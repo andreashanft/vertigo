@@ -180,9 +180,11 @@ void Sound::load(const QString &leftFile, const QString &rightFile)
     const QByteArray left = loadFile(leftFile);
     const QByteArray right = loadFile(rightFile);
 
+    // both channels must have the same length
+    const int length = qMin(left.size(), right.size());
     QByteArray data;
-    data.resize(left.size() + right.size());
-    for (int i = 0; i < left.size(); i++) {
+    data.resize(2 * length);
+    for (int i = 0; i < length; i++) {
         data[i * 2 + 0] = left[i];
         data[i * 2 + 1] = right[i];
     }
