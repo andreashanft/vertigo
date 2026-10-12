@@ -161,6 +161,76 @@ variables (`--watch`), trace calls, and see every volume/pan/pitch call the
 game makes. Use it to observe behaviour, then implement it independently; don't
 copy disassembled logic into this GPL code base.
 
+## Working safely with sfwin32 and the original executables
+
+sfwin32 loads the original DOS executables into memory, patches them and runs
+their machine code under a vectored exception handler. Treat both the runner
+and the game binaries as untrusted, and never build or run them on a
+development machine. It is Windows-only anyway; whether it works under the x86
+emulation of Windows on ARM is untested.
+
+Before building or running anything from sfwin32:
+
+- **Verify repo provenance**
+  - Only use the code from the official repository,
+    <https://github.com/mnkraus/sfwin32>.
+  - Check the commit hash and confirm it is the intended source. The commit
+    inspected (read-only, nothing built or run) while writing this roadmap was
+    `e0861140e62f0934432ad05b0d0813ab48b5d670` (2026-08-23, "Give
+    DESKTOP.EXE's text fields a keyboard").
+- **Treat the game binaries as untrusted input**
+  - Do not run `FIGHT.EXE` / `DESKTOP.EXE` or game assets from unknown sources.
+  - Verify checksums or source authenticity (see the table below).
+- **Run in an isolated Windows VM**
+  - Use a disposable VM or a snapshot-enabled environment.
+  - No sensitive data, no banking, no SSH keys, no developer credentials.
+- **Keep the VM offline**
+  - Disable networking before the first run.
+  - Only enable it after the app behaves normally.
+- **Run as a non-admin user**
+  - Prefer a standard local user account.
+  - Avoid Administrator privileges.
+- **Review dangerous execution paths**
+  - Loader and memory mapping
+  - Vectored exception handler
+  - Thread/context manipulation
+  - CLI options like `--patch`
+  - Any modification of executable memory
+- **Use a clean snapshot**
+  - Take a snapshot before building or executing.
+  - Restore immediately if you see unexpected process creation, file writes
+    or network activity.
+- **Monitor behaviour**, watching for:
+  - unexpected child processes
+  - file writes outside the game folder
+  - network connections
+  - registry changes
+  - suspicious DLL loads
+- **Prefer a fresh test VM for each major change**, especially after changing
+  patches or runner settings.
+- **If anything odd happens**
+  - Stop immediately.
+  - Restore the VM snapshot.
+  - Reassess the binary and asset sources.
+
+Known-good checksums of the GOG release (Archimedean Dynasty, GOG id
+1436955893). The MD5 values match GOG's own hash database shipped with the
+installation (`goggame-1436955893.hashdb`, 1,774 entries, all verified
+2026-10-13):
+
+| File | SHA-256 | MD5 (GOG hashdb) |
+|---|---|---|
+| `FIGHT.EXE` | `193b07df63cc67a6d3be151792e0dc72de62401ea15208d8e25363b76de21cee` | `d853239748b8d5c9dfdca4b270d95acf` |
+| `FIGHT3.EXE` | `f90440e630c6ee0a877bfcd542ab75ea1268ca83894859e3e97bfae3e4ad9c56` | `fa083f2aa8e2430495a485ee5a424b74` |
+| `DESKTOP.EXE` | `540bdc3781f0d035dfaf942dbcb5a54e2a4e72c47ba13585911ea356e4b86e67` | `df53e082660918aa8514c202981d7efc` |
+| `DESKTOP3.EXE` | `b9f71901015122247580f54274eed1e794f78c7984515069c15de6c558f9b488` | `9fd7a0daed5a133395d571e0b2ef1b50` |
+| `SF.EXE` | `940b707c04960a84762695a95c49346cd714ee1e6ce7195a65222ebf1294106c` | `fbf78a04501d92b0652f3ca4bdacd676` |
+| `SF3DFX.EXE` | `40a91282275ce99c6b3e4f653ffba70987a794cce336bbd2dc45e8a6f2b63cca` | `5e0dcb9726ab0a287a5ff7ae512862f4` |
+| `game.gog` (CD image) | `58ed1b740bc51f36a4aa8df51969ec6e6a1f2dc2eaabb54fd51183a4556ea3d4` | `7cd5858c1e5e73088a39057bbb025b80` |
+
+The hash database comes with the installation, so it only shows the files are
+what that GOG installer shipped; obtain the installer from GOG itself.
+
 ## Risks
 
 - Turning on enemy fire before the AI is tuned will make early missions
