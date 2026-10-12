@@ -2,6 +2,8 @@
 #include "txt/stringtable.h"
 #include "gfx/image.h"
 
+#include <QFile>
+
 
 namespace game {
 
@@ -16,9 +18,11 @@ DialogFrame::DialogFrame(Dialog* dialog, const QString &roomName, std::function<
 
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
-    QImage image = gfx::Image::load(QString("gfx:img/desktop/bground/d_%1.img").arg(roomName), colorTable);
-    if (image.isNull())
-        image = gfx::Image::load("gfx:img/desktop/bground/d_ew1.img", colorTable);
+    // not every room has its own dialog background, and loading a missing image aborts
+    QString background = QString("gfx:img/desktop/bground/d_%1.img").arg(roomName);
+    if (!QFile::exists(background))
+        background = "gfx:img/desktop/bground/d_ew1.img";
+    QImage image = gfx::Image::load(background, colorTable);
 
     ui::Label *label;
 
