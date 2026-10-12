@@ -217,6 +217,9 @@ set(SOURCES
 
 add_executable(vertigo WIN32 ${SOURCES})
 target_link_libraries(vertigo ${QT_LIBRARIES} ${SDL2_LIBRARY} ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
+if (TARGET glm::glm)
+    target_link_libraries(vertigo glm::glm)
+endif()
 if (Qt5OpenGL_FOUND)
     target_link_libraries(vertigo Qt5::OpenGL)
 endif()
