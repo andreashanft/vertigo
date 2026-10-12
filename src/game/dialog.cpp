@@ -40,6 +40,7 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
     std::function<void(int)> funcDisableStation,
     std::function<void(QString, int)> funcAddMission,
     std::function<void(int, QString)> funcReplaceApproachMovie,
+    std::function<void(int)> funcUpgradeBoat,
     std::function<void()> funcGameOver
 ) :
     ui::Widget(parent),
@@ -61,6 +62,7 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
     m_funcDisableStation(std::move(funcDisableStation)),
     m_funcAddMission(std::move(funcAddMission)),
     m_funcReplaceApproachMovie(std::move(funcReplaceApproachMovie)),
+    m_funcUpgradeBoat(std::move(funcUpgradeBoat)),
     m_funcGameOver(std::move(funcGameOver))
 {
     const QString baseName = QString("txt:dia/%1/%2").arg(chapter, 3, 10, QChar('0')).arg(id, 6, 10, QChar('0'));
@@ -216,7 +218,7 @@ void Dialog::select()
                     break;
 
                 case Message::Boat:
-                    // 2048 + message.value
+                    m_funcUpgradeBoat(2048 + message.value);
                     break;
 
                 case Message::GameOver:

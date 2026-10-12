@@ -632,6 +632,7 @@ void Chapter::addDialog(int dialogId)
         [this](int n) { disableStation(n); },
         [this](QString mission, int station) { addMission(mission, station); },
         [this](int station, QString movie) { replaceApproachMovie(station, movie); },
+        [this](int type) { upgradeBoat(type); },
         [this]() { gameOver(); }
     );
     m_pendingDialogues.insert(dialogId, dialog);
