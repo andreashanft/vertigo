@@ -50,7 +50,12 @@ Trash::Trash(Scenario *scenario, Billboard *billboard, const Vector3D &position)
 
 bool Trash::intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal)
 {
-    return m_billboard->intersect(start - m_position, dir, distance);
+    if (!m_billboard->intersect(start - m_position, dir, distance))
+        return false;
+    // the billboard collides like a sphere around its center
+    const Vector3D hit = start + dir*distance - m_position;
+    normal = glm::length2(hit) > 0 ? glm::normalize(hit) : -glm::normalize(dir);
+    return true;
 }
 
 

@@ -53,7 +53,8 @@ void TurretBase::draw()
     glTranslatef(m_position.x, m_position.y, m_position.z);
     glScalef(m_scale, m_scale, m_scale);
     m_base->draw();
-    m_body->draw();
+    if (m_body)
+        m_body->draw();
     glPopMatrix();
 }
 
@@ -66,7 +67,7 @@ bool TurretBase::intersect(const Vector3D &start, const Vector3D &dir, float rad
 
     float d;
     Vector3D norm;
-    if (m_body->intersect((start - m_position)/m_scale, dir, radius/m_scale, d, norm))
+    if (m_body && m_body->intersect((start - m_position)/m_scale, dir, radius/m_scale, d, norm))
     {
         d *= m_scale;
         if (!collision || distance > d)

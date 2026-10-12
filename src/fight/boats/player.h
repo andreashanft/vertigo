@@ -37,6 +37,7 @@ public:
 
 public:
     Player(Scenario *scenario, game::Boat *boat, float yaw);
+    ~Player();
 
 public:
     int shield(int index) const { return m_shield[index]; };
