@@ -451,12 +451,15 @@ void Depot::updateButtons()
     {
         m_btnInfo->enable();
 
-        if (m_selectedList == 1 && m_boat->isCompatible(m_list1.at(m_selectedItem)))
+        // in Repair state the selection may be empty
+        const bool validItem = m_selectedItem >= 0 && m_selectedItem < (int)(m_selectedList == 1 ? m_list1.size() : m_list2.size());
+
+        if (m_selectedList == 1 && validItem && m_boat->isCompatible(m_list1.at(m_selectedItem)))
             m_btnBuy->enable();
         else
             m_btnBuy->disable();
 
-        if (m_selectedList == 2 && m_boat->canSell(m_list2.at(m_selectedItem), m_boat->mountings()[m_mounting].name))
+        if (m_selectedList == 2 && validItem && m_boat->canSell(m_list2.at(m_selectedItem), m_boat->mountings()[m_mounting].name))
             m_btnSell->enable();
         else
             m_btnSell->disable();
@@ -571,6 +574,7 @@ void Depot::draw()
             m_state = Loading;
             m_loadingState = Arrows;
             m_loadingItem = 0;
+            m_time.start();
         }
     }
 

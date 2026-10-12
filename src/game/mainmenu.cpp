@@ -131,7 +131,7 @@ void MainMenu::draw()
     Menu::draw();
 
     if (m_lblNew.isVisible()) {
-        if (m_time.elapsed() > 300) {
+        if (!m_time.isValid() || m_time.elapsed() > 300) {
             m_time.start();
             m_cursor = !m_cursor;
         }
