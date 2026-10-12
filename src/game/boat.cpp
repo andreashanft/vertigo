@@ -137,9 +137,8 @@ void Boat::load()
     m_boatFile.setSection("Compatibility");
     for (int comp = 0; m_boatFile.contains(QString("Comp%1").arg(comp)); comp++)
     {
-        QString str = m_boatFile.value(QString("Comp%1").arg(comp)).toString();
-        str.truncate(str.indexOf(' '));
-        int model = str.toInt();
+        const QString str = m_boatFile.value(QString("Comp%1").arg(comp)).toString();
+        int model = str.section(' ', 0, 0, QString::SectionSkipEmpty).toInt();
         if (model != 99999)
             m_compatibility.insert(model);
     }

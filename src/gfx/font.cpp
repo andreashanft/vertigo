@@ -162,7 +162,9 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
 
             c -= 32;
 
-            Q_ASSERT(c < m_symbols.size());
+            // characters without a glyph are drawn as '?'
+            if (c >= m_symbols.size())
+                c = '?' - 32;
             const Symbol &symbol = m_symbols[c];
 
             if (m_alpha) {
@@ -228,6 +230,8 @@ int FontPrivate::width(const QString &text) const
             continue;
         }
         c -= 32;
+        if (c >= m_symbols.size())
+            c = '?' - 32;
         const Symbol &symbol = m_symbols[c];
         totalW += symbol.width;
     }

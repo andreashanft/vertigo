@@ -95,7 +95,7 @@ Horizon::Horizon(HUD *hud, glm::ivec2 center, const txt::DesFile &file) :
         
     std::vector<PointF> downPoints(file.value("DN_NumOfPoints").toInt());
     std::vector<int> downColors(file.value("DN_NumOfPoints").toInt());
-    for (i = 0; i < upPoints.size(); i++)
+    for (i = 0; i < downPoints.size(); i++)
     {
         downPoints[i] = PointF(file.value(QString("DN_PointX%1").arg(i)).toFloat(), file.value(QString("DN_PointY%1").arg(i)).toFloat());
         downColors[i] = file.value(QString("DN_Color%1").arg(i)).toInt();

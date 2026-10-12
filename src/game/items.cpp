@@ -101,9 +101,8 @@ Items::Items()
     int c;
     for (int c = 0; file.contains(QString("C%1").arg(c)); c++)
     {
-        QString str = file.value(QString("C%1").arg(c)).toString();
-        str.truncate(str.indexOf(' '));
-        auto it = m_items.find(str.toInt());
+        const QString str = file.value(QString("C%1").arg(c)).toString();
+        auto it = m_items.find(str.section(' ', 0, 0, QString::SectionSkipEmpty).toInt());
         if (it != m_items.end())
             it->second.cost = file.value(QString("C%1C").arg(c)).toInt();
     }
@@ -131,7 +130,7 @@ void Items::addItem(int model, Type type, const QString &name, const QString &im
     if (file.open(QFile::ReadOnly))
     {
         while (!file.atEnd())
-            item.text.append(trimEnd(file.readLine()));
+            item.text.append(trimEnd(QString::fromLatin1(file.readLine())));
     }
 
 }
@@ -195,8 +194,13 @@ int Items::getDepotPrice(int model)
 {
     if (items == NULL)
         items = new Items();
+    auto item = items->m_items.find(model);
+    if (item == items->m_items.end())
+        return 0;
+    // stations that don't sell an item use its base price
     Station station = Chapter::get()->stations().value(Chapter::get()->currentStation());
-    return (int)(0.9*items->m_items.at(model).cost*station.depotPrices().at(model));
+    auto factor = station.depotPrices().find(model);
+    return (int)(0.9*item->second.cost*(factor != station.depotPrices().end() ? factor->second : 1.0f));
 }
 
 

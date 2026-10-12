@@ -16,7 +16,9 @@
  ***************************************************************************/
 
 #include "video.h"
+#include "util/debug.h"
 
+#include <algorithm>
 #include <cstring>
 
 namespace gfx {
@@ -297,9 +299,11 @@ void Video::loadVideoDiff(std::size_t size)
 
     std::uint32_t num = 0;
     std::uint32_t pos = 0;
-    for (unsigned int i = 0; i < sizeBitmapUnpacked && pos < m_frame.size(); i++) {
-        for (int j = 7; j >= 0; j--) {
+    for (unsigned int i = 0; i < bitmap.size() && pos < m_frame.size(); i++) {
+        for (int j = 7; j >= 0 && pos < m_frame.size(); j--) {
             if ((static_cast<unsigned char>(bitmap[i]) >> j) & 0x01) {
+                if (num >= indices.size())
+                    return;
                 m_frame[pos] = indices[num];
                 num++;
             }
@@ -316,7 +320,11 @@ void Video::decode(std::size_t size, std::vector<char> &output)
     m_file >> sizeCompressed >> sizeDecompressed;
 
     output.reserve(sizeDecompressed);
-    VERIFY(decompressLZW(size - 2 * sizeof(std::int32_t), output));
+    if (!decompressLZW(size - 2 * sizeof(std::int32_t), output)) {
+        // corrupt data (e.g. one frame of 12-4-anf.mvi): pad the output instead of aborting
+        util::Debug() << "Skipping corrupt video frame";
+        output.resize(std::max<std::int32_t>(sizeDecompressed, 0));
+    }
     m_file.seek(startOffset + size);
 }
 
@@ -377,7 +385,7 @@ bool Video::decompressLZW(std::size_t size, std::vector<char> &out)
         } else if (next == dictionary.size()) {
             dictionary.push_back({ last, cLast, dictionary[last].length + 1 });
         } else {
-            ASSERT(false);
+            return false;
         }
 
         std::uint16_t i = next;
@@ -415,7 +423,10 @@ QImage Video::createImage()
     image.fill(0);
     image.setColorTable(m_colorTable);
 
-    const bool wide = (m_width * m_height) > m_frame.size();
+    const bool wide = std::size_t(m_width) * m_height > m_frame.size();
+    // don't read past frames or index maps that don't match the header
+    if (image.isNull() || (wide && (m_frame.size() < std::size_t(m_height) * (m_width / 2) || m_indexMap.size() < 256 * 256)))
+        return createEmpty();
 
     const std::uint8_t *index = reinterpret_cast<const std::uint8_t*>(m_frame.data());
     for (unsigned int y = 0; y < m_height; y++) {

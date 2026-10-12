@@ -95,6 +95,13 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
 }
 
 
+Player::~Player()
+{
+    // the engine sample is shared and would keep looping after the mission
+    sfx::SampleMap::get(sfx::Sample::Engine).stop();
+}
+
+
 float Player::noise() const
 {
     return (m_engineState != EngineOff ? ActiveObject::noise() : 0) + (m_scenario->sonar().isActive() || m_scenario->sonar().isActivating() ? 1 : 0);

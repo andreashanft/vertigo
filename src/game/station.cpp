@@ -43,9 +43,8 @@ Station::Station(int index, const QString &name) :
     file.setSection("Depot");
     for (int entry = 0; file.contains(QString("Entry%1").arg(entry)); entry++)
     {
-        QString str = file.value(QString("Entry%1").arg(entry)).toString();
-        str.truncate(str.indexOf(' '));
-        int model = str.toInt();
+        const QString str = file.value(QString("Entry%1").arg(entry)).toString();
+        int model = str.section(' ', 0, 0, QString::SectionSkipEmpty).toInt();
         if (model != 99999)
             m_depotPrices[model] = file.value(QString("Entry%1Cost").arg(entry)).toFloat();
     }

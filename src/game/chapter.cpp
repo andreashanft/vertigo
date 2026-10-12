@@ -82,14 +82,14 @@ Chapter::~Chapter()
     s.setValue("harbour", m_movieHarbour);
     s.endGroup();
 
+    // the desktop's dialog frames still reference pending dialogs
+    delete m_desktop;
     qDeleteAll(m_pendingDialogues);
     qDeleteAll(m_missions);
     delete m_scenario;
     delete m_mission;
     delete m_boat;
-    delete m_movie;
     delete m_briefing;
-    delete m_desktop;
     delete m_area;
     m_singleton = NULL;
 }
@@ -112,9 +112,12 @@ void Chapter::load(const QString &filename, bool load)
 {
     m_movies = std::queue<Movie, std::list<Movie>>();
     delete m_area;
-    if (m_desktop)
+    // save again once the new station is set up
+    const bool replaceDesktop = m_desktop != NULL;
+    if (m_desktop) {
         m_desktop->deleteLater();
-    delete m_movie;
+        m_desktop = NULL;
+    }
     m_movie = NULL;
     m_currentStation = -1;
     m_approachMovieReplacement.clear();
@@ -124,7 +127,7 @@ void Chapter::load(const QString &filename, bool load)
     m_missions.clear();
     delete m_mission;
     m_mission = NULL;
-    m_save = false;
+    m_save = replaceDesktop;
 
     txt::DesFile file(filename);
 
@@ -629,6 +632,7 @@ void Chapter::addDialog(int dialogId)
         [this](int n) { disableStation(n); },
         [this](QString mission, int station) { addMission(mission, station); },
         [this](int station, QString movie) { replaceApproachMovie(station, movie); },
+        [this](int type) { upgradeBoat(type); },
         [this]() { gameOver(); }
     );
     m_pendingDialogues.insert(dialogId, dialog);

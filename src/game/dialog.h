@@ -108,6 +108,7 @@ public:
        std::function<void(int)> funcDisableStation,
        std::function<void(QString, int)> funcAddMission,
        std::function<void(int, QString)> funcReplaceApproachMovie,
+       std::function<void(int)> funcUpgradeBoat,
        std::function<void()> funcGameOver
     );
 
@@ -169,6 +170,7 @@ private:
     std::function<void(int)> m_funcDisableStation;
     std::function<void(QString, int)> m_funcAddMission;
     std::function<void(int, QString)> m_funcReplaceApproachMovie;
+    std::function<void(int)> m_funcUpgradeBoat;
     std::function<void()> m_funcGameOver;
 };
 

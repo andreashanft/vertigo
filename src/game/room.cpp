@@ -83,6 +83,7 @@ Room::Room(int index, const QString &title, const QString &name,
 
         Person *person = new Person(file.value("Arrow").toString(), QPoint(file.value("X").toInt(), file.value("Y").toInt()), false, [this](int n) { startDialog(n); }, m_backgroundLabel);
         person->arrow.hide();
+        person->female = file.value("Sex").toString().toLower() == "f";
         m_persons.insert(personId, person);
 
         personId++;
@@ -123,13 +124,17 @@ void Room::restart()
     foreach (Dialog* dialog, dialogs) {
         Person *person = m_persons.value(dialog->person());
         if (!person) {
-            foreach (person, m_persons) {
-                if (person->arrow.isVisible() == false && person->female == dialog->isFemale())
+            // any free person of the dialog's sex, but never the dock man
+            foreach (Person *candidate, m_persons) {
+                if (candidate != m_dockMan && candidate->arrow.isVisible() == false && candidate->female == dialog->isFemale()) {
+                    person = candidate;
                     break;
+                }
             }
         }
 
-        Q_ASSERT(person);
+        if (!person)
+            continue;
         person->arrow.show();
         person->arrow.setText(dialog->name());
         person->arrow.setValue(dialog->id());

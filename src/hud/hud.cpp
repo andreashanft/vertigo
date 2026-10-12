@@ -16,7 +16,9 @@
  ***************************************************************************/
 
 #include "hud.h"
+#include <QGLWidget>
 #include <QKeyEvent>
+#include <algorithm>
 #include "SDL.h"
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
@@ -221,12 +223,19 @@ void HUD::draw()
     }
 
     int ticks = SDL_GetTicks();
-    float elapsedTime = (ticks - m_lastTicks)/1000.0f;
+    // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
+    float elapsedTime = std::min((ticks - m_lastTicks)/1000.0f, 0.25f);
     m_lastTicks = ticks;
-    m_scenario->update(elapsedTime);
+    while (elapsedTime > 0.0f) {
+        const float step = std::min(elapsedTime, 0.02f);
+        m_scenario->update(step);
+        elapsedTime -= step;
+    }
 
+    // the GL viewport is in device pixels, the rects in logical pixels
+    const qreal pixelRatio = window() ? window()->devicePixelRatioF() : 1.0;
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
-        glViewport(rect().x(), rect().y(), rect().width(), rect().height());
+        glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
 
     m_scenario->draw();
 
@@ -246,7 +255,7 @@ void HUD::draw()
     m_noScaleWidget.doDraw();
 
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
-        glViewport(m_rectGL.x, m_rectGL.y, m_rectGL.width, m_rectGL.height);
+        glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
 }
 
 

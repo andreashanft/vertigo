@@ -21,6 +21,8 @@
 
 #include "SDL.h"
 
+#include <iostream>
+
 namespace util {
 
 File::File()
@@ -45,6 +47,8 @@ void File::open(const std::string &name)
 #else
 	m_stream.open(m_name, std::ios_base::in | std::ios_base::binary);
 #endif
+    if (!m_stream.good())
+        std::cerr << "Failed to open " << m_name << std::endl;
     ASSERT(m_stream.good());
 }
 

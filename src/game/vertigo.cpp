@@ -56,7 +56,8 @@ void Vertigo::start(const QString &scenarioName)
 
     m_window.show();
     while (m_window.isVisible()) {
-        qApp->processEvents();
+        // block until the next event (at least the 20ms frame timer) instead of spinning
+        qApp->processEvents(QEventLoop::WaitForMoreEvents);
         util::DeferredDeletable::clear();
     }
 }

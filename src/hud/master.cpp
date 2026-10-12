@@ -21,6 +21,7 @@
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/player.h"
+#include <glm/common.hpp>
 #include <glm/geometric.hpp>
 
 
@@ -171,9 +172,10 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
 
             if (m_hud->scenario()->sonar().detectArmor())
             {
-                int kinetic = 10*target.locked()->kineticShield()/(target.locked()->kineticShieldMax() + 1);
+                // shields drop below zero when a target is paralyzed
+                int kinetic = glm::clamp(10*target.locked()->kineticShield()/(target.locked()->kineticShieldMax() + 1), 0, 9);
                 m_kineticShield[kinetic].draw(point.x + 25, point.y - 20, &m_clipRect);
-                int shock = 10*target.locked()->shockShield()/(target.locked()->shockShieldMax() + 1);
+                int shock = glm::clamp(10*target.locked()->shockShield()/(target.locked()->shockShieldMax() + 1), 0, 9);
                 m_shockShield[shock].draw(point.x + 29, point.y - 20, &m_clipRect);
             }
         }
