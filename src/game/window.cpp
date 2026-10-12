@@ -68,9 +68,11 @@ void Window::resizeGL(int w, int h)
 void Window::paintGL()
 {
     if (m_renderer) {
-        if (m_renderer->isCursorVisible())
+        // setCursor() recreates the native cursor, so only call it on changes
+        const bool cursorVisible = m_renderer->isCursorVisible();
+        if (cursorVisible && cursor().shape() != m_cursor.shape())
             setCursor(m_cursor);
-        else
+        else if (!cursorVisible && cursor().shape() != Qt::BlankCursor)
             setCursor(Qt::BlankCursor);
 
         m_renderer->setRect(rect());
