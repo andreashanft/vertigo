@@ -387,7 +387,7 @@ void Dialog::loadStrings(const QString &filename)
 
     QRegExp regexp("#(\\d*).*\\{(.*)\\}");
     while (!file.atEnd())  {
-        QString line = file.readLine();
+        QString line = QString::fromLatin1(file.readLine());
         if (file.error() != QFile::NoError)
             break;
 

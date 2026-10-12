@@ -58,10 +58,12 @@ bool DesFile::load(const QString &filename)
         return false;
 
     QRegExp regSection("^\\s*\\[(.*)\\]");
-    QRegExp regKey("(.*)=(.*)");
+    // values may be followed by a ';' comment, which can contain '=' itself
+    QRegExp regKey("([^=]*)=([^;]*)");
 
     while (!file.atEnd()) {
-        const QString line = file.readLine();
+        // the game data is 8-bit (DOS codepage 437) text; keep the raw bytes, the fonts are indexed by them
+        const QString line = QString::fromLatin1(file.readLine());
 
         if (regSection.indexIn(line) >= 0)
             setSection(regSection.cap(1).trimmed().toLower());
@@ -75,11 +77,11 @@ bool DesFile::load(const QString &filename)
         if (line.trimmed() == "{")
         {
             QStringList text;
-            QString textLine = trimEnd(file.readLine());
+            QString textLine = trimEnd(QString::fromLatin1(file.readLine()));
             while (!file.atEnd() && textLine != "}")
             {
                 text.append(textLine);
-                textLine = trimEnd(file.readLine());
+                textLine = trimEnd(QString::fromLatin1(file.readLine()));
             }
             setValue("{text}", text);
         }
@@ -99,6 +101,7 @@ bool DesFile::save(const QString &filename) const
         return false;
 
     QTextStream stream(&file);
+    stream.setCodec("ISO-8859-1");
 
     QMapIterator<QString, QVariantMap> itSections(m_sections);
     while (itSections.hasNext()) {

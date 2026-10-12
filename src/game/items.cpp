@@ -130,7 +130,7 @@ void Items::addItem(int model, Type type, const QString &name, const QString &im
     if (file.open(QFile::ReadOnly))
     {
         while (!file.atEnd())
-            item.text.append(trimEnd(file.readLine()));
+            item.text.append(trimEnd(QString::fromLatin1(file.readLine())));
     }
 
 }

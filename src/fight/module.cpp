@@ -97,7 +97,7 @@ Module::Module(gfx::TextureManager &texMan, const QString &name)
             stream >> nameLength;
             stream.skipRawData(4);
 
-            const QString textureName = file.read(nameLength);
+            const QString textureName = QString::fromLatin1(file.read(nameLength));
 
             std::vector<quint32> indices;
             indices.reserve(3 * numVertices2);
