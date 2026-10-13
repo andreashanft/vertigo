@@ -35,6 +35,7 @@ public:
 
 public:
     int num() const { return m_num; }
+    ConditionEvent* eventReached() { return &m_eventReached; }
 
 public:
     bool update(float elapsedTime);
@@ -48,6 +49,7 @@ private:
     int m_state;
     float m_time;
     bool m_reached;
+    ConditionEvent m_eventReached;
 };
 
 

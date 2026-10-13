@@ -45,8 +45,17 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--overlay` shows the debug overlay with player state and a label for every
   object (toggle with Ctrl+D, Cmd+D on macOS). Yellow labels are detected by
   the sonar, green ones are enabled but not detected, red ones not enabled yet.
-- The exit code tells how the mission ended: 0 success, 1 failed, 2 aborted
-  (Esc or window closed), 3 `--timeout` reached.
+- `--destroy 2064,2068` destroys these units (scenario ids, shown by the
+  overlay) one second into the mission, to test objectives and conditions.
+- The mission ends as soon as it is accomplished (no need to press Alt+A) or
+  10 seconds after it failed. The exit code tells how it ended: 0 success,
+  1 failed, 2 aborted (Esc or window closed), 3 `--timeout` reached. A summary
+  line with the time, enabled units and radio messages is printed at the end:
+
+  ```
+  $ vertigo s01805 --destroy 2064,2068,2069,2071 --timeout 5
+  s01805: timeout after 5.006 s, 43/51 units enabled, 2 radio messages
+  ```
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
 everything the loader skips or ignores: unsupported object types, unread

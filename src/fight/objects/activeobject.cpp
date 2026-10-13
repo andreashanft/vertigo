@@ -46,6 +46,8 @@ ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 
 void ActiveObject::damage(int kinetic, int shock, const Vector3D &position)
 {
+    // TODO: only count hits by another unit once shots know who fired them (roadmap step 1.4)
+    m_eventAttack.complete();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;
     if (m_kineticShield < 0)

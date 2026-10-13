@@ -46,6 +46,7 @@ public:
 public:
     util::event<>& eventSuccess() { return m_eventSuccess; }
     util::event<>& eventAbort() { return m_eventAbort; }
+    util::event<>& eventFailure() { return m_eventFailure; }
 
     void setDebugOverlay(bool visible);
 
@@ -83,6 +84,7 @@ private:
 private:
     util::event<> m_eventSuccess;
     util::event<> m_eventAbort;
+    util::event<> m_eventFailure;
 
     game::Boat *m_boat;
     fight::Scenario *m_scenario;

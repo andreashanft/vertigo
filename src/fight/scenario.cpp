@@ -302,6 +302,7 @@ Scenario::Scenario(const QString &name) :
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(object);
             if (activeObject)
             {
+                entry.iff = m_file.contains("iff") ? m_file.value("iff").toInt() : -1;
                 entry.condSignal = activeObject->eventDestroy();
                 entry.condAttacked = activeObject->eventAttack();
                 entry.condIdentified = activeObject->eventIdentify();
@@ -309,6 +310,10 @@ Scenario::Scenario(const QString &name) :
                 entry.condFinished = activeObject->eventFinish();
                 entry.condBoarded = activeObject->eventBoard();
             }
+            // "destroyed" for a nav point means it has been reached
+            NavPoint *navPoint = dynamic_cast<NavPoint *>(object);
+            if (navPoint)
+                entry.condSignal = navPoint->eventReached();
         }
 
         // Reading Objectives

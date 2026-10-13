@@ -21,6 +21,7 @@
 #include "game/boat.h"
 #include "game/items.h"
 #include "fight/scenario.h"
+#include "fight/objects/activeobject.h"
 #include "txt/desfile.h"
 
 #include <QCoreApplication>
@@ -81,6 +82,7 @@ int Vertigo::start(const Options &options)
         hud.reset(new hud::HUD());
         hud->eventSuccess() += [this, &result]() { result = ExitSuccess; m_window.close(); };
         hud->eventAbort() += [this, &result]() { result = ExitAborted; m_window.close(); };
+        hud->eventFailure() += [this, &result]() { result = ExitFailed; m_window.close(); };
         hud->setDebugOverlay(options.debugOverlay);
         hud->load(boat.get());
         scenario.reset(new fight::Scenario(options.scenario));
@@ -88,6 +90,7 @@ int Vertigo::start(const Options &options)
         m_window.setRenderer(hud.get());
     }
 
+    std::vector<int> destroy = options.destroy;
     QElapsedTimer timer;
     timer.start();
 
@@ -97,13 +100,45 @@ int Vertigo::start(const Options &options)
         qApp->processEvents(QEventLoop::WaitForMoreEvents);
         util::DeferredDeletable::clear();
 
+        if (scenario && !destroy.empty() && timer.elapsed() >= 1000) {
+            for (const int id : destroy) {
+                bool found = false;
+                for (const auto &record : scenario->objectRecords()) {
+                    fight::ActiveObject *object = dynamic_cast<fight::ActiveObject *>(record.object);
+                    if (record.id == id && object) {
+                        // a hit strong enough to destroy it, so "attacked" fires as well
+                        object->damage(object->kineticShield() + 1, 0, object->position());
+                        found = true;
+                    }
+                }
+                if (!found)
+                    std::cerr << "--destroy: no unit " << id << std::endl;
+            }
+            destroy.clear();
+        }
         if (scenario && result == ExitAborted && scenario->conditionManager().failed())
             result = ExitFailed;
+        // test mode doesn't wait for the autopilot key
+        if (scenario && result == ExitAborted && scenario->conditionManager().autopilot()) {
+            result = ExitSuccess;
+            m_window.close();
+        }
         if (scenario && options.timeout > 0 && timer.elapsed() >= options.timeout*1000) {
             if (result == ExitAborted)
                 result = ExitTimeout;
             m_window.close();
         }
+    }
+
+    if (scenario) {
+        int enabled = 0;
+        for (const auto &record : scenario->objectRecords())
+            if (record.object->isEnabled())
+                enabled++;
+        static const char *results[] = { "success", "failed", "aborted", "timeout" };
+        std::cout << options.scenario.toUtf8().constData() << ": " << results[result]
+                  << " after " << timer.elapsed()/1000.0 << " s, " << enabled << "/" << scenario->objectRecords().size()
+                  << " units enabled, " << scenario->radio().size() << " radio messages" << std::endl;
     }
 
     return result;

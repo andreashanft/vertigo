@@ -93,6 +93,11 @@ public:
 
 public:
     void complete();
+    // true once the "mission failed" message has had time to play and the mission should end
+    bool ended() const { return m_ended; }
+
+private:
+    bool m_ended;
 };
 
 
