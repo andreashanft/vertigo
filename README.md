@@ -31,6 +31,14 @@ make
 Qt has to be found through its real prefix; the symlinks Homebrew creates in
 `/opt/homebrew/lib/cmake` make Qt's CMake files look for `mkspecs` in the wrong place.
 
+## Game data
+
+Vertigo needs the complete game data, including the movies. A GOG installation
+only contains part of it; the rest is in the CD image (`game.gog`, a raw
+`MODE1/2352` track). Point Vertigo to a directory containing `DAT`, `GFX`,
+`SFX`, `TXT` and `VFX` from the CD's `SF` directory, with the installed files
+copied on top.
+
 ## Testing
 
 Vertigo can start a mission directly, which is meant for testing:
@@ -83,6 +91,16 @@ In a mission, Esc opens the mission menu (continue, abort the game, restart
 the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
 skips the mission as if it had been accomplished, for debugging.
 
+`vertigo --check [mission...]` loads all missions (or the given ones) and lists
+everything the loader skips or ignores: unsupported object types, unread
+settings and sections, and conditions that can't be resolved. The output for
+the German CD data is kept in [docs/mission-check.txt](docs/mission-check.txt);
+regenerate it after changes to the loader and compare:
+
+```
+build/vertigo --check > docs/mission-check.txt
+```
+
 ## 3D cockpits
 
 Besides the original 2D cockpit art, Vertigo can show 3D models of the four
@@ -106,21 +124,3 @@ directory (or the folder set as `cockpit/directory`).
   depth of the cockpit. `--shake 0.5` (setting `cockpit/shake`, default 1)
   scales it, 0 turns it off. `--trace` with the player's id prints the head
   offset.
-
-`vertigo --check [mission...]` loads all missions (or the given ones) and lists
-everything the loader skips or ignores: unsupported object types, unread
-settings and sections, and conditions that can't be resolved. The output for
-the German CD data is kept in [docs/mission-check.txt](docs/mission-check.txt);
-regenerate it after changes to the loader and compare:
-
-```
-build/vertigo --check > docs/mission-check.txt
-```
-
-## Game data
-
-Vertigo needs the complete game data, including the movies. A GOG installation
-only contains part of it; the rest is in the CD image (`game.gog`, a raw
-`MODE1/2352` track). Point Vertigo to a directory containing `DAT`, `GFX`,
-`SFX`, `TXT` and `VFX` from the CD's `SF` directory, with the installed files
-copied on top.
