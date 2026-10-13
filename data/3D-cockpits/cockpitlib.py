@@ -122,12 +122,13 @@ def see_through_mask(raw, min_size=40):
 
 def load(cid):
     """Read DES + COCKPIT.R16 of cockpit `cid` (camera, art, see-through mask)."""
-    global CID, DATA, OUT, DES, F, CX, CY, ART, SEE
+    global CID, DATA, OUT, F, CX, CY, ART, SEE
     CID = cid
     DATA = arg("--data") or default_data_dir()
     OUT = arg("--out") or os.path.join(HERE, "out", cid)
     os.makedirs(os.path.join(OUT, "renders"), exist_ok=True)
-    DES = parse_des(find_ci(DATA, "VFX", "COCKPIT", f"{cid}.DES"))
+    DES.clear()  # updated in place, so `from cockpitlib import *` sees it
+    DES.update(parse_des(find_ci(DATA, "VFX", "COCKPIT", f"{cid}.DES")))
     angle = float(DES.get("camera", {}).get("viewangle", 105.0))
     F = 320.0 / math.tan(math.radians(angle) / 2)
     CX = des_int("front", "VFX_StartX") + des_int("front", "VFX_FlightX", 320)
@@ -347,7 +348,8 @@ def masked_hull(step_deg=0.35, coarse_deg=4.0, extend_az=None, extend_el=None, g
         dense = np.arange(lo, hi, step_deg)
         left = np.arange(a_min, lo, coarse_deg)
         right = np.arange(hi, a_max, coarse_deg)
-        return np.unique(np.concatenate([left, dense, right, [a_max]]))
+        v = np.unique(np.round(np.concatenate([left, dense, right, [a_max]]), 6))
+        return v[np.concatenate([[True], np.diff(v) > step_deg * 0.25])]  # no zero-width faces
 
     az = axis(az0, az1, -180.0, 180.0)[:-1]          # wraps around
     el = axis(el0, el1, -89.0, 89.0)

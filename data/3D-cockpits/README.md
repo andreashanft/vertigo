@@ -103,6 +103,34 @@ See *Findings* for the comparison of upscalers.
 
 ## Findings
 
+### The four cockpits
+
+| cockpit | design | window IoU | triangles |
+| --- | --- | --- | --- |
+| 000 | oval porthole in a ribbed hull (`Porthole`) | 0.943 | 249k |
+| 001 | open canopy: diagonal struts, header arch, side windows continued past the frame | 0.983 | 308k |
+| 002 | open canopy: hazard-striped pillars, crown, sill, side struts | 0.985 | 483k |
+| 003 | open canopy: arch with ribbed feet, hanging monitors | 0.977 | 287k |
+
+All four have a named screen for every DES monitor section and a closed pod with floor and seat.
+Seen from the eye, the textured models are nearly indistinguishable from the originals.
+
+### Limitations and next steps
+
+- **Ghosting.** With `masked_hull`, every opaque pixel of the art also lands on the hull 25–35 cm
+  behind the parts. When the head moves, that shows as dark fringes beside struts and pillars.
+  Cockpit 003 avoids it by making the hull glass behind the modelled parts; 001 lets parts overlap
+  the art outline by about 1 px.
+- **Hidden surfaces.** Surfaces the original never shows get a colour-matched fallback. A visible
+  stepped seam remains where it meets the projected art.
+- **Library candidates.** The cockpit scripts contain helpers worth moving into `cockpitlib`:
+  - correct strut and cable widths near the image edges (`w_m`, `across_px`, `fit_across`);
+    `m_per_px` ignores the stretch of a flat 105° view;
+  - prisms whose bevel doesn't grow the outline (`inset`, `prism_eye`);
+  - mirrored traces, DES lamp positions, flat lamp lenses.
+- **Not done yet.** PBR materials and normal maps, LODs (standalone headsets need the hoses and
+  hull decimated), live screen content, and loading the models in Vertigo (glTF plus OpenXR).
+
 ### Upscaling (evaluated on cockpit 000)
 
 The upscalers were run on the exported art. The textures were then baked at 4096 and
