@@ -47,12 +47,15 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   the sonar, green ones are enabled but not detected, red ones not enabled yet.
 - `--destroy 2064,2068` destroys these units (scenario ids, shown by the
   overlay) one second into the mission, to test objectives and conditions.
-  The player's id destroys the player.
+  The player's id destroys the player; for areas and nav points it counts as
+  reaching them.
+- `--trace 2062,2055` prints these units' map cell, height above ground,
+  speed and current order every second.
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
   Esc menu (here: restart the mission).
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
-  at a fraction of their maximum turn rate (the sign picks the direction), until the AI
-  orders exist.
+  at a fraction of their maximum turn rate (the sign picks the direction),
+  instead of following their orders.
 - The mission ends as soon as it is accomplished (no need to press Alt+A), 10
   seconds after it failed, or 3 seconds after the player was destroyed. The
   exit code tells how it ended: 0 success, 1 failed, 2 aborted (Esc menu or

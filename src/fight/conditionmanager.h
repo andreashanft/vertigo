@@ -63,10 +63,14 @@ public:
     void buildDependencies();
 
     Condition* addCondition(int limit = 0);
+    // a condition for an order slot's "stop when" settings, nullptr if it has none
+    Condition* addBreakCondition(int cond1, int dep1, int ref1, int op, int cond2, int dep2, int ref2, int del);
     ConditionRadio* addCondRadio(const Vector3D &pos, const QString &text);
     ConditionSpace* addCondSpace(int x, int y, int dimx, int dimy, int minz, int maxz);
     void testSpace(float x, float y, float height);
     void delayComplete(Condition *cond, int delay);
+    // completes the "destroyed" event of an entry (for an area or nav point: reached), for testing
+    bool signal(int id);
     void update(float elapsedTime);
 
     bool autopilot() const { return m_condSuccess.isCompleted(); }

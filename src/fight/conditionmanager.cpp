@@ -81,6 +81,16 @@ void ConditionManager::update(float elapsedTime)
 }
 
 
+bool ConditionManager::signal(int id)
+{
+    const auto it = condEntries.find(id);
+    if (it == condEntries.end() || it->second.condSignal == nullptr)
+        return false;
+    it->second.condSignal->complete();
+    return true;
+}
+
+
 ConditionManager::ConditionEntry& ConditionManager::addEntry(int id)
 {
     return condEntries[id];
@@ -181,11 +191,36 @@ void ConditionManager::updateObjective(int id, int index, int wccond)
 }
 
 
+namespace {
+
+// 0 and 47 both mean "no condition"
+bool isCondition(int cond)
+{
+    return cond != 0 && cond != 47;
+}
+
+}
+
+
+Condition* ConditionManager::addBreakCondition(int cond1, int dep1, int ref1, int op, int cond2, int dep2, int ref2, int del)
+{
+    const int count = (isCondition(cond1) ? 1 : 0) + (isCondition(cond2) ? 1 : 0);
+    if (count == 0)
+        return nullptr;
+
+    Condition *condition = addCondition(count == 2 && op == 0 ? 2 : 1);
+    condition->setDelay(del);
+    if (isCondition(cond1))
+        initCondition(cond1, dep1, ref1, condition);
+    if (isCondition(cond2))
+        initCondition(cond2, dep2, ref2, condition);
+    condition->tryComplete();
+    return condition;
+}
+
+
 void ConditionManager::buildDependencies()
 {
-    // 0 and 47 both mean "no condition"
-    auto isCondition = [](int cond) { return cond != 0 && cond != 47; };
-
     for (const auto &pair : condEntries)
     {
         const ConditionEntry &entry = pair.second;

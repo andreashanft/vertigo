@@ -22,14 +22,19 @@
 #include "fight/objects/simpleobject.h"
 #include "fight/weapons/gun.h"
 #include <glm/mat3x3.hpp>
+#include <memory>
 
 namespace fight {
+
+
+class Orders;
 
 
 class SimpleBoat : public SimpleObject
 {
 public:
     SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float yaw);
+    ~SimpleBoat();
 
 public:
     const glm::mat3& orientation() const { return m_orientation; }
@@ -45,6 +50,13 @@ public:
     bool fullThrottle() const { return m_fullThrottle; }
     void setFullThrottle(bool fullThrottle) { m_fullThrottle = fullThrottle; }
     void setTurnVelocity(const Vector3D &turnVelocity) { m_turnVelocity = turnVelocity; }
+
+    // steering for the AI orders: head for a point at a speed, or stay in place
+    void steerTo(const Vector3D &point, float speed);
+    void hold();
+
+    Orders* orders() const { return m_orders.get(); }
+    void setOrders(Orders *orders);
 
 public:
     void setPosition(const Vector3D &pos);
@@ -78,6 +90,8 @@ protected:
     Vector3D m_angleFriction;
 
     float m_collisionRadius; // for terrain collisions
+
+    std::unique_ptr<Orders> m_orders;
 };
 
 

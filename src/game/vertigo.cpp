@@ -23,6 +23,9 @@
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/simpleboat.h"
+#include "fight/orders.h"
+#include <glm/geometric.hpp>
+#include <cmath>
 #include "txt/desfile.h"
 
 #include <QCoreApplication>
@@ -100,6 +103,8 @@ int Vertigo::start(const Options &options)
                     std::cerr << "--drive: no boat " << drive.id << std::endl;
                     continue;
                 }
+                // the test drives the unit instead of its orders
+                unit->setOrders(nullptr);
                 unit->setVelocityTarget(drive.speed/3.6f);
                 unit->setTurnVelocity(Vector3D(0, 0, drive.turn));
             }
@@ -112,6 +117,7 @@ int Vertigo::start(const Options &options)
     }
 
     std::vector<int> destroy = options.destroy;
+    float nextTrace = 0;
     auto keys = options.keys;
     QElapsedTimer timer;
     timer.start();
@@ -137,6 +143,9 @@ int Vertigo::start(const Options &options)
                         found = true;
                     }
                 }
+                // areas and nav points are reached instead
+                if (!found)
+                    found = scenario->conditionManager().signal(id);
                 if (!found)
                     std::cerr << "--destroy: no unit " << id << std::endl;
             }
@@ -153,6 +162,32 @@ int Vertigo::start(const Options &options)
             QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyPress, key, modifiers, text));
             QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyRelease, key, modifiers, text));
             it = keys.erase(it);
+        }
+        if (scenario && !options.trace.empty() && scenario->time() >= nextTrace) {
+            nextTrace = std::floor(scenario->time()) + 1;
+            const Vector3D &scale = scenario->surface().scale();
+            for (const int id : options.trace) {
+                for (const auto &record : scenario->objectRecords()) {
+                    if (record.id != id)
+                        continue;
+                    const Vector3D pos = record.object->position();
+                    QString line = QString("%1 t%2 %3: cell %4 %5 h%6")
+                        .arg(options.scenario).arg(int(scenario->time())).arg(id)
+                        .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
+                        .arg(int(pos.z - scenario->surface().heightAt(pos.x, pos.y)));
+                    if (!record.object->isEnabled())
+                        line += " disabled";
+                    if (const fight::ActiveObject *unit = dynamic_cast<const fight::ActiveObject *>(record.object))
+                        line += QString(" %1 km/h").arg(int(glm::length(unit->velocity())*3.6f));
+                    if (const fight::SimpleBoat *boat = dynamic_cast<const fight::SimpleBoat *>(record.object)) {
+                        if (boat->orders() && boat->orders()->currentSlot())
+                            line += QString(" order %1 %2").arg(boat->orders()->current()).arg(fight::OrderSlot::name(boat->orders()->currentSlot()->type));
+                        else if (boat->orders())
+                            line += " orders done";
+                    }
+                    std::cout << line.toUtf8().constData() << std::endl;
+                }
+            }
         }
         if (scenario && result == ExitAborted && scenario->conditionManager().failed())
             result = ExitFailed;

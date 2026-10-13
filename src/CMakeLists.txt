@@ -21,6 +21,8 @@ set(SOURCES
     fight/conditionmanager.cpp
     fight/conditionmanager.h
     fight/module.cpp
+    fight/orders.cpp
+    fight/orders.h
     fight/module.h
     fight/modulemanager.cpp
     fight/modulemanager.h

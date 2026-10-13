@@ -1,4 +1,10 @@
 s00101: 49 objects
+  2x order not implemented: ambush
+  2x order not implemented: attack
+  7x orders not run: typ 2052
+  6x orders not run: typ 2053
+  2x orders not run: typ 2059
+  4x orders not run: typ 2062
   20x unread key: movable#/ai
   4x unread key: movable#/card
   24x unread key: movable#/diff
@@ -7,27 +13,16 @@ s00101: 49 objects
   20x unread key: movable#/gun
   24x unread key: movable#/inte
   20x unread key: movable#/ntor
-  384x unread key: movable#/o#bccond#
-  192x unread key: movable#/o#bcdel
-  384x unread key: movable#/o#bcdep#
-  192x unread key: movable#/o#bcop
-  384x unread key: movable#/o#bcref#
-  10x unread key: movable#/o#car
-  25x unread key: movable#/o#dur
-  4x unread key: movable#/o#ene
-  2x unread key: movable#/o#hei
-  11x unread key: movable#/o#mah
-  11x unread key: movable#/o#mih
-  17x unread key: movable#/o#rad
-  13x unread key: movable#/o#refx
-  13x unread key: movable#/o#refy
-  192x unread key: movable#/o#typ
-  13x unread key: movable#/o#vel
   22x unread key: movable#/pz
   29x unread key: movable#/sle
   20x unread key: movable#/tor
   1x unread section: cd
 s00102: 54 objects
+  2x order not implemented: attack
+  7x orders not run: typ 2052
+  6x orders not run: typ 2053
+  2x orders not run: typ 2059
+  4x orders not run: typ 2062
   22x unread key: movable#/ai
   4x unread key: movable#/card
   26x unread key: movable#/diff
@@ -36,27 +31,13 @@ s00102: 54 objects
   22x unread key: movable#/gun
   26x unread key: movable#/inte
   22x unread key: movable#/ntor
-  416x unread key: movable#/o#bccond#
-  208x unread key: movable#/o#bcdel
-  416x unread key: movable#/o#bcdep#
-  208x unread key: movable#/o#bcop
-  416x unread key: movable#/o#bcref#
-  9x unread key: movable#/o#car
-  35x unread key: movable#/o#dur
-  3x unread key: movable#/o#ene
-  7x unread key: movable#/o#hei
-  18x unread key: movable#/o#mah
-  18x unread key: movable#/o#mih
-  27x unread key: movable#/o#rad
-  25x unread key: movable#/o#refx
-  25x unread key: movable#/o#refy
-  208x unread key: movable#/o#typ
-  25x unread key: movable#/o#vel
   23x unread key: movable#/pz
   26x unread key: movable#/sle
   22x unread key: movable#/tor
   1x unread section: cd
 s00103: 28 objects
+  6x orders not run: typ 2052
+  2x orders not run: typ 2062
   9x unread key: movable#/ai
   2x unread key: movable#/card
   11x unread key: movable#/diff
@@ -65,26 +46,17 @@ s00103: 28 objects
   9x unread key: movable#/gun
   11x unread key: movable#/inte
   9x unread key: movable#/ntor
-  176x unread key: movable#/o#bccond#
-  88x unread key: movable#/o#bcdel
-  176x unread key: movable#/o#bcdep#
-  88x unread key: movable#/o#bcop
-  176x unread key: movable#/o#bcref#
-  6x unread key: movable#/o#car
-  17x unread key: movable#/o#dur
-  2x unread key: movable#/o#hei
-  3x unread key: movable#/o#mah
-  3x unread key: movable#/o#mih
-  9x unread key: movable#/o#rad
-  5x unread key: movable#/o#refx
-  5x unread key: movable#/o#refy
-  88x unread key: movable#/o#typ
-  5x unread key: movable#/o#vel
   17x unread key: movable#/pz
   11x unread key: movable#/sle
   9x unread key: movable#/tor
   1x unread section: cd
 s00104: 44 objects
+  4x order not implemented: attack
+  1x orders not run: typ 2051
+  6x orders not run: typ 2052
+  3x orders not run: typ 2053
+  2x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 72
   21x unread key: movable#/ai
   2x unread key: movable#/card
@@ -94,27 +66,12 @@ s00104: 44 objects
   21x unread key: movable#/gun
   23x unread key: movable#/inte
   21x unread key: movable#/ntor
-  368x unread key: movable#/o#bccond#
-  184x unread key: movable#/o#bcdel
-  368x unread key: movable#/o#bcdep#
-  184x unread key: movable#/o#bcop
-  368x unread key: movable#/o#bcref#
-  6x unread key: movable#/o#car
-  42x unread key: movable#/o#dur
-  4x unread key: movable#/o#ene
-  16x unread key: movable#/o#hei
-  18x unread key: movable#/o#mah
-  18x unread key: movable#/o#mih
-  24x unread key: movable#/o#rad
-  34x unread key: movable#/o#refx
-  34x unread key: movable#/o#refy
-  184x unread key: movable#/o#typ
-  34x unread key: movable#/o#vel
   18x unread key: movable#/pz
   23x unread key: movable#/sle
   21x unread key: movable#/tor
   1x unread section: cd
 s00105: 1 objects
+  1x order not implemented: attack
   1x unread key: movable#/ai
   1x unread key: movable#/diff
   1x unread key: movable#/eint
@@ -122,24 +79,13 @@ s00105: 1 objects
   1x unread key: movable#/gun
   1x unread key: movable#/inte
   1x unread key: movable#/ntor
-  16x unread key: movable#/o#bccond#
-  8x unread key: movable#/o#bcdel
-  16x unread key: movable#/o#bcdep#
-  8x unread key: movable#/o#bcop
-  16x unread key: movable#/o#bcref#
-  1x unread key: movable#/o#dur
-  1x unread key: movable#/o#ene
-  1x unread key: movable#/o#mah
-  1x unread key: movable#/o#mih
-  1x unread key: movable#/o#rad
-  1x unread key: movable#/o#refx
-  1x unread key: movable#/o#refy
-  8x unread key: movable#/o#typ
-  1x unread key: movable#/o#vel
   1x unread key: movable#/sle
   1x unread key: movable#/tor
   1x unread section: cd
 s00106: 27 objects
+  2x order not implemented: ambush
+  6x orders not run: typ 2052
+  2x orders not run: typ 2062
   8x unread key: movable#/ai
   2x unread key: movable#/card
   10x unread key: movable#/diff
@@ -148,26 +94,16 @@ s00106: 27 objects
   8x unread key: movable#/gun
   10x unread key: movable#/inte
   8x unread key: movable#/ntor
-  160x unread key: movable#/o#bccond#
-  80x unread key: movable#/o#bcdel
-  160x unread key: movable#/o#bcdep#
-  80x unread key: movable#/o#bcop
-  160x unread key: movable#/o#bcref#
-  8x unread key: movable#/o#car
-  16x unread key: movable#/o#dur
-  2x unread key: movable#/o#ene
-  2x unread key: movable#/o#mah
-  2x unread key: movable#/o#mih
-  6x unread key: movable#/o#rad
-  2x unread key: movable#/o#refx
-  2x unread key: movable#/o#refy
-  80x unread key: movable#/o#typ
-  2x unread key: movable#/o#vel
   17x unread key: movable#/pz
   10x unread key: movable#/sle
   8x unread key: movable#/tor
   1x unread section: cd
 s00201: 35 objects
+  2x order not implemented: ambush
+  8x order not implemented: attack
+  4x orders not run: typ 2051
+  4x orders not run: typ 2052
+  1x orders not run: typ 2059
   16x unread key: movable#/ai
   30x unread key: movable#/diff
   14x unread key: movable#/dis
@@ -177,27 +113,14 @@ s00201: 35 objects
   16x unread key: movable#/inte
   16x unread key: movable#/ntor
   14x unread key: movable#/num
-  256x unread key: movable#/o#bccond#
-  128x unread key: movable#/o#bcdel
-  256x unread key: movable#/o#bcdep#
-  128x unread key: movable#/o#bcop
-  256x unread key: movable#/o#bcref#
-  7x unread key: movable#/o#car
-  23x unread key: movable#/o#dur
-  10x unread key: movable#/o#ene
-  2x unread key: movable#/o#hei
-  16x unread key: movable#/o#mah
-  16x unread key: movable#/o#mih
-  19x unread key: movable#/o#rad
-  18x unread key: movable#/o#refx
-  18x unread key: movable#/o#refy
-  128x unread key: movable#/o#typ
-  18x unread key: movable#/o#vel
   4x unread key: movable#/pz
   30x unread key: movable#/sle
   16x unread key: movable#/tor
   1x unread section: cd
 s00202: 104 objects
+  21x order not implemented: attack
+  1x order not implemented: gotowithinfiltrate
+  4x orders not run: typ 2062
   19x unread key: movable#/ai
   4x unread key: movable#/card
   23x unread key: movable#/diff
@@ -206,27 +129,14 @@ s00202: 104 objects
   19x unread key: movable#/gun
   23x unread key: movable#/inte
   19x unread key: movable#/ntor
-  368x unread key: movable#/o#bccond#
-  184x unread key: movable#/o#bcdel
-  368x unread key: movable#/o#bcdep#
-  184x unread key: movable#/o#bcop
-  368x unread key: movable#/o#bcref#
-  1x unread key: movable#/o#con
-  29x unread key: movable#/o#dur
-  23x unread key: movable#/o#ene
-  25x unread key: movable#/o#mah
-  25x unread key: movable#/o#mih
-  24x unread key: movable#/o#rad
-  24x unread key: movable#/o#refx
-  24x unread key: movable#/o#refy
-  184x unread key: movable#/o#typ
-  25x unread key: movable#/o#vel
   79x unread key: movable#/pz
   23x unread key: movable#/sle
   19x unread key: movable#/tor
   1x unread section: cd
   63x unread section: current#
 s00203: 83 objects
+  14x order not implemented: attack
+  2x orders not run: typ 2051
   12x unread key: movable#/ai
   77x unread key: movable#/diff
   65x unread key: movable#/dis
@@ -236,25 +146,13 @@ s00203: 83 objects
   12x unread key: movable#/inte
   12x unread key: movable#/ntor
   65x unread key: movable#/num
-  192x unread key: movable#/o#bccond#
-  96x unread key: movable#/o#bcdel
-  192x unread key: movable#/o#bcdep#
-  96x unread key: movable#/o#bcop
-  192x unread key: movable#/o#bcref#
-  20x unread key: movable#/o#dur
-  16x unread key: movable#/o#ene
-  20x unread key: movable#/o#mah
-  20x unread key: movable#/o#mih
-  20x unread key: movable#/o#rad
-  20x unread key: movable#/o#refx
-  20x unread key: movable#/o#refy
-  96x unread key: movable#/o#typ
-  20x unread key: movable#/o#vel
   4x unread key: movable#/pz
   77x unread key: movable#/sle
   12x unread key: movable#/tor
   1x unread section: cd
 s00204: 21 objects
+  4x order not implemented: attack
+  6x orders not run: typ 2052
   11x unread key: movable#/ai
   11x unread key: movable#/diff
   11x unread key: movable#/eint
@@ -262,28 +160,15 @@ s00204: 21 objects
   11x unread key: movable#/gun
   11x unread key: movable#/inte
   11x unread key: movable#/ntor
-  176x unread key: movable#/o#bccond#
-  88x unread key: movable#/o#bcdel
-  176x unread key: movable#/o#bcdep#
-  88x unread key: movable#/o#bcop
-  176x unread key: movable#/o#bcref#
-  6x unread key: movable#/o#car
-  15x unread key: movable#/o#dur
-  4x unread key: movable#/o#ene
-  7x unread key: movable#/o#hei
-  5x unread key: movable#/o#mah
-  5x unread key: movable#/o#mih
-  11x unread key: movable#/o#rad
-  12x unread key: movable#/o#refx
-  12x unread key: movable#/o#refy
-  88x unread key: movable#/o#typ
-  12x unread key: movable#/o#vel
   9x unread key: movable#/pz
   11x unread key: movable#/sle
   11x unread key: movable#/tor
   1x unread section: cd
   55x unread section: current#
 s00205: 14 objects
+  6x order not implemented: attack
+  1x orders not run: typ 2051
+  2x orders not run: typ 2062
   7x unread key: movable#/ai
   2x unread key: movable#/card
   9x unread key: movable#/diff
@@ -292,25 +177,15 @@ s00205: 14 objects
   7x unread key: movable#/gun
   9x unread key: movable#/inte
   7x unread key: movable#/ntor
-  144x unread key: movable#/o#bccond#
-  72x unread key: movable#/o#bcdel
-  144x unread key: movable#/o#bcdep#
-  72x unread key: movable#/o#bcop
-  144x unread key: movable#/o#bcref#
-  13x unread key: movable#/o#dur
-  7x unread key: movable#/o#ene
-  7x unread key: movable#/o#mah
-  7x unread key: movable#/o#mih
-  7x unread key: movable#/o#rad
-  7x unread key: movable#/o#refx
-  7x unread key: movable#/o#refy
-  72x unread key: movable#/o#typ
-  7x unread key: movable#/o#vel
   5x unread key: movable#/pz
   9x unread key: movable#/sle
   7x unread key: movable#/tor
   1x unread section: cd
 s00301: 72 objects
+  24x order not implemented: attack
+  3x orders not run: typ 2051
+  5x orders not run: typ 2053
+  11x orders not run: typ 2062
   37x unread key: movable#/ai
   11x unread key: movable#/card
   64x unread key: movable#/diff
@@ -321,25 +196,14 @@ s00301: 72 objects
   48x unread key: movable#/inte
   37x unread key: movable#/ntor
   16x unread key: movable#/num
-  768x unread key: movable#/o#bccond#
-  384x unread key: movable#/o#bcdel
-  768x unread key: movable#/o#bcdep#
-  384x unread key: movable#/o#bcop
-  768x unread key: movable#/o#bcref#
-  72x unread key: movable#/o#dur
-  24x unread key: movable#/o#ene
-  60x unread key: movable#/o#mah
-  60x unread key: movable#/o#mih
-  60x unread key: movable#/o#rad
-  60x unread key: movable#/o#refx
-  60x unread key: movable#/o#refy
-  384x unread key: movable#/o#typ
-  60x unread key: movable#/o#vel
   6x unread key: movable#/pz
   66x unread key: movable#/sle
   37x unread key: movable#/tor
   1x unread section: cd
 s00302: 10 objects
+  5x order not implemented: ambush
+  9x order not implemented: attack
+  2x orders not run: typ 2051
   9x unread key: movable#/ai
   9x unread key: movable#/diff
   9x unread key: movable#/eint
@@ -347,26 +211,12 @@ s00302: 10 objects
   9x unread key: movable#/gun
   9x unread key: movable#/inte
   9x unread key: movable#/ntor
-  144x unread key: movable#/o#bccond#
-  72x unread key: movable#/o#bcdel
-  144x unread key: movable#/o#bcdep#
-  72x unread key: movable#/o#bcop
-  144x unread key: movable#/o#bcref#
-  5x unread key: movable#/o#car
-  23x unread key: movable#/o#dur
-  14x unread key: movable#/o#ene
-  3x unread key: movable#/o#hei
-  21x unread key: movable#/o#mah
-  21x unread key: movable#/o#mih
-  16x unread key: movable#/o#rad
-  24x unread key: movable#/o#refx
-  24x unread key: movable#/o#refy
-  72x unread key: movable#/o#typ
-  24x unread key: movable#/o#vel
   9x unread key: movable#/sle
   9x unread key: movable#/tor
   1x unread section: cd
 s00303: 15 objects
+  5x order not implemented: attack
+  2x orders not run: typ 2053
   9x unread key: movable#/ai
   9x unread key: movable#/diff
   9x unread key: movable#/eint
@@ -374,27 +224,14 @@ s00303: 15 objects
   9x unread key: movable#/gun
   9x unread key: movable#/inte
   9x unread key: movable#/ntor
-  144x unread key: movable#/o#bccond#
-  72x unread key: movable#/o#bcdel
-  144x unread key: movable#/o#bcdep#
-  72x unread key: movable#/o#bcop
-  144x unread key: movable#/o#bcref#
-  9x unread key: movable#/o#dur
-  5x unread key: movable#/o#ene
-  10x unread key: movable#/o#hei
-  7x unread key: movable#/o#mah
-  7x unread key: movable#/o#mih
-  7x unread key: movable#/o#rad
-  17x unread key: movable#/o#refx
-  17x unread key: movable#/o#refy
-  72x unread key: movable#/o#typ
-  17x unread key: movable#/o#vel
   5x unread key: movable#/pz
   9x unread key: movable#/sle
   9x unread key: movable#/tor
   1x unread section: cd
   71x unread section: current#
 s00304: 6 objects
+  7x order not implemented: attack
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 72
   5x unread key: movable#/ai
   5x unread key: movable#/diff
@@ -403,24 +240,16 @@ s00304: 6 objects
   5x unread key: movable#/gun
   5x unread key: movable#/inte
   5x unread key: movable#/ntor
-  80x unread key: movable#/o#bccond#
-  40x unread key: movable#/o#bcdel
-  80x unread key: movable#/o#bcdep#
-  40x unread key: movable#/o#bcop
-  80x unread key: movable#/o#bcref#
-  10x unread key: movable#/o#dur
-  7x unread key: movable#/o#ene
-  10x unread key: movable#/o#mah
-  10x unread key: movable#/o#mih
-  10x unread key: movable#/o#rad
-  10x unread key: movable#/o#refx
-  10x unread key: movable#/o#refy
-  40x unread key: movable#/o#typ
-  10x unread key: movable#/o#vel
   10x unread key: movable#/sle
   5x unread key: movable#/tor
   1x unread section: cd
 s00401: 196 objects
+  12x order not implemented: attack
+  2x orders not run: typ 2051
+  7x orders not run: typ 2052
+  8x orders not run: typ 2059
+  14x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   33x unread key: movable#/ai
   14x unread key: movable#/card
@@ -432,23 +261,6 @@ s00401: 196 objects
   47x unread key: movable#/inte
   33x unread key: movable#/ntor
   133x unread key: movable#/num
-  752x unread key: movable#/o#bccond#
-  376x unread key: movable#/o#bcdel
-  752x unread key: movable#/o#bcdep#
-  376x unread key: movable#/o#bcop
-  752x unread key: movable#/o#bcref#
-  15x unread key: movable#/o#car
-  12x unread key: movable#/o#con
-  67x unread key: movable#/o#dur
-  12x unread key: movable#/o#ene
-  1x unread key: movable#/o#hei
-  18x unread key: movable#/o#mah
-  18x unread key: movable#/o#mih
-  33x unread key: movable#/o#rad
-  19x unread key: movable#/o#refx
-  19x unread key: movable#/o#refy
-  376x unread key: movable#/o#typ
-  19x unread key: movable#/o#vel
   14x unread key: movable#/pz
   180x unread key: movable#/sle
   33x unread key: movable#/tor
@@ -456,6 +268,9 @@ s00401: 196 objects
   13x unread section: current#
 s00402: 44 objects
   1x condition: Empty faction 1
+  8x order not implemented: attack
+  5x orders not run: typ 2052
+  2x orders not run: typ 2053
   15x unread key: movable#/ai
   15x unread key: movable#/diff
   15x unread key: movable#/eint
@@ -463,27 +278,14 @@ s00402: 44 objects
   15x unread key: movable#/gun
   15x unread key: movable#/inte
   15x unread key: movable#/ntor
-  240x unread key: movable#/o#bccond#
-  120x unread key: movable#/o#bcdel
-  240x unread key: movable#/o#bcdep#
-  120x unread key: movable#/o#bcop
-  240x unread key: movable#/o#bcref#
-  5x unread key: movable#/o#car
-  35x unread key: movable#/o#dur
-  8x unread key: movable#/o#ene
-  16x unread key: movable#/o#hei
-  23x unread key: movable#/o#mah
-  23x unread key: movable#/o#mih
-  28x unread key: movable#/o#rad
-  39x unread key: movable#/o#refx
-  39x unread key: movable#/o#refy
-  120x unread key: movable#/o#typ
-  39x unread key: movable#/o#vel
   28x unread key: movable#/pz
   15x unread key: movable#/sle
   15x unread key: movable#/tor
   1x unread section: cd
 s00403: 39 objects
+  2x order not implemented: attack
+  3x orders not run: typ 2051
+  5x orders not run: typ 2062
   19x unread key: movable#/ai
   5x unread key: movable#/card
   24x unread key: movable#/diff
@@ -492,26 +294,17 @@ s00403: 39 objects
   19x unread key: movable#/gun
   24x unread key: movable#/inte
   19x unread key: movable#/ntor
-  384x unread key: movable#/o#bccond#
-  192x unread key: movable#/o#bcdel
-  384x unread key: movable#/o#bcdep#
-  192x unread key: movable#/o#bcop
-  384x unread key: movable#/o#bcref#
-  25x unread key: movable#/o#dur
-  2x unread key: movable#/o#ene
-  20x unread key: movable#/o#mah
-  20x unread key: movable#/o#mih
-  20x unread key: movable#/o#rad
-  20x unread key: movable#/o#refx
-  20x unread key: movable#/o#refy
-  192x unread key: movable#/o#typ
-  20x unread key: movable#/o#vel
   14x unread key: movable#/pz
   24x unread key: movable#/sle
   19x unread key: movable#/tor
   1x unread section: cd
 s00404: 57 objects
   8x condition: Objective not found 14
+  5x order not implemented: attack
+  5x orders not run: typ 2051
+  7x orders not run: typ 2052
+  2x orders not run: typ 2053
+  4x orders not run: typ 2062
   33x unread key: movable#/ai
   4x unread key: movable#/card
   37x unread key: movable#/diff
@@ -520,27 +313,17 @@ s00404: 57 objects
   33x unread key: movable#/gun
   37x unread key: movable#/inte
   33x unread key: movable#/ntor
-  592x unread key: movable#/o#bccond#
-  296x unread key: movable#/o#bcdel
-  592x unread key: movable#/o#bcdep#
-  296x unread key: movable#/o#bcop
-  592x unread key: movable#/o#bcref#
-  7x unread key: movable#/o#car
-  74x unread key: movable#/o#dur
-  5x unread key: movable#/o#ene
-  17x unread key: movable#/o#hei
-  49x unread key: movable#/o#mah
-  49x unread key: movable#/o#mih
-  56x unread key: movable#/o#rad
-  66x unread key: movable#/o#refx
-  66x unread key: movable#/o#refy
-  296x unread key: movable#/o#typ
-  66x unread key: movable#/o#vel
   17x unread key: movable#/pz
   37x unread key: movable#/sle
   33x unread key: movable#/tor
   1x unread section: cd
 s00405: 180 objects
+  6x order not implemented: ambush
+  4x order not implemented: attack
+  13x orders not run: typ 2051
+  10x orders not run: typ 2052
+  10x orders not run: typ 2059
+  5x orders not run: typ 2062
   43x unread key: movable#/ai
   5x unread key: movable#/card
   177x unread key: movable#/diff
@@ -551,26 +334,18 @@ s00405: 180 objects
   48x unread key: movable#/inte
   43x unread key: movable#/ntor
   129x unread key: movable#/num
-  768x unread key: movable#/o#bccond#
-  384x unread key: movable#/o#bcdel
-  768x unread key: movable#/o#bcdep#
-  384x unread key: movable#/o#bcop
-  768x unread key: movable#/o#bcref#
-  26x unread key: movable#/o#car
-  60x unread key: movable#/o#dur
-  10x unread key: movable#/o#ene
-  28x unread key: movable#/o#mah
-  28x unread key: movable#/o#mih
-  42x unread key: movable#/o#rad
-  28x unread key: movable#/o#refx
-  28x unread key: movable#/o#refy
-  384x unread key: movable#/o#typ
-  28x unread key: movable#/o#vel
   231x unread key: movable#/sle
   43x unread key: movable#/tor
   1x unread section: cd
   63x unread section: current#
 s00406: 178 objects
+  3x order not implemented: attack
+  1x order not implemented: gotowithinfiltrate
+  3x orders not run: typ 2051
+  5x orders not run: typ 2052
+  3x orders not run: typ 2053
+  5x orders not run: typ 2059
+  11x orders not run: typ 2062
   36x unread key: movable#/ai
   11x unread key: movable#/card
   100x unread key: movable#/diff
@@ -581,28 +356,14 @@ s00406: 178 objects
   47x unread key: movable#/inte
   36x unread key: movable#/ntor
   53x unread key: movable#/num
-  752x unread key: movable#/o#bccond#
-  376x unread key: movable#/o#bcdel
-  752x unread key: movable#/o#bcdep#
-  376x unread key: movable#/o#bcop
-  752x unread key: movable#/o#bcref#
-  10x unread key: movable#/o#car
-  60x unread key: movable#/o#dur
-  4x unread key: movable#/o#ene
-  17x unread key: movable#/o#hei
-  24x unread key: movable#/o#mah
-  24x unread key: movable#/o#mih
-  33x unread key: movable#/o#rad
-  40x unread key: movable#/o#refx
-  40x unread key: movable#/o#refy
-  376x unread key: movable#/o#typ
-  41x unread key: movable#/o#vel
   75x unread key: movable#/pz
   100x unread key: movable#/sle
   36x unread key: movable#/tor
   1x unread section: cd
   27x unread section: current#
 s00601: 18 objects
+  4x order not implemented: attack
+  1x order not implemented: gotowithinfiltrate
   1x placeholder: typ 2063 dtyp 91
   15x unread key: movable#/ai
   15x unread key: movable#/diff
@@ -611,29 +372,14 @@ s00601: 18 objects
   15x unread key: movable#/gun
   15x unread key: movable#/inte
   15x unread key: movable#/ntor
-  240x unread key: movable#/o#bccond#
-  120x unread key: movable#/o#bcdel
-  240x unread key: movable#/o#bcdep#
-  120x unread key: movable#/o#bcop
-  240x unread key: movable#/o#bcref#
-  36x unread key: movable#/o#dur
-  7x unread key: movable#/o#ene
-  9x unread key: movable#/o#esc
-  10x unread key: movable#/o#hei
-  23x unread key: movable#/o#mah
-  23x unread key: movable#/o#mih
-  12x unread key: movable#/o#rad
-  22x unread key: movable#/o#refx
-  22x unread key: movable#/o#refy
-  120x unread key: movable#/o#typ
-  33x unread key: movable#/o#vel
-  9x unread key: movable#/o#xof
-  9x unread key: movable#/o#yof
-  9x unread key: movable#/o#zof
   15x unread key: movable#/sle
   15x unread key: movable#/tor
   1x unread section: cd
 s00701: 25 objects
+  10x order not implemented: attack
+  8x orders not run: typ 2052
+  3x orders not run: typ 2059
+  3x orders not run: typ 2062
   18x unread key: movable#/ai
   3x unread key: movable#/card
   21x unread key: movable#/diff
@@ -642,27 +388,17 @@ s00701: 25 objects
   18x unread key: movable#/gun
   21x unread key: movable#/inte
   18x unread key: movable#/ntor
-  336x unread key: movable#/o#bccond#
-  168x unread key: movable#/o#bcdel
-  336x unread key: movable#/o#bcdep#
-  168x unread key: movable#/o#bcop
-  336x unread key: movable#/o#bcref#
-  11x unread key: movable#/o#car
-  32x unread key: movable#/o#dur
-  10x unread key: movable#/o#ene
-  10x unread key: movable#/o#mah
-  10x unread key: movable#/o#mih
-  21x unread key: movable#/o#rad
-  10x unread key: movable#/o#refx
-  10x unread key: movable#/o#refy
-  168x unread key: movable#/o#typ
-  10x unread key: movable#/o#vel
   2x unread key: movable#/pz
   22x unread key: movable#/sle
   18x unread key: movable#/tor
   1x unread section: cd
   15x unread section: current#
 s00702: 22 objects
+  5x order not implemented: ambush
+  1x order not implemented: attack
+  8x orders not run: typ 2052
+  3x orders not run: typ 2059
+  3x orders not run: typ 2062
   16x unread key: movable#/ai
   3x unread key: movable#/card
   19x unread key: movable#/diff
@@ -671,27 +407,17 @@ s00702: 22 objects
   16x unread key: movable#/gun
   19x unread key: movable#/inte
   16x unread key: movable#/ntor
-  304x unread key: movable#/o#bccond#
-  152x unread key: movable#/o#bcdel
-  304x unread key: movable#/o#bcdep#
-  152x unread key: movable#/o#bcop
-  304x unread key: movable#/o#bcref#
-  16x unread key: movable#/o#car
-  28x unread key: movable#/o#dur
-  6x unread key: movable#/o#ene
-  6x unread key: movable#/o#mah
-  6x unread key: movable#/o#mih
-  12x unread key: movable#/o#rad
-  6x unread key: movable#/o#refx
-  6x unread key: movable#/o#refy
-  152x unread key: movable#/o#typ
-  6x unread key: movable#/o#vel
   2x unread key: movable#/pz
   23x unread key: movable#/sle
   16x unread key: movable#/tor
   1x unread section: cd
   15x unread section: current#
 s00703: 21 objects
+  3x order not implemented: ambush
+  3x order not implemented: attack
+  8x orders not run: typ 2052
+  3x orders not run: typ 2059
+  3x orders not run: typ 2062
   15x unread key: movable#/ai
   3x unread key: movable#/card
   18x unread key: movable#/diff
@@ -700,28 +426,18 @@ s00703: 21 objects
   15x unread key: movable#/gun
   18x unread key: movable#/inte
   15x unread key: movable#/ntor
-  288x unread key: movable#/o#bccond#
-  144x unread key: movable#/o#bcdel
-  288x unread key: movable#/o#bcdep#
-  144x unread key: movable#/o#bcop
-  288x unread key: movable#/o#bcref#
-  14x unread key: movable#/o#car
-  30x unread key: movable#/o#dur
-  6x unread key: movable#/o#ene
-  2x unread key: movable#/o#hei
-  6x unread key: movable#/o#mah
-  6x unread key: movable#/o#mih
-  14x unread key: movable#/o#rad
-  8x unread key: movable#/o#refx
-  8x unread key: movable#/o#refy
-  144x unread key: movable#/o#typ
-  8x unread key: movable#/o#vel
   2x unread key: movable#/pz
   19x unread key: movable#/sle
   15x unread key: movable#/tor
   1x unread section: cd
   15x unread section: current#
 s00704: 113 objects
+  4x order not implemented: attack
+  2x order not implemented: gotowithinfiltrate
+  2x orders not run: typ 2051
+  4x orders not run: typ 2052
+  3x orders not run: typ 2059
+  3x orders not run: typ 2062
   40x unread key: movable#/ai
   3x unread key: movable#/card
   74x unread key: movable#/diff
@@ -732,28 +448,17 @@ s00704: 113 objects
   43x unread key: movable#/inte
   40x unread key: movable#/ntor
   31x unread key: movable#/num
-  688x unread key: movable#/o#bccond#
-  344x unread key: movable#/o#bcdel
-  688x unread key: movable#/o#bcdep#
-  344x unread key: movable#/o#bcop
-  688x unread key: movable#/o#bcref#
-  52x unread key: movable#/o#car
-  117x unread key: movable#/o#dur
-  66x unread key: movable#/o#ene
-  4x unread key: movable#/o#hei
-  22x unread key: movable#/o#mah
-  22x unread key: movable#/o#mih
-  68x unread key: movable#/o#rad
-  24x unread key: movable#/o#refx
-  24x unread key: movable#/o#refy
-  344x unread key: movable#/o#typ
-  26x unread key: movable#/o#vel
   34x unread key: movable#/pz
   74x unread key: movable#/sle
   40x unread key: movable#/tor
   1x unread section: cd
   25x unread section: current#
 s00705: 21 objects
+  5x order not implemented: attack
+  3x order not implemented: gotowithinfiltrate
+  8x orders not run: typ 2052
+  3x orders not run: typ 2059
+  3x orders not run: typ 2062
   16x unread key: movable#/ai
   3x unread key: movable#/card
   19x unread key: movable#/diff
@@ -762,28 +467,15 @@ s00705: 21 objects
   16x unread key: movable#/gun
   19x unread key: movable#/inte
   16x unread key: movable#/ntor
-  304x unread key: movable#/o#bccond#
-  152x unread key: movable#/o#bcdel
-  304x unread key: movable#/o#bcdep#
-  152x unread key: movable#/o#bcop
-  304x unread key: movable#/o#bcref#
-  11x unread key: movable#/o#car
-  37x unread key: movable#/o#dur
-  8x unread key: movable#/o#ene
-  4x unread key: movable#/o#hei
-  8x unread key: movable#/o#mah
-  8x unread key: movable#/o#mih
-  16x unread key: movable#/o#rad
-  9x unread key: movable#/o#refx
-  9x unread key: movable#/o#refy
-  152x unread key: movable#/o#typ
-  12x unread key: movable#/o#vel
   2x unread key: movable#/pz
   20x unread key: movable#/sle
   16x unread key: movable#/tor
   1x unread section: cd
   15x unread section: current#
 s00706: 38 objects
+  46x order not implemented: attack
+  3x orders not run: typ 2051
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 78
   32x unread key: movable#/ai
   32x unread key: movable#/diff
@@ -792,25 +484,16 @@ s00706: 38 objects
   32x unread key: movable#/gun
   32x unread key: movable#/inte
   32x unread key: movable#/ntor
-  512x unread key: movable#/o#bccond#
-  256x unread key: movable#/o#bcdel
-  512x unread key: movable#/o#bcdep#
-  256x unread key: movable#/o#bcop
-  512x unread key: movable#/o#bcref#
-  57x unread key: movable#/o#dur
-  49x unread key: movable#/o#ene
-  26x unread key: movable#/o#hei
-  55x unread key: movable#/o#mah
-  55x unread key: movable#/o#mih
-  55x unread key: movable#/o#rad
-  81x unread key: movable#/o#refx
-  81x unread key: movable#/o#refy
-  256x unread key: movable#/o#typ
-  81x unread key: movable#/o#vel
   32x unread key: movable#/sle
   32x unread key: movable#/tor
   1x unread section: cd
 s00902: 75 objects
+  1x order not implemented: ambush
+  6x order not implemented: attack
+  1x order not implemented: gotowithinfiltrate
+  3x orders not run: typ 2052
+  4x orders not run: typ 2059
+  5x orders not run: typ 2062
   14x unread key: movable#/ai
   5x unread key: movable#/card
   58x unread key: movable#/diff
@@ -821,28 +504,17 @@ s00902: 75 objects
   19x unread key: movable#/inte
   14x unread key: movable#/ntor
   39x unread key: movable#/num
-  304x unread key: movable#/o#bccond#
-  152x unread key: movable#/o#bcdel
-  304x unread key: movable#/o#bcdep#
-  152x unread key: movable#/o#bcop
-  304x unread key: movable#/o#bcref#
-  4x unread key: movable#/o#car
-  32x unread key: movable#/o#dur
-  8x unread key: movable#/o#ene
-  2x unread key: movable#/o#hei
-  9x unread key: movable#/o#mah
-  9x unread key: movable#/o#mih
-  10x unread key: movable#/o#rad
-  10x unread key: movable#/o#refx
-  10x unread key: movable#/o#refy
-  152x unread key: movable#/o#typ
-  11x unread key: movable#/o#vel
   17x unread key: movable#/pz
   58x unread key: movable#/sle
   14x unread key: movable#/tor
   1x unread section: cd
   68x unread section: current#
 s00903: 75 objects
+  9x order not implemented: attack
+  1x order not implemented: gotowithinfiltrate
+  3x orders not run: typ 2052
+  5x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 71
   12x unread key: movable#/ai
   5x unread key: movable#/card
@@ -854,27 +526,18 @@ s00903: 75 objects
   17x unread key: movable#/inte
   12x unread key: movable#/ntor
   39x unread key: movable#/num
-  272x unread key: movable#/o#bccond#
-  136x unread key: movable#/o#bcdel
-  272x unread key: movable#/o#bcdep#
-  136x unread key: movable#/o#bcop
-  272x unread key: movable#/o#bcref#
-  3x unread key: movable#/o#car
-  22x unread key: movable#/o#dur
-  10x unread key: movable#/o#ene
-  10x unread key: movable#/o#mah
-  10x unread key: movable#/o#mih
-  12x unread key: movable#/o#rad
-  9x unread key: movable#/o#refx
-  9x unread key: movable#/o#refy
-  136x unread key: movable#/o#typ
-  10x unread key: movable#/o#vel
   17x unread key: movable#/pz
   56x unread key: movable#/sle
   12x unread key: movable#/tor
   1x unread section: cd
   68x unread section: current#
 s01001: 27 objects
+  9x order not implemented: attack
+  1x order not implemented: gotowithinfiltrate
+  2x orders not run: typ 2051
+  1x orders not run: typ 2059
+  1x orders not run: typ 2062
+  2x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 81
   1x placeholder: typ 2063 dtyp 85
   19x unread key: movable#/ai
@@ -885,31 +548,13 @@ s01001: 27 objects
   19x unread key: movable#/gun
   20x unread key: movable#/inte
   19x unread key: movable#/ntor
-  320x unread key: movable#/o#bccond#
-  160x unread key: movable#/o#bcdel
-  320x unread key: movable#/o#bcdep#
-  160x unread key: movable#/o#bcop
-  320x unread key: movable#/o#bcref#
-  1x unread key: movable#/o#car
-  30x unread key: movable#/o#dur
-  11x unread key: movable#/o#ene
-  2x unread key: movable#/o#esc
-  3x unread key: movable#/o#hei
-  21x unread key: movable#/o#mah
-  21x unread key: movable#/o#mih
-  19x unread key: movable#/o#rad
-  21x unread key: movable#/o#refx
-  21x unread key: movable#/o#refy
-  160x unread key: movable#/o#typ
-  24x unread key: movable#/o#vel
-  2x unread key: movable#/o#xof
-  2x unread key: movable#/o#yof
-  2x unread key: movable#/o#zof
   1x unread key: movable#/pz
   20x unread key: movable#/sle
   19x unread key: movable#/tor
   1x unread section: cd
 s01002: 8 objects
+  3x order not implemented: attack
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 73
   7x unread key: movable#/ai
   7x unread key: movable#/diff
@@ -918,29 +563,14 @@ s01002: 8 objects
   7x unread key: movable#/gun
   7x unread key: movable#/inte
   7x unread key: movable#/ntor
-  112x unread key: movable#/o#bccond#
-  56x unread key: movable#/o#bcdel
-  112x unread key: movable#/o#bcdep#
-  56x unread key: movable#/o#bcop
-  112x unread key: movable#/o#bcref#
-  27x unread key: movable#/o#dur
-  7x unread key: movable#/o#ene
-  9x unread key: movable#/o#esc
-  4x unread key: movable#/o#hei
-  20x unread key: movable#/o#mah
-  20x unread key: movable#/o#mih
-  11x unread key: movable#/o#rad
-  15x unread key: movable#/o#refx
-  15x unread key: movable#/o#refy
-  56x unread key: movable#/o#typ
-  24x unread key: movable#/o#vel
-  9x unread key: movable#/o#xof
-  9x unread key: movable#/o#yof
-  9x unread key: movable#/o#zof
   7x unread key: movable#/sle
   7x unread key: movable#/tor
   1x unread section: cd
 s01101: 13 objects
+  6x order not implemented: attack
+  1x order not implemented: gotowithinfiltrate
+  1x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 80
   8x unread key: movable#/ai
   1x unread key: movable#/card
@@ -950,29 +580,15 @@ s01101: 13 objects
   8x unread key: movable#/gun
   9x unread key: movable#/inte
   8x unread key: movable#/ntor
-  144x unread key: movable#/o#bccond#
-  72x unread key: movable#/o#bcdel
-  144x unread key: movable#/o#bcdep#
-  72x unread key: movable#/o#bcop
-  144x unread key: movable#/o#bcref#
-  25x unread key: movable#/o#dur
-  7x unread key: movable#/o#ene
-  2x unread key: movable#/o#esc
-  9x unread key: movable#/o#hei
-  12x unread key: movable#/o#mah
-  12x unread key: movable#/o#mih
-  9x unread key: movable#/o#rad
-  18x unread key: movable#/o#refx
-  18x unread key: movable#/o#refy
-  72x unread key: movable#/o#typ
-  21x unread key: movable#/o#vel
-  2x unread key: movable#/o#xof
-  2x unread key: movable#/o#yof
-  2x unread key: movable#/o#zof
   9x unread key: movable#/sle
   8x unread key: movable#/tor
   1x unread section: cd
 s01201: 62 objects
+  9x order not implemented: attack
+  4x order not implemented: gotowithinfiltrate
+  5x orders not run: typ 2052
+  2x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 71
   34x unread key: movable#/ai
   2x unread key: movable#/card
@@ -982,31 +598,14 @@ s01201: 62 objects
   34x unread key: movable#/gun
   36x unread key: movable#/inte
   34x unread key: movable#/ntor
-  576x unread key: movable#/o#bccond#
-  288x unread key: movable#/o#bcdel
-  576x unread key: movable#/o#bcdep#
-  288x unread key: movable#/o#bcop
-  576x unread key: movable#/o#bcref#
-  5x unread key: movable#/o#car
-  58x unread key: movable#/o#dur
-  13x unread key: movable#/o#ene
-  5x unread key: movable#/o#esc
-  1x unread key: movable#/o#hei
-  50x unread key: movable#/o#mah
-  50x unread key: movable#/o#mih
-  46x unread key: movable#/o#rad
-  42x unread key: movable#/o#refx
-  42x unread key: movable#/o#refy
-  288x unread key: movable#/o#typ
-  51x unread key: movable#/o#vel
-  5x unread key: movable#/o#xof
-  5x unread key: movable#/o#yof
-  5x unread key: movable#/o#zof
   23x unread key: movable#/pz
   41x unread key: movable#/sle
   34x unread key: movable#/tor
   1x unread section: cd
 s01202: 22 objects
+  6x order not implemented: attack
+  3x orders not run: typ 2051
+  6x orders not run: typ 2062
   11x unread key: movable#/ai
   6x unread key: movable#/card
   17x unread key: movable#/diff
@@ -1015,25 +614,14 @@ s01202: 22 objects
   11x unread key: movable#/gun
   17x unread key: movable#/inte
   11x unread key: movable#/ntor
-  272x unread key: movable#/o#bccond#
-  136x unread key: movable#/o#bcdel
-  272x unread key: movable#/o#bcdep#
-  136x unread key: movable#/o#bcop
-  272x unread key: movable#/o#bcref#
-  33x unread key: movable#/o#dur
-  6x unread key: movable#/o#ene
-  16x unread key: movable#/o#mah
-  16x unread key: movable#/o#mih
-  16x unread key: movable#/o#rad
-  16x unread key: movable#/o#refx
-  16x unread key: movable#/o#refy
-  136x unread key: movable#/o#typ
-  16x unread key: movable#/o#vel
   5x unread key: movable#/pz
   20x unread key: movable#/sle
   11x unread key: movable#/tor
   1x unread section: cd
 s01203: 75 objects
+  4x order not implemented: gotowithinfiltrate
+  21x orders not run: typ 2062
+  2x orders not run: typ 2063
   2x placeholder: typ 2063 dtyp 69
   21x unread key: movable#/ai
   21x unread key: movable#/card
@@ -1043,26 +631,17 @@ s01203: 75 objects
   21x unread key: movable#/gun
   42x unread key: movable#/inte
   21x unread key: movable#/ntor
-  672x unread key: movable#/o#bccond#
-  336x unread key: movable#/o#bcdel
-  672x unread key: movable#/o#bcdep#
-  336x unread key: movable#/o#bcop
-  672x unread key: movable#/o#bcref#
-  51x unread key: movable#/o#dur
-  4x unread key: movable#/o#ene
-  34x unread key: movable#/o#hei
-  22x unread key: movable#/o#mah
-  22x unread key: movable#/o#mih
-  18x unread key: movable#/o#rad
-  52x unread key: movable#/o#refx
-  52x unread key: movable#/o#refy
-  336x unread key: movable#/o#typ
-  56x unread key: movable#/o#vel
   30x unread key: movable#/pz
   42x unread key: movable#/sle
   21x unread key: movable#/tor
   1x unread section: cd
 s01301: 84 objects
+  4x order not implemented: attack
+  1x orders not run: typ 2051
+  2x orders not run: typ 2052
+  4x orders not run: typ 2059
+  5x orders not run: typ 2062
+  3x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   2x placeholder: typ 2063 dtyp 69
   25x unread key: movable#/ai
@@ -1075,32 +654,15 @@ s01301: 84 objects
   30x unread key: movable#/inte
   25x unread key: movable#/ntor
   34x unread key: movable#/num
-  480x unread key: movable#/o#bccond#
-  240x unread key: movable#/o#bcdel
-  480x unread key: movable#/o#bcdep#
-  240x unread key: movable#/o#bcop
-  480x unread key: movable#/o#bcref#
-  6x unread key: movable#/o#car
-  1x unread key: movable#/o#con
-  45x unread key: movable#/o#dur
-  19x unread key: movable#/o#ene
-  3x unread key: movable#/o#esc
-  9x unread key: movable#/o#hei
-  25x unread key: movable#/o#mah
-  25x unread key: movable#/o#mih
-  28x unread key: movable#/o#rad
-  31x unread key: movable#/o#refx
-  31x unread key: movable#/o#refy
-  240x unread key: movable#/o#typ
-  34x unread key: movable#/o#vel
-  3x unread key: movable#/o#xof
-  3x unread key: movable#/o#yof
-  3x unread key: movable#/o#zof
   15x unread key: movable#/pz
   64x unread key: movable#/sle
   25x unread key: movable#/tor
   1x unread section: cd
 s01302: 43 objects
+  14x order not implemented: attack
+  2x orders not run: typ 2053
+  5x orders not run: typ 2062
+  5x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   1x placeholder: typ 2063 dtyp 69
   1x placeholder: typ 2063 dtyp 71
@@ -1114,26 +676,14 @@ s01302: 43 objects
   23x unread key: movable#/gun
   28x unread key: movable#/inte
   23x unread key: movable#/ntor
-  448x unread key: movable#/o#bccond#
-  224x unread key: movable#/o#bcdel
-  448x unread key: movable#/o#bcdep#
-  224x unread key: movable#/o#bcop
-  448x unread key: movable#/o#bcref#
-  47x unread key: movable#/o#dur
-  14x unread key: movable#/o#ene
-  20x unread key: movable#/o#hei
-  28x unread key: movable#/o#mah
-  28x unread key: movable#/o#mih
-  28x unread key: movable#/o#rad
-  48x unread key: movable#/o#refx
-  48x unread key: movable#/o#refy
-  224x unread key: movable#/o#typ
-  48x unread key: movable#/o#vel
   9x unread key: movable#/pz
   28x unread key: movable#/sle
   23x unread key: movable#/tor
   1x unread section: cd
 s01303: 55 objects
+  2x orders not run: typ 2053
+  5x orders not run: typ 2062
+  5x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   1x placeholder: typ 2063 dtyp 71
   1x placeholder: typ 2063 dtyp 72
@@ -1147,29 +697,16 @@ s01303: 55 objects
   33x unread key: movable#/gun
   38x unread key: movable#/inte
   33x unread key: movable#/ntor
-  608x unread key: movable#/o#bccond#
-  304x unread key: movable#/o#bcdel
-  608x unread key: movable#/o#bcdep#
-  304x unread key: movable#/o#bcop
-  608x unread key: movable#/o#bcref#
-  70x unread key: movable#/o#dur
-  7x unread key: movable#/o#esc
-  25x unread key: movable#/o#hei
-  60x unread key: movable#/o#mah
-  60x unread key: movable#/o#mih
-  53x unread key: movable#/o#rad
-  78x unread key: movable#/o#refx
-  78x unread key: movable#/o#refy
-  304x unread key: movable#/o#typ
-  85x unread key: movable#/o#vel
-  7x unread key: movable#/o#xof
-  7x unread key: movable#/o#yof
-  7x unread key: movable#/o#zof
   9x unread key: movable#/pz
   38x unread key: movable#/sle
   33x unread key: movable#/tor
   1x unread section: cd
 s01304: 74 objects
+  3x order not implemented: attack
+  2x order not implemented: gotowithinfiltrate
+  2x orders not run: typ 2053
+  5x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 83
   26x unread key: movable#/ai
   5x unread key: movable#/card
@@ -1181,26 +718,14 @@ s01304: 74 objects
   31x unread key: movable#/inte
   26x unread key: movable#/ntor
   32x unread key: movable#/num
-  496x unread key: movable#/o#bccond#
-  248x unread key: movable#/o#bcdel
-  496x unread key: movable#/o#bcdep#
-  248x unread key: movable#/o#bcop
-  496x unread key: movable#/o#bcref#
-  49x unread key: movable#/o#dur
-  5x unread key: movable#/o#ene
-  27x unread key: movable#/o#hei
-  39x unread key: movable#/o#mah
-  39x unread key: movable#/o#mih
-  37x unread key: movable#/o#rad
-  64x unread key: movable#/o#refx
-  64x unread key: movable#/o#refy
-  248x unread key: movable#/o#typ
-  66x unread key: movable#/o#vel
   9x unread key: movable#/pz
   63x unread key: movable#/sle
   26x unread key: movable#/tor
   1x unread section: cd
 s01305: 36 objects
+  2x orders not run: typ 2053
+  5x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 84
   19x unread key: movable#/ai
   5x unread key: movable#/card
@@ -1210,25 +735,16 @@ s01305: 36 objects
   19x unread key: movable#/gun
   24x unread key: movable#/inte
   19x unread key: movable#/ntor
-  384x unread key: movable#/o#bccond#
-  192x unread key: movable#/o#bcdel
-  384x unread key: movable#/o#bcdep#
-  192x unread key: movable#/o#bcop
-  384x unread key: movable#/o#bcref#
-  56x unread key: movable#/o#dur
-  19x unread key: movable#/o#hei
-  49x unread key: movable#/o#mah
-  49x unread key: movable#/o#mih
-  49x unread key: movable#/o#rad
-  68x unread key: movable#/o#refx
-  68x unread key: movable#/o#refy
-  192x unread key: movable#/o#typ
-  68x unread key: movable#/o#vel
   9x unread key: movable#/pz
   24x unread key: movable#/sle
   19x unread key: movable#/tor
   1x unread section: cd
 s01306: 124 objects
+  1x order not implemented: ambush
+  4x orders not run: typ 2051
+  15x orders not run: typ 2052
+  15x orders not run: typ 2059
+  4x orders not run: typ 2062
   38x unread key: movable#/ai
   4x unread key: movable#/card
   106x unread key: movable#/diff
@@ -1239,27 +755,16 @@ s01306: 124 objects
   42x unread key: movable#/inte
   38x unread key: movable#/ntor
   64x unread key: movable#/num
-  672x unread key: movable#/o#bccond#
-  336x unread key: movable#/o#bcdel
-  672x unread key: movable#/o#bcdep#
-  336x unread key: movable#/o#bcop
-  672x unread key: movable#/o#bcref#
-  31x unread key: movable#/o#car
-  46x unread key: movable#/o#dur
-  16x unread key: movable#/o#ene
-  8x unread key: movable#/o#mah
-  8x unread key: movable#/o#mih
-  37x unread key: movable#/o#rad
-  8x unread key: movable#/o#refx
-  8x unread key: movable#/o#refy
-  336x unread key: movable#/o#typ
-  8x unread key: movable#/o#vel
   18x unread key: movable#/pz
   115x unread key: movable#/sle
   38x unread key: movable#/tor
   1x unread section: cd
   45x unread section: current#
 s01307: 27 objects
+  4x order not implemented: attack
+  2x orders not run: typ 2053
+  4x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   7x unread key: movable#/ai
   4x unread key: movable#/card
@@ -1269,21 +774,6 @@ s01307: 27 objects
   7x unread key: movable#/gun
   11x unread key: movable#/inte
   7x unread key: movable#/ntor
-  176x unread key: movable#/o#bccond#
-  88x unread key: movable#/o#bcdel
-  176x unread key: movable#/o#bcdep#
-  88x unread key: movable#/o#bcop
-  176x unread key: movable#/o#bcref#
-  16x unread key: movable#/o#dur
-  5x unread key: movable#/o#ene
-  1x unread key: movable#/o#hei
-  5x unread key: movable#/o#mah
-  5x unread key: movable#/o#mih
-  5x unread key: movable#/o#rad
-  6x unread key: movable#/o#refx
-  6x unread key: movable#/o#refy
-  88x unread key: movable#/o#typ
-  6x unread key: movable#/o#vel
   14x unread key: movable#/pz
   11x unread key: movable#/sle
   7x unread key: movable#/tor
@@ -1297,30 +787,15 @@ s01308: 6 objects
   5x unread key: movable#/gun
   6x unread key: movable#/inte
   5x unread key: movable#/ntor
-  96x unread key: movable#/o#bccond#
-  48x unread key: movable#/o#bcdel
-  96x unread key: movable#/o#bcdep#
-  48x unread key: movable#/o#bcop
-  96x unread key: movable#/o#bcref#
-  1x unread key: movable#/o#con
-  26x unread key: movable#/o#dur
-  20x unread key: movable#/o#ene
-  4x unread key: movable#/o#esc
-  1x unread key: movable#/o#hei
-  25x unread key: movable#/o#mah
-  25x unread key: movable#/o#mih
-  21x unread key: movable#/o#rad
-  22x unread key: movable#/o#refx
-  22x unread key: movable#/o#refy
-  48x unread key: movable#/o#typ
-  26x unread key: movable#/o#vel
-  4x unread key: movable#/o#xof
-  4x unread key: movable#/o#yof
-  4x unread key: movable#/o#zof
   6x unread key: movable#/sle
   5x unread key: movable#/tor
   1x unread section: cd
 s01501: 66 objects
+  5x order not implemented: attack
+  2x order not implemented: gotowithinfiltrate
+  2x orders not run: typ 2051
+  5x orders not run: typ 2053
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 84
   50x unread key: movable#/ai
   50x unread key: movable#/diff
@@ -1329,26 +804,14 @@ s01501: 66 objects
   50x unread key: movable#/gun
   50x unread key: movable#/inte
   50x unread key: movable#/ntor
-  800x unread key: movable#/o#bccond#
-  400x unread key: movable#/o#bcdel
-  800x unread key: movable#/o#bcdep#
-  400x unread key: movable#/o#bcop
-  800x unread key: movable#/o#bcref#
-  67x unread key: movable#/o#dur
-  7x unread key: movable#/o#ene
-  31x unread key: movable#/o#hei
-  61x unread key: movable#/o#mah
-  61x unread key: movable#/o#mih
-  59x unread key: movable#/o#rad
-  90x unread key: movable#/o#refx
-  90x unread key: movable#/o#refy
-  400x unread key: movable#/o#typ
-  92x unread key: movable#/o#vel
   14x unread key: movable#/pz
   50x unread key: movable#/sle
   50x unread key: movable#/tor
   1x unread section: cd
 s01601: 26 objects
+  1x order not implemented: attack
+  5x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 73
   16x unread key: movable#/ai
   5x unread key: movable#/card
@@ -1358,30 +821,14 @@ s01601: 26 objects
   16x unread key: movable#/gun
   21x unread key: movable#/inte
   16x unread key: movable#/ntor
-  336x unread key: movable#/o#bccond#
-  168x unread key: movable#/o#bcdel
-  336x unread key: movable#/o#bcdep#
-  168x unread key: movable#/o#bcop
-  336x unread key: movable#/o#bcref#
-  38x unread key: movable#/o#dur
-  10x unread key: movable#/o#ene
-  3x unread key: movable#/o#esc
-  1x unread key: movable#/o#hei
-  25x unread key: movable#/o#mah
-  25x unread key: movable#/o#mih
-  22x unread key: movable#/o#rad
-  23x unread key: movable#/o#refx
-  23x unread key: movable#/o#refy
-  168x unread key: movable#/o#typ
-  26x unread key: movable#/o#vel
-  3x unread key: movable#/o#xof
-  3x unread key: movable#/o#yof
-  3x unread key: movable#/o#zof
   2x unread key: movable#/pz
   21x unread key: movable#/sle
   16x unread key: movable#/tor
   1x unread section: cd
 s01602: 92 objects
+  23x order not implemented: attack
+  4x orders not run: typ 2062
+  3x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   1x placeholder: typ 2063 dtyp 72
   1x placeholder: typ 2063 dtyp 79
@@ -1393,27 +840,14 @@ s01602: 92 objects
   49x unread key: movable#/gun
   53x unread key: movable#/inte
   49x unread key: movable#/ntor
-  848x unread key: movable#/o#bccond#
-  424x unread key: movable#/o#bcdel
-  848x unread key: movable#/o#bcdep#
-  424x unread key: movable#/o#bcop
-  848x unread key: movable#/o#bcref#
-  12x unread key: movable#/o#car
-  80x unread key: movable#/o#dur
-  42x unread key: movable#/o#ene
-  11x unread key: movable#/o#hei
-  42x unread key: movable#/o#mah
-  42x unread key: movable#/o#mih
-  54x unread key: movable#/o#rad
-  53x unread key: movable#/o#refx
-  53x unread key: movable#/o#refy
-  424x unread key: movable#/o#typ
-  53x unread key: movable#/o#vel
   33x unread key: movable#/pz
   53x unread key: movable#/sle
   49x unread key: movable#/tor
   1x unread section: cd
 s01701: 41 objects
+  2x order not implemented: attack
+  4x orders not run: typ 2062
+  2x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   1x placeholder: typ 2063 dtyp 79
   31x unread key: movable#/ai
@@ -1424,26 +858,14 @@ s01701: 41 objects
   31x unread key: movable#/gun
   35x unread key: movable#/inte
   31x unread key: movable#/ntor
-  560x unread key: movable#/o#bccond#
-  280x unread key: movable#/o#bcdel
-  560x unread key: movable#/o#bcdep#
-  280x unread key: movable#/o#bcop
-  560x unread key: movable#/o#bcref#
-  49x unread key: movable#/o#dur
-  19x unread key: movable#/o#ene
-  30x unread key: movable#/o#hei
-  31x unread key: movable#/o#mah
-  31x unread key: movable#/o#mih
-  31x unread key: movable#/o#rad
-  61x unread key: movable#/o#refx
-  61x unread key: movable#/o#refy
-  280x unread key: movable#/o#typ
-  61x unread key: movable#/o#vel
   2x unread key: movable#/pz
   35x unread key: movable#/sle
   31x unread key: movable#/tor
   1x unread section: cd
 s01702: 43 objects
+  2x order not implemented: attack
+  4x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 79
   34x unread key: movable#/ai
   4x unread key: movable#/card
@@ -1453,30 +875,15 @@ s01702: 43 objects
   34x unread key: movable#/gun
   38x unread key: movable#/inte
   34x unread key: movable#/ntor
-  608x unread key: movable#/o#bccond#
-  304x unread key: movable#/o#bcdel
-  608x unread key: movable#/o#bcdep#
-  304x unread key: movable#/o#bcop
-  608x unread key: movable#/o#bcref#
-  73x unread key: movable#/o#dur
-  2x unread key: movable#/o#ene
-  1x unread key: movable#/o#esc
-  8x unread key: movable#/o#hei
-  38x unread key: movable#/o#mah
-  38x unread key: movable#/o#mih
-  37x unread key: movable#/o#rad
-  45x unread key: movable#/o#refx
-  45x unread key: movable#/o#refy
-  304x unread key: movable#/o#typ
-  46x unread key: movable#/o#vel
-  1x unread key: movable#/o#xof
-  1x unread key: movable#/o#yof
-  1x unread key: movable#/o#zof
   2x unread key: movable#/pz
   38x unread key: movable#/sle
   34x unread key: movable#/tor
   1x unread section: cd
 s01801: 147 objects
+  11x orders not run: typ 2052
+  8x orders not run: typ 2059
+  30x orders not run: typ 2062
+  3x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 72
   1x placeholder: typ 2063 dtyp 75
   1x placeholder: typ 2063 dtyp 80
@@ -1490,21 +897,6 @@ s01801: 147 objects
   71x unread key: movable#/inte
   41x unread key: movable#/ntor
   30x unread key: movable#/num
-  1136x unread key: movable#/o#bccond#
-  568x unread key: movable#/o#bcdel
-  1136x unread key: movable#/o#bcdep#
-  568x unread key: movable#/o#bcop
-  1136x unread key: movable#/o#bcref#
-  19x unread key: movable#/o#car
-  96x unread key: movable#/o#dur
-  10x unread key: movable#/o#hei
-  31x unread key: movable#/o#mah
-  31x unread key: movable#/o#mih
-  50x unread key: movable#/o#rad
-  41x unread key: movable#/o#refx
-  41x unread key: movable#/o#refy
-  568x unread key: movable#/o#typ
-  41x unread key: movable#/o#vel
   39x unread key: movable#/pz
   101x unread key: movable#/sle
   41x unread key: movable#/tor
@@ -1512,6 +904,11 @@ s01801: 147 objects
   151x unread section: current#
 s01802: 158 objects
   2x condition: Objective not found 24
+  20x orders not run: typ 2051
+  11x orders not run: typ 2052
+  8x orders not run: typ 2059
+  30x orders not run: typ 2062
+  2x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 72
   1x placeholder: typ 2063 dtyp 80
   55x unread key: movable#/ai
@@ -1524,27 +921,16 @@ s01802: 158 objects
   85x unread key: movable#/inte
   55x unread key: movable#/ntor
   30x unread key: movable#/num
-  1360x unread key: movable#/o#bccond#
-  680x unread key: movable#/o#bcdel
-  1360x unread key: movable#/o#bcdep#
-  680x unread key: movable#/o#bcop
-  1360x unread key: movable#/o#bcref#
-  19x unread key: movable#/o#car
-  101x unread key: movable#/o#dur
-  4x unread key: movable#/o#ene
-  36x unread key: movable#/o#mah
-  36x unread key: movable#/o#mih
-  55x unread key: movable#/o#rad
-  36x unread key: movable#/o#refx
-  36x unread key: movable#/o#refy
-  680x unread key: movable#/o#typ
-  36x unread key: movable#/o#vel
   38x unread key: movable#/pz
   115x unread key: movable#/sle
   55x unread key: movable#/tor
   1x unread section: cd
   151x unread section: current#
 s01803: 118 objects
+  11x orders not run: typ 2052
+  8x orders not run: typ 2059
+  30x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 80
   33x unread key: movable#/ai
   30x unread key: movable#/card
@@ -1556,27 +942,16 @@ s01803: 118 objects
   63x unread key: movable#/inte
   33x unread key: movable#/ntor
   15x unread key: movable#/num
-  1008x unread key: movable#/o#bccond#
-  504x unread key: movable#/o#bcdel
-  1008x unread key: movable#/o#bcdep#
-  504x unread key: movable#/o#bcop
-  1008x unread key: movable#/o#bcref#
-  19x unread key: movable#/o#car
-  83x unread key: movable#/o#dur
-  13x unread key: movable#/o#hei
-  13x unread key: movable#/o#mah
-  13x unread key: movable#/o#mih
-  32x unread key: movable#/o#rad
-  26x unread key: movable#/o#refx
-  26x unread key: movable#/o#refy
-  504x unread key: movable#/o#typ
-  26x unread key: movable#/o#vel
   38x unread key: movable#/pz
   78x unread key: movable#/sle
   33x unread key: movable#/tor
   1x unread section: cd
   124x unread section: current#
 s01804: 122 objects
+  11x orders not run: typ 2052
+  8x orders not run: typ 2059
+  30x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 87
   36x unread key: movable#/ai
   30x unread key: movable#/card
@@ -1588,28 +963,14 @@ s01804: 122 objects
   66x unread key: movable#/inte
   36x unread key: movable#/ntor
   15x unread key: movable#/num
-  1056x unread key: movable#/o#bccond#
-  528x unread key: movable#/o#bcdel
-  1056x unread key: movable#/o#bcdep#
-  528x unread key: movable#/o#bcop
-  1056x unread key: movable#/o#bcref#
-  19x unread key: movable#/o#car
-  1x unread key: movable#/o#con
-  158x unread key: movable#/o#dur
-  3x unread key: movable#/o#hei
-  92x unread key: movable#/o#mah
-  92x unread key: movable#/o#mih
-  111x unread key: movable#/o#rad
-  95x unread key: movable#/o#refx
-  95x unread key: movable#/o#refy
-  528x unread key: movable#/o#typ
-  95x unread key: movable#/o#vel
   38x unread key: movable#/pz
   81x unread key: movable#/sle
   36x unread key: movable#/tor
   1x unread section: cd
   124x unread section: current#
 s01805: 51 objects
+  11x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 69
   26x unread key: movable#/ai
   11x unread key: movable#/card
@@ -1619,31 +980,15 @@ s01805: 51 objects
   26x unread key: movable#/gun
   37x unread key: movable#/inte
   26x unread key: movable#/ntor
-  592x unread key: movable#/o#bccond#
-  296x unread key: movable#/o#bcdel
-  592x unread key: movable#/o#bcdep#
-  296x unread key: movable#/o#bcop
-  592x unread key: movable#/o#bcref#
-  2x unread key: movable#/o#car
-  1x unread key: movable#/o#con
-  47x unread key: movable#/o#dur
-  6x unread key: movable#/o#esc
-  24x unread key: movable#/o#hei
-  30x unread key: movable#/o#mah
-  30x unread key: movable#/o#mih
-  26x unread key: movable#/o#rad
-  48x unread key: movable#/o#refx
-  48x unread key: movable#/o#refy
-  296x unread key: movable#/o#typ
-  54x unread key: movable#/o#vel
-  6x unread key: movable#/o#xof
-  6x unread key: movable#/o#yof
-  6x unread key: movable#/o#zof
   11x unread key: movable#/pz
   37x unread key: movable#/sle
   26x unread key: movable#/tor
   1x unread section: cd
 s01806: 39 objects
+  5x order not implemented: ambush
+  4x order not implemented: attack
+  13x orders not run: typ 2059
+  3x orders not run: typ 2062
   18x unread key: movable#/ai
   3x unread key: movable#/card
   21x unread key: movable#/diff
@@ -1652,28 +997,13 @@ s01806: 39 objects
   18x unread key: movable#/gun
   21x unread key: movable#/inte
   18x unread key: movable#/ntor
-  336x unread key: movable#/o#bccond#
-  168x unread key: movable#/o#bcdel
-  336x unread key: movable#/o#bcdep#
-  168x unread key: movable#/o#bcop
-  336x unread key: movable#/o#bcref#
-  18x unread key: movable#/o#car
-  31x unread key: movable#/o#dur
-  9x unread key: movable#/o#ene
-  5x unread key: movable#/o#hei
-  9x unread key: movable#/o#mah
-  9x unread key: movable#/o#mih
-  17x unread key: movable#/o#rad
-  14x unread key: movable#/o#refx
-  14x unread key: movable#/o#refy
-  168x unread key: movable#/o#typ
-  14x unread key: movable#/o#vel
   17x unread key: movable#/pz
   21x unread key: movable#/sle
   18x unread key: movable#/tor
   1x unread section: cd
   78x unread section: current#
 s02001: 46 objects
+  6x orders not run: typ 2062
   3x unread key: movable#/ai
   6x unread key: movable#/card
   9x unread key: movable#/diff
@@ -1682,30 +1012,13 @@ s02001: 46 objects
   3x unread key: movable#/gun
   9x unread key: movable#/inte
   3x unread key: movable#/ntor
-  144x unread key: movable#/o#bccond#
-  72x unread key: movable#/o#bcdel
-  144x unread key: movable#/o#bcdep#
-  72x unread key: movable#/o#bcop
-  144x unread key: movable#/o#bcref#
-  3x unread key: movable#/o#con
-  15x unread key: movable#/o#dur
-  3x unread key: movable#/o#ene
-  2x unread key: movable#/o#esc
-  5x unread key: movable#/o#mah
-  5x unread key: movable#/o#mih
-  3x unread key: movable#/o#rad
-  3x unread key: movable#/o#refx
-  3x unread key: movable#/o#refy
-  72x unread key: movable#/o#typ
-  5x unread key: movable#/o#vel
-  2x unread key: movable#/o#xof
-  2x unread key: movable#/o#yof
-  2x unread key: movable#/o#zof
   37x unread key: movable#/pz
   9x unread key: movable#/sle
   3x unread key: movable#/tor
   1x unread section: cd
 s02002: 27 objects
+  3x orders not run: typ 2062
+  3x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
   1x placeholder: typ 2063 dtyp 69
   1x placeholder: typ 2063 dtyp 70
@@ -1717,30 +1030,13 @@ s02002: 27 objects
   14x unread key: movable#/gun
   17x unread key: movable#/inte
   14x unread key: movable#/ntor
-  272x unread key: movable#/o#bccond#
-  136x unread key: movable#/o#bcdel
-  272x unread key: movable#/o#bcdep#
-  136x unread key: movable#/o#bcop
-  272x unread key: movable#/o#bcref#
-  29x unread key: movable#/o#dur
-  4x unread key: movable#/o#esc
-  6x unread key: movable#/o#hei
-  24x unread key: movable#/o#mah
-  24x unread key: movable#/o#mih
-  20x unread key: movable#/o#rad
-  26x unread key: movable#/o#refx
-  26x unread key: movable#/o#refy
-  136x unread key: movable#/o#typ
-  30x unread key: movable#/o#vel
-  4x unread key: movable#/o#xof
-  4x unread key: movable#/o#yof
-  4x unread key: movable#/o#zof
   4x unread key: movable#/pz
   22x unread key: movable#/sle
   14x unread key: movable#/tor
   1x unread section: cd
 s02003: 50 objects
   1x condition: Objective not found 32
+  11x orders not run: typ 2062
   12x unread key: movable#/ai
   11x unread key: movable#/card
   23x unread key: movable#/diff
@@ -1749,30 +1045,14 @@ s02003: 50 objects
   12x unread key: movable#/gun
   23x unread key: movable#/inte
   12x unread key: movable#/ntor
-  368x unread key: movable#/o#bccond#
-  184x unread key: movable#/o#bcdel
-  368x unread key: movable#/o#bcdep#
-  184x unread key: movable#/o#bcop
-  368x unread key: movable#/o#bcref#
-  1x unread key: movable#/o#con
-  30x unread key: movable#/o#dur
-  4x unread key: movable#/o#esc
-  6x unread key: movable#/o#hei
-  16x unread key: movable#/o#mah
-  16x unread key: movable#/o#mih
-  12x unread key: movable#/o#rad
-  18x unread key: movable#/o#refx
-  18x unread key: movable#/o#refy
-  184x unread key: movable#/o#typ
-  22x unread key: movable#/o#vel
-  4x unread key: movable#/o#xof
-  4x unread key: movable#/o#yof
-  4x unread key: movable#/o#zof
   26x unread key: movable#/pz
   23x unread key: movable#/sle
   12x unread key: movable#/tor
   1x unread section: cd
 s02004: 62 objects
+  1x order not implemented: attack
+  12x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 87
   10x unread key: movable#/ai
   12x unread key: movable#/card
@@ -1782,27 +1062,13 @@ s02004: 62 objects
   10x unread key: movable#/gun
   22x unread key: movable#/inte
   10x unread key: movable#/ntor
-  352x unread key: movable#/o#bccond#
-  176x unread key: movable#/o#bcdel
-  352x unread key: movable#/o#bcdep#
-  176x unread key: movable#/o#bcop
-  352x unread key: movable#/o#bcref#
-  2x unread key: movable#/o#con
-  43x unread key: movable#/o#dur
-  1x unread key: movable#/o#ene
-  21x unread key: movable#/o#hei
-  20x unread key: movable#/o#mah
-  20x unread key: movable#/o#mih
-  20x unread key: movable#/o#rad
-  41x unread key: movable#/o#refx
-  41x unread key: movable#/o#refy
-  176x unread key: movable#/o#typ
-  41x unread key: movable#/o#vel
   37x unread key: movable#/pz
   22x unread key: movable#/sle
   10x unread key: movable#/tor
   1x unread section: cd
 s02005: 63 objects
+  5x order not implemented: ambush
+  7x orders not run: typ 2062
   17x unread key: movable#/ai
   7x unread key: movable#/card
   24x unread key: movable#/diff
@@ -1811,33 +1077,13 @@ s02005: 63 objects
   17x unread key: movable#/gun
   24x unread key: movable#/inte
   17x unread key: movable#/ntor
-  384x unread key: movable#/o#bccond#
-  192x unread key: movable#/o#bcdel
-  384x unread key: movable#/o#bcdep#
-  192x unread key: movable#/o#bcop
-  384x unread key: movable#/o#bcref#
-  5x unread key: movable#/o#car
-  4x unread key: movable#/o#con
-  52x unread key: movable#/o#dur
-  8x unread key: movable#/o#ene
-  7x unread key: movable#/o#esc
-  29x unread key: movable#/o#hei
-  28x unread key: movable#/o#mah
-  28x unread key: movable#/o#mih
-  16x unread key: movable#/o#rad
-  50x unread key: movable#/o#refx
-  50x unread key: movable#/o#refy
-  192x unread key: movable#/o#typ
-  57x unread key: movable#/o#vel
-  7x unread key: movable#/o#xof
-  7x unread key: movable#/o#yof
-  7x unread key: movable#/o#zof
   37x unread key: movable#/pz
   24x unread key: movable#/sle
   17x unread key: movable#/tor
   1x unread section: cd
 s02006: 62 objects
   1x condition: Objective not found 21
+  7x orders not run: typ 2062
   16x unread key: movable#/ai
   7x unread key: movable#/card
   23x unread key: movable#/diff
@@ -1846,26 +1092,12 @@ s02006: 62 objects
   16x unread key: movable#/gun
   23x unread key: movable#/inte
   16x unread key: movable#/ntor
-  368x unread key: movable#/o#bccond#
-  184x unread key: movable#/o#bcdel
-  368x unread key: movable#/o#bcdep#
-  184x unread key: movable#/o#bcop
-  368x unread key: movable#/o#bcref#
-  4x unread key: movable#/o#con
-  27x unread key: movable#/o#dur
-  9x unread key: movable#/o#hei
-  16x unread key: movable#/o#mah
-  16x unread key: movable#/o#mih
-  16x unread key: movable#/o#rad
-  25x unread key: movable#/o#refx
-  25x unread key: movable#/o#refy
-  184x unread key: movable#/o#typ
-  25x unread key: movable#/o#vel
   37x unread key: movable#/pz
   23x unread key: movable#/sle
   16x unread key: movable#/tor
   1x unread section: cd
 s02007: 71 objects
+  6x orders not run: typ 2062
   1x placeholder: typ 2063 dtyp 87
   26x unread key: movable#/ai
   6x unread key: movable#/card
@@ -1875,26 +1107,14 @@ s02007: 71 objects
   26x unread key: movable#/gun
   32x unread key: movable#/inte
   26x unread key: movable#/ntor
-  512x unread key: movable#/o#bccond#
-  256x unread key: movable#/o#bcdel
-  512x unread key: movable#/o#bcdep#
-  256x unread key: movable#/o#bcop
-  512x unread key: movable#/o#bcref#
-  3x unread key: movable#/o#con
-  35x unread key: movable#/o#dur
-  13x unread key: movable#/o#hei
-  26x unread key: movable#/o#mah
-  26x unread key: movable#/o#mih
-  26x unread key: movable#/o#rad
-  39x unread key: movable#/o#refx
-  39x unread key: movable#/o#refy
-  256x unread key: movable#/o#typ
-  39x unread key: movable#/o#vel
   37x unread key: movable#/pz
   32x unread key: movable#/sle
   26x unread key: movable#/tor
   1x unread section: cd
 s02201: 133 objects
+  27x orders not run: typ 2052
+  19x orders not run: typ 2062
+  3x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 80
   2x placeholder: typ 2063 dtyp 85
   55x unread key: movable#/ai
@@ -1905,27 +1125,14 @@ s02201: 133 objects
   55x unread key: movable#/gun
   74x unread key: movable#/inte
   55x unread key: movable#/ntor
-  1184x unread key: movable#/o#bccond#
-  592x unread key: movable#/o#bcdel
-  1184x unread key: movable#/o#bcdep#
-  592x unread key: movable#/o#bcop
-  1184x unread key: movable#/o#bcref#
-  26x unread key: movable#/o#car
-  19x unread key: movable#/o#con
-  95x unread key: movable#/o#dur
-  41x unread key: movable#/o#hei
-  36x unread key: movable#/o#mah
-  36x unread key: movable#/o#mih
-  62x unread key: movable#/o#rad
-  77x unread key: movable#/o#refx
-  77x unread key: movable#/o#refy
-  592x unread key: movable#/o#typ
-  77x unread key: movable#/o#vel
   55x unread key: movable#/pz
   74x unread key: movable#/sle
   55x unread key: movable#/tor
   1x unread section: cd
 s02202: 150 objects
+  28x orders not run: typ 2052
+  12x orders not run: typ 2062
+  5x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 80
   1x placeholder: typ 2063 dtyp 81
   3x placeholder: typ 2063 dtyp 85
@@ -1937,27 +1144,14 @@ s02202: 150 objects
   82x unread key: movable#/gun
   94x unread key: movable#/inte
   82x unread key: movable#/ntor
-  1504x unread key: movable#/o#bccond#
-  752x unread key: movable#/o#bcdel
-  1504x unread key: movable#/o#bcdep#
-  752x unread key: movable#/o#bcop
-  1504x unread key: movable#/o#bcref#
-  28x unread key: movable#/o#car
-  12x unread key: movable#/o#con
-  113x unread key: movable#/o#dur
-  43x unread key: movable#/o#hei
-  56x unread key: movable#/o#mah
-  56x unread key: movable#/o#mih
-  84x unread key: movable#/o#rad
-  99x unread key: movable#/o#refx
-  99x unread key: movable#/o#refy
-  752x unread key: movable#/o#typ
-  99x unread key: movable#/o#vel
   49x unread key: movable#/pz
   113x unread key: movable#/sle
   82x unread key: movable#/tor
   1x unread section: cd
 s02203: 141 objects
+  9x orders not run: typ 2052
+  16x orders not run: typ 2062
+  1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 86
   67x unread key: movable#/ai
   16x unread key: movable#/card
@@ -1967,26 +1161,14 @@ s02203: 141 objects
   67x unread key: movable#/gun
   83x unread key: movable#/inte
   67x unread key: movable#/ntor
-  1328x unread key: movable#/o#bccond#
-  664x unread key: movable#/o#bcdel
-  1328x unread key: movable#/o#bcdep#
-  664x unread key: movable#/o#bcop
-  1328x unread key: movable#/o#bcref#
-  9x unread key: movable#/o#car
-  138x unread key: movable#/o#dur
-  100x unread key: movable#/o#hei
-  102x unread key: movable#/o#mah
-  102x unread key: movable#/o#mih
-  111x unread key: movable#/o#rad
-  202x unread key: movable#/o#refx
-  202x unread key: movable#/o#refy
-  664x unread key: movable#/o#typ
-  202x unread key: movable#/o#vel
   55x unread key: movable#/pz
   93x unread key: movable#/sle
   67x unread key: movable#/tor
   1x unread section: cd
 s02204: 95 objects
+  9x orders not run: typ 2052
+  4x orders not run: typ 2062
+  5x orders not run: typ 2063
   3x placeholder: typ 2063 dtyp 82
   1x placeholder: typ 2063 dtyp 86
   1x placeholder: typ 2063 dtyp 87
@@ -1998,26 +1180,15 @@ s02204: 95 objects
   40x unread key: movable#/gun
   44x unread key: movable#/inte
   40x unread key: movable#/ntor
-  704x unread key: movable#/o#bccond#
-  352x unread key: movable#/o#bcdel
-  704x unread key: movable#/o#bcdep#
-  352x unread key: movable#/o#bcop
-  704x unread key: movable#/o#bcref#
-  9x unread key: movable#/o#car
-  51x unread key: movable#/o#dur
-  43x unread key: movable#/o#hei
-  36x unread key: movable#/o#mah
-  36x unread key: movable#/o#mih
-  45x unread key: movable#/o#rad
-  79x unread key: movable#/o#refx
-  79x unread key: movable#/o#refy
-  352x unread key: movable#/o#typ
-  79x unread key: movable#/o#vel
   46x unread key: movable#/pz
   60x unread key: movable#/sle
   40x unread key: movable#/tor
   1x unread section: cd
 s02205: 164 objects
+  5x order not implemented: attack
+  23x orders not run: typ 2052
+  4x orders not run: typ 2062
+  2x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 86
   1x placeholder: typ 2063 dtyp 87
   55x unread key: movable#/ai
@@ -2030,23 +1201,6 @@ s02205: 164 objects
   59x unread key: movable#/inte
   55x unread key: movable#/ntor
   22x unread key: movable#/num
-  944x unread key: movable#/o#bccond#
-  472x unread key: movable#/o#bcdel
-  944x unread key: movable#/o#bcdep#
-  472x unread key: movable#/o#bcop
-  944x unread key: movable#/o#bcref#
-  23x unread key: movable#/o#car
-  2x unread key: movable#/o#con
-  71x unread key: movable#/o#dur
-  5x unread key: movable#/o#ene
-  37x unread key: movable#/o#hei
-  37x unread key: movable#/o#mah
-  37x unread key: movable#/o#mih
-  60x unread key: movable#/o#rad
-  74x unread key: movable#/o#refx
-  74x unread key: movable#/o#refy
-  472x unread key: movable#/o#typ
-  74x unread key: movable#/o#vel
   76x unread key: movable#/pz
   87x unread key: movable#/sle
   55x unread key: movable#/tor
@@ -2059,24 +1213,13 @@ strai0: 129 objects
   45x unread key: movable#/gun
   45x unread key: movable#/inte
   45x unread key: movable#/ntor
-  720x unread key: movable#/o#bccond#
-  360x unread key: movable#/o#bcdel
-  720x unread key: movable#/o#bcdep#
-  360x unread key: movable#/o#bcop
-  720x unread key: movable#/o#bcref#
-  45x unread key: movable#/o#dur
-  45x unread key: movable#/o#mah
-  45x unread key: movable#/o#mih
-  45x unread key: movable#/o#rad
-  45x unread key: movable#/o#refx
-  45x unread key: movable#/o#refy
-  360x unread key: movable#/o#typ
-  45x unread key: movable#/o#vel
   84x unread key: movable#/pz
   45x unread key: movable#/sle
   45x unread key: movable#/tor
   1x unread section: cd
 strai1: 197 objects
+  29x orders not run: typ 2051
+  14x orders not run: typ 2052
   48x unread key: movable#/ai
   48x unread key: movable#/diff
   48x unread key: movable#/eint
@@ -2084,25 +1227,14 @@ strai1: 197 objects
   48x unread key: movable#/gun
   48x unread key: movable#/inte
   48x unread key: movable#/ntor
-  768x unread key: movable#/o#bccond#
-  384x unread key: movable#/o#bcdel
-  768x unread key: movable#/o#bcdep#
-  384x unread key: movable#/o#bcop
-  768x unread key: movable#/o#bcref#
-  14x unread key: movable#/o#car
-  51x unread key: movable#/o#dur
-  37x unread key: movable#/o#mah
-  37x unread key: movable#/o#mih
-  51x unread key: movable#/o#rad
-  37x unread key: movable#/o#refx
-  37x unread key: movable#/o#refy
-  384x unread key: movable#/o#typ
-  37x unread key: movable#/o#vel
   148x unread key: movable#/pz
   48x unread key: movable#/sle
   48x unread key: movable#/tor
   1x unread section: cd
 strai2: 140 objects
+  39x order not implemented: attack
+  5x orders not run: typ 2051
+  6x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 71
   1x placeholder: typ 2063 dtyp 73
   1x placeholder: typ 2063 dtyp 77
@@ -2117,26 +1249,17 @@ strai2: 140 objects
   48x unread key: movable#/inte
   48x unread key: movable#/ntor
   84x unread key: movable#/num
-  768x unread key: movable#/o#bccond#
-  384x unread key: movable#/o#bcdel
-  768x unread key: movable#/o#bcdep#
-  384x unread key: movable#/o#bcop
-  768x unread key: movable#/o#bcref#
-  48x unread key: movable#/o#dur
-  44x unread key: movable#/o#ene
-  4x unread key: movable#/o#hei
-  48x unread key: movable#/o#mah
-  48x unread key: movable#/o#mih
-  48x unread key: movable#/o#rad
-  52x unread key: movable#/o#refx
-  52x unread key: movable#/o#refy
-  384x unread key: movable#/o#typ
-  52x unread key: movable#/o#vel
   132x unread key: movable#/sle
   48x unread key: movable#/tor
   1x unread section: cd
   80x unread section: current#
 strai3: 227 objects
+  11x order not implemented: attack
+  17x orders not run: typ 2051
+  9x orders not run: typ 2052
+  9x orders not run: typ 2053
+  21x orders not run: typ 2059
+  6x orders not run: typ 2062
   83x unread key: movable#/ai
   6x unread key: movable#/card
   126x unread key: movable#/diff
@@ -2147,45 +1270,15 @@ strai3: 227 objects
   89x unread key: movable#/inte
   83x unread key: movable#/ntor
   37x unread key: movable#/num
-  1424x unread key: movable#/o#bccond#
-  712x unread key: movable#/o#bcdel
-  1424x unread key: movable#/o#bcdep#
-  712x unread key: movable#/o#bcop
-  1424x unread key: movable#/o#bcref#
-  30x unread key: movable#/o#car
-  4x unread key: movable#/o#con
-  98x unread key: movable#/o#dur
-  14x unread key: movable#/o#ene
-  44x unread key: movable#/o#hei
-  50x unread key: movable#/o#mah
-  50x unread key: movable#/o#mih
-  80x unread key: movable#/o#rad
-  94x unread key: movable#/o#refx
-  94x unread key: movable#/o#refy
-  712x unread key: movable#/o#typ
-  94x unread key: movable#/o#vel
   97x unread key: movable#/pz
   126x unread key: movable#/sle
   83x unread key: movable#/tor
   1x unread section: cd
 
 Total: 71 missions, 4981 objects
-  36368x unread key: movable#/o#bccond#
-  36368x unread key: movable#/o#bcdep#
-  36368x unread key: movable#/o#bcref#
-  18184x unread key: movable#/o#bcdel
-  18184x unread key: movable#/o#bcop
-  18184x unread key: movable#/o#typ
-  3405x unread key: movable#/o#dur
   3301x unread key: movable#/sle
   3155x unread key: movable#/diff
-  2738x unread key: movable#/o#vel
-  2645x unread key: movable#/o#refx
-  2645x unread key: movable#/o#refy
   2273x unread key: movable#/inte
-  2260x unread key: movable#/o#rad
-  1905x unread key: movable#/o#mah
-  1905x unread key: movable#/o#mih
   1849x unread key: movable#/ai
   1849x unread key: movable#/eint
   1849x unread key: movable#/eng
@@ -2196,16 +1289,17 @@ Total: 71 missions, 4981 objects
   1266x unread section: current#
   882x unread key: movable#/dis
   882x unread key: movable#/num
-  833x unread key: movable#/o#hei
-  630x unread key: movable#/o#ene
-  526x unread key: movable#/o#car
   424x unread key: movable#/card
-  71x unread key: movable#/o#con
+  423x orders not run: typ 2062
+  380x order not implemented: attack
+  303x orders not run: typ 2052
+  133x orders not run: typ 2059
+  127x orders not run: typ 2051
   71x unread section: cd
-  68x unread key: movable#/o#esc
-  68x unread key: movable#/o#xof
-  68x unread key: movable#/o#yof
-  68x unread key: movable#/o#zof
+  70x orders not run: typ 2063
+  53x orders not run: typ 2053
+  37x order not implemented: ambush
+  24x order not implemented: gotowithinfiltrate
   12x condition: Objective not found #
   8x placeholder: typ 2063 dtyp 68
   7x placeholder: typ 2063 dtyp 69

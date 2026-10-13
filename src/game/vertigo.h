@@ -44,6 +44,7 @@ public:
         std::vector<std::pair<float, QKeySequence>> keys; // test mode: press these keys at these times (seconds)
         struct Drive { int id; float speed; float turn; };
         std::vector<Drive> drive;                       // test mode: let these boats move straight or in a circle
+        std::vector<int> trace;                         // test mode: print these units' state every second
         bool check = false;                             // report what the mission loader ignores
         QStringList checkScenarios;                     // empty = all missions
     };
