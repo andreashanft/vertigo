@@ -76,6 +76,10 @@ public:
     bool blink() const { return static_cast<int>(m_time/0.5f)%2 == 0; }
     int endType() const { return m_endType; }
 
+    int playerId() const { return m_playerId; }
+    void destroyPlayer() { m_eventPlayerDestroyed.complete(); }
+    bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
+
     Player* player() const { return m_player.get(); }
 
     Surface& surface() { return m_surface; }
@@ -154,6 +158,8 @@ private:
 
     char m_attitudeMatrix[9][9];
     int m_endType;
+    int m_playerId;
+    ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;
 

@@ -36,6 +36,7 @@ namespace hud {
 
 
 class SonarMonitor;
+class MissionMenu;
 
 
 class HUD : public game::Renderer
@@ -44,15 +45,21 @@ public:
     HUD();
 
 public:
+    // the player leaves the mission: accomplished (autopilot), abort the game, restart the mission, load the last save
     util::event<>& eventSuccess() { return m_eventSuccess; }
     util::event<>& eventAbort() { return m_eventAbort; }
+    util::event<>& eventRestart() { return m_eventRestart; }
+    util::event<>& eventLoad() { return m_eventLoad; }
+    // the mission is over and the game over menu is shown
     util::event<>& eventFailure() { return m_eventFailure; }
+    util::event<>& eventDied() { return m_eventDied; }
 
     void setDebugOverlay(bool visible);
 
     game::Boat* boat() const { return m_boat; }
     fight::Scenario* scenario() const { return m_scenario; }
     int navPoint() const { return m_navPoint; }
+    bool isPaused() const { return m_paused; }
 
     bool wide() const { return m_wide; }
     const RectF& rectHUD() const { return m_rectHUD; }
@@ -80,11 +87,17 @@ protected:
 
 private:
     Rect readRect(const txt::DesFile &file);
+    void setFrozen(bool frozen);
+    void updateMissionState();
+    void leave(util::event<> &event);
 
 private:
     util::event<> m_eventSuccess;
     util::event<> m_eventAbort;
+    util::event<> m_eventRestart;
+    util::event<> m_eventLoad;
     util::event<> m_eventFailure;
+    util::event<> m_eventDied;
 
     game::Boat *m_boat;
     fight::Scenario *m_scenario;
@@ -114,6 +127,13 @@ private:
     SonarMonitor* m_sonar2;
     ui::Widget* m_debugOverlay;
     bool m_debugOverlayVisible;
+    MissionMenu* m_menu;
+
+    bool m_paused;
+    bool m_frozen;          // mission time and sounds stopped (pause or menu)
+    bool m_successShown;
+    bool m_failureShown;
+    float m_deathTime;      // mission time of the player's death, -1 while alive
 };
 
 

@@ -133,6 +133,13 @@ void Player::damage(int kinetic, int shock, const Vector3D &position)
 }
 
 
+void Player::destroy()
+{
+    // TODO: called from damage() once the player can be destroyed (roadmap step 1.4)
+    m_scenario->destroyPlayer();
+}
+
+
 bool Player::update(float elapsedTime)
 {
     m_angleVelocity.x += m_angleVelocity.x*m_angleFriction.x*64*elapsedTime;

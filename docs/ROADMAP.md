@@ -56,7 +56,7 @@ So the plan builds those basics first.
 | 1.2 | Missing condition types ("any unit of faction X attacked", order chaining, protect-only objectives, nav-point objectives), a real failure path, fix the endless "mission failed" voice. Ship together with 1.1 | S–M | Missions become winnable (**done**; "attacked" fires on any hit until 1.4) |
 | 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders |
 | 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions |
-| 1.5 | Mission end: Esc menu, failure and death screens (texts already exist), restart / abort / load. Keep "skip mission" as a debug key until missions are winnable | M | Proper campaign flow |
+| 1.5 | Mission end: Esc menu, failure and death screens (texts already exist), restart / abort / load. Keep "skip mission" as a debug key until missions are winnable | M | Proper campaign flow (**done**; the player can only be destroyed by `--destroy` until 1.4) |
 | 1.6 | Tanks (ground-following, 22 missions) and cargo ships (built from blocks, 36 missions; start with static hulls) | M / M–L | Escort targets, dust clouds |
 | 1.7 | Enemy guns, using the gun and volley settings in the object files | M | Orders 4, 6, 7, 8 |
 | 1.8 | Torpedoes: 22 types, magazines, fire key, lock (none / noise / optic, 0–6 s), homing, decoys, enemy torpedo towers | L | Torpedo HUD, trails, cluster torpedo, turrets |
@@ -97,7 +97,7 @@ Order of work: 1, 2, 9 → 3 → 5 → (needs 1.4 and 1.7) → 7, 8 → 4 → 6 
 
 | Item | What it is | Effort | Needs |
 |---|---|---|---|
-| Pause | P key stops mission time and sounds, shows the PAUSE image | S | – |
+| Pause | P key stops mission time and sounds, shows the PAUSE image (**done**) | S | – |
 | Voxel radar | 120×100 terrain view ahead of the boat, inside the master monitor | M | – |
 | Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages | M | Full rows need 1.8 |
 | Icons | Current, radiation (probably shallow depth; unverified), locked | S each | Phase 2, 1.8 |
@@ -336,9 +336,9 @@ Handled since step 1.2:
 - wccond 2 on a nav point means "reached" (S00303, S02006).
 - Mission failure plays its message once and ends the mission 10 s later.
 
-Still reported by `--check`: 12 references to objectives that no unit defines
-(S00404, S01802, S02003, S02006), and "player destroyed" in S00401, which
-needs step 1.4.
+Since step 1.5, "destroyed" on the player's id means the player died (S00401
+sends pirates). Still reported by `--check`: 12 references to objectives that
+no unit defines (S00404, S01802, S02003, S02006).
 
 ### D. Currents and radiation
 

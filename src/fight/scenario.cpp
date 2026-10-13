@@ -48,6 +48,7 @@ namespace fight {
 
 Scenario::Scenario(const QString &name) :
     m_name(name),
+    m_playerId(-1),
     m_moduleManager(m_textureManager),
     m_effectManager(this),
     m_conditionManager(this),
@@ -212,6 +213,8 @@ Scenario::Scenario(const QString &name) :
             m_yaw = m_file.value("card").toInt()*glm::quarter_pi<float>();
             m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
             entry.condTrigger = m_conditionManager.addCondition(0);
+            entry.condSignal = &m_eventPlayerDestroyed;
+            m_playerId = id;
 
             {
                 /*for (int i = 0; i < 27; i++)

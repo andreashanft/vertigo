@@ -421,7 +421,6 @@ s00304: 6 objects
   5x unread key: movable#/tor
   1x unread section: cd
 s00401: 196 objects
-  3x condition: Undefined object 2145
   1x placeholder: typ 2063 dtyp 68
   33x unread key: movable#/ai
   14x unread key: movable#/card
@@ -2215,7 +2214,6 @@ Total: 71 missions, 4981 objects
   6x placeholder: typ 2063 dtyp 85
   5x placeholder: typ 2063 dtyp 71
   5x placeholder: typ 2063 dtyp 87
-  3x condition: Undefined object #
   3x placeholder: typ 2063 dtyp 73
   3x placeholder: typ 2063 dtyp 78
   3x placeholder: typ 2063 dtyp 79
