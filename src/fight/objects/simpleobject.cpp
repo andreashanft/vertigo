@@ -26,13 +26,16 @@ namespace fight {
 SimpleObject::SimpleObject(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float scale) :
     ActiveObject(scenario, file, info)
 {
+    // composite objects (cargo ships) have no model of their own and set up their box themselves
     file.setSection("cluster");
-    m_base = scenario->moduleManager().get(file.contains("base") ? file.value("base").toString() : file.value("name").toString());
+    const QString base = file.contains("base") ? file.value("base").toString() : file.value("name").toString();
+    m_base = base.isEmpty() ? nullptr : scenario->moduleManager().get(base);
 
     file.setSection("size");
-    m_scale = file.value("scale").toFloat() * scale;
+    m_scale = m_base ? file.value("scale").toFloat() * scale : 1.0f;
 
-    m_localBox = m_base->box().scale(m_scale);
+    if (m_base)
+        m_localBox = m_base->box().scale(m_scale);
     m_box = m_localBox;
     scenario->collisionManager().addObject(this);
 }

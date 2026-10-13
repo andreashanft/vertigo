@@ -35,6 +35,7 @@ namespace {
 
 // a unit counts as having arrived within this horizontal distance (metres)
 const float ArriveDistance = 20.0f;
+const float EngageLeash = 2.5f;     // patrols give up a target this many sensor ranges away
 // durations from this on mean "forever"
 const int Forever = 100000;
 // guns fire when they point at the target within this angle (radians)
@@ -82,6 +83,8 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_attackEnd(0),
     m_ambushed(false),
     m_torpedoRun(false),
+    m_engaged(nullptr),
+    m_nextScan(0),
     m_dockStart(-1)
 {
     if (!m_slots.empty())
@@ -96,6 +99,7 @@ void Orders::start(int slot)
     m_attack = Attack::Approach;
     m_attackEnd = 0;
     m_ambushed = false;
+    m_engaged = nullptr;
     m_dockStart = -1;
     m_unit->setTrigger(false);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
@@ -115,7 +119,9 @@ QString Orders::state() const
         return QString();
     QString text = OrderSlot::name(m_slots[m_current].type);
     const int type = m_slots[m_current].type;
-    if ((type == OrderSlot::Attack || (type == OrderSlot::Ambush && m_ambushed)) && m_attackEnd > 0)
+    if (m_engaged)
+        text += " engaging";
+    if ((type == OrderSlot::Attack || (type == OrderSlot::Ambush && m_ambushed) || m_engaged) && m_attackEnd > 0)
         text += m_attack == Attack::Approach ? " approach" : m_attack == Attack::Attack ? " attack" : " break";
     if (m_unit->trigger())
         text += " firing";
@@ -283,10 +289,20 @@ void Orders::startAttackState(Attack state, ActiveObject *target)
     case Attack::Attack:
         {
             m_torpedoRun = random() < settings.torpedoProbability;
-            // a miss by up to 8 m, the less likely to hit the larger
-            const float error = (1 - settings.hitProbability)*8.0f*random();
-            const float angle = random()*glm::two_pi<float>();
-            m_offset = Vector3D(error*std::cos(angle), error*std::sin(angle), 0.5f*error*(random() - 0.5f));
+            // AttackProbabilityHit is the chance that the run is on target; otherwise it aims past the hull,
+            // to the side of the line of fire
+            m_offset = Vector3D(0);
+            if (random() >= settings.hitProbability)
+            {
+                const Vector3D dim = target->box().dim();
+                const float miss = 0.5f*std::max(dim.x, std::max(dim.y, dim.z)) + random(3.0f, 8.0f);
+                Vector3D line = target->center() - m_unit->position();
+                line = glm::length(line) > 0.1f ? glm::normalize(line) : Vector3D(0, 1, 0);
+                const Vector3D side = glm::normalize(std::abs(line.z) < 0.9f ? glm::cross(line, Vector3D(0, 0, 1)) : glm::cross(line, Vector3D(1, 0, 0)));
+                const Vector3D up = glm::cross(side, line);
+                const float angle = random()*glm::two_pi<float>();
+                m_offset = (side*std::cos(angle) + up*0.5f*std::sin(angle))*miss;
+            }
             m_attackEnd = m_scenario->time() + random(settings.minAttackTime, settings.maxAttackTime);
         }
         break;
@@ -469,6 +485,31 @@ void Orders::update()
     // the rest needs a unit that can move
     if (!m_boat)
         return;
+
+    // patrols and escorts attack hostile units within their sensor range (senr, 100 m if unset),
+    // and go back to their order when the target is gone or has got away
+    if ((slot.type == OrderSlot::Patrol || slot.type == OrderSlot::Escort) && m_boat->engagesHostiles())
+    {
+        const float sensorRange = m_unit->sensorRange() > 0 ? m_unit->sensorRange() : 100.0f;
+        if (m_engaged && (!isAlive(m_engaged) || glm::length(m_engaged->position() - m_unit->position()) > EngageLeash*sensorRange))
+        {
+            m_engaged = nullptr;
+            m_attackEnd = 0;
+            m_unit->setTrigger(false);
+            if (slot.type == OrderSlot::Patrol)
+                pickPatrolPoint();
+        }
+        if (!m_engaged && m_scenario->time() >= m_nextScan)
+        {
+            m_nextScan = m_scenario->time() + 1.0f;
+            m_engaged = nearestHostile(sensorRange, -1);
+        }
+        if (m_engaged)
+        {
+            updateAttack(m_engaged, m_boat->maxVelocity());
+            return;
+        }
+    }
 
     switch (slot.type)
     {

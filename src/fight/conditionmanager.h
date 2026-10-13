@@ -56,6 +56,7 @@ public:
         ConditionEvent *condFinished;
         ConditionEvent *condBoarded;
         int iff = -1; // faction of the unit, -1 if it has none
+        bool absent = false; // not in the mission at this difficulty: achieved for objectives, no faction
     };
 
 public:
@@ -100,6 +101,7 @@ private:
     QStringList m_issues;
     std::map<int, Condition> m_condObjectives;
     std::set<int> m_destroyTargets;
+    std::list<ConditionEvent> m_absentEvents; // completed once the dependencies are built
 
     struct DelayCompleteEntry
     {

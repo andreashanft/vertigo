@@ -66,6 +66,8 @@ public:
     };
     const AttackSettings& attackSettings() const { return m_attackSettings; }
     virtual bool isGroundVehicle() const { return false; }
+    // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)
+    virtual bool engagesHostiles() const { return true; }
 
 public:
     void setPosition(const Vector3D &pos);

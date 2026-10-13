@@ -60,6 +60,8 @@ set(SOURCES
     fight/objects/mine.h
     fight/objects/navpoint.cpp
     fight/objects/navpoint.h
+    fight/boats/cargoship.cpp
+    fight/boats/cargoship.h
     fight/objects/placeholder.cpp
     fight/objects/placeholder.h
     fight/objects/object.cpp
