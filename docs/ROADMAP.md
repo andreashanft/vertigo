@@ -245,7 +245,7 @@ and Succubus cockpits) after milestone 6.
 | D7 | Master monitor: activity | Second line shows what the target does: `GOTO`, `PATROLLING`, `ATTACKING` | `activity not implemented` (with the sonar's activity detection) |
 | D8 | Master monitor: weapons | `G:` the target's gun short name (`VEN1`), `T:` its torpedoes | `NIMP` |
 | D9 | Aim help (HUDAIMH) | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame | Drawn on the target's centre |
-| D10 | Sonar monitors | A dotted red line from the centre towards the locked target | Only a symbol on the target, inside the range |
+| D10 | Cargo ships | Each block is a sonar contact and target of its own (a row of dots on the sonar, a bracket per block) | One contact for the whole ship |
 | D11 | Target lock | `u` locks the nearest enemy (HELP0-2.TXT) | Not implemented (L locks what is in the reticle, N the next nav point) |
 | D12 | Unknown marker | A red circle with a cross, apart from the locked target (shots in combat), sometimes outside the HUD frame; not one of HUDAIMH, HUDTARG, HUDTURR, HUDPOI* | – (identify first) |
 | D13 | Hits | Plasma hits light up as large blue-white flashes; explosions close by fill much of the view | Smaller hit effects (compare sizes) |

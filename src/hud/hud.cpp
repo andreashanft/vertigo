@@ -738,6 +738,8 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_L)
         m_scenario->target().lockReticle();
+    if (e->key() == Qt::Key_U)
+        m_scenario->target().lockNearestEnemy();
     if (e->key() == Qt::Key_I)
         for (SlaveMonitor *monitor : m_slaveMonitors)
             monitor->togglePage();

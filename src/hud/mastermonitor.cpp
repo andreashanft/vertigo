@@ -124,7 +124,7 @@ void MasterMonitor::draw()
         glFrontFace(GL_CW);
         glMatrixMode(GL_MODELVIEW);
         glLoadMatrixf(glm::value_ptr(m));
-        obj->draw();
+        obj->drawPreview();
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         glDisable(GL_CULL_FACE);

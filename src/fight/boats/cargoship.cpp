@@ -71,7 +71,7 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
         blockFile.setSection("size");
         block.scale = blockFile.value("scale").toFloat()/32.0f;
         blockFile.setSection("defense");
-        block.shield = blockFile.value("kineticshield0").toInt();
+        block.shield = block.shieldMax = blockFile.value("kineticshield0").toInt();
 
         const BoundingBox own = block.module->box().scale(block.scale);
         block.position = Vector3D(0);
@@ -191,7 +191,91 @@ bool CargoShip::update(float elapsedTime)
         if (!turret.destroyed)
             updateTurret(turret, elapsedTime);
     updateWrecks(elapsedTime);
+    updateSegments();
     return false;
+}
+
+
+std::vector<CargoSegment *> CargoShip::createSegments()
+{
+    std::vector<CargoSegment *> segments;
+    for (int i = 0; i < int(m_blocks.size()); i++)
+    {
+        m_blocks[i].segment = new CargoSegment(m_scenario, this, i, m_info);
+        m_blocks[i].segment->disable();
+        segments.push_back(m_blocks[i].segment);
+    }
+    return segments;
+}
+
+
+// the segments follow their blocks and are there as long as the blocks are
+void CargoShip::updateSegments()
+{
+    for (const Block &block : m_blocks)
+    {
+        if (!block.segment)
+            continue;
+        block.segment->setEnabled(isEnabled() && !block.destroyed && !m_eventDestroy.isCompleted());
+        block.segment->place(block.box.transform(glm::translate(m_position)*Matrix(m_orientationInverted)), m_velocity, block.shield, block.shieldMax);
+    }
+}
+
+
+void CargoShip::drawBlock(int index)
+{
+    const Block &block = m_blocks[index];
+    glPushMatrix();
+    glTranslatef(m_position.x, m_position.y, m_position.z);
+    glMultMatrixf(glm::value_ptr(Matrix(m_orientationInverted)));
+    glTranslatef(block.position.x, block.position.y, block.position.z);
+    glScalef(block.scale, block.scale, block.scale);
+    block.module->draw();
+    glPopMatrix();
+}
+
+
+CargoSegment::CargoSegment(Scenario *scenario, CargoShip *ship, int block, const ObjectInfo &info) :
+    ActiveObject(scenario),
+    m_ship(ship),
+    m_block(block)
+{
+    m_info = info;
+    m_noise = 0;
+    m_identified = false;
+    m_kineticShield = m_kineticShieldMax = 1;
+}
+
+
+void CargoSegment::place(const BoundingBox &box, const Vector3D &velocity, int shield, int shieldMax)
+{
+    m_box = box;
+    m_position = center();
+    m_velocity = velocity;
+    m_kineticShield = shield;
+    m_kineticShieldMax = shieldMax;
+}
+
+
+float CargoSegment::noise() const
+{
+    return m_ship->noise();
+}
+
+
+void CargoSegment::drawPreview()
+{
+    m_ship->drawBlock(m_block);
+}
+
+
+// identifying a block identifies the ship's cargo
+void CargoSegment::identify()
+{
+    if (!m_eventIdentify.isCompleted())
+        m_eventIdentify.complete();
+    if (!m_ship->isIdentified())
+        m_ship->identify();
 }
 
 
@@ -410,6 +494,8 @@ void CargoShip::damage(int kinetic, int shock, const Vector3D &position, ActiveO
 void CargoShip::destroyBlock(Block &block)
 {
     block.destroyed = true;
+    if (block.segment)
+        block.segment->disable();
     const Vector3D center = toWorld((block.box.minPoint() + block.box.maxPoint())*0.5f);
     m_scenario->effectManager().addEffect(Effects::Explosion_2, center);
     sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, center.x, center.y, center.z);
@@ -549,6 +635,9 @@ void CargoShip::destroy()
 {
     if (m_eventDestroy.isCompleted())
         return;
+    for (const Block &block : m_blocks)
+        if (block.segment)
+            block.segment->disable();
     // every block that is still there goes up
     for (const Block &block : m_blocks)
         if (!block.destroyed)

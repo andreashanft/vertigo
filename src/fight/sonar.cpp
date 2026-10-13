@@ -156,7 +156,7 @@ void Sonar::update(float elapsedTime)
     for (const auto &object_ptr : *m_scenario)
     {
         ActiveObject *object = dynamic_cast<ActiveObject *>(object_ptr.get());
-        if (!object || !object->isEnabled())
+        if (!object || !object->isEnabled() || !object->isContact())
             continue;
         if (!m_active && object->noise() <= 0.1f)
             continue;

@@ -98,7 +98,9 @@ public:
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
-    void identify();
+    virtual void identify();
+    // whether the sonar shows it (a cargo ship shows its blocks instead)
+    virtual bool isContact() const { return true; }
     // the unit isn't in the mission at this difficulty: it never appears (see ConditionEntry::absent)
     void leaveMission();
 

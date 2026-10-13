@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "target.h"
+#include "sonar.h"
 #include "scenario.h"
 #include "objects/activeobject.h"
 #include "objects/navpoint.h"
@@ -94,6 +95,20 @@ void Target::lockReticle()
             m_lockedNavPoint = navPoint;
             m_locked = nullptr;
         }
+    }
+}
+
+
+void Target::lockNearestEnemy()
+{
+    const Sonar::SonarEntry *nearest = nullptr;
+    for (const auto &entry : m_scenario->sonar())
+        if (!entry.isFriend && m_scenario->isHostile(Scenario::PlayerFaction, entry.object->iff()) && (!nearest || entry.distance < nearest->distance))
+            nearest = &entry;
+    if (nearest)
+    {
+        m_locked = nearest->object;
+        m_lockedNavPoint = nullptr;
     }
 }
 

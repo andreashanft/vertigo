@@ -27,9 +27,35 @@
 namespace fight {
 
 
+class CargoShip;
 class Module;
 class Turret;
 class UnitGun;
+
+
+// One block of a cargo ship as a sonar contact and target of its own, as in the original: the
+// ship moves it along and keeps it enabled while the block is there. Its shield is the block's.
+// Hits land on the ship's hull, which damages the block that was hit.
+class CargoSegment : public ActiveObject
+{
+public:
+    CargoSegment(Scenario *scenario, CargoShip *ship, int block, const ObjectInfo &info);
+
+public:
+    void place(const BoundingBox &box, const Vector3D &velocity, int shield, int shieldMax);
+    float noise() const;
+    bool update(float elapsedTime) { return false; }
+    void draw() {}
+    void drawPreview();
+    bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal) { return false; }
+    void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr) {}
+    void destroy() {}
+    void identify();
+
+private:
+    CargoShip *m_ship;
+    int m_block;
+};
 
 
 // A big ship assembled from blocks (cship*/bship* files, [CargoBlockN]): each block is placed
@@ -55,6 +81,10 @@ public:
     void draw();
     void arm(int model, txt::DesFile &file) {}
     bool engagesHostiles() const { return false; }
+    bool isContact() const { return false; }
+    // the blocks as sonar contacts; the scenario owns them
+    std::vector<CargoSegment *> createSegments();
+    void drawBlock(int index);
     bool collidesWithObjects() const { return false; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
@@ -68,7 +98,9 @@ private:
         Vector3D position;  // ship coordinates (metres)
         BoundingBox box;    // ship coordinates
         int shield;
+        int shieldMax;
         bool destroyed = false;
+        CargoSegment *segment = nullptr;
     };
 
     struct ShipTurret
@@ -116,6 +148,7 @@ private:
     void breakApart();
     void updateWrecks(float elapsedTime);
     void explodeWreck(const Wreck &wreck);
+    void updateSegments();
 
 private:
     std::vector<Block> m_blocks;
