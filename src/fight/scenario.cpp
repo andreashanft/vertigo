@@ -46,6 +46,7 @@ namespace fight {
 
 
 Scenario::Scenario(const QString &name) :
+    m_name(name),
     m_moduleManager(m_textureManager),
     m_effectManager(this),
     m_conditionManager(this),
@@ -91,6 +92,7 @@ Scenario::Scenario(const QString &name) :
     types[67] = "entrobot";
 
     float initialDir = 0.0f;
+    QSet<QString> skippedSections;
     foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
         m_file.setSection(section);
 
@@ -114,16 +116,19 @@ Scenario::Scenario(const QString &name) :
 
         Object *object = NULL;
         const int type = m_file.value("typ").toInt();
+        QString desName;
 
         txt::DesFile objectDes;
         if (m_file.contains("dtyp") && type != TypeNavPoint && type != TypeCrawler)
         {
             const int dType = m_file.value("dtyp").toInt();
             if (types.find(dType) == types.end()) {
-                util::Debug() << "Unhandled dtype " << dType;
+                loadIssue(QString("skipped movable: typ %1 dtyp %2").arg(type).arg(dType));
+                skippedSections << section;
                 continue;
             }
             objectDes.load(QString("vfx:sobjects/%1.des").arg(types[dType]));
+            desName = types[dType];
         }
 
         ActiveObject::ObjectInfo info;
@@ -243,7 +248,7 @@ Scenario::Scenario(const QString &name) :
         case TypeSpace:
             {
                 if (m_file.value("pz").toInt() != 0)
-                    util::Debug() << "Unexpected space parameter";
+                    loadIssue("unhandled: space with pz != 0");
                 ConditionSpace *space = m_conditionManager.addCondSpace(m_file.value("px").toInt()*m_surface.scale().x,
                                                                         m_file.value("py").toInt()*m_surface.scale().y,
                                                                         m_file.value("dimx").toInt()*m_surface.scale().x,
@@ -256,12 +261,14 @@ Scenario::Scenario(const QString &name) :
             break;
 
         default:
-            util::Debug() << "Unhandled movable " << type << " " << m_file.value("dtyp").toInt();
+            loadIssue(QString("skipped movable: typ %1 dtyp %2").arg(type).arg(m_file.value("dtyp").toInt()));
+            skippedSections << section;
         }
 
         if (object != NULL)
         {
             m_objects.emplace_back(object);
+            m_records.push_back({ id, type, desName, object });
             object->disable();
             entry.condTrigger = object->condEnable();
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(object);
@@ -302,7 +309,7 @@ Scenario::Scenario(const QString &name) :
 
         const int type = m_file.value("typ").toInt();
         if (type != 5120)
-            util::Debug() << "Unhandled radio type " << type;
+            loadIssue(QString("unhandled: radio typ %1").arg(type));
 
         ConditionRadio *radio = m_conditionManager.addCondRadio(getPosition(), m_file.valueText("rtxt"));
         entry.condTrigger = radio;
@@ -325,6 +332,20 @@ Scenario::Scenario(const QString &name) :
 
     m_file.setSection("End");
     m_endType = m_file.value("Type").toInt();
+
+    // report what the loader ignored, with numbers in names collapsed to '#'
+    QRegExp digits("\\d+");
+    foreach (const QString &section, m_file.sections()) {
+        if (skippedSections.contains(section))
+            continue;
+        const QString sectionName = QString(section).replace(digits, "#");
+        if (!m_file.wasSectionRead(section)) {
+            loadIssue(QString("unread section: %1").arg(sectionName));
+            continue;
+        }
+        foreach (const QString &key, m_file.unreadKeys(section))
+            loadIssue(QString("unread key: %1/%2").arg(sectionName, QString(key).replace(digits, "#")));
+    }
 
 
 
@@ -577,6 +598,21 @@ void Scenario::keyReleaseEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_Space)
         m_player->fireStop();
+}
+
+
+QStringList Scenario::loadReport() const
+{
+    QStringList report = m_loadIssues;
+    foreach (const QString &issue, m_conditionManager.issues())
+        report << "condition: " + issue;
+    return report;
+}
+
+
+void Scenario::loadIssue(const QString &text)
+{
+    m_loadIssues << text;
 }
 
 

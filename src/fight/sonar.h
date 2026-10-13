@@ -58,6 +58,10 @@ public:
     bool detectWeapons() const { return m_detectWeapons; }
     bool detectActivity() const { return m_detectActivity; }
 
+    // distance at which an object is detected passively / actively
+    float passiveRange(const ActiveObject *object) const;
+    float activeRange(const ActiveObject *object) const;
+
 public:
     void update(float elapsedTime);
 

@@ -51,6 +51,7 @@ public:
 
 public:
     static Item* get(int model);
+    static const std::map<int, Item>& all();
     static std::vector<int> getDepotItems(const QString &mounting);
     static int getDepotPrice(int model);
 

@@ -21,6 +21,7 @@
 
 #include <map>
 #include <list>
+#include <QStringList>
 #include "condition.h"
 
 
@@ -68,6 +69,13 @@ public:
     void update(float elapsedTime);
 
     bool autopilot() const { return m_condSuccess.isCompleted(); }
+    bool failed() const { return m_condFailure.isCompleted(); }
+
+    // problems found while setting up the conditions, e.g. unresolved references
+    const QStringList& issues() const { return m_issues; }
+
+private:
+    void issue(const QString &text);
 
 private:
     Scenario *m_scenario;
@@ -78,6 +86,7 @@ private:
 
     ConditionSuccess m_condSuccess;
     ConditionFailure m_condFailure;
+    QStringList m_issues;
     std::map<int, Condition> m_condObjectives;
 
     struct DelayCompleteEntry

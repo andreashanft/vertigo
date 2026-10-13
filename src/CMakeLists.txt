@@ -171,6 +171,8 @@ set(SOURCES
     hud/sonarmonitor.h
     hud/autopilot.cpp
     hud/autopilot.h
+    hud/debugoverlay.cpp
+    hud/debugoverlay.h
     hud/horizon.cpp
     hud/horizon.h
 

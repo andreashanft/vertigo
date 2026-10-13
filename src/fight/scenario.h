@@ -47,6 +47,21 @@ public:
     Scenario(const QString &name);
 
 public:
+    struct ObjectRecord
+    {
+        int id;
+        int type;
+        QString des;
+        Object *object;
+    };
+
+public:
+    const QString& name() const { return m_name; }
+    const std::vector<ObjectRecord>& objectRecords() const { return m_records; }
+
+    // everything the loader skipped or ignored, one line per occurrence
+    QStringList loadReport() const;
+
     const Matrix& projectionMatrix() const { return m_projectionMatrix; }
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
     const Matrix& cameraMatrix() const { return m_cameraMatrix; }
@@ -88,6 +103,7 @@ public:
 
 private:
     Vector3D getPosition();
+    void loadIssue(const QString &text);
 
 private:
     enum Type
@@ -128,7 +144,10 @@ private:
     Sonar m_sonar;
     Target m_target;
 
+    QString m_name;
+    QStringList m_loadIssues;
     std::vector<std::unique_ptr<Object>> m_objects;
+    std::vector<ObjectRecord> m_records;
     std::vector<Object*> m_lightSources;
     std::vector<NavPoint*> m_navPoints;
 

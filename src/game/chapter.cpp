@@ -70,6 +70,8 @@ Chapter::Chapter(const QString &name, std::function<void(Renderer*)> funcSetRend
     m_tasksFile.load("dat:story/tasks.des");
 
     m_HUD->eventSuccess() += [this]() { finishMission(); };
+    // TODO: Esc still counts as success until missions can be completed (roadmap step 1.5)
+    m_HUD->eventAbort() += [this]() { finishMission(); };
 }
 
 
