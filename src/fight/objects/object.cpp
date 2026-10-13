@@ -47,12 +47,14 @@ Object::Object(Scenario *scenario, txt::DesFile &file, float scale) :
 
 void Object::setEnabled(bool enabled)
 {
-    m_enabled = enabled;
+    m_enabled = enabled && !m_absent;
 }
 
 
 void Object::enable()
 {
+    if (m_absent)
+        return;
     m_enabled = true;
 }
 

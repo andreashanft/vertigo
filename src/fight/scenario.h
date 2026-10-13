@@ -54,6 +54,12 @@ public:
     Scenario(const QString &name);
     ~Scenario();
 
+    // the game's difficulty: 0 easy, 1 normal, 2 hard. Units whose "diff" key is higher stay out of the mission.
+    static int difficulty();
+    static void setDifficulty(int difficulty);
+    // test mode: use this difficulty without storing it
+    static void overrideDifficulty(int difficulty);
+
 public:
     struct ObjectRecord
     {

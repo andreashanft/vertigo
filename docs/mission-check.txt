@@ -1,7 +1,6 @@
 s00101: 49 objects
   20x unread key: movable#/ai
   4x unread key: movable#/card
-  24x unread key: movable#/diff
   20x unread key: movable#/eint
   20x unread key: movable#/eng
   24x unread key: movable#/inte
@@ -11,7 +10,6 @@ s00101: 49 objects
 s00102: 54 objects
   22x unread key: movable#/ai
   4x unread key: movable#/card
-  26x unread key: movable#/diff
   22x unread key: movable#/eint
   22x unread key: movable#/eng
   26x unread key: movable#/inte
@@ -21,7 +19,6 @@ s00102: 54 objects
 s00103: 28 objects
   9x unread key: movable#/ai
   2x unread key: movable#/card
-  11x unread key: movable#/diff
   9x unread key: movable#/eint
   9x unread key: movable#/eng
   11x unread key: movable#/inte
@@ -31,7 +28,6 @@ s00103: 28 objects
 s00104: 44 objects
   21x unread key: movable#/ai
   2x unread key: movable#/card
-  24x unread key: movable#/diff
   21x unread key: movable#/eint
   21x unread key: movable#/eng
   24x unread key: movable#/inte
@@ -40,7 +36,6 @@ s00104: 44 objects
   1x unread section: cd
 s00105: 1 objects
   1x unread key: movable#/ai
-  1x unread key: movable#/diff
   1x unread key: movable#/eint
   1x unread key: movable#/eng
   1x unread key: movable#/inte
@@ -49,7 +44,6 @@ s00105: 1 objects
 s00106: 27 objects
   8x unread key: movable#/ai
   2x unread key: movable#/card
-  10x unread key: movable#/diff
   8x unread key: movable#/eint
   8x unread key: movable#/eng
   10x unread key: movable#/inte
@@ -58,7 +52,6 @@ s00106: 27 objects
   1x unread section: cd
 s00201: 35 objects
   16x unread key: movable#/ai
-  30x unread key: movable#/diff
   14x unread key: movable#/dis
   16x unread key: movable#/eint
   16x unread key: movable#/eng
@@ -70,7 +63,6 @@ s00201: 35 objects
 s00202: 104 objects
   19x unread key: movable#/ai
   4x unread key: movable#/card
-  23x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   23x unread key: movable#/inte
@@ -79,7 +71,6 @@ s00202: 104 objects
   1x unread section: cd
 s00203: 83 objects
   12x unread key: movable#/ai
-  77x unread key: movable#/diff
   65x unread key: movable#/dis
   12x unread key: movable#/eint
   12x unread key: movable#/eng
@@ -90,7 +81,6 @@ s00203: 83 objects
   1x unread section: cd
 s00204: 21 objects
   11x unread key: movable#/ai
-  11x unread key: movable#/diff
   11x unread key: movable#/eint
   11x unread key: movable#/eng
   11x unread key: movable#/inte
@@ -100,7 +90,6 @@ s00204: 21 objects
 s00205: 14 objects
   7x unread key: movable#/ai
   2x unread key: movable#/card
-  9x unread key: movable#/diff
   7x unread key: movable#/eint
   7x unread key: movable#/eng
   9x unread key: movable#/inte
@@ -110,7 +99,6 @@ s00205: 14 objects
 s00301: 72 objects
   37x unread key: movable#/ai
   11x unread key: movable#/card
-  64x unread key: movable#/diff
   16x unread key: movable#/dis
   37x unread key: movable#/eint
   37x unread key: movable#/eng
@@ -121,7 +109,6 @@ s00301: 72 objects
   1x unread section: cd
 s00302: 10 objects
   9x unread key: movable#/ai
-  9x unread key: movable#/diff
   9x unread key: movable#/eint
   9x unread key: movable#/eng
   9x unread key: movable#/inte
@@ -129,7 +116,6 @@ s00302: 10 objects
   1x unread section: cd
 s00303: 15 objects
   9x unread key: movable#/ai
-  9x unread key: movable#/diff
   9x unread key: movable#/eint
   9x unread key: movable#/eng
   9x unread key: movable#/inte
@@ -138,7 +124,6 @@ s00303: 15 objects
   1x unread section: cd
 s00304: 6 objects
   5x unread key: movable#/ai
-  6x unread key: movable#/diff
   5x unread key: movable#/eint
   5x unread key: movable#/eng
   6x unread key: movable#/inte
@@ -147,7 +132,6 @@ s00304: 6 objects
 s00401: 196 objects
   33x unread key: movable#/ai
   14x unread key: movable#/card
-  181x unread key: movable#/diff
   133x unread key: movable#/dis
   33x unread key: movable#/eint
   33x unread key: movable#/eng
@@ -159,7 +143,6 @@ s00401: 196 objects
 s00402: 44 objects
   1x condition: Empty faction 1
   15x unread key: movable#/ai
-  15x unread key: movable#/diff
   15x unread key: movable#/eint
   15x unread key: movable#/eng
   15x unread key: movable#/inte
@@ -169,7 +152,6 @@ s00402: 44 objects
 s00403: 39 objects
   19x unread key: movable#/ai
   5x unread key: movable#/card
-  24x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   24x unread key: movable#/inte
@@ -180,7 +162,6 @@ s00404: 57 objects
   8x condition: Objective not found 14
   33x unread key: movable#/ai
   4x unread key: movable#/card
-  37x unread key: movable#/diff
   33x unread key: movable#/eint
   33x unread key: movable#/eng
   37x unread key: movable#/inte
@@ -190,7 +171,6 @@ s00404: 57 objects
 s00405: 180 objects
   43x unread key: movable#/ai
   5x unread key: movable#/card
-  177x unread key: movable#/diff
   129x unread key: movable#/dis
   43x unread key: movable#/eint
   43x unread key: movable#/eng
@@ -201,7 +181,6 @@ s00405: 180 objects
 s00406: 178 objects
   36x unread key: movable#/ai
   11x unread key: movable#/card
-  100x unread key: movable#/diff
   53x unread key: movable#/dis
   36x unread key: movable#/eint
   36x unread key: movable#/eng
@@ -212,7 +191,6 @@ s00406: 178 objects
   1x unread section: cd
 s00601: 18 objects
   15x unread key: movable#/ai
-  16x unread key: movable#/diff
   15x unread key: movable#/eint
   15x unread key: movable#/eng
   16x unread key: movable#/inte
@@ -221,7 +199,6 @@ s00601: 18 objects
 s00701: 25 objects
   18x unread key: movable#/ai
   3x unread key: movable#/card
-  21x unread key: movable#/diff
   18x unread key: movable#/eint
   18x unread key: movable#/eng
   21x unread key: movable#/inte
@@ -231,7 +208,6 @@ s00701: 25 objects
 s00702: 22 objects
   16x unread key: movable#/ai
   3x unread key: movable#/card
-  19x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   19x unread key: movable#/inte
@@ -241,7 +217,6 @@ s00702: 22 objects
 s00703: 21 objects
   15x unread key: movable#/ai
   3x unread key: movable#/card
-  18x unread key: movable#/diff
   15x unread key: movable#/eint
   15x unread key: movable#/eng
   18x unread key: movable#/inte
@@ -251,7 +226,6 @@ s00703: 21 objects
 s00704: 113 objects
   40x unread key: movable#/ai
   3x unread key: movable#/card
-  74x unread key: movable#/diff
   31x unread key: movable#/dis
   40x unread key: movable#/eint
   40x unread key: movable#/eng
@@ -263,7 +237,6 @@ s00704: 113 objects
 s00705: 21 objects
   16x unread key: movable#/ai
   3x unread key: movable#/card
-  19x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   19x unread key: movable#/inte
@@ -272,7 +245,6 @@ s00705: 21 objects
   1x unread section: cd
 s00706: 38 objects
   32x unread key: movable#/ai
-  33x unread key: movable#/diff
   32x unread key: movable#/eint
   32x unread key: movable#/eng
   33x unread key: movable#/inte
@@ -281,7 +253,6 @@ s00706: 38 objects
 s00902: 75 objects
   14x unread key: movable#/ai
   5x unread key: movable#/card
-  58x unread key: movable#/diff
   39x unread key: movable#/dis
   14x unread key: movable#/eint
   14x unread key: movable#/eng
@@ -293,7 +264,6 @@ s00902: 75 objects
 s00903: 75 objects
   12x unread key: movable#/ai
   5x unread key: movable#/card
-  57x unread key: movable#/diff
   39x unread key: movable#/dis
   12x unread key: movable#/eint
   12x unread key: movable#/eng
@@ -305,7 +275,6 @@ s00903: 75 objects
 s01001: 27 objects
   19x unread key: movable#/ai
   1x unread key: movable#/card
-  22x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   22x unread key: movable#/inte
@@ -314,7 +283,6 @@ s01001: 27 objects
   1x unread section: cd
 s01002: 8 objects
   7x unread key: movable#/ai
-  8x unread key: movable#/diff
   7x unread key: movable#/eint
   7x unread key: movable#/eng
   8x unread key: movable#/inte
@@ -323,7 +291,6 @@ s01002: 8 objects
 s01101: 13 objects
   8x unread key: movable#/ai
   1x unread key: movable#/card
-  10x unread key: movable#/diff
   8x unread key: movable#/eint
   8x unread key: movable#/eng
   10x unread key: movable#/inte
@@ -332,7 +299,6 @@ s01101: 13 objects
 s01201: 62 objects
   34x unread key: movable#/ai
   2x unread key: movable#/card
-  37x unread key: movable#/diff
   34x unread key: movable#/eint
   34x unread key: movable#/eng
   37x unread key: movable#/inte
@@ -342,7 +308,6 @@ s01201: 62 objects
 s01202: 22 objects
   11x unread key: movable#/ai
   6x unread key: movable#/card
-  17x unread key: movable#/diff
   11x unread key: movable#/eint
   11x unread key: movable#/eng
   17x unread key: movable#/inte
@@ -352,7 +317,6 @@ s01202: 22 objects
 s01203: 75 objects
   21x unread key: movable#/ai
   21x unread key: movable#/card
-  44x unread key: movable#/diff
   21x unread key: movable#/eint
   21x unread key: movable#/eng
   44x unread key: movable#/inte
@@ -362,7 +326,6 @@ s01203: 75 objects
 s01301: 84 objects
   25x unread key: movable#/ai
   5x unread key: movable#/card
-  67x unread key: movable#/diff
   34x unread key: movable#/dis
   25x unread key: movable#/eint
   25x unread key: movable#/eng
@@ -374,7 +337,6 @@ s01301: 84 objects
 s01302: 43 objects
   23x unread key: movable#/ai
   5x unread key: movable#/card
-  33x unread key: movable#/diff
   23x unread key: movable#/eint
   23x unread key: movable#/eng
   33x unread key: movable#/inte
@@ -384,7 +346,6 @@ s01302: 43 objects
 s01303: 55 objects
   33x unread key: movable#/ai
   5x unread key: movable#/card
-  43x unread key: movable#/diff
   33x unread key: movable#/eint
   33x unread key: movable#/eng
   43x unread key: movable#/inte
@@ -394,7 +355,6 @@ s01303: 55 objects
 s01304: 74 objects
   26x unread key: movable#/ai
   5x unread key: movable#/card
-  64x unread key: movable#/diff
   32x unread key: movable#/dis
   26x unread key: movable#/eint
   26x unread key: movable#/eng
@@ -406,7 +366,6 @@ s01304: 74 objects
 s01305: 36 objects
   19x unread key: movable#/ai
   5x unread key: movable#/card
-  25x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   25x unread key: movable#/inte
@@ -416,7 +375,6 @@ s01305: 36 objects
 s01306: 124 objects
   38x unread key: movable#/ai
   4x unread key: movable#/card
-  106x unread key: movable#/diff
   64x unread key: movable#/dis
   38x unread key: movable#/eint
   38x unread key: movable#/eng
@@ -428,7 +386,6 @@ s01306: 124 objects
 s01307: 27 objects
   7x unread key: movable#/ai
   4x unread key: movable#/card
-  12x unread key: movable#/diff
   7x unread key: movable#/eint
   7x unread key: movable#/eng
   12x unread key: movable#/inte
@@ -438,7 +395,6 @@ s01307: 27 objects
 s01308: 6 objects
   5x unread key: movable#/ai
   1x unread key: movable#/card
-  6x unread key: movable#/diff
   5x unread key: movable#/eint
   5x unread key: movable#/eng
   6x unread key: movable#/inte
@@ -446,7 +402,6 @@ s01308: 6 objects
   1x unread section: cd
 s01501: 66 objects
   50x unread key: movable#/ai
-  51x unread key: movable#/diff
   50x unread key: movable#/eint
   50x unread key: movable#/eng
   51x unread key: movable#/inte
@@ -456,7 +411,6 @@ s01501: 66 objects
 s01601: 26 objects
   16x unread key: movable#/ai
   5x unread key: movable#/card
-  22x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   22x unread key: movable#/inte
@@ -466,7 +420,6 @@ s01601: 26 objects
 s01602: 92 objects
   49x unread key: movable#/ai
   4x unread key: movable#/card
-  56x unread key: movable#/diff
   49x unread key: movable#/eint
   49x unread key: movable#/eng
   56x unread key: movable#/inte
@@ -476,7 +429,6 @@ s01602: 92 objects
 s01701: 41 objects
   31x unread key: movable#/ai
   4x unread key: movable#/card
-  37x unread key: movable#/diff
   31x unread key: movable#/eint
   31x unread key: movable#/eng
   37x unread key: movable#/inte
@@ -486,7 +438,6 @@ s01701: 41 objects
 s01702: 43 objects
   34x unread key: movable#/ai
   4x unread key: movable#/card
-  39x unread key: movable#/diff
   34x unread key: movable#/eint
   34x unread key: movable#/eng
   39x unread key: movable#/inte
@@ -496,7 +447,6 @@ s01702: 43 objects
 s01801: 147 objects
   41x unread key: movable#/ai
   30x unread key: movable#/card
-  104x unread key: movable#/diff
   30x unread key: movable#/dis
   41x unread key: movable#/eint
   41x unread key: movable#/eng
@@ -509,7 +459,6 @@ s01802: 158 objects
   2x condition: Objective not found 24
   55x unread key: movable#/ai
   30x unread key: movable#/card
-  117x unread key: movable#/diff
   30x unread key: movable#/dis
   55x unread key: movable#/eint
   55x unread key: movable#/eng
@@ -521,7 +470,6 @@ s01802: 158 objects
 s01803: 118 objects
   33x unread key: movable#/ai
   30x unread key: movable#/card
-  79x unread key: movable#/diff
   15x unread key: movable#/dis
   33x unread key: movable#/eint
   33x unread key: movable#/eng
@@ -533,7 +481,6 @@ s01803: 118 objects
 s01804: 122 objects
   36x unread key: movable#/ai
   30x unread key: movable#/card
-  82x unread key: movable#/diff
   15x unread key: movable#/dis
   36x unread key: movable#/eint
   36x unread key: movable#/eng
@@ -545,7 +492,6 @@ s01804: 122 objects
 s01805: 51 objects
   26x unread key: movable#/ai
   11x unread key: movable#/card
-  38x unread key: movable#/diff
   26x unread key: movable#/eint
   26x unread key: movable#/eng
   38x unread key: movable#/inte
@@ -555,7 +501,6 @@ s01805: 51 objects
 s01806: 39 objects
   18x unread key: movable#/ai
   3x unread key: movable#/card
-  21x unread key: movable#/diff
   18x unread key: movable#/eint
   18x unread key: movable#/eng
   21x unread key: movable#/inte
@@ -565,7 +510,6 @@ s01806: 39 objects
 s02001: 46 objects
   3x unread key: movable#/ai
   6x unread key: movable#/card
-  9x unread key: movable#/diff
   3x unread key: movable#/eint
   3x unread key: movable#/eng
   9x unread key: movable#/inte
@@ -575,7 +519,6 @@ s02001: 46 objects
 s02002: 27 objects
   14x unread key: movable#/ai
   3x unread key: movable#/card
-  20x unread key: movable#/diff
   14x unread key: movable#/eint
   14x unread key: movable#/eng
   20x unread key: movable#/inte
@@ -587,7 +530,6 @@ s02003: 50 objects
   1x condition: Objective not found 36
   12x unread key: movable#/ai
   11x unread key: movable#/card
-  23x unread key: movable#/diff
   12x unread key: movable#/eint
   12x unread key: movable#/eng
   23x unread key: movable#/inte
@@ -597,7 +539,6 @@ s02003: 50 objects
 s02004: 62 objects
   10x unread key: movable#/ai
   12x unread key: movable#/card
-  23x unread key: movable#/diff
   10x unread key: movable#/eint
   10x unread key: movable#/eng
   23x unread key: movable#/inte
@@ -607,7 +548,6 @@ s02004: 62 objects
 s02005: 63 objects
   17x unread key: movable#/ai
   7x unread key: movable#/card
-  24x unread key: movable#/diff
   17x unread key: movable#/eint
   17x unread key: movable#/eng
   24x unread key: movable#/inte
@@ -618,7 +558,6 @@ s02006: 62 objects
   1x condition: Objective not found 21
   16x unread key: movable#/ai
   7x unread key: movable#/card
-  23x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   23x unread key: movable#/inte
@@ -628,7 +567,6 @@ s02006: 62 objects
 s02007: 71 objects
   26x unread key: movable#/ai
   6x unread key: movable#/card
-  33x unread key: movable#/diff
   26x unread key: movable#/eint
   26x unread key: movable#/eng
   33x unread key: movable#/inte
@@ -638,7 +576,6 @@ s02007: 71 objects
 s02201: 133 objects
   55x unread key: movable#/ai
   19x unread key: movable#/card
-  77x unread key: movable#/diff
   55x unread key: movable#/eint
   55x unread key: movable#/eng
   77x unread key: movable#/inte
@@ -648,7 +585,6 @@ s02201: 133 objects
 s02202: 150 objects
   82x unread key: movable#/ai
   12x unread key: movable#/card
-  99x unread key: movable#/diff
   82x unread key: movable#/eint
   82x unread key: movable#/eng
   99x unread key: movable#/inte
@@ -658,7 +594,6 @@ s02202: 150 objects
 s02203: 141 objects
   67x unread key: movable#/ai
   16x unread key: movable#/card
-  84x unread key: movable#/diff
   67x unread key: movable#/eint
   67x unread key: movable#/eng
   84x unread key: movable#/inte
@@ -668,7 +603,6 @@ s02203: 141 objects
 s02204: 95 objects
   40x unread key: movable#/ai
   4x unread key: movable#/card
-  49x unread key: movable#/diff
   40x unread key: movable#/eint
   40x unread key: movable#/eng
   49x unread key: movable#/inte
@@ -678,7 +612,6 @@ s02204: 95 objects
 s02205: 164 objects
   55x unread key: movable#/ai
   4x unread key: movable#/card
-  83x unread key: movable#/diff
   22x unread key: movable#/dis
   55x unread key: movable#/eint
   55x unread key: movable#/eng
@@ -689,7 +622,6 @@ s02205: 164 objects
   1x unread section: cd
 strai0: 129 objects
   45x unread key: movable#/ai
-  45x unread key: movable#/diff
   45x unread key: movable#/eint
   45x unread key: movable#/eng
   45x unread key: movable#/inte
@@ -698,7 +630,6 @@ strai0: 129 objects
   1x unread section: cd
 strai1: 197 objects
   48x unread key: movable#/ai
-  48x unread key: movable#/diff
   48x unread key: movable#/eint
   48x unread key: movable#/eng
   48x unread key: movable#/inte
@@ -707,7 +638,6 @@ strai1: 197 objects
   1x unread section: cd
 strai2: 140 objects
   48x unread key: movable#/ai
-  138x unread key: movable#/diff
   84x unread key: movable#/dis
   48x unread key: movable#/eint
   48x unread key: movable#/eng
@@ -718,7 +648,6 @@ strai2: 140 objects
 strai3: 227 objects
   83x unread key: movable#/ai
   6x unread key: movable#/card
-  126x unread key: movable#/diff
   37x unread key: movable#/dis
   83x unread key: movable#/eint
   83x unread key: movable#/eng
@@ -730,7 +659,6 @@ strai3: 227 objects
 
 Total: 71 missions, 4981 objects
   3373x unread key: movable#/sle
-  3227x unread key: movable#/diff
   2345x unread key: movable#/inte
   1849x unread key: movable#/ai
   1849x unread key: movable#/eint

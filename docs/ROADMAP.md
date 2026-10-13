@@ -189,7 +189,13 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    tank turrets don't aim yet, the radiation icon is open.)
 5. **Cargo ships and a balancing pass** against the original. (**Cargo ships
    done**: `CargoShip` builds the hull from its blocks, places the turrets on
-   it and runs the boat orders; see appendix A.)
+   it and runs the boat orders; see appendix A. **Difficulty done**: Easy,
+   Normal or Hard in the main menu (DEEPTEXT 107–109), Normal by default and in
+   test mode, `--difficulty` to change it. A unit whose `diff` key (0–2) is
+   above the level stays out of the mission. Only boats, bombers and tanks
+   carry it: 151 of them need Normal, 112 Hard, and before this every
+   mission was played as Hard. An absent unit counts as achieved in "destroy
+   these" objectives, is in no faction and never fires its own events.)
 
 ## Open questions and how to settle them
 

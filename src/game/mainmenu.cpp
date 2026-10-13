@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "chapter.h"
+#include "fight/scenario.h"
 #include "mainmenu.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
@@ -35,6 +36,7 @@ MainMenu::MainMenu(std::function<void(QString)> funcStartGame, std::function<voi
     m_lblMainTitle(&m_lblMain),
     m_btnMainNew([this]() { showNew(); }, &m_lblMain),
     m_btnMainLoad([this]() { showLoad(); }, &m_lblMain),
+    m_btnMainDifficulty([this]() { fight::Scenario::setDifficulty((fight::Scenario::difficulty() + 1)%3); updateDifficulty(); }, &m_lblMain),
     m_btnMainQuit(funcQuit, &m_lblMain),
     m_lblNew(&m_title, false),
     m_lblNewTitle(&m_lblNew),
@@ -84,6 +86,13 @@ MainMenu::MainMenu(std::function<void(QString)> funcStartGame, std::function<voi
     m_btnMainLoad.setWidth(640);
     m_btnMainLoad.setAlignment(ui::Label::AlignHCenter);
     m_btnMainLoad.setText(txt::StringTable::get(txt::MainMenu_Load));
+
+    // easy, normal, hard: cycles on click
+    m_btnMainDifficulty.setFont(fontLarge);
+    m_btnMainDifficulty.setPosition(0, 328);
+    m_btnMainDifficulty.setWidth(640);
+    m_btnMainDifficulty.setAlignment(ui::Label::AlignHCenter);
+    updateDifficulty();
 
     m_btnMainQuit.setFont(fontLarge);
     m_btnMainQuit.setPosition(0, 408);
@@ -285,6 +294,12 @@ void MainMenu::showLoading()
 {
     m_lblLoad.hide();
     m_lblLoading.show();
+}
+
+
+void MainMenu::updateDifficulty()
+{
+    m_btnMainDifficulty.setText(txt::StringTable::get(txt::String(txt::Text107 + fight::Scenario::difficulty())));
 }
 
 

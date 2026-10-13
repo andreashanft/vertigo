@@ -42,6 +42,7 @@
 #include "boats/tank.h"
 
 #include <QGLContext>
+#include <QSettings>
 #include <QTime>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
@@ -51,6 +52,29 @@
 
 
 namespace fight {
+
+
+static int s_difficultyOverride = -1;
+
+
+int Scenario::difficulty()
+{
+    if (s_difficultyOverride >= 0)
+        return s_difficultyOverride;
+    return glm::clamp(QSettings().value("Game/difficulty", 1).toInt(), 0, 2);
+}
+
+
+void Scenario::setDifficulty(int difficulty)
+{
+    QSettings().setValue("Game/difficulty", glm::clamp(difficulty, 0, 2));
+}
+
+
+void Scenario::overrideDifficulty(int difficulty)
+{
+    s_difficultyOverride = glm::clamp(difficulty, 0, 2);
+}
 
 
 namespace {
@@ -119,6 +143,8 @@ Scenario::Scenario(const QString &name) :
     float initialDir = 0.0f;
     QSet<QString> placeholderSections;
     std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
+    std::vector<ActiveObject *> absentUnits; // only at a higher difficulty
+    const int difficulty = Scenario::difficulty();
     foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
         m_file.setSection(section);
 
@@ -338,6 +364,12 @@ Scenario::Scenario(const QString &name) :
                 if ((type == TypeBoat || type == TypeBomber || type == TypeTorpedoTower) && torpedoes > 0)
                     activeObject->setTorpedoes(torpedoType, torpedoes);
                 entry.iff = m_file.contains("iff") ? m_file.value("iff").toInt() : -1;
+                if (m_file.value("diff", 0).toInt() > difficulty)
+                {
+                    absentUnits.push_back(activeObject);
+                    entry.absent = true;
+                    entry.iff = -1;
+                }
                 entry.condSignal = activeObject->eventDestroy();
                 entry.condAttacked = activeObject->eventAttack();
                 entry.condIdentified = activeObject->eventIdentify();
@@ -471,6 +503,8 @@ Scenario::Scenario(const QString &name) :
     }
 
     m_conditionManager.buildDependencies();
+    for (ActiveObject *unit : absentUnits)
+        unit->leaveMission();
 
     for (auto &pending : pendingOrders)
     {
