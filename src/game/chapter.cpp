@@ -72,6 +72,7 @@ Chapter::Chapter(const QString &name, std::function<void(Renderer*)> funcSetRend
     m_HUD->eventSuccess() += [this]() { finishMission(); };
     // TODO: Esc still counts as success until missions can be completed (roadmap step 1.5)
     m_HUD->eventAbort() += [this]() { finishMission(); };
+    m_HUD->eventFailure() += [this]() { failMission(); };
 }
 
 
@@ -460,6 +461,17 @@ void Chapter::finishMission()
         playApproach(true);
         playMovies();
     }
+}
+
+
+void Chapter::failMission()
+{
+    Q_ASSERT(m_scenario);
+    m_scenario->deleteLater();
+    m_scenario = NULL;
+
+    // TODO: failure screen with restart, abort and load (roadmap step 1.5); until then restart from the briefing
+    startMission();
 }
 
 

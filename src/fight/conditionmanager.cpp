@@ -183,6 +183,9 @@ void ConditionManager::updateObjective(int id, int index, int wccond)
 
 void ConditionManager::buildDependencies()
 {
+    // 0 and 47 both mean "no condition"
+    auto isCondition = [](int cond) { return cond != 0 && cond != 47; };
+
     for (const auto &pair : condEntries)
     {
         const ConditionEntry &entry = pair.second;
@@ -193,18 +196,23 @@ void ConditionManager::buildDependencies()
         }
 
         entry.condTrigger->setDelay(entry.del);
-        if (entry.cond1 == 0)
+        int count = 0;
+        if (isCondition(entry.cond1))
         {
-            if (entry.cond2 != 0)
-                issue(QString("Abnormal condition %1").arg(pair.first));
-            continue;
+            initCondition(entry.cond1, entry.dep1, entry.ref1, entry.condTrigger);
+            count++;
         }
-
-        initCondition(entry.cond1, entry.dep1, entry.ref1, entry.condTrigger);
-        if (entry.cond2 != 0)
+        if (isCondition(entry.cond2))
+        {
             initCondition(entry.cond2, entry.dep2, entry.ref2, entry.condTrigger);
-        entry.condTrigger->setLimit(entry.cond2 != 0 && entry.op == 0 ? 2 : 1);
-        if (entry.op != 0 && entry.op != 1)
+            count++;
+        }
+        if (count == 0)
+            continue;
+
+        // op 0 is "and", op 1 is "or"
+        entry.condTrigger->setLimit(count == 2 && entry.op == 0 ? 2 : 1);
+        if (count == 2 && entry.op != 0 && entry.op != 1)
             issue(QString("Unhandled condition operation %1").arg(entry.op));
     }
     for (const auto &pair : condEntries)
@@ -215,100 +223,123 @@ void ConditionManager::buildDependencies()
 
 void ConditionManager::initCondition(int cond, int dep, int ref, Condition *condDepend)
 {
-    if (cond == 1 || cond == 39)
-    {
-        if (dep != 1)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (condEntries.find(ref) == condEntries.end())
-            issue(QString("Condition reference not found %1").arg(ref));
-        if (condEntries[ref].condSignal == nullptr)
-            issue(QString("Undefined object %1").arg(ref));
-        else
-            condEntries[ref].condSignal->addDependency(condDepend, cond == 1);
-    }
-    if (cond == 2 || cond == 40)
-    {
-        if (dep != 1)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (condEntries.find(ref) == condEntries.end())
-            issue(QString("Condition reference not found %1").arg(ref));
-        if (condEntries[ref].condAttacked == nullptr)
-            issue(QString("Undefined object %1").arg(ref));
-        else
-            condEntries[ref].condAttacked->addDependency(condDepend, cond == 2);
-    }
-    if (cond == 3 || cond == 41)
-    {
-        if (dep != 1)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (condEntries.find(ref) == condEntries.end())
-            issue(QString("Condition reference not found %1").arg(ref));
-        if (condEntries[ref].condIdentified == nullptr)
-            issue(QString("Undefined object %1").arg(ref));
-        else
-            condEntries[ref].condIdentified->addDependency(condDepend, cond == 3);
-    }
-    if (cond == 4)
+    if (cond == 4 || cond == 5 || (cond >= 6 && cond <= 37))
     {
         if (dep != 0)
             issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
         if (ref != -1)
             issue(QString("Unexpected reference %1 %2").arg(cond).arg(ref));
+    }
+
+    if (cond == 4)
+    {
         m_condSuccess.addDependency(condDepend);
+        return;
     }
     if (cond == 5)
     {
-        if (dep != 0)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (ref != -1)
-            issue(QString("Unexpected reference %1 %2").arg(cond).arg(ref));
         m_condFailure.addDependency(condDepend);
+        return;
     }
     if (cond >= 6 && cond <= 37)
     {
-        if (dep != 0)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (ref != -1)
-            issue(QString("Unexpected reference %1 %2").arg(cond).arg(ref));
-        int objective = cond - 6;
-        if (m_condObjectives.find(objective) == m_condObjectives.end())
+        // objective n succeeded (even) or failed (odd)
+        const int objective = cond - 6;
+        const auto it = m_condObjectives.find(objective);
+        if (it != m_condObjectives.end())
+            it->second.addDependency(condDepend);
+        else if (objective % 2 == 0 && m_condObjectives.count(objective + 1))
+            // objectives that can only fail (protect, avoid an area) count as achieved until they fail
+            m_condObjectives.at(objective + 1).addDependency(condDepend, false);
+        else
             issue(QString("Objective not found %1").arg(cond));
-        else
-            m_condObjectives.at(objective).addDependency(condDepend);
+        return;
     }
-    if (cond == 38)
+
+    // the remaining conditions refer to a unit (dep 1) or to every unit of a faction (dep 2);
+    // the second code of each pair is the negation
+    bool positive;
+    switch (cond)
     {
-        if (dep != 1)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (condEntries.find(ref) == condEntries.end())
-            issue(QString("Condition reference not found %1").arg(ref));
-        if (condEntries[ref].condParalyzed == nullptr)
-            issue(QString("Undefined object %1").arg(ref));
-        else
-           condEntries[ref].condParalyzed->addDependency(condDepend);
+    case 1: case 2: case 3: case 38: case 43: case 45:
+        positive = true;
+        break;
+    case 39: case 40: case 41: case 44: case 46:
+        positive = false;
+        break;
+    default:
+        issue(QString("Unhandled condition %1").arg(cond));
+        return;
     }
-    if (cond == 43 || cond == 44)
+
+    ConditionEvent *event = nullptr;
+    if (dep == 1)
+        event = unitEvent(cond, ref);
+    else if (dep == 2)
+        event = factionEvent(cond, ref);
+    else
+        issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
+
+    if (event)
+        event->addDependency(condDepend, positive);
+}
+
+
+ConditionEvent* ConditionManager::unitEvent(int cond, int ref)
+{
+    const auto it = condEntries.find(ref);
+    if (it == condEntries.end())
     {
-        if (dep != 1)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (condEntries.find(ref) == condEntries.end())
-            issue(QString("Condition reference not found %1").arg(ref));
-        if (condEntries[ref].condFinished == nullptr)
-            issue(QString("Undefined object %1").arg(ref));
-        else
-            condEntries[ref].condFinished->addDependency(condDepend, cond == 43);
+        issue(QString("Condition reference not found %1").arg(ref));
+        return nullptr;
     }
-    if (cond == 45 || cond == 46)
+
+    const ConditionEntry &entry = it->second;
+    ConditionEvent *event = nullptr;
+    switch (cond)
     {
-        if (dep != 1)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
-        if (condEntries.find(ref) == condEntries.end())
-            issue(QString("Condition reference not found %1").arg(ref));
-        if (condEntries[ref].condBoarded == nullptr)
-            issue(QString("Undefined object %1").arg(ref));
-        else
-            condEntries[ref].condBoarded->addDependency(condDepend, cond == 45);
+    case 1: case 39: event = entry.condSignal; break;
+    case 2: case 40: event = entry.condAttacked; break;
+    case 3: case 41: event = entry.condIdentified; break;
+    case 38:         event = entry.condParalyzed; break;
+    case 43: case 44: event = entry.condFinished; break;
+    case 45: case 46: event = entry.condBoarded; break;
     }
+    if (event == nullptr)
+        issue(QString("Undefined object %1").arg(ref));
+    return event;
+}
+
+
+// "every unit of the faction destroyed" or "any unit of the faction attacked"
+ConditionEvent* ConditionManager::factionEvent(int cond, int iff)
+{
+    const bool destroyed = cond == 1 || cond == 39;
+    if (!destroyed && cond != 2 && cond != 40)
+    {
+        issue(QString("Unhandled faction condition %1").arg(cond));
+        return nullptr;
+    }
+
+    const auto key = std::make_pair(destroyed ? 1 : 2, iff);
+    const auto it = m_factionEvents.find(key);
+    if (it != m_factionEvents.end())
+        return it->second;
+
+    std::vector<ConditionEvent *> members;
+    for (const auto &pair : condEntries)
+        if (pair.second.iff == iff)
+            members.push_back(destroyed ? pair.second.condSignal : pair.second.condAttacked);
+
+    // a faction without units is never destroyed nor attacked
+    if (members.empty())
+        issue(QString("Empty faction %1").arg(iff));
+    Condition *event = addCondition(members.empty() ? -1 : destroyed ? int(members.size()) : 1);
+    for (ConditionEvent *member : members)
+        member->addDependency(event);
+
+    m_factionEvents[key] = event;
+    return event;
 }
 
 

@@ -38,6 +38,7 @@ public:
         std::vector<std::pair<QString, int>> equipment; // test mode items: mounting, model
         int timeout = 0;                                // test mode time limit in seconds
         bool debugOverlay = false;
+        std::vector<int> destroy;                       // test mode: destroy these units after one second
         bool check = false;                             // report what the mission loader ignores
         QStringList checkScenarios;                     // empty = all missions
     };

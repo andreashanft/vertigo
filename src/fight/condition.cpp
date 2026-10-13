@@ -107,6 +107,9 @@ ConditionSuccess::ConditionSuccess(Scenario *scenario) :
 
 void ConditionSuccess::complete()
 {
+    if (m_scenario->conditionManager().failed())
+        return;
+
     if (m_delay == 0)
     {
         if (m_scenario->endType() == 0)
@@ -124,13 +127,24 @@ void ConditionSuccess::complete()
 
 
 ConditionFailure::ConditionFailure(Scenario *scenario) :
-    Condition(scenario, 1)
+    Condition(scenario, 1),
+    m_ended(false)
 {
 }
 
 
 void ConditionFailure::complete()
 {
+    // the second call comes from the delay below and ends the mission
+    if (m_completed)
+    {
+        m_ended = true;
+        return;
+    }
+    // a mission that has been accomplished can't fail any more
+    if (m_scenario->conditionManager().autopilot())
+        return;
+
     Condition::complete();
     sfx::SampleMap::get(sfx::Sample::MissionFailed).play();
     m_scenario->conditionManager().delayComplete(this, 10);

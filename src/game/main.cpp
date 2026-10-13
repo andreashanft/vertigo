@@ -49,9 +49,10 @@ int main(int argc, char *argv[])
     const QCommandLineOption equipOption("equip", "Install items in test mode, e.g. GUN=3082,TUR1=3074 (repeatable, see --list-items).", "mounting=model");
     const QCommandLineOption timeoutOption("timeout", "End test mode after this many seconds.", "seconds");
     const QCommandLineOption overlayOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
+    const QCommandLineOption destroyOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068.", "ids");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, checkOption, itemsOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, checkOption, itemsOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -64,6 +65,16 @@ int main(int argc, char *argv[])
     options.boat = parser.value(boatOption).toInt();
     options.timeout = parser.value(timeoutOption).toInt();
     options.debugOverlay = parser.isSet(overlayOption);
+    foreach (const QString &value, parser.values(destroyOption)) {
+        foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
+            bool ok = false;
+            options.destroy.push_back(id.toInt(&ok));
+            if (!ok) {
+                QTextStream(stderr) << "Invalid --destroy value " << id << ", expected unit ids\n";
+                return game::Vertigo::ExitUsage;
+            }
+        }
+    }
     foreach (const QString &value, parser.values(equipOption)) {
         foreach (const QString &item, value.split(',', QString::SkipEmptyParts)) {
             const QStringList parts = item.split('=');

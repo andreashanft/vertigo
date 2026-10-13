@@ -57,6 +57,7 @@ bool NavPoint::update(float elapsedTime)
         {
             sfx::SampleMap::get(sfx::Sample::NavPoint).play();
             m_reached = true;
+            m_eventReached.complete();
         }
     }
     return false;

@@ -251,6 +251,13 @@ void HUD::draw()
         elapsedTime -= step;
     }
 
+    if (m_scenario->conditionManager().failureEnded())
+    {
+        m_scenario = nullptr;
+        m_eventFailure();
+        return;
+    }
+
     // the GL viewport is in device pixels, the rects in logical pixels
     const qreal pixelRatio = window() ? window()->devicePixelRatioF() : 1.0;
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)

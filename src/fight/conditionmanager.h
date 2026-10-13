@@ -54,6 +54,7 @@ public:
         ConditionEvent *condParalyzed;
         ConditionEvent *condFinished;
         ConditionEvent *condBoarded;
+        int iff = -1; // faction of the unit, -1 if it has none
     };
 
 public:
@@ -70,6 +71,7 @@ public:
 
     bool autopilot() const { return m_condSuccess.isCompleted(); }
     bool failed() const { return m_condFailure.isCompleted(); }
+    bool failureEnded() const { return m_condFailure.ended(); }
 
     // problems found while setting up the conditions, e.g. unresolved references
     const QStringList& issues() const { return m_issues; }
@@ -99,6 +101,10 @@ private:
 
 private:
     void initCondition(int cond, int dep, int ref, Condition *condDepend);
+    ConditionEvent* unitEvent(int cond, int ref);
+    ConditionEvent* factionEvent(int cond, int iff);
+
+    std::map<std::pair<int, int>, Condition*> m_factionEvents;
 };
 
 

@@ -53,7 +53,7 @@ So the plan builds those basics first.
 | # | Step | Effort | Unlocks |
 |---|---|---|---|
 | 1.1 | Load every unit type: complete the type table ([appendix A](#a-dtyp--object-file)), use a placeholder instead of skipping a unit, always register objectives | S | 63 missions get their missing units (**done**: cargo ships are placeholder boxes until 1.6, tanks are static until 1.6) |
-| 1.2 | Missing condition types ("any unit of faction X attacked", order chaining, protect-only objectives, nav-point objectives), a real failure path, fix the endless "mission failed" voice. Ship together with 1.1 | S–M | Missions become winnable |
+| 1.2 | Missing condition types ("any unit of faction X attacked", order chaining, protect-only objectives, nav-point objectives), a real failure path, fix the endless "mission failed" voice. Ship together with 1.1 | S–M | Missions become winnable (**done**; "attacked" fires on any hit until 1.4) |
 | 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders |
 | 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions |
 | 1.5 | Mission end: Esc menu, failure and death screens (texts already exist), restart / abort / load. Keep "skip mission" as a debug key until missions are winnable | M | Proper campaign flow |
@@ -323,10 +323,22 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 | finish ("ist angekommen") | own GotoWithArrive reaches its point | 7 |
 | board ("wurde infiltriert") | target of another unit's GotoWithInfiltrate | 8 |
 
-Not handled yet in `ConditionManager::initCondition`: faction references
-(`bcdep` 2, 257 uses), code 47 chaining, conditions on protect-only or missing
-objectives (the waves in S01301 and S01805 never spawn), nav-point objectives
-with wccond 2 (S00303, S02006).
+Handled since step 1.2:
+
+- Faction references (`bcdep` 2, `bcref` is the faction's `iff`): 1 means
+  every unit of the faction is destroyed (S01501 "the Crawlers are gone"),
+  39 its negation, 2 any unit of the faction attacked. A faction without units
+  is never destroyed (S00402 refers to faction 1, which has no units).
+- 0 and 47 both mean "no condition", in either slot.
+- "Objective achieved" on an objective that can only fail (wccond 5: protect a
+  unit, or stay out of an area) means "not failed yet". This spawns the waves
+  in S01301 and S01805 and drives the sensor areas in S00405.
+- wccond 2 on a nav point means "reached" (S00303, S02006).
+- Mission failure plays its message once and ends the mission 10 s later.
+
+Still reported by `--check`: 12 references to objectives that no unit defines
+(S00404, S01802, S02003, S02006), and "player destroyed" in S00401, which
+needs step 1.4.
 
 ### D. Currents and radiation
 
