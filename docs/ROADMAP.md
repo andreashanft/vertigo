@@ -111,7 +111,9 @@ settings; no closer than 35 m, and the way goes round the target) and tanks
 6 waits at its point until the target is within 300 m or the unit is hit,
 then attacks; 11 destroys the unit after `dur` (`con` 1: counted from being
 boarded). Hostility is the attitude matrix (2 = hostile), the player is
-faction 0. Still missing: 10 (GotoWithInfiltrate) and orders for cargo ships.
+faction 0. 10 (milestone 4) flies to the unit `ene`, docks on top of it for
+`dur` seconds and then completes its "boarded" event. Still missing: orders for
+cargo ships.
 
 **Done:** orders 1, 2, 9, 3 and 5 for boats and bombers (`fight/orders.cpp`),
 with "stop when" conditions per slot. A slot ends when its break condition is
@@ -184,7 +186,8 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    particle pool, the slave monitor's F1–F4 pages and lamps, and THREAT,
    which needs torpedoes.)
 4. **Torpedoes:** step 1.8, lock HUD, threat and locked icons, trails, cluster
-   torpedo, turret targeting, orders 10/11.
+   torpedo, turret targeting, orders 10/11. (**Done**; turrets aim instantly,
+   tank turrets don't aim yet, the radiation icon is open.)
 5. **Cargo ships and a balancing pass** against the original.
 
 ## Open questions and how to settle them

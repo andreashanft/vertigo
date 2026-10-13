@@ -5,10 +5,8 @@ s00101: 49 objects
   20x unread key: movable#/eint
   20x unread key: movable#/eng
   24x unread key: movable#/inte
-  20x unread key: movable#/ntor
   22x unread key: movable#/pz
   29x unread key: movable#/sle
-  20x unread key: movable#/tor
   1x unread section: cd
 s00102: 54 objects
   22x unread key: movable#/ai
@@ -17,10 +15,8 @@ s00102: 54 objects
   22x unread key: movable#/eint
   22x unread key: movable#/eng
   26x unread key: movable#/inte
-  22x unread key: movable#/ntor
   23x unread key: movable#/pz
   26x unread key: movable#/sle
-  22x unread key: movable#/tor
   1x unread section: cd
 s00103: 28 objects
   9x unread key: movable#/ai
@@ -29,10 +25,8 @@ s00103: 28 objects
   9x unread key: movable#/eint
   9x unread key: movable#/eng
   11x unread key: movable#/inte
-  9x unread key: movable#/ntor
   17x unread key: movable#/pz
   11x unread key: movable#/sle
-  9x unread key: movable#/tor
   1x unread section: cd
 s00104: 44 objects
   1x order not run: goto for typ 2063
@@ -43,10 +37,8 @@ s00104: 44 objects
   21x unread key: movable#/eint
   21x unread key: movable#/eng
   23x unread key: movable#/inte
-  21x unread key: movable#/ntor
   18x unread key: movable#/pz
   23x unread key: movable#/sle
-  21x unread key: movable#/tor
   1x unread section: cd
 s00105: 1 objects
   1x unread key: movable#/ai
@@ -54,9 +46,7 @@ s00105: 1 objects
   1x unread key: movable#/eint
   1x unread key: movable#/eng
   1x unread key: movable#/inte
-  1x unread key: movable#/ntor
   1x unread key: movable#/sle
-  1x unread key: movable#/tor
   1x unread section: cd
 s00106: 27 objects
   8x unread key: movable#/ai
@@ -65,10 +55,8 @@ s00106: 27 objects
   8x unread key: movable#/eint
   8x unread key: movable#/eng
   10x unread key: movable#/inte
-  8x unread key: movable#/ntor
   17x unread key: movable#/pz
   10x unread key: movable#/sle
-  8x unread key: movable#/tor
   1x unread section: cd
 s00201: 35 objects
   16x unread key: movable#/ai
@@ -77,24 +65,19 @@ s00201: 35 objects
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   16x unread key: movable#/inte
-  16x unread key: movable#/ntor
   14x unread key: movable#/num
   4x unread key: movable#/pz
   30x unread key: movable#/sle
-  16x unread key: movable#/tor
   1x unread section: cd
 s00202: 104 objects
-  1x order not implemented: gotowithinfiltrate
   19x unread key: movable#/ai
   4x unread key: movable#/card
   23x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   23x unread key: movable#/inte
-  19x unread key: movable#/ntor
   79x unread key: movable#/pz
   23x unread key: movable#/sle
-  19x unread key: movable#/tor
   1x unread section: cd
 s00203: 83 objects
   12x unread key: movable#/ai
@@ -103,11 +86,9 @@ s00203: 83 objects
   12x unread key: movable#/eint
   12x unread key: movable#/eng
   12x unread key: movable#/inte
-  12x unread key: movable#/ntor
   65x unread key: movable#/num
   4x unread key: movable#/pz
   77x unread key: movable#/sle
-  12x unread key: movable#/tor
   1x unread section: cd
 s00204: 21 objects
   11x unread key: movable#/ai
@@ -115,10 +96,8 @@ s00204: 21 objects
   11x unread key: movable#/eint
   11x unread key: movable#/eng
   11x unread key: movable#/inte
-  11x unread key: movable#/ntor
   9x unread key: movable#/pz
   11x unread key: movable#/sle
-  11x unread key: movable#/tor
   1x unread section: cd
 s00205: 14 objects
   7x unread key: movable#/ai
@@ -127,10 +106,8 @@ s00205: 14 objects
   7x unread key: movable#/eint
   7x unread key: movable#/eng
   9x unread key: movable#/inte
-  7x unread key: movable#/ntor
   5x unread key: movable#/pz
   9x unread key: movable#/sle
-  7x unread key: movable#/tor
   1x unread section: cd
 s00301: 72 objects
   37x unread key: movable#/ai
@@ -140,11 +117,9 @@ s00301: 72 objects
   37x unread key: movable#/eint
   37x unread key: movable#/eng
   48x unread key: movable#/inte
-  37x unread key: movable#/ntor
   16x unread key: movable#/num
   6x unread key: movable#/pz
   66x unread key: movable#/sle
-  37x unread key: movable#/tor
   1x unread section: cd
 s00302: 10 objects
   9x unread key: movable#/ai
@@ -152,9 +127,7 @@ s00302: 10 objects
   9x unread key: movable#/eint
   9x unread key: movable#/eng
   9x unread key: movable#/inte
-  9x unread key: movable#/ntor
   9x unread key: movable#/sle
-  9x unread key: movable#/tor
   1x unread section: cd
 s00303: 15 objects
   9x unread key: movable#/ai
@@ -162,10 +135,8 @@ s00303: 15 objects
   9x unread key: movable#/eint
   9x unread key: movable#/eng
   9x unread key: movable#/inte
-  9x unread key: movable#/ntor
   5x unread key: movable#/pz
   9x unread key: movable#/sle
-  9x unread key: movable#/tor
   1x unread section: cd
 s00304: 6 objects
   1x placeholder: typ 2063 dtyp 72
@@ -174,9 +145,7 @@ s00304: 6 objects
   5x unread key: movable#/eint
   5x unread key: movable#/eng
   5x unread key: movable#/inte
-  5x unread key: movable#/ntor
   10x unread key: movable#/sle
-  5x unread key: movable#/tor
   1x unread section: cd
 s00401: 196 objects
   1x placeholder: typ 2063 dtyp 68
@@ -187,11 +156,9 @@ s00401: 196 objects
   33x unread key: movable#/eint
   33x unread key: movable#/eng
   47x unread key: movable#/inte
-  33x unread key: movable#/ntor
   133x unread key: movable#/num
   14x unread key: movable#/pz
   180x unread key: movable#/sle
-  33x unread key: movable#/tor
   1x unread section: cd
 s00402: 44 objects
   1x condition: Empty faction 1
@@ -200,10 +167,8 @@ s00402: 44 objects
   15x unread key: movable#/eint
   15x unread key: movable#/eng
   15x unread key: movable#/inte
-  15x unread key: movable#/ntor
   28x unread key: movable#/pz
   15x unread key: movable#/sle
-  15x unread key: movable#/tor
   1x unread section: cd
 s00403: 39 objects
   19x unread key: movable#/ai
@@ -212,10 +177,8 @@ s00403: 39 objects
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   24x unread key: movable#/inte
-  19x unread key: movable#/ntor
   14x unread key: movable#/pz
   24x unread key: movable#/sle
-  19x unread key: movable#/tor
   1x unread section: cd
 s00404: 57 objects
   8x condition: Objective not found 14
@@ -225,10 +188,8 @@ s00404: 57 objects
   33x unread key: movable#/eint
   33x unread key: movable#/eng
   37x unread key: movable#/inte
-  33x unread key: movable#/ntor
   17x unread key: movable#/pz
   37x unread key: movable#/sle
-  33x unread key: movable#/tor
   1x unread section: cd
 s00405: 180 objects
   43x unread key: movable#/ai
@@ -238,13 +199,10 @@ s00405: 180 objects
   43x unread key: movable#/eint
   43x unread key: movable#/eng
   48x unread key: movable#/inte
-  43x unread key: movable#/ntor
   129x unread key: movable#/num
   231x unread key: movable#/sle
-  43x unread key: movable#/tor
   1x unread section: cd
 s00406: 178 objects
-  1x order not implemented: gotowithinfiltrate
   36x unread key: movable#/ai
   11x unread key: movable#/card
   100x unread key: movable#/diff
@@ -252,23 +210,18 @@ s00406: 178 objects
   36x unread key: movable#/eint
   36x unread key: movable#/eng
   47x unread key: movable#/inte
-  36x unread key: movable#/ntor
   53x unread key: movable#/num
   75x unread key: movable#/pz
   100x unread key: movable#/sle
-  36x unread key: movable#/tor
   1x unread section: cd
 s00601: 18 objects
-  1x order not implemented: gotowithinfiltrate
   1x placeholder: typ 2063 dtyp 91
   15x unread key: movable#/ai
   15x unread key: movable#/diff
   15x unread key: movable#/eint
   15x unread key: movable#/eng
   15x unread key: movable#/inte
-  15x unread key: movable#/ntor
   15x unread key: movable#/sle
-  15x unread key: movable#/tor
   1x unread section: cd
 s00701: 25 objects
   18x unread key: movable#/ai
@@ -277,10 +230,8 @@ s00701: 25 objects
   18x unread key: movable#/eint
   18x unread key: movable#/eng
   21x unread key: movable#/inte
-  18x unread key: movable#/ntor
   2x unread key: movable#/pz
   22x unread key: movable#/sle
-  18x unread key: movable#/tor
   1x unread section: cd
 s00702: 22 objects
   16x unread key: movable#/ai
@@ -289,10 +240,8 @@ s00702: 22 objects
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   19x unread key: movable#/inte
-  16x unread key: movable#/ntor
   2x unread key: movable#/pz
   23x unread key: movable#/sle
-  16x unread key: movable#/tor
   1x unread section: cd
 s00703: 21 objects
   15x unread key: movable#/ai
@@ -301,13 +250,10 @@ s00703: 21 objects
   15x unread key: movable#/eint
   15x unread key: movable#/eng
   18x unread key: movable#/inte
-  15x unread key: movable#/ntor
   2x unread key: movable#/pz
   19x unread key: movable#/sle
-  15x unread key: movable#/tor
   1x unread section: cd
 s00704: 113 objects
-  2x order not implemented: gotowithinfiltrate
   40x unread key: movable#/ai
   3x unread key: movable#/card
   74x unread key: movable#/diff
@@ -315,24 +261,19 @@ s00704: 113 objects
   40x unread key: movable#/eint
   40x unread key: movable#/eng
   43x unread key: movable#/inte
-  40x unread key: movable#/ntor
   31x unread key: movable#/num
   34x unread key: movable#/pz
   74x unread key: movable#/sle
-  40x unread key: movable#/tor
   1x unread section: cd
 s00705: 21 objects
-  3x order not implemented: gotowithinfiltrate
   16x unread key: movable#/ai
   3x unread key: movable#/card
   19x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   19x unread key: movable#/inte
-  16x unread key: movable#/ntor
   2x unread key: movable#/pz
   20x unread key: movable#/sle
-  16x unread key: movable#/tor
   1x unread section: cd
 s00706: 38 objects
   1x order not run: patrol for typ 2063
@@ -342,12 +283,9 @@ s00706: 38 objects
   32x unread key: movable#/eint
   32x unread key: movable#/eng
   32x unread key: movable#/inte
-  32x unread key: movable#/ntor
   32x unread key: movable#/sle
-  32x unread key: movable#/tor
   1x unread section: cd
 s00902: 75 objects
-  1x order not implemented: gotowithinfiltrate
   14x unread key: movable#/ai
   5x unread key: movable#/card
   58x unread key: movable#/diff
@@ -355,14 +293,11 @@ s00902: 75 objects
   14x unread key: movable#/eint
   14x unread key: movable#/eng
   19x unread key: movable#/inte
-  14x unread key: movable#/ntor
   39x unread key: movable#/num
   17x unread key: movable#/pz
   58x unread key: movable#/sle
-  14x unread key: movable#/tor
   1x unread section: cd
 s00903: 75 objects
-  1x order not implemented: gotowithinfiltrate
   1x placeholder: typ 2063 dtyp 71
   12x unread key: movable#/ai
   5x unread key: movable#/card
@@ -371,14 +306,11 @@ s00903: 75 objects
   12x unread key: movable#/eint
   12x unread key: movable#/eng
   17x unread key: movable#/inte
-  12x unread key: movable#/ntor
   39x unread key: movable#/num
   17x unread key: movable#/pz
   56x unread key: movable#/sle
-  12x unread key: movable#/tor
   1x unread section: cd
 s01001: 27 objects
-  1x order not implemented: gotowithinfiltrate
   1x order not run: goto for typ 2063
   1x order not run: gotowitharrive for typ 2063
   1x placeholder: typ 2063 dtyp 81
@@ -389,10 +321,8 @@ s01001: 27 objects
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   20x unread key: movable#/inte
-  19x unread key: movable#/ntor
   1x unread key: movable#/pz
   20x unread key: movable#/sle
-  19x unread key: movable#/tor
   1x unread section: cd
 s01002: 8 objects
   1x order not run: goto for typ 2063
@@ -403,12 +333,9 @@ s01002: 8 objects
   7x unread key: movable#/eint
   7x unread key: movable#/eng
   7x unread key: movable#/inte
-  7x unread key: movable#/ntor
   7x unread key: movable#/sle
-  7x unread key: movable#/tor
   1x unread section: cd
 s01101: 13 objects
-  1x order not implemented: gotowithinfiltrate
   1x placeholder: typ 2063 dtyp 80
   8x unread key: movable#/ai
   1x unread key: movable#/card
@@ -416,12 +343,9 @@ s01101: 13 objects
   8x unread key: movable#/eint
   8x unread key: movable#/eng
   9x unread key: movable#/inte
-  8x unread key: movable#/ntor
   9x unread key: movable#/sle
-  8x unread key: movable#/tor
   1x unread section: cd
 s01201: 62 objects
-  4x order not implemented: gotowithinfiltrate
   1x order not run: goto for typ 2063
   1x placeholder: typ 2063 dtyp 71
   34x unread key: movable#/ai
@@ -430,10 +354,8 @@ s01201: 62 objects
   34x unread key: movable#/eint
   34x unread key: movable#/eng
   36x unread key: movable#/inte
-  34x unread key: movable#/ntor
   23x unread key: movable#/pz
   41x unread key: movable#/sle
-  34x unread key: movable#/tor
   1x unread section: cd
 s01202: 22 objects
   11x unread key: movable#/ai
@@ -442,13 +364,10 @@ s01202: 22 objects
   11x unread key: movable#/eint
   11x unread key: movable#/eng
   17x unread key: movable#/inte
-  11x unread key: movable#/ntor
   5x unread key: movable#/pz
   20x unread key: movable#/sle
-  11x unread key: movable#/tor
   1x unread section: cd
 s01203: 75 objects
-  4x order not implemented: gotowithinfiltrate
   6x order not run: goto for typ 2063
   2x placeholder: typ 2063 dtyp 69
   21x unread key: movable#/ai
@@ -457,10 +376,8 @@ s01203: 75 objects
   21x unread key: movable#/eint
   21x unread key: movable#/eng
   42x unread key: movable#/inte
-  21x unread key: movable#/ntor
   30x unread key: movable#/pz
   42x unread key: movable#/sle
-  21x unread key: movable#/tor
   1x unread section: cd
 s01301: 84 objects
   3x order not run: gotowitharrive for typ 2063
@@ -473,11 +390,9 @@ s01301: 84 objects
   25x unread key: movable#/eint
   25x unread key: movable#/eng
   30x unread key: movable#/inte
-  25x unread key: movable#/ntor
   34x unread key: movable#/num
   15x unread key: movable#/pz
   64x unread key: movable#/sle
-  25x unread key: movable#/tor
   1x unread section: cd
 s01302: 43 objects
   4x order not run: goto for typ 2063
@@ -493,10 +408,8 @@ s01302: 43 objects
   23x unread key: movable#/eint
   23x unread key: movable#/eng
   28x unread key: movable#/inte
-  23x unread key: movable#/ntor
   9x unread key: movable#/pz
   28x unread key: movable#/sle
-  23x unread key: movable#/tor
   1x unread section: cd
 s01303: 55 objects
   4x order not run: goto for typ 2063
@@ -513,13 +426,10 @@ s01303: 55 objects
   33x unread key: movable#/eint
   33x unread key: movable#/eng
   38x unread key: movable#/inte
-  33x unread key: movable#/ntor
   9x unread key: movable#/pz
   38x unread key: movable#/sle
-  33x unread key: movable#/tor
   1x unread section: cd
 s01304: 74 objects
-  2x order not implemented: gotowithinfiltrate
   1x order not run: attack for typ 2063
   1x placeholder: typ 2063 dtyp 83
   26x unread key: movable#/ai
@@ -529,11 +439,9 @@ s01304: 74 objects
   26x unread key: movable#/eint
   26x unread key: movable#/eng
   31x unread key: movable#/inte
-  26x unread key: movable#/ntor
   32x unread key: movable#/num
   9x unread key: movable#/pz
   63x unread key: movable#/sle
-  26x unread key: movable#/tor
   1x unread section: cd
 s01305: 36 objects
   1x order not run: patrol for typ 2063
@@ -544,10 +452,8 @@ s01305: 36 objects
   19x unread key: movable#/eint
   19x unread key: movable#/eng
   24x unread key: movable#/inte
-  19x unread key: movable#/ntor
   9x unread key: movable#/pz
   24x unread key: movable#/sle
-  19x unread key: movable#/tor
   1x unread section: cd
 s01306: 124 objects
   38x unread key: movable#/ai
@@ -557,11 +463,9 @@ s01306: 124 objects
   38x unread key: movable#/eint
   38x unread key: movable#/eng
   42x unread key: movable#/inte
-  38x unread key: movable#/ntor
   64x unread key: movable#/num
   18x unread key: movable#/pz
   115x unread key: movable#/sle
-  38x unread key: movable#/tor
   1x unread section: cd
 s01307: 27 objects
   1x placeholder: typ 2063 dtyp 68
@@ -571,10 +475,8 @@ s01307: 27 objects
   7x unread key: movable#/eint
   7x unread key: movable#/eng
   11x unread key: movable#/inte
-  7x unread key: movable#/ntor
   14x unread key: movable#/pz
   11x unread key: movable#/sle
-  7x unread key: movable#/tor
   1x unread section: cd
 s01308: 6 objects
   5x unread key: movable#/ai
@@ -583,12 +485,9 @@ s01308: 6 objects
   5x unread key: movable#/eint
   5x unread key: movable#/eng
   6x unread key: movable#/inte
-  5x unread key: movable#/ntor
   6x unread key: movable#/sle
-  5x unread key: movable#/tor
   1x unread section: cd
 s01501: 66 objects
-  2x order not implemented: gotowithinfiltrate
   1x order not run: patrol for typ 2063
   1x placeholder: typ 2063 dtyp 84
   50x unread key: movable#/ai
@@ -596,10 +495,8 @@ s01501: 66 objects
   50x unread key: movable#/eint
   50x unread key: movable#/eng
   50x unread key: movable#/inte
-  50x unread key: movable#/ntor
   14x unread key: movable#/pz
   50x unread key: movable#/sle
-  50x unread key: movable#/tor
   1x unread section: cd
 s01601: 26 objects
   1x order not run: gotowitharrive for typ 2063
@@ -610,10 +507,8 @@ s01601: 26 objects
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   21x unread key: movable#/inte
-  16x unread key: movable#/ntor
   2x unread key: movable#/pz
   21x unread key: movable#/sle
-  16x unread key: movable#/tor
   1x unread section: cd
 s01602: 92 objects
   1x placeholder: typ 2063 dtyp 68
@@ -625,10 +520,8 @@ s01602: 92 objects
   49x unread key: movable#/eint
   49x unread key: movable#/eng
   53x unread key: movable#/inte
-  49x unread key: movable#/ntor
   33x unread key: movable#/pz
   53x unread key: movable#/sle
-  49x unread key: movable#/tor
   1x unread section: cd
 s01701: 41 objects
   2x order not run: goto for typ 2063
@@ -640,10 +533,8 @@ s01701: 41 objects
   31x unread key: movable#/eint
   31x unread key: movable#/eng
   35x unread key: movable#/inte
-  31x unread key: movable#/ntor
   2x unread key: movable#/pz
   35x unread key: movable#/sle
-  31x unread key: movable#/tor
   1x unread section: cd
 s01702: 43 objects
   1x order not run: patrol for typ 2063
@@ -654,10 +545,8 @@ s01702: 43 objects
   34x unread key: movable#/eint
   34x unread key: movable#/eng
   38x unread key: movable#/inte
-  34x unread key: movable#/ntor
   2x unread key: movable#/pz
   38x unread key: movable#/sle
-  34x unread key: movable#/tor
   1x unread section: cd
 s01801: 147 objects
   1x order not run: gotowitharrive for typ 2063
@@ -672,11 +561,9 @@ s01801: 147 objects
   41x unread key: movable#/eint
   41x unread key: movable#/eng
   71x unread key: movable#/inte
-  41x unread key: movable#/ntor
   30x unread key: movable#/num
   39x unread key: movable#/pz
   101x unread key: movable#/sle
-  41x unread key: movable#/tor
   1x unread section: cd
 s01802: 158 objects
   2x condition: Objective not found 24
@@ -690,11 +577,9 @@ s01802: 158 objects
   55x unread key: movable#/eint
   55x unread key: movable#/eng
   85x unread key: movable#/inte
-  55x unread key: movable#/ntor
   30x unread key: movable#/num
   38x unread key: movable#/pz
   115x unread key: movable#/sle
-  55x unread key: movable#/tor
   1x unread section: cd
 s01803: 118 objects
   1x placeholder: typ 2063 dtyp 80
@@ -705,11 +590,9 @@ s01803: 118 objects
   33x unread key: movable#/eint
   33x unread key: movable#/eng
   63x unread key: movable#/inte
-  33x unread key: movable#/ntor
   15x unread key: movable#/num
   38x unread key: movable#/pz
   78x unread key: movable#/sle
-  33x unread key: movable#/tor
   1x unread section: cd
 s01804: 122 objects
   1x placeholder: typ 2063 dtyp 87
@@ -720,11 +603,9 @@ s01804: 122 objects
   36x unread key: movable#/eint
   36x unread key: movable#/eng
   66x unread key: movable#/inte
-  36x unread key: movable#/ntor
   15x unread key: movable#/num
   38x unread key: movable#/pz
   81x unread key: movable#/sle
-  36x unread key: movable#/tor
   1x unread section: cd
 s01805: 51 objects
   1x placeholder: typ 2063 dtyp 69
@@ -734,10 +615,8 @@ s01805: 51 objects
   26x unread key: movable#/eint
   26x unread key: movable#/eng
   37x unread key: movable#/inte
-  26x unread key: movable#/ntor
   11x unread key: movable#/pz
   37x unread key: movable#/sle
-  26x unread key: movable#/tor
   1x unread section: cd
 s01806: 39 objects
   18x unread key: movable#/ai
@@ -746,10 +625,8 @@ s01806: 39 objects
   18x unread key: movable#/eint
   18x unread key: movable#/eng
   21x unread key: movable#/inte
-  18x unread key: movable#/ntor
   17x unread key: movable#/pz
   21x unread key: movable#/sle
-  18x unread key: movable#/tor
   1x unread section: cd
 s02001: 46 objects
   3x unread key: movable#/ai
@@ -758,10 +635,8 @@ s02001: 46 objects
   3x unread key: movable#/eint
   3x unread key: movable#/eng
   9x unread key: movable#/inte
-  3x unread key: movable#/ntor
   37x unread key: movable#/pz
   9x unread key: movable#/sle
-  3x unread key: movable#/tor
   1x unread section: cd
 s02002: 27 objects
   1x placeholder: typ 2063 dtyp 68
@@ -773,10 +648,8 @@ s02002: 27 objects
   14x unread key: movable#/eint
   14x unread key: movable#/eng
   17x unread key: movable#/inte
-  14x unread key: movable#/ntor
   4x unread key: movable#/pz
   22x unread key: movable#/sle
-  14x unread key: movable#/tor
   1x unread section: cd
 s02003: 50 objects
   1x condition: Objective not found 32
@@ -787,10 +660,8 @@ s02003: 50 objects
   12x unread key: movable#/eint
   12x unread key: movable#/eng
   23x unread key: movable#/inte
-  12x unread key: movable#/ntor
   26x unread key: movable#/pz
   23x unread key: movable#/sle
-  12x unread key: movable#/tor
   1x unread section: cd
 s02004: 62 objects
   1x order not run: patrol for typ 2063
@@ -801,10 +672,8 @@ s02004: 62 objects
   10x unread key: movable#/eint
   10x unread key: movable#/eng
   22x unread key: movable#/inte
-  10x unread key: movable#/ntor
   37x unread key: movable#/pz
   22x unread key: movable#/sle
-  10x unread key: movable#/tor
   1x unread section: cd
 s02005: 63 objects
   17x unread key: movable#/ai
@@ -813,10 +682,8 @@ s02005: 63 objects
   17x unread key: movable#/eint
   17x unread key: movable#/eng
   24x unread key: movable#/inte
-  17x unread key: movable#/ntor
   37x unread key: movable#/pz
   24x unread key: movable#/sle
-  17x unread key: movable#/tor
   1x unread section: cd
 s02006: 62 objects
   1x condition: Objective not found 21
@@ -826,10 +693,8 @@ s02006: 62 objects
   16x unread key: movable#/eint
   16x unread key: movable#/eng
   23x unread key: movable#/inte
-  16x unread key: movable#/ntor
   37x unread key: movable#/pz
   23x unread key: movable#/sle
-  16x unread key: movable#/tor
   1x unread section: cd
 s02007: 71 objects
   1x placeholder: typ 2063 dtyp 87
@@ -839,10 +704,8 @@ s02007: 71 objects
   26x unread key: movable#/eint
   26x unread key: movable#/eng
   32x unread key: movable#/inte
-  26x unread key: movable#/ntor
   37x unread key: movable#/pz
   32x unread key: movable#/sle
-  26x unread key: movable#/tor
   1x unread section: cd
 s02201: 133 objects
   2x order not run: patrol for typ 2063
@@ -854,10 +717,8 @@ s02201: 133 objects
   55x unread key: movable#/eint
   55x unread key: movable#/eng
   74x unread key: movable#/inte
-  55x unread key: movable#/ntor
   55x unread key: movable#/pz
   74x unread key: movable#/sle
-  55x unread key: movable#/tor
   1x unread section: cd
 s02202: 150 objects
   1x order not run: goto for typ 2063
@@ -871,10 +732,8 @@ s02202: 150 objects
   82x unread key: movable#/eint
   82x unread key: movable#/eng
   94x unread key: movable#/inte
-  82x unread key: movable#/ntor
   49x unread key: movable#/pz
   113x unread key: movable#/sle
-  82x unread key: movable#/tor
   1x unread section: cd
 s02203: 141 objects
   1x order not run: patrol for typ 2063
@@ -885,10 +744,8 @@ s02203: 141 objects
   67x unread key: movable#/eint
   67x unread key: movable#/eng
   83x unread key: movable#/inte
-  67x unread key: movable#/ntor
   55x unread key: movable#/pz
   93x unread key: movable#/sle
-  67x unread key: movable#/tor
   1x unread section: cd
 s02204: 95 objects
   3x order not run: attack for typ 2063
@@ -903,10 +760,8 @@ s02204: 95 objects
   40x unread key: movable#/eint
   40x unread key: movable#/eng
   44x unread key: movable#/inte
-  40x unread key: movable#/ntor
   46x unread key: movable#/pz
   60x unread key: movable#/sle
-  40x unread key: movable#/tor
   1x unread section: cd
 s02205: 164 objects
   2x order not run: patrol for typ 2063
@@ -919,11 +774,9 @@ s02205: 164 objects
   55x unread key: movable#/eint
   55x unread key: movable#/eng
   59x unread key: movable#/inte
-  55x unread key: movable#/ntor
   22x unread key: movable#/num
   76x unread key: movable#/pz
   87x unread key: movable#/sle
-  55x unread key: movable#/tor
   1x unread section: cd
 strai0: 129 objects
   45x unread key: movable#/ai
@@ -931,10 +784,8 @@ strai0: 129 objects
   45x unread key: movable#/eint
   45x unread key: movable#/eng
   45x unread key: movable#/inte
-  45x unread key: movable#/ntor
   84x unread key: movable#/pz
   45x unread key: movable#/sle
-  45x unread key: movable#/tor
   1x unread section: cd
 strai1: 197 objects
   48x unread key: movable#/ai
@@ -942,10 +793,8 @@ strai1: 197 objects
   48x unread key: movable#/eint
   48x unread key: movable#/eng
   48x unread key: movable#/inte
-  48x unread key: movable#/ntor
   148x unread key: movable#/pz
   48x unread key: movable#/sle
-  48x unread key: movable#/tor
   1x unread section: cd
 strai2: 140 objects
   4x order not run: patrol for typ 2063
@@ -960,10 +809,8 @@ strai2: 140 objects
   48x unread key: movable#/eint
   48x unread key: movable#/eng
   48x unread key: movable#/inte
-  48x unread key: movable#/ntor
   84x unread key: movable#/num
   132x unread key: movable#/sle
-  48x unread key: movable#/tor
   1x unread section: cd
 strai3: 227 objects
   83x unread key: movable#/ai
@@ -973,11 +820,9 @@ strai3: 227 objects
   83x unread key: movable#/eint
   83x unread key: movable#/eng
   89x unread key: movable#/inte
-  83x unread key: movable#/ntor
   37x unread key: movable#/num
   97x unread key: movable#/pz
   126x unread key: movable#/sle
-  83x unread key: movable#/tor
   1x unread section: cd
 
 Total: 71 missions, 4981 objects
@@ -987,15 +832,12 @@ Total: 71 missions, 4981 objects
   1849x unread key: movable#/ai
   1849x unread key: movable#/eint
   1849x unread key: movable#/eng
-  1849x unread key: movable#/ntor
-  1849x unread key: movable#/tor
   1634x unread key: movable#/pz
   882x unread key: movable#/dis
   882x unread key: movable#/num
   424x unread key: movable#/card
   71x unread section: cd
   26x order not run: goto for typ 2063
-  24x order not implemented: gotowithinfiltrate
   24x order not run: patrol for typ 2063
   13x condition: Objective not found #
   11x order not run: gotowitharrive for typ 2063
