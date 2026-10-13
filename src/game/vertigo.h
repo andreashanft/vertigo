@@ -47,6 +47,7 @@ public:
         struct Drive { int id; float speed; float turn; };
         std::vector<Drive> drive;                       // test mode: let these boats move straight or in a circle
         std::vector<int> trace;                         // test mode: print these units' state every second
+        std::vector<int> fire;                          // test mode: these units fire (towers aim at the player)
         bool check = false;                             // report what the mission loader ignores
         QStringList checkScenarios;                     // empty = all missions
     };

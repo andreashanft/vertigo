@@ -18,32 +18,96 @@
 #include "turret.h"
 #include "turretbase.h"
 #include "fight/scenario.h"
+#include "fight/weapons/unitgun.h"
+#include "txt/desfile.h"
+#include <glm/gtc/constants.hpp>
+#include <glm/trigonometric.hpp>
+#include <cmath>
 
 
 namespace fight {
 
 
 TurretBase::TurretBase(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info) :
-    SimpleObject(scenario, file, info)
+    SimpleObject(scenario, file, info),
+    m_yaw(0),
+    m_pitch(0),
+    m_targetYaw(0),
+    m_targetPitch(0),
+    m_yawVelocity(1),
+    m_pitchVelocity(1)
 {
     m_static = false;
 
-    file.setSection("gunturret");
-    if (file.contains("name"))
+    for (const char *section : { "gunturret", "torpedoturret" })
     {
-        txt::DesFile gunDes(QString("vfx:sobjects/%1.des").arg(file.value("name").toString()));
-        m_body.reset(new Turret(scenario, gunDes)); // TODO: TurretGun
-        m_body->setPosition(Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat()));
+        file.setSection(section);
+        if (!file.contains("name"))
+            continue;
+        m_turretName = file.value("name").toString();
+        txt::DesFile turretFile(QString("vfx:sobjects/%1.des").arg(m_turretName));
+        m_body.reset(new Turret(scenario, turretFile)); // TODO: TurretTorpedo
+        m_turretPosition = Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat());
+        m_body->setPosition(m_turretPosition);
         m_box.add(m_body->box().scale(m_scale));
+
+        turretFile.setSection("kinematics");
+        m_yawVelocity = turretFile.value("MaxAngleVelocityA", 1).toFloat();
+        m_pitchVelocity = turretFile.value("MaxAngleVelocityB", 1).toFloat();
     }
-    file.setSection("torpedoturret");
-    if (file.contains("name"))
+}
+
+
+// the gun is in the turret's file: [StaticGun] and [VolleyGun]
+void TurretBase::arm(int model, txt::DesFile &file)
+{
+    if (m_turretName.isEmpty())
+        return;
+    txt::DesFile turretFile(QString("vfx:sobjects/%1.des").arg(m_turretName));
+    const UnitGun::Mount mount = UnitGun::readMount(turretFile);
+    if (mount.model < 0)
+        return; // torpedo towers
+    if (!UnitGun::isGun(model))
+        model = mount.model;
+    if (!UnitGun::isGun(model))
+        return;
+    std::vector<Vector3D> muzzles;
+    for (const Vector3D &muzzle : mount.muzzles)
+        muzzles.push_back(muzzle*m_scale);
+    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &turretFile));
+    if (mount.ammunition >= 0)
+        m_unitGun->setAmmunition(mount.ammunition);
+}
+
+
+void TurretBase::aimAt(const Vector3D &point)
+{
+    const Vector3D way = point - pivot();
+    m_targetYaw = std::atan2(way.x, way.y);
+    m_targetPitch = std::atan2(way.z, glm::length(Vector2D(way)));
+}
+
+
+Vector3D TurretBase::aim() const
+{
+    return Vector3D(std::sin(m_yaw)*std::cos(m_pitch), std::cos(m_yaw)*std::cos(m_pitch), std::sin(m_pitch));
+}
+
+
+bool TurretBase::update(float elapsedTime)
+{
+    // turn towards the target at the turret's rates
+    const float yawError = std::remainder(m_targetYaw - m_yaw, glm::two_pi<float>());
+    m_yaw += glm::clamp(yawError, -m_yawVelocity*elapsedTime, m_yawVelocity*elapsedTime);
+    m_pitch += glm::clamp(m_targetPitch - m_pitch, -m_pitchVelocity*elapsedTime, m_pitchVelocity*elapsedTime);
+
+    if (m_unitGun)
     {
-        txt::DesFile torpedoDes(QString("vfx:sobjects/%1.des").arg(file.value("name").toString()));
-        m_body.reset(new Turret(scenario, torpedoDes)); // TODO: TurretTorpedo
-        m_body->setPosition(Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat()));
-        m_box.add(m_body->box().scale(m_scale));
+        const Vector3D dir = aim();
+        const Vector3D right = Vector3D(std::cos(m_yaw), -std::sin(m_yaw), 0);
+        m_unitGun->update(elapsedTime, m_trigger, pivot(), dir, glm::cross(right, dir), right);
     }
+    return false;
 }
 
 
@@ -54,7 +118,13 @@ void TurretBase::draw()
     glScalef(m_scale, m_scale, m_scale);
     m_base->draw();
     if (m_body)
+    {
+        // turn the turret around its position (the turret draws itself at that position)
+        glTranslatef(m_turretPosition.x, m_turretPosition.y, m_turretPosition.z);
+        glRotatef(-glm::degrees(m_yaw), 0, 0, 1);
+        glTranslatef(-m_turretPosition.x, -m_turretPosition.y, -m_turretPosition.z);
         m_body->draw();
+    }
     glPopMatrix();
 }
 

@@ -83,6 +83,8 @@ set(SOURCES
 
     fight/weapons/gun.cpp
     fight/weapons/gun.h
+    fight/weapons/unitgun.cpp
+    fight/weapons/unitgun.h
 
     game/area.cpp
     game/area.h

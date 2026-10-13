@@ -64,6 +64,7 @@ public:
     void updateVelocity(float elapsedTime);
     void updateOrientation(float elapsedTime);
     void draw();
+    void arm(int model, txt::DesFile &file);
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
 
 protected:

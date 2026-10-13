@@ -26,6 +26,7 @@
 #include "fight/orders.h"
 #include <glm/geometric.hpp>
 #include <cmath>
+#include <algorithm>
 #include "txt/desfile.h"
 
 #include <QCoreApplication>
@@ -194,6 +195,16 @@ int Vertigo::start(const Options &options)
                 it->time += it->hold;
                 it->hold = -1;
                 ++it;
+            }
+        }
+        if (scenario) {
+            for (const auto &record : scenario->objectRecords()) {
+                if (std::find(options.fire.begin(), options.fire.end(), record.id) == options.fire.end())
+                    continue;
+                if (fight::ActiveObject *unit = dynamic_cast<fight::ActiveObject *>(record.object)) {
+                    unit->setTrigger(true);
+                    unit->aimAt(scenario->player()->position());
+                }
             }
         }
         if (scenario && !options.trace.empty() && scenario->time() >= nextTrace) {

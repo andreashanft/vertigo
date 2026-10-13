@@ -317,6 +317,7 @@ Scenario::Scenario(const QString &name) :
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(object);
             if (activeObject)
             {
+                activeObject->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
                 entry.iff = m_file.contains("iff") ? m_file.value("iff").toInt() : -1;
                 entry.condSignal = activeObject->eventDestroy();
                 entry.condAttacked = activeObject->eventAttack();

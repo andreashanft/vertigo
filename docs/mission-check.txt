@@ -9,7 +9,6 @@ s00101: 49 objects
   24x unread key: movable#/diff
   20x unread key: movable#/eint
   20x unread key: movable#/eng
-  20x unread key: movable#/gun
   24x unread key: movable#/inte
   20x unread key: movable#/ntor
   22x unread key: movable#/pz
@@ -26,7 +25,6 @@ s00102: 54 objects
   26x unread key: movable#/diff
   22x unread key: movable#/eint
   22x unread key: movable#/eng
-  22x unread key: movable#/gun
   26x unread key: movable#/inte
   22x unread key: movable#/ntor
   23x unread key: movable#/pz
@@ -41,7 +39,6 @@ s00103: 28 objects
   11x unread key: movable#/diff
   9x unread key: movable#/eint
   9x unread key: movable#/eng
-  9x unread key: movable#/gun
   11x unread key: movable#/inte
   9x unread key: movable#/ntor
   17x unread key: movable#/pz
@@ -59,7 +56,6 @@ s00104: 44 objects
   23x unread key: movable#/diff
   21x unread key: movable#/eint
   21x unread key: movable#/eng
-  21x unread key: movable#/gun
   23x unread key: movable#/inte
   21x unread key: movable#/ntor
   18x unread key: movable#/pz
@@ -72,7 +68,6 @@ s00105: 1 objects
   1x unread key: movable#/diff
   1x unread key: movable#/eint
   1x unread key: movable#/eng
-  1x unread key: movable#/gun
   1x unread key: movable#/inte
   1x unread key: movable#/ntor
   1x unread key: movable#/sle
@@ -87,7 +82,6 @@ s00106: 27 objects
   10x unread key: movable#/diff
   8x unread key: movable#/eint
   8x unread key: movable#/eng
-  8x unread key: movable#/gun
   10x unread key: movable#/inte
   8x unread key: movable#/ntor
   17x unread key: movable#/pz
@@ -104,7 +98,6 @@ s00201: 35 objects
   14x unread key: movable#/dis
   16x unread key: movable#/eint
   16x unread key: movable#/eng
-  16x unread key: movable#/gun
   16x unread key: movable#/inte
   16x unread key: movable#/ntor
   14x unread key: movable#/num
@@ -121,7 +114,6 @@ s00202: 104 objects
   23x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
-  19x unread key: movable#/gun
   23x unread key: movable#/inte
   19x unread key: movable#/ntor
   79x unread key: movable#/pz
@@ -135,7 +127,6 @@ s00203: 83 objects
   65x unread key: movable#/dis
   12x unread key: movable#/eint
   12x unread key: movable#/eng
-  12x unread key: movable#/gun
   12x unread key: movable#/inte
   12x unread key: movable#/ntor
   65x unread key: movable#/num
@@ -150,7 +141,6 @@ s00204: 21 objects
   11x unread key: movable#/diff
   11x unread key: movable#/eint
   11x unread key: movable#/eng
-  11x unread key: movable#/gun
   11x unread key: movable#/inte
   11x unread key: movable#/ntor
   9x unread key: movable#/pz
@@ -165,7 +155,6 @@ s00205: 14 objects
   9x unread key: movable#/diff
   7x unread key: movable#/eint
   7x unread key: movable#/eng
-  7x unread key: movable#/gun
   9x unread key: movable#/inte
   7x unread key: movable#/ntor
   5x unread key: movable#/pz
@@ -181,7 +170,6 @@ s00301: 72 objects
   16x unread key: movable#/dis
   37x unread key: movable#/eint
   37x unread key: movable#/eng
-  37x unread key: movable#/gun
   48x unread key: movable#/inte
   37x unread key: movable#/ntor
   16x unread key: movable#/num
@@ -196,7 +184,6 @@ s00302: 10 objects
   9x unread key: movable#/diff
   9x unread key: movable#/eint
   9x unread key: movable#/eng
-  9x unread key: movable#/gun
   9x unread key: movable#/inte
   9x unread key: movable#/ntor
   9x unread key: movable#/sle
@@ -208,7 +195,6 @@ s00303: 15 objects
   9x unread key: movable#/diff
   9x unread key: movable#/eint
   9x unread key: movable#/eng
-  9x unread key: movable#/gun
   9x unread key: movable#/inte
   9x unread key: movable#/ntor
   5x unread key: movable#/pz
@@ -223,7 +209,6 @@ s00304: 6 objects
   5x unread key: movable#/diff
   5x unread key: movable#/eint
   5x unread key: movable#/eng
-  5x unread key: movable#/gun
   5x unread key: movable#/inte
   5x unread key: movable#/ntor
   10x unread key: movable#/sle
@@ -242,7 +227,6 @@ s00401: 196 objects
   133x unread key: movable#/dis
   33x unread key: movable#/eint
   33x unread key: movable#/eng
-  33x unread key: movable#/gun
   47x unread key: movable#/inte
   33x unread key: movable#/ntor
   133x unread key: movable#/num
@@ -258,7 +242,6 @@ s00402: 44 objects
   15x unread key: movable#/diff
   15x unread key: movable#/eint
   15x unread key: movable#/eng
-  15x unread key: movable#/gun
   15x unread key: movable#/inte
   15x unread key: movable#/ntor
   28x unread key: movable#/pz
@@ -273,7 +256,6 @@ s00403: 39 objects
   24x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
-  19x unread key: movable#/gun
   24x unread key: movable#/inte
   19x unread key: movable#/ntor
   14x unread key: movable#/pz
@@ -290,7 +272,6 @@ s00404: 57 objects
   37x unread key: movable#/diff
   33x unread key: movable#/eint
   33x unread key: movable#/eng
-  33x unread key: movable#/gun
   37x unread key: movable#/inte
   33x unread key: movable#/ntor
   17x unread key: movable#/pz
@@ -309,7 +290,6 @@ s00405: 180 objects
   129x unread key: movable#/dis
   43x unread key: movable#/eint
   43x unread key: movable#/eng
-  43x unread key: movable#/gun
   48x unread key: movable#/inte
   43x unread key: movable#/ntor
   129x unread key: movable#/num
@@ -328,7 +308,6 @@ s00406: 178 objects
   53x unread key: movable#/dis
   36x unread key: movable#/eint
   36x unread key: movable#/eng
-  36x unread key: movable#/gun
   47x unread key: movable#/inte
   36x unread key: movable#/ntor
   53x unread key: movable#/num
@@ -344,7 +323,6 @@ s00601: 18 objects
   15x unread key: movable#/diff
   15x unread key: movable#/eint
   15x unread key: movable#/eng
-  15x unread key: movable#/gun
   15x unread key: movable#/inte
   15x unread key: movable#/ntor
   15x unread key: movable#/sle
@@ -360,7 +338,6 @@ s00701: 25 objects
   21x unread key: movable#/diff
   18x unread key: movable#/eint
   18x unread key: movable#/eng
-  18x unread key: movable#/gun
   21x unread key: movable#/inte
   18x unread key: movable#/ntor
   2x unread key: movable#/pz
@@ -378,7 +355,6 @@ s00702: 22 objects
   19x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
-  16x unread key: movable#/gun
   19x unread key: movable#/inte
   16x unread key: movable#/ntor
   2x unread key: movable#/pz
@@ -396,7 +372,6 @@ s00703: 21 objects
   18x unread key: movable#/diff
   15x unread key: movable#/eint
   15x unread key: movable#/eng
-  15x unread key: movable#/gun
   18x unread key: movable#/inte
   15x unread key: movable#/ntor
   2x unread key: movable#/pz
@@ -415,7 +390,6 @@ s00704: 113 objects
   31x unread key: movable#/dis
   40x unread key: movable#/eint
   40x unread key: movable#/eng
-  40x unread key: movable#/gun
   43x unread key: movable#/inte
   40x unread key: movable#/ntor
   31x unread key: movable#/num
@@ -434,7 +408,6 @@ s00705: 21 objects
   19x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
-  16x unread key: movable#/gun
   19x unread key: movable#/inte
   16x unread key: movable#/ntor
   2x unread key: movable#/pz
@@ -449,7 +422,6 @@ s00706: 38 objects
   32x unread key: movable#/diff
   32x unread key: movable#/eint
   32x unread key: movable#/eng
-  32x unread key: movable#/gun
   32x unread key: movable#/inte
   32x unread key: movable#/ntor
   32x unread key: movable#/sle
@@ -468,7 +440,6 @@ s00902: 75 objects
   39x unread key: movable#/dis
   14x unread key: movable#/eint
   14x unread key: movable#/eng
-  14x unread key: movable#/gun
   19x unread key: movable#/inte
   14x unread key: movable#/ntor
   39x unread key: movable#/num
@@ -489,7 +460,6 @@ s00903: 75 objects
   39x unread key: movable#/dis
   12x unread key: movable#/eint
   12x unread key: movable#/eng
-  12x unread key: movable#/gun
   17x unread key: movable#/inte
   12x unread key: movable#/ntor
   39x unread key: movable#/num
@@ -510,7 +480,6 @@ s01001: 27 objects
   20x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
-  19x unread key: movable#/gun
   20x unread key: movable#/inte
   19x unread key: movable#/ntor
   1x unread key: movable#/pz
@@ -525,7 +494,6 @@ s01002: 8 objects
   7x unread key: movable#/diff
   7x unread key: movable#/eint
   7x unread key: movable#/eng
-  7x unread key: movable#/gun
   7x unread key: movable#/inte
   7x unread key: movable#/ntor
   7x unread key: movable#/sle
@@ -542,7 +510,6 @@ s01101: 13 objects
   9x unread key: movable#/diff
   8x unread key: movable#/eint
   8x unread key: movable#/eng
-  8x unread key: movable#/gun
   9x unread key: movable#/inte
   8x unread key: movable#/ntor
   9x unread key: movable#/sle
@@ -560,7 +527,6 @@ s01201: 62 objects
   36x unread key: movable#/diff
   34x unread key: movable#/eint
   34x unread key: movable#/eng
-  34x unread key: movable#/gun
   36x unread key: movable#/inte
   34x unread key: movable#/ntor
   23x unread key: movable#/pz
@@ -575,7 +541,6 @@ s01202: 22 objects
   17x unread key: movable#/diff
   11x unread key: movable#/eint
   11x unread key: movable#/eng
-  11x unread key: movable#/gun
   17x unread key: movable#/inte
   11x unread key: movable#/ntor
   5x unread key: movable#/pz
@@ -592,7 +557,6 @@ s01203: 75 objects
   42x unread key: movable#/diff
   21x unread key: movable#/eint
   21x unread key: movable#/eng
-  21x unread key: movable#/gun
   42x unread key: movable#/inte
   21x unread key: movable#/ntor
   30x unread key: movable#/pz
@@ -613,7 +577,6 @@ s01301: 84 objects
   34x unread key: movable#/dis
   25x unread key: movable#/eint
   25x unread key: movable#/eng
-  25x unread key: movable#/gun
   30x unread key: movable#/inte
   25x unread key: movable#/ntor
   34x unread key: movable#/num
@@ -635,7 +598,6 @@ s01302: 43 objects
   28x unread key: movable#/diff
   23x unread key: movable#/eint
   23x unread key: movable#/eng
-  23x unread key: movable#/gun
   28x unread key: movable#/inte
   23x unread key: movable#/ntor
   9x unread key: movable#/pz
@@ -655,7 +617,6 @@ s01303: 55 objects
   38x unread key: movable#/diff
   33x unread key: movable#/eint
   33x unread key: movable#/eng
-  33x unread key: movable#/gun
   38x unread key: movable#/inte
   33x unread key: movable#/ntor
   9x unread key: movable#/pz
@@ -674,7 +635,6 @@ s01304: 74 objects
   32x unread key: movable#/dis
   26x unread key: movable#/eint
   26x unread key: movable#/eng
-  26x unread key: movable#/gun
   31x unread key: movable#/inte
   26x unread key: movable#/ntor
   32x unread key: movable#/num
@@ -691,7 +651,6 @@ s01305: 36 objects
   24x unread key: movable#/diff
   19x unread key: movable#/eint
   19x unread key: movable#/eng
-  19x unread key: movable#/gun
   24x unread key: movable#/inte
   19x unread key: movable#/ntor
   9x unread key: movable#/pz
@@ -709,7 +668,6 @@ s01306: 124 objects
   64x unread key: movable#/dis
   38x unread key: movable#/eint
   38x unread key: movable#/eng
-  38x unread key: movable#/gun
   42x unread key: movable#/inte
   38x unread key: movable#/ntor
   64x unread key: movable#/num
@@ -727,7 +685,6 @@ s01307: 27 objects
   11x unread key: movable#/diff
   7x unread key: movable#/eint
   7x unread key: movable#/eng
-  7x unread key: movable#/gun
   11x unread key: movable#/inte
   7x unread key: movable#/ntor
   14x unread key: movable#/pz
@@ -740,7 +697,6 @@ s01308: 6 objects
   6x unread key: movable#/diff
   5x unread key: movable#/eint
   5x unread key: movable#/eng
-  5x unread key: movable#/gun
   6x unread key: movable#/inte
   5x unread key: movable#/ntor
   6x unread key: movable#/sle
@@ -755,7 +711,6 @@ s01501: 66 objects
   50x unread key: movable#/diff
   50x unread key: movable#/eint
   50x unread key: movable#/eng
-  50x unread key: movable#/gun
   50x unread key: movable#/inte
   50x unread key: movable#/ntor
   14x unread key: movable#/pz
@@ -772,7 +727,6 @@ s01601: 26 objects
   21x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
-  16x unread key: movable#/gun
   21x unread key: movable#/inte
   16x unread key: movable#/ntor
   2x unread key: movable#/pz
@@ -791,7 +745,6 @@ s01602: 92 objects
   53x unread key: movable#/diff
   49x unread key: movable#/eint
   49x unread key: movable#/eng
-  49x unread key: movable#/gun
   53x unread key: movable#/inte
   49x unread key: movable#/ntor
   33x unread key: movable#/pz
@@ -809,7 +762,6 @@ s01701: 41 objects
   35x unread key: movable#/diff
   31x unread key: movable#/eint
   31x unread key: movable#/eng
-  31x unread key: movable#/gun
   35x unread key: movable#/inte
   31x unread key: movable#/ntor
   2x unread key: movable#/pz
@@ -826,7 +778,6 @@ s01702: 43 objects
   38x unread key: movable#/diff
   34x unread key: movable#/eint
   34x unread key: movable#/eng
-  34x unread key: movable#/gun
   38x unread key: movable#/inte
   34x unread key: movable#/ntor
   2x unread key: movable#/pz
@@ -847,7 +798,6 @@ s01801: 147 objects
   30x unread key: movable#/dis
   41x unread key: movable#/eint
   41x unread key: movable#/eng
-  41x unread key: movable#/gun
   71x unread key: movable#/inte
   41x unread key: movable#/ntor
   30x unread key: movable#/num
@@ -870,7 +820,6 @@ s01802: 158 objects
   30x unread key: movable#/dis
   55x unread key: movable#/eint
   55x unread key: movable#/eng
-  55x unread key: movable#/gun
   85x unread key: movable#/inte
   55x unread key: movable#/ntor
   30x unread key: movable#/num
@@ -890,7 +839,6 @@ s01803: 118 objects
   15x unread key: movable#/dis
   33x unread key: movable#/eint
   33x unread key: movable#/eng
-  33x unread key: movable#/gun
   63x unread key: movable#/inte
   33x unread key: movable#/ntor
   15x unread key: movable#/num
@@ -910,7 +858,6 @@ s01804: 122 objects
   15x unread key: movable#/dis
   36x unread key: movable#/eint
   36x unread key: movable#/eng
-  36x unread key: movable#/gun
   66x unread key: movable#/inte
   36x unread key: movable#/ntor
   15x unread key: movable#/num
@@ -927,7 +874,6 @@ s01805: 51 objects
   37x unread key: movable#/diff
   26x unread key: movable#/eint
   26x unread key: movable#/eng
-  26x unread key: movable#/gun
   37x unread key: movable#/inte
   26x unread key: movable#/ntor
   11x unread key: movable#/pz
@@ -944,7 +890,6 @@ s01806: 39 objects
   21x unread key: movable#/diff
   18x unread key: movable#/eint
   18x unread key: movable#/eng
-  18x unread key: movable#/gun
   21x unread key: movable#/inte
   18x unread key: movable#/ntor
   17x unread key: movable#/pz
@@ -958,7 +903,6 @@ s02001: 46 objects
   9x unread key: movable#/diff
   3x unread key: movable#/eint
   3x unread key: movable#/eng
-  3x unread key: movable#/gun
   9x unread key: movable#/inte
   3x unread key: movable#/ntor
   37x unread key: movable#/pz
@@ -976,7 +920,6 @@ s02002: 27 objects
   17x unread key: movable#/diff
   14x unread key: movable#/eint
   14x unread key: movable#/eng
-  14x unread key: movable#/gun
   17x unread key: movable#/inte
   14x unread key: movable#/ntor
   4x unread key: movable#/pz
@@ -991,7 +934,6 @@ s02003: 50 objects
   23x unread key: movable#/diff
   12x unread key: movable#/eint
   12x unread key: movable#/eng
-  12x unread key: movable#/gun
   23x unread key: movable#/inte
   12x unread key: movable#/ntor
   26x unread key: movable#/pz
@@ -1008,7 +950,6 @@ s02004: 62 objects
   22x unread key: movable#/diff
   10x unread key: movable#/eint
   10x unread key: movable#/eng
-  10x unread key: movable#/gun
   22x unread key: movable#/inte
   10x unread key: movable#/ntor
   37x unread key: movable#/pz
@@ -1023,7 +964,6 @@ s02005: 63 objects
   24x unread key: movable#/diff
   17x unread key: movable#/eint
   17x unread key: movable#/eng
-  17x unread key: movable#/gun
   24x unread key: movable#/inte
   17x unread key: movable#/ntor
   37x unread key: movable#/pz
@@ -1038,7 +978,6 @@ s02006: 62 objects
   23x unread key: movable#/diff
   16x unread key: movable#/eint
   16x unread key: movable#/eng
-  16x unread key: movable#/gun
   23x unread key: movable#/inte
   16x unread key: movable#/ntor
   37x unread key: movable#/pz
@@ -1053,7 +992,6 @@ s02007: 71 objects
   32x unread key: movable#/diff
   26x unread key: movable#/eint
   26x unread key: movable#/eng
-  26x unread key: movable#/gun
   32x unread key: movable#/inte
   26x unread key: movable#/ntor
   37x unread key: movable#/pz
@@ -1071,7 +1009,6 @@ s02201: 133 objects
   74x unread key: movable#/diff
   55x unread key: movable#/eint
   55x unread key: movable#/eng
-  55x unread key: movable#/gun
   74x unread key: movable#/inte
   55x unread key: movable#/ntor
   55x unread key: movable#/pz
@@ -1090,7 +1027,6 @@ s02202: 150 objects
   94x unread key: movable#/diff
   82x unread key: movable#/eint
   82x unread key: movable#/eng
-  82x unread key: movable#/gun
   94x unread key: movable#/inte
   82x unread key: movable#/ntor
   49x unread key: movable#/pz
@@ -1107,7 +1043,6 @@ s02203: 141 objects
   83x unread key: movable#/diff
   67x unread key: movable#/eint
   67x unread key: movable#/eng
-  67x unread key: movable#/gun
   83x unread key: movable#/inte
   67x unread key: movable#/ntor
   55x unread key: movable#/pz
@@ -1126,7 +1061,6 @@ s02204: 95 objects
   44x unread key: movable#/diff
   40x unread key: movable#/eint
   40x unread key: movable#/eng
-  40x unread key: movable#/gun
   44x unread key: movable#/inte
   40x unread key: movable#/ntor
   46x unread key: movable#/pz
@@ -1146,7 +1080,6 @@ s02205: 164 objects
   22x unread key: movable#/dis
   55x unread key: movable#/eint
   55x unread key: movable#/eng
-  55x unread key: movable#/gun
   59x unread key: movable#/inte
   55x unread key: movable#/ntor
   22x unread key: movable#/num
@@ -1159,7 +1092,6 @@ strai0: 129 objects
   45x unread key: movable#/diff
   45x unread key: movable#/eint
   45x unread key: movable#/eng
-  45x unread key: movable#/gun
   45x unread key: movable#/inte
   45x unread key: movable#/ntor
   84x unread key: movable#/pz
@@ -1172,7 +1104,6 @@ strai1: 197 objects
   48x unread key: movable#/diff
   48x unread key: movable#/eint
   48x unread key: movable#/eng
-  48x unread key: movable#/gun
   48x unread key: movable#/inte
   48x unread key: movable#/ntor
   148x unread key: movable#/pz
@@ -1192,7 +1123,6 @@ strai2: 140 objects
   84x unread key: movable#/dis
   48x unread key: movable#/eint
   48x unread key: movable#/eng
-  48x unread key: movable#/gun
   48x unread key: movable#/inte
   48x unread key: movable#/ntor
   84x unread key: movable#/num
@@ -1210,7 +1140,6 @@ strai3: 227 objects
   37x unread key: movable#/dis
   83x unread key: movable#/eint
   83x unread key: movable#/eng
-  83x unread key: movable#/gun
   89x unread key: movable#/inte
   83x unread key: movable#/ntor
   37x unread key: movable#/num
@@ -1226,7 +1155,6 @@ Total: 71 missions, 4981 objects
   1849x unread key: movable#/ai
   1849x unread key: movable#/eint
   1849x unread key: movable#/eng
-  1849x unread key: movable#/gun
   1849x unread key: movable#/ntor
   1849x unread key: movable#/tor
   1634x unread key: movable#/pz

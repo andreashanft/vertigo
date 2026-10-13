@@ -19,6 +19,7 @@
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "fight/orders.h"
+#include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -112,6 +113,14 @@ void SimpleBoat::updateBox()
 }
 
 
+// boats fire from the nose; their object files have no gun data
+void SimpleBoat::arm(int model, txt::DesFile &file)
+{
+    if (UnitGun::isGun(model))
+        m_unitGun.reset(new UnitGun(m_scenario, this, model, { Vector3D(0, m_localBox.maxPoint().y + 0.5f, 0) }));
+}
+
+
 bool SimpleBoat::update(float elapsedTime)
 {
     if (m_orders)
@@ -120,6 +129,8 @@ bool SimpleBoat::update(float elapsedTime)
     updateVelocity(elapsedTime);
     // the current drifts the boat without changing its own velocity
     move((m_velocity + m_scenario->current(m_position)*m_currentFactor)*elapsedTime);
+    if (m_unitGun)
+        m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
 
     return false;
 }

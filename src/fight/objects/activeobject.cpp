@@ -19,6 +19,7 @@
 #include "fight/scenario.h"
 #include "sfx/samplemap.h"
 #include "fight/effects/effectmanager.h"
+#include "fight/weapons/unitgun.h"
 #include <algorithm>
 
 
@@ -43,6 +44,11 @@ ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectI
     file.setSection("defense");
     m_kineticShield = m_kineticShieldMax = file.value("kineticshield0").toInt();
     m_shockShield = m_shockShieldMax = file.value("shockshield0", 10000000).toInt();
+}
+
+
+ActiveObject::~ActiveObject()
+{
 }
 
 

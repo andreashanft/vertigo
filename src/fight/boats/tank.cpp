@@ -20,6 +20,7 @@
 #include "fight/module.h"
 #include "fight/orders.h"
 #include "fight/objects/turret.h"
+#include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -59,6 +60,24 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
 
 Tank::~Tank()
 {
+}
+
+
+void Tank::arm(int model, txt::DesFile &file)
+{
+    const UnitGun::Mount mount = UnitGun::readMount(file);
+    if (mount.model < 0)
+        return; // crawlers have no gun
+    if (!UnitGun::isGun(model))
+        model = mount.model;
+    if (!UnitGun::isGun(model))
+        return;
+    std::vector<Vector3D> muzzles;
+    for (const Vector3D &muzzle : mount.muzzles)
+        muzzles.push_back(muzzle*m_scale);
+    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &file));
+    if (mount.ammunition >= 0)
+        m_unitGun->setAmmunition(mount.ammunition);
 }
 
 
@@ -114,6 +133,10 @@ bool Tank::update(float elapsedTime)
     const Vector3D previous = m_position;
     setPosition(m_position + heading*m_speed*elapsedTime);
     m_velocity = elapsedTime > 0 ? (m_position - previous)/elapsedTime : Vector3D(0);
+
+    // TODO: aim the turret (the gun fires along the heading for now)
+    if (m_unitGun)
+        m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
 
     return false;
 }
