@@ -29,6 +29,7 @@
 #include "objects/mine.h"
 #include "objects/turretbase.h"
 #include "objects/navpoint.h"
+#include "objects/placeholder.h"
 #include "objects/simpleobject.h"
 
 #include "boats/simpleboat.h"
@@ -71,28 +72,35 @@ Scenario::Scenario(const QString &name) :
     m_depth = m_file.value("depth").toInt();
     m_surface.load(m_file.value("name").toString().toLower(), m_file.value("maxheightscale").toInt(), m_file.value("patchcomb").toInt());
 
-    std::map<int, QString> types;
-    types[ 1] = "anscout2";
-    types[ 5] = "guntow0";
-    types[ 7] = "guntow2";
-    types[ 8] = "bioscout";
-    types[ 9] = "honglong";
-    types[16] = "anbombr1";
-    types[10] = "russcout";
-    types[12] = "atscout";
-    types[27] = "mine0";
-    types[28] = "mine1";
-    types[36] = "tortow0";
-    types[39] = "anscout1";
-    types[40] = "anbombr2";
-    types[41] = "atbomber";
-    types[47] = "build2";
-    types[48] = "build3";
-    types[50] = "build5";
-    types[67] = "entrobot";
+    // dtyp -> object file, decoded from the original FIGHT.EXE (docs/ROADMAP.md, appendix A)
+    std::map<int, QString> types = {
+        // scouts
+        { 1, "anscout2" }, { 8, "bioscout" }, { 9, "honglong" }, {10, "russcout" }, {11, "prscout1" },
+        {12, "atscout" }, {13, "prscout2" }, {14, "moghboot" }, {15, "indrboot" }, {39, "anscout1" },
+        {67, "entrobot" }, {88, "anscout3" }, {89, "anscout4" },
+        // bombers
+        {16, "anbombr1" }, {40, "anbombr2" }, {41, "atbomber" }, {42, "prbomber" }, {43, "biobombr" },
+        {44, "russbomb" },
+        // tanks
+        { 2, "tank0" }, { 3, "tank1" }, { 4, "tank2" }, {65, "tank3" }, {66, "tank4" },
+        // gun towers and the torpedo tower
+        { 5, "guntow0" }, { 6, "guntow1" }, { 7, "guntow2" }, {90, "guntow3" }, {36, "tortow0" },
+        // mines
+        {27, "mine0" }, {28, "mine1" },
+        // buildings
+        {45, "build0" }, {46, "build1" }, {47, "build2" }, {48, "build3" }, {49, "build4" },
+        {50, "build5" }, {51, "build6" }, {52, "build7" },
+        // cargo ships
+        {91, "bship10" },
+    };
+    for (int i = 0; i < 10; i++)
+    {
+        types[68 + i] = QString("cship%1").arg(i);
+        types[78 + i] = QString("bship%1").arg(i);
+    }
 
     float initialDir = 0.0f;
-    QSet<QString> skippedSections;
+    QSet<QString> placeholderSections;
     foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
         m_file.setSection(section);
 
@@ -116,19 +124,25 @@ Scenario::Scenario(const QString &name) :
 
         Object *object = NULL;
         const int type = m_file.value("typ").toInt();
+        const int dType = m_file.value("dtyp").toInt();
         QString desName;
 
         txt::DesFile objectDes;
-        if (m_file.contains("dtyp") && type != TypeNavPoint && type != TypeCrawler)
+        bool placeholder = false;
+        const bool usesObjectFile = type == TypeBoat || type == TypeBomber || type == TypeTank || type == TypeTower ||
+                                    type == TypeTorpedoTower || type == TypeMine || type == TypeActiveBuilding ||
+                                    type == TypeCargoShip;
+        if (usesObjectFile)
         {
-            const int dType = m_file.value("dtyp").toInt();
-            if (types.find(dType) == types.end()) {
-                loadIssue(QString("skipped movable: typ %1 dtyp %2").arg(type).arg(dType));
-                skippedSections << section;
-                continue;
-            }
-            objectDes.load(QString("vfx:sobjects/%1.des").arg(types[dType]));
-            desName = types[dType];
+            const auto it = types.find(dType);
+            if (it != types.end())
+                desName = it->second;
+            else if (type == TypeBoat)
+                desName = "anscout4"; // the original's fallback for scouts
+            else
+                placeholder = true;
+            if (!desName.isEmpty())
+                objectDes.load(QString("vfx:sobjects/%1.des").arg(desName));
         }
 
         ActiveObject::ObjectInfo info;
@@ -143,7 +157,7 @@ Scenario::Scenario(const QString &name) :
         if (m_file.contains("senr"))
             info.sensorRange = m_file.value("senr").toInt();
 
-        switch (type) {
+        switch (placeholder ? 0 : type) {
         case TypeBoat:
             {
                 object = new SimpleBoat(this, objectDes, info, 0);
@@ -159,6 +173,14 @@ Scenario::Scenario(const QString &name) :
                 Vector3D pos = getPosition();
                 pos.z += 20.0f;
                 object->setPosition(pos);
+            }
+            break;
+
+        case TypeTank:
+            {
+                // TODO: ground following, turret (roadmap step 1.6)
+                object = new SimpleObject(this, objectDes, info);
+                object->setPosition(getPosition());
             }
             break;
 
@@ -215,7 +237,7 @@ Scenario::Scenario(const QString &name) :
 
         case TypeNavPoint:
             {
-                object = new NavPoint(this, m_file.value("dtyp").toInt());
+                object = new NavPoint(this, dType);
                 object->setPosition(getPosition() + Vector3D(-0.5f*m_surface.scale().x, -0.5f*m_surface.scale().y, 10));
                 m_navPoints.push_back(static_cast<NavPoint*>(object));
             }
@@ -260,9 +282,15 @@ Scenario::Scenario(const QString &name) :
             }
             break;
 
+        case TypeCargoShip:
         default:
-            loadIssue(QString("skipped movable: typ %1 dtyp %2").arg(type).arg(m_file.value("dtyp").toInt()));
-            skippedSections << section;
+            {
+                // TODO: cargo ships are assembled from blocks (roadmap step 1.6)
+                loadIssue(QString("placeholder: typ %1 dtyp %2").arg(type).arg(dType));
+                placeholderSections << section;
+                object = new Placeholder(this, objectDes, info, type == TypeCargoShip ? 24.0f : 4.0f);
+                object->setPosition(getPosition());
+            }
         }
 
         if (object != NULL)
@@ -336,7 +364,7 @@ Scenario::Scenario(const QString &name) :
     // report what the loader ignored, with numbers in names collapsed to '#'
     QRegExp digits("\\d+");
     foreach (const QString &section, m_file.sections()) {
-        if (skippedSections.contains(section))
+        if (placeholderSections.contains(section))
             continue;
         const QString sectionName = QString(section).replace(digits, "#");
         if (!m_file.wasSectionRead(section)) {

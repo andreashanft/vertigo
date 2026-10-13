@@ -121,6 +121,7 @@ private:
         TypeSpace          = 2060,
         TypeNavPoint       = 2061,
         TypeActiveBuilding = 2062,
+        TypeCargoShip      = 2063,
     };
 
     Vector3D m_position;

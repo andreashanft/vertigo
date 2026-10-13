@@ -52,6 +52,8 @@ set(SOURCES
     fight/objects/mine.h
     fight/objects/navpoint.cpp
     fight/objects/navpoint.h
+    fight/objects/placeholder.cpp
+    fight/objects/placeholder.h
     fight/objects/object.cpp
     fight/objects/object.h
     fight/objects/simpleobject.cpp
