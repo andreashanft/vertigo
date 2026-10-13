@@ -49,7 +49,9 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_torpedoReady(0),
     m_rearmingTime(5),
     m_lockTarget(nullptr),
-    m_lockTime(0)
+    m_lockTime(0),
+    m_lockAnnounced(false),
+    m_threats(0)
 {
     if (boat->magazine() >= 1025)
     {
@@ -171,6 +173,13 @@ float Player::lockProgress() const
     if (!type || type->lockType == 0 || !m_lockTarget)
         return 0;
     return type->lockDelay > 0 ? std::min(1.0f, m_lockTime/type->lockDelay) : 1.0f;
+}
+
+
+float Player::lockRemaining() const
+{
+    const TorpedoType *type = m_selectedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_selectedTorpedo] - 1) : nullptr;
+    return type ? std::max(0.0f, type->lockDelay - m_lockTime) : 0;
 }
 
 
@@ -338,6 +347,24 @@ bool Player::update(float elapsedTime)
         m_lockTime += elapsedTime;
     else
         m_lockTime = 0;
+    // a beep when locking starts, beep and voice when a homing torpedo would follow
+    const float progress = lockProgress();
+    if (progress > 0 && m_lockTime <= elapsedTime)
+        sfx::SampleMap::get(sfx::Sample::LockOn).play();
+    if (progress >= 1 && !m_lockAnnounced)
+    {
+        sfx::SampleMap::get(sfx::Sample::TorpedoLockOn).play();
+        sfx::SampleMap::get(sfx::Sample::Voice_TorpedoReady).play();
+    }
+    m_lockAnnounced = progress >= 1;
+
+    // homing torpedoes on their way: the threat beep, and the voice for each new one
+    const int threats = m_scenario->threatsTo(this);
+    if (threats > m_threats)
+        sfx::SampleMap::get(sfx::Sample::Voice_TorpedoThreat).play();
+    if (threats > 0)
+        sfx::SampleMap::get(sfx::Sample::Threat).play();
+    m_threats = threats;
 
     m_gun.update(elapsedTime);
     if (m_firing && m_gun.state() == Gun::StateReady)

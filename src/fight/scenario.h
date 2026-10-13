@@ -99,6 +99,8 @@ public:
     Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
     const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
     int torpedoesLaunched() const { return m_torpedoesLaunched; }
+    // homing torpedoes on their way to the unit
+    int threatsTo(const ActiveObject *unit) const;
     void addDecoy(const Vector3D &position, float seconds);
     bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
 

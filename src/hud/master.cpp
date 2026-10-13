@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "master.h"
+#include <cmath>
 #include "hud.h"
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
@@ -152,13 +153,21 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
     }
     else
     {
-        if (!isPassive)
+        fight::Target &target = m_hud->scenario()->target();
+        const fight::Player *player = m_hud->scenario()->player();
+        const bool torpedoLock = target.locked() && player->lockTarget() == target.locked() && player->lockProgress() > 0;
+
+        if (torpedoLock && player->lockProgress() >= 1)
+            // a homing torpedo would follow this target
+            tex = isPassive ? &m_lockPassiveYellow : &m_lockActiveYellow;
+        else if (!isPassive)
             tex = isFriend && m_hud->scenario()->blink() ? &m_lockActiveGreen : &m_lockActiveRed;
         else
             tex = isFriend && m_hud->scenario()->blink() ? &m_lockPassiveGreen : &m_lockPassiveRed;
         tex->draw(point.x - tex->width()/2, point.y - tex->height()/2, &m_clipRect);
 
-        fight::Target &target = m_hud->scenario()->target();
+        if (torpedoLock && player->lockProgress() < 1)
+            m_hud->fontYellow().draw(QString::number(int(std::ceil(player->lockRemaining()))), Rect(point.x - 100, point.y + 38, 200, -1), true, false, &m_clipRect);
 
         if (!isPassive)
             m_hud->fontGreen().draw(QString("%1M").arg(static_cast<int>(glm::round(target.distance()))), Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);

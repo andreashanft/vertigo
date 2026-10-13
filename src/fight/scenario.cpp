@@ -833,6 +833,14 @@ Torpedo* Scenario::launchTorpedo(int type, const Vector3D &position, const Vecto
 }
 
 
+int Scenario::threatsTo(const ActiveObject *unit) const
+{
+    return std::count_if(m_torpedoes.begin(), m_torpedoes.end(), [unit](const std::unique_ptr<Torpedo> &torpedo) {
+        return !torpedo->isDone() && torpedo->target() == unit;
+    });
+}
+
+
 void Scenario::addDecoy(const Vector3D &position, float seconds)
 {
     m_decoys.push_back({ position, m_time + seconds });

@@ -48,6 +48,7 @@
 #include "pause.h"
 #include "alert.h"
 #include "slavemonitor.h"
+#include "symbols.h"
 #include "sfx/soundsystem.h"
 #include "txt/stringtable.h"
 
@@ -134,6 +135,14 @@ void HUD::load(game::Boat *boat)
     file.setSection("hudalertblock");
     Alert *alert = new Alert(this, readRect(file));
     m_children.emplace_back(alert);
+
+    file.setSection("hudthreatblock");
+    Threat *threat = new Threat(this, readRect(file));
+    m_children.emplace_back(threat);
+
+    file.setSection("hudsymbolblock1");
+    Symbols *symbols = new Symbols(this, readRect(file));
+    m_children.emplace_back(symbols);
 
     file.setSection("hudpauseblock");
     Pause *pause = new Pause(this, readRect(file));

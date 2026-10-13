@@ -186,6 +186,8 @@ set(SOURCES
     hud/slavemonitor.cpp
     hud/slavemonitor.h
     hud/sonarmonitor.cpp
+    hud/symbols.cpp
+    hud/symbols.h
     hud/sonarmonitor.h
     hud/autopilot.cpp
     hud/autopilot.h

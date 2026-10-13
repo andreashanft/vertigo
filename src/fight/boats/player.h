@@ -53,6 +53,7 @@ public:
     bool torpedoReady() const;
     ActiveObject* lockTarget() const { return m_lockTarget; }
     float lockProgress() const; // 0-1, 1 when a homing torpedo would follow the target
+    float lockRemaining() const; // seconds until the lock is complete
     const Gun* turret(int index) const { return index == 0 ? m_tur1.get() : m_tur2.get(); }
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
@@ -82,6 +83,8 @@ private:
     float m_rearmingTime;
     ActiveObject *m_lockTarget;
     float m_lockTime;
+    bool m_lockAnnounced;
+    int m_threats;
 
     int m_shield[4];
     float m_lastHit = -1;
