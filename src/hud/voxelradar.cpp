@@ -21,6 +21,8 @@
 #include "fight/boats/player.h"
 #include "fight/objects/activeobject.h"
 #include "fight/objects/building.h"
+#include "fight/effects/trash.h"
+#include "fight/target.h"
 #include "txt/desfile.h"
 
 #include <QFile>
@@ -45,7 +47,7 @@ const int FogRows = 32;
 const int Entries = 256;
 const int LightLevels = 64;
 const int Orange = 64;
-// the patch is drawn as a grid of quads
+// the patch is drawn with the height map's cells at this size (patch widths)
 const int GridSteps = 32;
 // the patch at the boat's ground level fills at most this part of the view
 const float PatchWidth = 0.9f;
@@ -144,42 +146,87 @@ void VoxelRadar::render(fight::Scenario *scenario)
     QPainter painter(&m_image);
     painter.setPen(Qt::NoPen);
 
-    // the terrain, from the far edge to the near one so that nearer quads cover what lies behind;
-    // the lowest ground on the patch is dark, the highest bright
-    const float step = 2*extent/GridSteps;
-    Vector3D points[GridSteps + 1][GridSteps + 1];
-    float lowest = 1e9f, highest = -1e9f;
-    for (int j = 0; j <= GridSteps; j++)
-        for (int i = 0; i <= GridSteps; i++)
-        {
-            const Vector2D p = Vector2D(boat) + right*(i*step - extent) + forward*(j*step - extent);
-            points[j][i] = Vector3D(p, surface.heightAt(p.x, p.y));
-            lowest = std::min(lowest, points[j][i].z);
-            highest = std::max(highest, points[j][i].z);
-        }
-    const float range = std::max(highest - lowest, 10.0f);
-    for (int j = GridSteps - 1; j >= 0; j--)
-        for (int i = 0; i < GridSteps; i++)
-        {
-            const float z = 0.25f*(points[j][i].z + points[j][i + 1].z + points[j + 1][i].z + points[j + 1][i + 1].z);
-            const int level = glm::clamp(int(8 + 54*(z - lowest)/range), 0, LightLevels - 1);
-            // slightly darker towards the far edge
-            painter.setBrush(QColor(shade(FogRows - 1 - (j*6)/GridSteps, level)));
-            const QPointF quad[4] = { project(points[j][i]), project(points[j][i + 1]), project(points[j + 1][i + 1]), project(points[j + 1][i]) };
-            painter.drawPolygon(quad, 4);
-        }
-
-    // buildings on the patch as orange blocks (their boxes, in the patch's frame and cut off at its
-    // edges), the faces farther away first
-    const QColor orange(shade(FogRows - 1, Orange));
+    // the terrain: the height map's own grid (so the shading stays with the ground as the boat
+    // moves), cut to the patch and drawn from far to near so that nearer cells cover what lies
+    // behind; the lowest ground is dark, the highest bright
     auto toPatch = [&](const Vector3D &p) { const Vector2D way(p - boat); return Vector2D(glm::dot(way, right), glm::dot(way, forward)); };
     auto fromPatch = [&](float x, float y, float z) { return Vector3D(Vector2D(boat) + right*x + forward*y, z); };
-    for (const auto &object : *scenario)
+    const float step = 2*extent/GridSteps;
+    const int first[2] = { int(std::floor((boat.x - 1.5f*extent)/step)), int(std::floor((boat.y - 1.5f*extent)/step)) };
+    const int count = int(3*extent/step) + 2;
+    std::vector<float> heights(count*count);
+    for (int j = 0; j < count; j++)
+        for (int i = 0; i < count; i++)
+            heights[j*count + i] = surface.heightAt((first[0] + i)*step, (first[1] + j)*step);
+
+    struct Cell { std::vector<Vector3D> corners; float height; float depth; };
+    std::vector<Cell> cells;
+    float lowest = 1e9f, highest = -1e9f;
+    for (int j = 0; j + 1 < count; j++)
+        for (int i = 0; i + 1 < count; i++)
+        {
+            // the cell in the patch's frame (x, y) with its heights (z), cut at the patch's edges
+            std::vector<Vector3D> polygon;
+            for (const auto &c : { std::make_pair(0, 0), std::make_pair(1, 0), std::make_pair(1, 1), std::make_pair(0, 1) })
+            {
+                const Vector2D local = toPatch(Vector3D((first[0] + i + c.first)*step, (first[1] + j + c.second)*step, 0));
+                polygon.push_back(Vector3D(local, heights[(j + c.second)*count + i + c.first]));
+            }
+            for (int axis = 0; axis < 2 && !polygon.empty(); axis++)
+                for (const float sign : { -1.0f, 1.0f })
+                {
+                    std::vector<Vector3D> kept;
+                    for (size_t k = 0; k < polygon.size(); k++)
+                    {
+                        const Vector3D &a = polygon[k], &b = polygon[(k + 1) % polygon.size()];
+                        const float da = extent - sign*a[axis], db = extent - sign*b[axis];
+                        if (da >= 0)
+                            kept.push_back(a);
+                        if ((da >= 0) != (db >= 0))
+                            kept.push_back(a + (b - a)*(da/(da - db)));
+                    }
+                    polygon.swap(kept);
+                }
+            if (polygon.size() < 3)
+                continue;
+            Cell cell;
+            Vector3D middle(0);
+            for (const Vector3D &corner : polygon)
+            {
+                cell.corners.push_back(fromPatch(corner.x, corner.y, corner.z));
+                middle += corner;
+                lowest = std::min(lowest, corner.z);
+                highest = std::max(highest, corner.z);
+            }
+            middle /= float(polygon.size());
+            cell.height = middle.z;
+            cell.depth = glm::length(fromPatch(middle.x, middle.y, middle.z) - eye);
+            cells.push_back(cell);
+        }
+    // the range follows the patch slowly, so the shades don't jump
+    const float time = scenario->time();
+    const float blend = m_lowest > m_highest || time < m_time ? 1.0f : std::min(1.0f, 2.0f*(time - m_time));
+    m_lowest += (lowest - m_lowest)*blend;
+    m_highest += (highest - m_highest)*blend;
+    m_time = time;
+    const float range = std::max(m_highest - m_lowest, 10.0f);
+    std::sort(cells.begin(), cells.end(), [](const Cell &a, const Cell &b) { return a.depth > b.depth; });
+    const float farthest = cells.empty() ? 1 : cells.front().depth, nearest = cells.empty() ? 0 : cells.back().depth;
+    for (const Cell &cell : cells)
     {
-        const fight::Building *building = dynamic_cast<const fight::Building *>(object.get());
-        if (!building || !building->isEnabled())
-            continue;
-        const Vector3D a = building->box().minPoint(), b = building->box().maxPoint();
+        const int level = glm::clamp(int(8 + 54*(cell.height - m_lowest)/range), 0, LightLevels - 1);
+        // slightly darker towards the far edge
+        const int fog = FogRows - 1 - int(6*(cell.depth - nearest)/std::max(farthest - nearest, 1.0f));
+        painter.setBrush(QColor(shade(fog, level)));
+        QPointF polygon[8];
+        for (size_t k = 0; k < cell.corners.size(); k++)
+            polygon[k] = project(cell.corners[k]);
+        painter.drawPolygon(polygon, int(cell.corners.size()));
+    }
+
+    // a block on the patch (a box in the patch's frame, cut off at its edges), the faces farther
+    // away first
+    auto drawBlock = [&](const Vector3D &a, const Vector3D &b, const QColor &colour) {
         Vector2D low(1e9f), high(-1e9f);
         for (const Vector3D &corner : { a, Vector3D(a.x, b.y, 0), Vector3D(b.x, a.y, 0), b })
         {
@@ -189,15 +236,15 @@ void VoxelRadar::render(fight::Scenario *scenario)
         low = glm::max(low, Vector2D(-extent));
         high = glm::min(high, Vector2D(extent));
         if (low.x >= high.x || low.y >= high.y)
-            continue;
+            return;
         const float z0 = a.z, z1 = b.z;
         struct Face { Vector3D corners[4]; QColor color; float depth; };
         Face faces[5] = {
-            { { fromPatch(low.x, low.y, z1), fromPatch(high.x, low.y, z1), fromPatch(high.x, high.y, z1), fromPatch(low.x, high.y, z1) }, orange.lighter(130), 0 },
-            { { fromPatch(low.x, low.y, z0), fromPatch(high.x, low.y, z0), fromPatch(high.x, low.y, z1), fromPatch(low.x, low.y, z1) }, orange, 0 },
-            { { fromPatch(low.x, high.y, z0), fromPatch(high.x, high.y, z0), fromPatch(high.x, high.y, z1), fromPatch(low.x, high.y, z1) }, orange, 0 },
-            { { fromPatch(low.x, low.y, z0), fromPatch(low.x, high.y, z0), fromPatch(low.x, high.y, z1), fromPatch(low.x, low.y, z1) }, orange.darker(130), 0 },
-            { { fromPatch(high.x, low.y, z0), fromPatch(high.x, high.y, z0), fromPatch(high.x, high.y, z1), fromPatch(high.x, low.y, z1) }, orange.darker(130), 0 },
+            { { fromPatch(low.x, low.y, z1), fromPatch(high.x, low.y, z1), fromPatch(high.x, high.y, z1), fromPatch(low.x, high.y, z1) }, colour.lighter(130), 0 },
+            { { fromPatch(low.x, low.y, z0), fromPatch(high.x, low.y, z0), fromPatch(high.x, low.y, z1), fromPatch(low.x, low.y, z1) }, colour, 0 },
+            { { fromPatch(low.x, high.y, z0), fromPatch(high.x, high.y, z0), fromPatch(high.x, high.y, z1), fromPatch(low.x, high.y, z1) }, colour, 0 },
+            { { fromPatch(low.x, low.y, z0), fromPatch(low.x, high.y, z0), fromPatch(low.x, high.y, z1), fromPatch(low.x, low.y, z1) }, colour.darker(130), 0 },
+            { { fromPatch(high.x, low.y, z0), fromPatch(high.x, high.y, z0), fromPatch(high.x, high.y, z1), fromPatch(high.x, low.y, z1) }, colour.darker(130), 0 },
         };
         for (Face &face : faces)
             face.depth = glm::length((face.corners[0] + face.corners[2])*0.5f - eye);
@@ -208,17 +255,44 @@ void VoxelRadar::render(fight::Scenario *scenario)
             const QPointF quad[4] = { project(face.corners[0]), project(face.corners[1]), project(face.corners[2]), project(face.corners[3]) };
             painter.drawPolygon(quad, 4);
         }
+    };
+
+    // the water currents as blue boxes over their 2x2 blocks of map cells, one cell high
+    const Vector3D &scale = surface.scale();
+    for (const fight::Scenario::CurrentCell &current : scenario->currentCells())
+    {
+        const Vector2D a(current.x*scale.x, current.y*scale.y), b = a + Vector2D(2*scale.x, 2*scale.y);
+        const float ground = surface.heightAt(0.5f*(a.x + b.x), 0.5f*(a.y + b.y));
+        drawBlock(Vector3D(a, ground), Vector3D(b, ground + scale.x), QColor(40, 72, 232, 160));
     }
 
-    // the sonar contacts on the patch: a line from the ground up to each
+    // buildings as orange blocks
+    const QColor orange(shade(FogRows - 1, Orange));
+    for (const auto &object : *scenario)
+    {
+        const fight::Building *building = dynamic_cast<const fight::Building *>(object.get());
+        if (building && building->isEnabled())
+            drawBlock(building->box().minPoint(), building->box().maxPoint(), orange);
+    }
+
+    // lines up from the ground: debris (trash) in green
+    auto drawLine = [&](const Vector3D &position, const QColor &colour) {
+        if (!inPatch(position))
+            return;
+        painter.setPen(colour);
+        painter.drawLine(project(Vector3D(position.x, position.y, surface.heightAt(position.x, position.y))), project(position));
+    };
+    for (const auto &object : *scenario)
+        if (dynamic_cast<const fight::Trash *>(object.get()) && object->isEnabled())
+            drawLine(object->position(), QColor(64, 200, 64));
+
+    // the sonar contacts: red hostile, green friendly, blue neutral, the locked target grey
+    const fight::ActiveObject *locked = scenario->target().locked();
     for (const auto &entry : scenario->sonar())
     {
-        const Vector3D position = entry.object->center();
-        if (!inPatch(position))
-            continue;
         const bool hostile = scenario->isHostile(fight::Scenario::PlayerFaction, entry.object->iff());
-        painter.setPen(entry.isFriend ? QColor(64, 200, 64) : hostile ? QColor(232, 32, 24) : QColor(64, 96, 255));
-        painter.drawLine(project(Vector3D(position.x, position.y, surface.heightAt(position.x, position.y))), project(position));
+        drawLine(entry.object->center(), entry.object == locked ? QColor(160, 160, 160) :
+                 entry.isFriend ? QColor(64, 200, 64) : hostile ? QColor(232, 32, 24) : QColor(64, 96, 255));
     }
     painter.setPen(orange);
     painter.drawLine(project(target), project(boat));

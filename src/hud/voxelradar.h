@@ -36,8 +36,9 @@ namespace hud {
 // [VoxelRadar0]), as in the original: a square patch turning with the boat, seen from behind and
 // above, shaded by height with the cockpit's shading table (VFX/TEXTURE/VOX_nnn.S16), low ground
 // dark and peaks bright, and with nothing around it, so the monitor shows through. Buildings are
-// orange blocks; the boat is an orange line up from the ground and the sonar contacts lines in
-// red (hostile), green (friendly) or blue (neutral).
+// orange blocks and water currents blue boxes; the boat is an orange line up from the ground, the
+// sonar contacts are lines in red (hostile), green (friendly), blue (neutral) or grey (the locked
+// target), and debris lines in green.
 //
 // How the original uses its settings is still to be compared: here Projection is the angle the
 // view looks down at and the patch reaches WorldMaxY cells to each side of the boat; WorldMinY
@@ -66,6 +67,8 @@ private:
     Rect m_rect;
     float m_elevation = 0.52f;  // radians the view looks down
     float m_extent = 20;        // cells from the boat to each side of the patch
+    float m_lowest = 1, m_highest = 0;  // the heights the shades span, following the patch
+    float m_time = 0;
     std::vector<QRgb> m_table;  // FogRows x Entries, fog row 0 is the farthest
     QImage m_image;
     gfx::Texture m_texture;
