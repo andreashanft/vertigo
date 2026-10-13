@@ -19,6 +19,8 @@
 #include "hud.h"
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
+#include "fight/boats/simpleboat.h"
+#include "fight/orders.h"
 
 #include <glm/geometric.hpp>
 #include <set>
@@ -128,6 +130,9 @@ void DebugOverlay::drawLabels()
             const float speed = glm::length(active->velocity());
             if (speed > 0.1f)
                 text += QString(" V%1").arg(int(speed*3.6f));
+            if (const fight::SimpleBoat *boat = dynamic_cast<const fight::SimpleBoat *>(active))
+                if (boat->orders() && boat->orders()->currentSlot())
+                    text += QString(" O%1 %2").arg(boat->orders()->current()).arg(fight::OrderSlot::name(boat->orders()->currentSlot()->type));
             if (detected.count(object))
                 font = &m_hud->fontYellow();
         }

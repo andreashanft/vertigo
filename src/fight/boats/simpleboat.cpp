@@ -18,6 +18,7 @@
 #include "simpleboat.h"
 #include "fight/scenario.h"
 #include "fight/module.h"
+#include "fight/orders.h"
 #include "txt/desfile.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -58,6 +59,41 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
 }
 
 
+SimpleBoat::~SimpleBoat()
+{
+}
+
+
+void SimpleBoat::setOrders(Orders *orders)
+{
+    m_orders.reset(orders);
+}
+
+
+void SimpleBoat::steerTo(const Vector3D &point, float speed)
+{
+    const Vector3D way = point - m_position;
+    const Vector3D local = m_orientation*way;
+
+    // positive turns to the right (yaw) and pitch the nose down
+    const float yawError = std::atan2(local.x, local.y);
+    const float pitch = std::asin(glm::clamp(dir().z, -1.0f, 1.0f));
+    const float targetPitch = glm::clamp(std::atan2(way.z, 40.0f), -0.6f, 0.6f);
+    m_turnVelocity = Vector3D(glm::clamp(2.0f*(pitch - targetPitch), -1.0f, 1.0f), 0, glm::clamp(1.5f*yawError, -1.0f, 1.0f));
+
+    // slow down while turning towards a point to the side or behind
+    m_velocityTarget = speed*std::max(0.3f, std::cos(std::min(glm::abs(yawError), glm::half_pi<float>())));
+}
+
+
+void SimpleBoat::hold()
+{
+    const float pitch = std::asin(glm::clamp(dir().z, -1.0f, 1.0f));
+    m_turnVelocity = Vector3D(glm::clamp(2.0f*pitch, -1.0f, 1.0f), 0, 0);
+    m_velocityTarget = 0;
+}
+
+
 void SimpleBoat::setPosition(const Vector3D &pos)
 {
     m_position = pos;
@@ -73,6 +109,8 @@ void SimpleBoat::updateBox()
 
 bool SimpleBoat::update(float elapsedTime)
 {
+    if (m_orders)
+        m_orders->update();
     updateOrientation(elapsedTime);
     updateVelocity(elapsedTime);
     move(m_velocity*elapsedTime);

@@ -17,6 +17,7 @@
 
 #include "scenario.h"
 #include "module.h"
+#include "orders.h"
 #include "surface/element.h"
 #include "surface/betaspline.h"
 #include "effects/billboard.h"
@@ -102,6 +103,7 @@ Scenario::Scenario(const QString &name) :
 
     float initialDir = 0.0f;
     QSet<QString> placeholderSections;
+    std::vector<std::pair<SimpleBoat *, std::vector<OrderSlot>>> pendingOrders;
     foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
         m_file.setSection(section);
 
@@ -319,6 +321,57 @@ Scenario::Scenario(const QString &name) :
                 entry.condSignal = navPoint->eventReached();
         }
 
+        // order orderSlots; all of them are read, so the load report only lists what is really ignored
+        std::vector<OrderSlot> orderSlots;
+        bool slotsEnded = false;
+        for (int n = 0; n < 8; n++)
+        {
+            auto value = [this, n](const char *name, int defaultValue) {
+                const QString key = QString("o%1%2").arg(n).arg(name);
+                return m_file.contains(key) ? m_file.value(key).toInt() : defaultValue;
+            };
+            OrderSlot slot;
+            slot.type = value("typ", OrderSlot::None);
+            slot.dur = value("dur", 0);
+            slot.refx = value("refx", 0);
+            slot.refy = value("refy", 0);
+            slot.vel = value("vel", 100);
+            slot.hei = value("hei", 0);
+            slot.rad = value("rad", 0);
+            slot.mih = value("mih", 0);
+            slot.mah = value("mah", 0);
+            slot.esc = value("esc", -1);
+            slot.offset = Vector3D(value("xof", 0), value("yof", 0), value("zof", 0));
+            slot.ene = value("ene", -1);
+            slot.car = value("car", 0);
+            slot.con = value("con", 0);
+            slot.cond1 = value("bccond1", 0);
+            slot.dep1 = value("bcdep1", 0);
+            slot.ref1 = value("bcref1", -1);
+            slot.op = value("bcop", 0);
+            slot.cond2 = value("bccond2", 0);
+            slot.dep2 = value("bcdep2", 0);
+            slot.ref2 = value("bcref2", -1);
+            slot.del = value("bcdel", 0);
+            if (slot.type == OrderSlot::None)
+                slotsEnded = true;
+            if (!slotsEnded)
+                orderSlots.push_back(slot);
+        }
+        if (!orderSlots.empty())
+        {
+            SimpleBoat *boat = dynamic_cast<SimpleBoat *>(object);
+            if (boat)
+            {
+                pendingOrders.emplace_back(boat, orderSlots);
+                for (const OrderSlot &slot : orderSlots)
+                    if (!OrderSlot::isImplemented(slot.type))
+                        loadIssue(QString("order not implemented: %1").arg(OrderSlot::name(slot.type)));
+            }
+            else if (object)
+                loadIssue(QString("orders not run: typ %1").arg(type));
+        }
+
         // Reading Objectives
         for (int i = 0; i < 16; i++)
         {
@@ -358,6 +411,13 @@ Scenario::Scenario(const QString &name) :
     }
 
     m_conditionManager.buildDependencies();
+
+    for (auto &pending : pendingOrders)
+    {
+        for (OrderSlot &slot : pending.second)
+            slot.breakCondition = m_conditionManager.addBreakCondition(slot.cond1, slot.dep1, slot.ref1, slot.op, slot.cond2, slot.dep2, slot.ref2, slot.del);
+        pending.first->setOrders(new Orders(this, pending.first, pending.second));
+    }
 
     std::sort(m_navPoints.begin(), m_navPoints.end(), [](NavPoint *a, NavPoint *b) { return a->num() < b->num(); });
 

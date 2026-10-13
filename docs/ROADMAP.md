@@ -93,6 +93,15 @@ circling, with terrain look-ahead.
 
 Order of work: 1, 2, 9 → 3 → 5 → (needs 1.4 and 1.7) → 7, 8 → 4 → 6 → 10 → 11.
 
+**Done:** orders 1, 2, 9, 3 and 5 for boats and bombers (`fight/orders.cpp`),
+with "stop when" conditions per slot. A slot ends when its break condition is
+met, or when it is finished: Goto and GotoWithArrive on arrival (20 m), Wait,
+Patrol and Escort after `dur`. After the last slot the unit holds its
+position. Heights are above ground with a look-ahead of 60 m. Units with other
+orders hold their position for now; `--check` lists them ("order not
+implemented"), as well as the orders of units that can't move yet (tanks,
+crawlers, towers, buildings, cargo ships: "orders not run").
+
 ## Phase 4 – HUD
 
 | Item | What it is | Effort | Needs |
