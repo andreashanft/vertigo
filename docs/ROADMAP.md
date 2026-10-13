@@ -57,7 +57,7 @@ So the plan builds those basics first.
 | 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders (**done** for boats and bombers; tanks follow in 1.6, collisions between units come with the orders) |
 | 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions (**done**: attacker passed through guns, projectiles and damage; "attacked" only for hits by another unit; the player is hit per side (front, left, right, back) and destroyed when a side drops below zero; destroyed units explode, sized by the unit) |
 | 1.5 | Mission end: Esc menu, failure and death screens (texts already exist), restart / abort / load. Keep "skip mission" as a debug key until missions are winnable | M | Proper campaign flow (**done**; the player can only be destroyed by `--destroy` until 1.4) |
-| 1.6 | Tanks (ground-following, 22 missions) and cargo ships (built from blocks, 36 missions; start with static hulls) | M / M–L | Escort targets, dust clouds (**tanks done**: tanks and crawlers drive on the ground, tilt with it at most `MaxClimbingAngle`, and run their orders; the turret is drawn but doesn't aim yet. Cargo ships are built from their blocks in milestone 5) |
+| 1.6 | Tanks (ground-following, 22 missions) and cargo ships (built from blocks, 36 missions; start with static hulls) | M / M–L | Escort targets, dust clouds (**tanks done**: tanks and crawlers drive on the ground, tilt with it at most `MaxClimbingAngle`, and run their orders; since milestone 6 their turret (the `Gun` module or the `GunTurret`) turns towards the target at 1.5 rad/s and the gun fires along it. Cargo ships are built from their blocks in milestone 5) |
 | 1.7 | Enemy guns, using the gun and volley settings in the object files | M | Orders 4, 6, 7, 8 (**done**: `UnitGun` with `[StaticGun]` muzzles and `[VolleyGun]` rhythm; the mission's `gun` key picks the model (0–13, 14 is "No Gun"); boats fire from the nose, tanks along their heading, towers from a turret that turns towards its target at the turret's rates. Who fires when is up to the orders) |
 | 1.8 | Torpedoes: 22 types, magazines, fire key, lock (none / noise / optic, 0–6 s), homing, decoys, enemy torpedo towers | L | Torpedo HUD, trails, cluster torpedo, turrets (**done**; the data only has lock types 0 and 1) |
 
@@ -138,7 +138,7 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 | Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice (**done**: ALERT blinks for 3 s after a hit, with the alert beep; THREAT blinks while homing torpedoes follow the player, with the threat beep and the voice for each new one) | S | 1.4, 1.8 |
 | Friendly fire | Escalating radio warnings; the third friendly kill fails the mission (**done**: friends are units not hostile to the player's faction 8 that aren't destroy objectives or mines; warnings 67–70 at most every 3 s, kills 71, the third kill 89 and failure; `~` texts are red) | M | 1.4, 1.5 |
 | Torpedo lock + countdown | Lock ring, countdown from the torpedo's lock time, beep and "torpedo ready" voice (**done**: the target must stay locked and within 40° of the nose; the ring turns yellow when complete) | S | 1.8 |
-| Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets (**done**: orders attack my target / sync / search and destroy / stop; Claw targets attacking torpedoes, Punisher hostile vessels, Eraser both; scan, lock time, accuracy and volleys from GLOBWEAP `[SoftwareN]`; states from `[TurretStateN]`; torpedoes can be shot down; brackets green scanning, yellow locking, red firing; turrets aim instantly) | L | 1.4, 1.8 |
+| Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets (**done**: orders attack my target / sync / search and destroy / stop; Claw targets attacking torpedoes, Punisher hostile vessels, Eraser both; scan, lock time, accuracy and volleys from GLOBWEAP `[SoftwareN]`; states from `[TurretStateN]`; torpedoes can be shot down; brackets green scanning, yellow locking, red firing; turrets turn at 1.5 rad/s, as the turret models do, and fire once they point at the target (milestone 6)) | L | 1.4, 1.8 |
 
 ## Phase 5 – Effects
 
@@ -212,6 +212,11 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    recharge for energy guns (`EnergyDemand` and the gun state "EnergyDelay"
    exist, the pool doesn't), tower accuracy, and cargo-ship placement and
    turret size.)
+6. **Loose ends:** what earlier milestones left out: voxel radar, dust
+   clouds and the particle pool, the slave monitor's F1–F4 pages and lamps,
+   turrets that turn at their rates (player and tanks), collisions between
+   units. The radiation icon and the sensor type wait for the alignment with
+   the original, which comes near the end.
 
 ## Open questions and how to settle them
 

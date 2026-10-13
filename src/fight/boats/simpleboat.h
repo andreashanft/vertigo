@@ -68,6 +68,8 @@ public:
     virtual bool isGroundVehicle() const { return false; }
     // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)
     virtual bool engagesHostiles() const { return true; }
+    // where the gun points; units with a turret turn it with aimAt()
+    virtual Vector3D gunDirection() const { return dir(); }
 
 public:
     void setPosition(const Vector3D &pos);

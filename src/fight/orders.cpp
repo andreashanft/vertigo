@@ -339,7 +339,8 @@ void Orders::updateAttack(ActiveObject *target, float speed)
         const Vector3D point = lead(target);
         const float distance = glm::length(point - m_unit->position());
         m_boat->steerTo(point, distance > 0.6f*range ? speed : 0.3f*speed);
-        m_unit->setTrigger(aligned(m_boat->dir(), point, range));
+        m_boat->aimAt(point);
+        m_unit->setTrigger(aligned(m_boat->gunDirection(), point, range));
         return;
     }
 

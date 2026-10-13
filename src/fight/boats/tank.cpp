@@ -24,6 +24,7 @@
 #include "txt/desfile.h"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -31,11 +32,28 @@
 namespace fight {
 
 
+namespace {
+
+// The Gun modules (panztur*) have no turn rates in the data; like the GunTurret's (TANTUR2) and
+// the turret models', theirs is 1.5 rad/s, faster than any hull turns (at most 1.1).
+const float GunTurnRate = 1.5f;
+const float MinPitch = -0.17f;
+const float MaxPitch = 1.0f;
+
+}
+
+
 Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float yaw) :
     SimpleBoat(scenario, file, info, yaw),
     m_heading(yaw),
     m_speed(0),
-    m_gun(nullptr)
+    m_gun(nullptr),
+    m_turretRate(GunTurnRate),
+    m_turretYaw(0),
+    m_turretPitch(0),
+    m_targetYaw(0),
+    m_targetPitch(0),
+    m_aimHold(0)
 {
     // the turret, in model coordinates like the base
     file.setSection("cluster");
@@ -43,6 +61,7 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
     {
         m_gun = scenario->moduleManager().get(file.value("gun").toString());
         m_gunOffset = Vector3D(file.value("GunOffsetX").toFloat(), file.value("GunOffsetY").toFloat(), file.value("GunOffsetZ").toFloat());
+        m_pivot = m_gunOffset;
         m_localBox.add(m_gun->box().translate(m_gunOffset).scale(m_scale));
     }
     file.setSection("gunturret");
@@ -52,6 +71,9 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
         m_turret.reset(new Turret(scenario, turretFile));
         m_turret->setPosition(Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat()));
         m_localBox.add(m_turret->box().scale(m_scale));
+        m_pivot = m_turret->position();
+        turretFile.setSection("kinematics");
+        m_turretRate = turretFile.value("MaxAngleVelocityA", GunTurnRate).toFloat();
     }
 
     m_groundOffset = -m_localBox.minPoint().z;
@@ -134,11 +156,57 @@ bool Tank::update(float elapsedTime)
     setPosition(m_position + heading*m_speed*elapsedTime);
     m_velocity = elapsedTime > 0 ? (m_position - previous)/elapsedTime : Vector3D(0);
 
-    // TODO: aim the turret (the gun fires along the heading for now)
+    updateTurret(elapsedTime);
     if (m_unitGun)
-        m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
+    {
+        // the muzzles turn with the turret around its pivot
+        const glm::mat3 frame = m_orientationInverted*turretRotation();
+        const Vector3D pivot = m_pivot*m_scale;
+        const Vector3D origin = m_position + m_orientationInverted*pivot - frame*pivot;
+        m_unitGun->update(elapsedTime, m_trigger, origin, frame[1], frame[2], frame[0]);
+    }
 
     return false;
+}
+
+
+void Tank::aimAt(const Vector3D &point)
+{
+    if (!m_gun && !m_turret)
+        return;
+    const Vector3D way = m_orientation*(point - (m_position + m_orientationInverted*(m_pivot*m_scale)));
+    m_targetYaw = std::atan2(way.x, way.y);
+    m_targetPitch = glm::clamp(std::atan2(way.z, glm::length(Vector2D(way))), MinPitch, MaxPitch);
+    m_aimHold = 1.0f;
+}
+
+
+Vector3D Tank::gunDirection() const
+{
+    return m_orientationInverted*turretRotation()[1];
+}
+
+
+glm::mat3 Tank::turretRotation() const
+{
+    // yaw to the right around z, then pitch up around the turned x axis
+    const float cy = std::cos(m_turretYaw), sy = std::sin(m_turretYaw);
+    const float cp = std::cos(m_turretPitch), sp = std::sin(m_turretPitch);
+    const Vector3D right(cy, -sy, 0);
+    const Vector3D forward(sy*cp, cy*cp, sp);
+    return glm::mat3(right, forward, glm::cross(right, forward));
+}
+
+
+void Tank::updateTurret(float elapsedTime)
+{
+    m_aimHold -= elapsedTime;
+    if (m_aimHold <= 0)
+        m_targetYaw = m_targetPitch = 0;
+    const float step = m_turretRate*elapsedTime;
+    m_turretYaw += glm::clamp(std::remainder(m_targetYaw - m_turretYaw, glm::two_pi<float>()), -step, step);
+    m_turretYaw = std::remainder(m_turretYaw, glm::two_pi<float>());
+    m_turretPitch += glm::clamp(m_targetPitch - m_turretPitch, -step, step);
 }
 
 
@@ -149,16 +217,21 @@ void Tank::draw()
     glMultMatrixf(glm::value_ptr(Matrix(m_orientationInverted)));
     glScalef(m_scale, m_scale, m_scale);
     m_base->draw();
+    // the turret turns around its pivot; only its yaw shows, the barrel's pitch isn't modelled
     if (m_gun)
     {
         glPushMatrix();
         glTranslatef(m_gunOffset.x, m_gunOffset.y, m_gunOffset.z);
+        glRotatef(-glm::degrees(m_turretYaw), 0, 0, 1);
         m_gun->draw();
         glPopMatrix();
     }
     if (m_turret)
     {
         glPushMatrix();
+        glTranslatef(m_pivot.x, m_pivot.y, m_pivot.z);
+        glRotatef(-glm::degrees(m_turretYaw), 0, 0, 1);
+        glTranslatef(-m_pivot.x, -m_pivot.y, -m_pivot.z);
         m_turret->draw();
         glPopMatrix();
     }

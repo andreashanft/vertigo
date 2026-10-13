@@ -233,7 +233,6 @@ void Player::dropBuzzer()
 
 void Player::destroy()
 {
-    // TODO: called from damage() once the player can be destroyed (roadmap step 1.4)
     m_scenario->destroyPlayer();
 }
 

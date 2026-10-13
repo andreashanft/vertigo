@@ -22,6 +22,7 @@
 #include "fight/weapons/torpedo.h"
 #include "txt/desfile.h"
 
+#include <glm/common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/constants.hpp>
 #include <cmath>
@@ -37,6 +38,11 @@ float random()
     return qrand()/float(RAND_MAX);
 }
 
+// The data has no turn rates for the player's turrets; the turret models (TURRETn.DES) mostly turn
+// at 1.5 rad/s, so they do too. A shot leaves once the turret is within this angle of its aim.
+const float TurnRate = 1.5f;
+const float AimTolerance = 0.035f;
+
 }
 
 
@@ -51,7 +57,8 @@ PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int 
     m_lockTime(0),
     m_nextScan(0),
     m_shots(0),
-    m_volleyEnd(0)
+    m_volleyEnd(0),
+    m_aim(0, 1, 0)
 {
     m_gun.addMuzzles(Vector3D(0), gunItem);
     m_gun.setDefect(defect);
@@ -100,6 +107,38 @@ void PlayerTurret::setOrder(Order order)
 Vector3D PlayerTurret::mountPosition() const
 {
     return m_player->position() + m_player->right()*m_mount.x + m_player->dir()*m_mount.y + m_player->up()*m_mount.z;
+}
+
+
+Vector3D PlayerTurret::toWorld(const Vector3D &local) const
+{
+    return m_player->right()*local.x + m_player->dir()*local.y + m_player->up()*local.z;
+}
+
+
+Vector3D PlayerTurret::toLocal(const Vector3D &world) const
+{
+    return Vector3D(glm::dot(world, m_player->right()), glm::dot(world, m_player->dir()), glm::dot(world, m_player->up()));
+}
+
+
+bool PlayerTurret::turnTo(const Vector3D &direction, float elapsedTime)
+{
+    const Vector3D wanted = glm::normalize(toLocal(direction));
+    const float angle = std::acos(glm::clamp(glm::dot(m_aim, wanted), -1.0f, 1.0f));
+    const float step = TurnRate*elapsedTime;
+    if (angle <= step)
+        m_aim = wanted;
+    else
+    {
+        // rotate within the plane of both directions (any plane when they are opposite)
+        Vector3D axis = glm::cross(m_aim, wanted);
+        if (glm::length(axis) < 1e-4f)
+            axis = glm::cross(m_aim, std::abs(m_aim.z) < 0.9f ? Vector3D(0, 0, 1) : Vector3D(1, 0, 0));
+        axis = glm::normalize(axis);
+        m_aim = glm::normalize(m_aim*std::cos(step) + glm::cross(axis, m_aim)*std::sin(step));
+    }
+    return angle - step < AimTolerance;
 }
 
 
@@ -166,11 +205,12 @@ void PlayerTurret::update(float elapsedTime, bool playerFiring)
     {
     case Order::Stop:
         m_state = State::Stopped;
+        turnTo(m_player->dir(), elapsedTime);
         return;
 
     case Order::Sync:
         m_state = State::Sync;
-        if (playerFiring && m_gun.state() == Gun::StateReady)
+        if (turnTo(m_player->dir(), elapsedTime) && playerFiring && m_gun.state() == Gun::StateReady)
             m_gun.fire(mountPosition(), m_player->dir(), m_player->up(), m_player->right());
         return;
 
@@ -204,8 +244,16 @@ void PlayerTurret::update(float elapsedTime, bool playerFiring)
     {
         m_target = nullptr;
         m_state = State::Scanning;
+        turnTo(m_player->dir(), elapsedTime);
         return;
     }
+
+    // lead the target; the software's accuracy decides how far off a shot may go
+    const Vector3D mount = mountPosition();
+    const float distance = glm::length(m_target->center() - mount);
+    const float flight = m_gun.projectileSpeed() > 0 ? distance/m_gun.projectileSpeed() : 0;
+    const Vector3D aim = glm::normalize(m_target->center() + m_target->velocity()*flight + m_aimError - mount);
+    const bool aligned = turnTo(aim, elapsedTime);
     if (m_lockTime < m_software.lock)
     {
         m_lockTime += elapsedTime;
@@ -217,22 +265,17 @@ void PlayerTurret::update(float elapsedTime, bool playerFiring)
         m_state = State::Volley;
         return;
     }
-
-    // lead the target; the software's accuracy decides how far off a shot may go
-    const Vector3D mount = mountPosition();
-    const float distance = glm::length(m_target->center() - mount);
-    if (distance > m_gun.range())
+    if (distance > m_gun.range() || !aligned)
     {
         m_state = State::Locking;
         return;
     }
-    const float flight = m_gun.projectileSpeed() > 0 ? distance/m_gun.projectileSpeed() : 0;
-    const Vector3D aim = glm::normalize(m_target->center() + m_target->velocity()*flight + m_aimError - mount);
-    Vector3D right = glm::cross(aim, m_player->up());
+    const Vector3D barrel = toWorld(m_aim);
+    Vector3D right = glm::cross(barrel, m_player->up());
     right = glm::length(right) > 1e-3f ? glm::normalize(right) : m_player->right();
     if (m_gun.state() == Gun::StateReady)
     {
-        m_gun.fire(mount, aim, glm::cross(right, aim), right);
+        m_gun.fire(mount, barrel, glm::cross(right, barrel), right);
         const float error = (1 - m_software.hit)*6.0f*random();
         const float angle = random()*glm::two_pi<float>();
         m_aimError = Vector3D(error*std::cos(angle), error*std::sin(angle), 0);
