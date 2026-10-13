@@ -225,7 +225,9 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    clouds and the particle pool, the slave monitor's F1–F4 pages and lamps,
    turrets that turn at their rates (player and tanks), collisions between
    units. The radiation icon and the sensor type wait for the alignment with
-   the original, which comes near the end.
+   the original, which comes near the end. (**Done**; what the voxel radar's
+   settings, the lamps and the dust sprite mean in the original is to be
+   compared then. Test mode gained `--near` to start next to a unit.)
 
 ## Open questions and how to settle them
 
