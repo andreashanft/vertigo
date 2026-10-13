@@ -29,30 +29,30 @@ namespace sfx {
 enum class Sample
 {
     Sample0,
-    Sample1,
-    Sample2,
+    Explosion_Big,
+    Hit_Metal,
     Shoot_Vendetta,
-    Sample4,
+    Engine_Torpedo,
     Sample5,
-    Sample6,
-    Sample7,
-    Sample8,
-    Sample9,
-    Sample10,
+    Threat,
+    LockOn,
+    Error,
+    TorpedoLockOn,
+    Alert,
     Engine,
     Shoot_MaximumImpact,
     Shoot_PlasmaGun,
-    Sample14,
-    Sample15,
-    Sample16,
-    Sample17,
+    Torpedo_Launch,
+    Explosion_Ground,
+    Explosion_Small,
+    Explosion_EMS,
     Sample18,
     Sample19,
     Sample20,
-    Sample21,
+    Engine_Turret,
     Radio,
-    Sample23,
-    Sample24,
+    Engine_Enemy1,
+    Engine_Enemy2,
     Shoot_DoomMortar,
     Shoot_PlasmaDeath,
     Boat_Collision,
@@ -62,8 +62,8 @@ enum class Sample
     Engine_Startup,
     Engine_Shutdown,
     Sample33,
-    Sample34,
-    Sample35,
+    Engine_Biont,
+    Engine_BigShip,
     Sample36,
     Sample37,
     Sample38,
@@ -95,7 +95,7 @@ enum class Sample
     SonarActivated,
     SonarDeactivated,
     Sample66,
-    Sample67,
+    Voice_TargetLocked,
     TargetIdentified,
     TargetDestroyed,
     Sample70,
@@ -105,12 +105,12 @@ enum class Sample
     Sample74,
     Sample75,
     Sample76,
-    Sample77,
+    Voice_TorpedoReady,
     MissionAccomplished,
     Autopilot,
     NavPoint,
-    Sample81,
-    Sample82,
+    Voice_LockOn,
+    Voice_TorpedoThreat,
     MissionFailed,
 };
 
@@ -121,6 +121,10 @@ public:
     static void load();
     static void reset();
     static Sound& get(Sample sample) { return m_samples[static_cast<int>(sample)]; }
+    // plays a copy of the sample at a point in the world
+    static void playAt(Sample sample, float x, float y, float z);
+    // a looping copy at a point, for engines; stop() deletes it; nullptr if no source is free
+    static Sound* loopAt(Sample sample, float x, float y, float z);
 
 private:
     static std::vector<Sound> m_samples;

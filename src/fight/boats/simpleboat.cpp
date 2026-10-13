@@ -19,6 +19,7 @@
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "fight/orders.h"
+#include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -58,6 +59,29 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     const Vector3D dim = m_localBox.dim();
     m_collisionRadius = glm::clamp(0.5f*std::min(dim.x, std::min(dim.y, dim.z)), 1.5f, 8.0f);
 
+    file.setSection("attack");
+    AttackSettings &a = m_attackSettings;
+    auto setting = [&file](const char *key, float &value, float scale = 1) {
+        if (file.contains(key))
+            value = file.value(key).toFloat()*scale;
+    };
+    setting("AlignProbabilityFront", a.alignFront);
+    setting("AlignProbabilityBack", a.alignBack);
+    setting("AlignProbabilityLeft", a.alignLeft);
+    setting("AlignProbabilityRight", a.alignRight);
+    setting("MinAlignRadius", a.minAlignRadius, 1/32.0f);
+    setting("MaxAlignRadius", a.maxAlignRadius, 1/32.0f);
+    setting("MinAlignTime", a.minAlignTime);
+    setting("MaxAlignTime", a.maxAlignTime);
+    setting("MinAttackTime", a.minAttackTime);
+    setting("MaxAttackTime", a.maxAttackTime);
+    setting("AttackProbabilityHit", a.hitProbability);
+    setting("AttackProbabilityTorpedoFire", a.torpedoProbability);
+    setting("MinFlightRadius", a.minFlightRadius, 1/32.0f);
+    setting("MaxFlightRadius", a.maxFlightRadius, 1/32.0f);
+    setting("MinFlightTime", a.minFlightTime);
+    setting("MaxFlightTime", a.maxFlightTime);
+
     // boats move, so collision results must not be cached
     m_static = false;
     updateBox();
@@ -66,12 +90,6 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
 
 SimpleBoat::~SimpleBoat()
 {
-}
-
-
-void SimpleBoat::setOrders(Orders *orders)
-{
-    m_orders.reset(orders);
 }
 
 
@@ -112,6 +130,14 @@ void SimpleBoat::updateBox()
 }
 
 
+// boats fire from the nose; their object files have no gun data
+void SimpleBoat::arm(int model, txt::DesFile &file)
+{
+    if (UnitGun::isGun(model))
+        m_unitGun.reset(new UnitGun(m_scenario, this, model, { Vector3D(0, m_localBox.maxPoint().y + 0.5f, 0) }));
+}
+
+
 bool SimpleBoat::update(float elapsedTime)
 {
     if (m_orders)
@@ -120,6 +146,8 @@ bool SimpleBoat::update(float elapsedTime)
     updateVelocity(elapsedTime);
     // the current drifts the boat without changing its own velocity
     move((m_velocity + m_scenario->current(m_position)*m_currentFactor)*elapsedTime);
+    if (m_unitGun)
+        m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
 
     return false;
 }

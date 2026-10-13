@@ -41,6 +41,8 @@ public:
     void setPosition(const Vector3D &pos);
     bool update(float elapsedTime);
     void draw();
+    void arm(int model, txt::DesFile &file);
+    bool isGroundVehicle() const { return true; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
 
 private:

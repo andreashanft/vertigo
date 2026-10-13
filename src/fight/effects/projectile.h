@@ -26,6 +26,9 @@
 namespace fight {
 
 
+class ActiveObject;
+
+
 class Projectile : public Effect
 {
 public:
@@ -34,12 +37,14 @@ public:
 public:
     void setPosition(const Vector3D &pos);
     void setDirection(const Vector3D &direction);
+    void setOwner(ActiveObject *owner) { m_owner = owner; }
     bool update(float elapsedTime);
 
 private:
     Vector3D m_originPos;
     Vector3D m_direction;
     CollisionCache m_collisionCache;
+    ActiveObject *m_owner = nullptr; // never hit by its own shots
 };
 
 

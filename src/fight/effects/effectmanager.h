@@ -31,6 +31,7 @@ namespace fight {
 class Scenario;
 enum class Effects;
 class Projectile;
+class ActiveObject;
 
 class EffectManager
 {
@@ -41,7 +42,9 @@ public:
     Billboard* getBillboard(Effects effect);
 
     Effect* addEffect(Effects effect, const Vector3D &position, float angle = 0, float scale = 1);
-    Projectile* addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction);
+    // a piece flying from the position in the direction, slowing down and sinking (DEBRIS.DES)
+    Effect* addDebris(Effects debris, const Vector3D &position, const Vector3D &direction);
+    Projectile* addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction, ActiveObject *owner = nullptr);
 
     void update(float elapsedTime);
     void draw();

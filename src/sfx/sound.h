@@ -45,9 +45,13 @@ public:
     void setVolume(float volume);
     void setRandomPitch(float randomPitch);
     void setPitch(float pitch);
+    // makes the sound come from a point in the world (sounds are attached to the listener otherwise)
+    void setPosition(float x, float y, float z);
+    bool hasSource() const { return m_source != 0; }
     bool isInstance() const { return m_instance; }
 
 private:
+    friend class SampleMap;
     Sound(const Sound &o);
     QByteArray loadFile(const QString &filename);
     bool acquire();

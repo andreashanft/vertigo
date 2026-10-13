@@ -39,14 +39,20 @@ class HUD;
 class MissionMenu : public ui::Widget
 {
 public:
-    enum class Page { None, Main, ConfirmAbort, ConfirmRestart, ConfirmLoad, GameOver, Died };
-    enum class Action { None, Continue, Abort, Restart, Load };
+    enum class Page { None, Main, ConfirmAbort, ConfirmRestart, ConfirmLoad, GameOver, Died, Turrets, Turret1, Turret2 };
+    enum class Action { None, Continue, Abort, Restart, Load, TurretOrder };
 
 public:
     MissionMenu(HUD *hud, const Point &center);
 
 public:
     Page page() const { return m_page; }
+    // the turret menu doesn't stop the mission
+    bool pauses() const { return m_page != Page::None && m_page != Page::Turrets && m_page != Page::Turret1 && m_page != Page::Turret2; }
+    // after Action::TurretOrder: which turret (0, 1, or -1 for both) and which order (0 attack, 1 sync, 2 search, 3 stop)
+    int turret() const { return m_turret; }
+    int turretOrder() const { return m_turretOrder; }
+    void setTurrets(int count) { m_turretCount = count; }
     void open(Page page);
     Action keyPressEvent(int key);
     // shows the lines for a few seconds while no menu is open
@@ -67,6 +73,9 @@ private:
     HUD *m_hud;
     Point m_center;
     Page m_page;
+    int m_turret = 0;
+    int m_turretOrder = 0;
+    int m_turretCount = 0;
     QStringList m_notice;
     unsigned int m_noticeEnd;
 

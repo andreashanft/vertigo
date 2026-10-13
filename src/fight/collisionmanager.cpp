@@ -73,7 +73,7 @@ void CollisionManager::removeObject(Object *object)
 }
 
 
-Object* CollisionManager::testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, CollisionCache *collisionCache)
+Object* CollisionManager::testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, CollisionCache *collisionCache, const Object *ignore)
 {
     Vector3D dir = end - start;
     float distance = glm::length(dir);
@@ -81,7 +81,7 @@ Object* CollisionManager::testCollision(const Vector3D &start, const Vector3D &e
 
     Object *collisionObject = NULL;
     for (Object *object : m_objects)
-        if (object->isEnabled() && object->box().test(end, radius))
+        if (object != ignore && object->isEnabled() && object->box().test(end, radius))
         {
             bool collision = false;
             float d;

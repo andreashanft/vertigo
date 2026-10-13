@@ -18,6 +18,13 @@
 #include "activeobject.h"
 #include "fight/scenario.h"
 #include "sfx/samplemap.h"
+#include "fight/effects/effectmanager.h"
+#include "fight/weapons/unitgun.h"
+#include "fight/orders.h"
+#include "fight/weapons/torpedo.h"
+#include "fight/boats/simpleboat.h"
+#include <glm/geometric.hpp>
+#include <algorithm>
 
 
 namespace fight {
@@ -44,26 +51,89 @@ ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 }
 
 
-void ActiveObject::damage(int kinetic, int shock, const Vector3D &position)
+ActiveObject::~ActiveObject()
 {
-    // TODO: only count hits by another unit once shots know who fired them (roadmap step 1.4)
-    m_eventAttack.complete();
+}
+
+
+void ActiveObject::setOrders(Orders *orders)
+{
+    m_orders.reset(orders);
+}
+
+
+bool ActiveObject::fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction)
+{
+    const TorpedoType *type = TorpedoType::get(m_torpedoType);
+    if (!type || m_torpedoCount <= 0 || m_scenario->time() < m_torpedoReady)
+        return false;
+    m_scenario->launchTorpedo(m_torpedoType, position, direction, glm::length(m_velocity), this, type->lockType != 0 ? target : nullptr);
+    m_torpedoCount--;
+    m_torpedoReady = m_scenario->time() + 6.0f;
+    return true;
+}
+
+
+bool ActiveObject::update(float elapsedTime)
+{
+    if (m_orders)
+        m_orders->update();
+    return false;
+}
+
+
+void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
+{
+    if (attacker && attacker != this)
+        m_eventAttack.complete();
+    const bool wasDestroyed = m_eventDestroy.isCompleted();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;
     if (m_kineticShield < 0)
-    {
         destroy();
-        return;
-    }
-    if (m_shockShield < 0)
-    {
+    else if (m_shockShield < 0)
         m_eventParalyze.complete();
-    }
+
+    if (attacker && attacker != this && attacker == m_scenario->player())
+        m_scenario->playerHit(this, !wasDestroyed && m_eventDestroy.isCompleted());
 }
 
 
 void ActiveObject::destroy()
 {
+    if (m_eventDestroy.isCompleted())
+        return;
+
+    // explosion sized to the object: small, medium or large flash
+    const Vector3D dim = m_box.dim();
+    const float size = std::max(dim.x, std::max(dim.y, dim.z));
+    const Effects explosion = size < 8.0f ? Effects::Explosion_0 : size < 20.0f ? Effects::Explosion_1 : Effects::Explosion_2;
+    m_scenario->effectManager().addEffect(explosion, center());
+    const Vector3D at = center();
+    sfx::SampleMap::playAt(size < 20.0f ? sfx::Sample::Explosion_Small : sfx::Sample::Explosion_Big, at.x, at.y, at.z);
+
+    // debris (DEBRIS.DES): plates 0-2, engine 3, small parts 4-8, large parts 9-13, bodies 14-16
+    auto random = [](int min, int max) { return min + qrand()%(max - min + 1); };
+    auto direction = []() {
+        const Vector3D d(qrand()/float(RAND_MAX) - 0.5f, qrand()/float(RAND_MAX) - 0.5f, 0.5f*qrand()/float(RAND_MAX));
+        return glm::length(d) > 0.01f ? glm::normalize(d) : Vector3D(0, 0, 1);
+    };
+    auto debris = [this, &direction](int index) {
+        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), center(), direction());
+    };
+    const int pieces = size < 8.0f ? 4 : size < 20.0f ? 6 : 10;
+    for (int i = 0; i < pieces; i++)
+        debris(i % 3 == 0 ? random(0, 2) : size >= 8.0f && i % 3 == 1 ? random(9, 13) : random(4, 8));
+    const SimpleBoat *vessel = dynamic_cast<const SimpleBoat *>(this);
+    if (vessel)
+    {
+        debris(3);
+        // crewed vessels
+        if (!vessel->isGroundVehicle() || size >= 8.0f)
+            for (int i = random(1, 3); i > 0; i--)
+                debris(random(14, 16));
+    }
+
     disable();
     m_eventDestroy.complete();
     if (m_scenario->target().locked() == this)

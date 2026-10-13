@@ -18,6 +18,9 @@
 #include "scenario.h"
 #include "module.h"
 #include "orders.h"
+#include "enginesounds.h"
+#include "weapons/torpedo.h"
+#include "sfx/soundsystem.h"
 #include "surface/element.h"
 #include "surface/betaspline.h"
 #include "effects/billboard.h"
@@ -25,6 +28,7 @@
 #include "game/boat.h"
 #include "sfx/samplemap.h"
 #include "util/debug.h"
+#include "txt/stringtable.h"
 
 #include "objects/building.h"
 #include "objects/mine.h"
@@ -113,7 +117,7 @@ Scenario::Scenario(const QString &name) :
 
     float initialDir = 0.0f;
     QSet<QString> placeholderSections;
-    std::vector<std::pair<SimpleBoat *, std::vector<OrderSlot>>> pendingOrders;
+    std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
     foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
         m_file.setSection(section);
 
@@ -317,6 +321,12 @@ Scenario::Scenario(const QString &name) :
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(object);
             if (activeObject)
             {
+                activeObject->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                // torpedoes for units with tubes: boats, bombers and torpedo towers
+                const int torpedoes = m_file.value("ntor", 0).toInt();
+                const int torpedoType = m_file.value("tor", -1).toInt();
+                if ((type == TypeBoat || type == TypeBomber || type == TypeTorpedoTower) && torpedoes > 0)
+                    activeObject->setTorpedoes(torpedoType, torpedoes);
                 entry.iff = m_file.contains("iff") ? m_file.value("iff").toInt() : -1;
                 entry.condSignal = activeObject->eventDestroy();
                 entry.condAttacked = activeObject->eventAttack();
@@ -370,13 +380,20 @@ Scenario::Scenario(const QString &name) :
         }
         if (!orderSlots.empty())
         {
-            SimpleBoat *boat = dynamic_cast<SimpleBoat *>(object);
-            if (boat)
+            ActiveObject *unit = dynamic_cast<ActiveObject *>(object);
+            if (unit)
             {
-                pendingOrders.emplace_back(boat, orderSlots);
+                pendingOrders.emplace_back(unit, orderSlots);
+                const bool moves = dynamic_cast<SimpleBoat *>(unit) != nullptr;
                 for (const OrderSlot &slot : orderSlots)
+                {
+                    const bool forAll = slot.type == OrderSlot::Wait || slot.type == OrderSlot::CardinalPatrol ||
+                                        slot.type == OrderSlot::CardinalAttack || slot.type == OrderSlot::Explode;
                     if (!OrderSlot::isImplemented(slot.type))
                         loadIssue(QString("order not implemented: %1").arg(OrderSlot::name(slot.type)));
+                    else if (!moves && !forAll)
+                        loadIssue(QString("order not run: %1 for typ %2").arg(OrderSlot::name(slot.type)).arg(type));
+                }
             }
             else if (object)
                 loadIssue(QString("orders not run: typ %1").arg(type));
@@ -484,6 +501,11 @@ Scenario::Scenario(const QString &name) :
 }
 
 
+Scenario::~Scenario()
+{
+}
+
+
 void Scenario::setBoat(game::Boat *boat)
 {
     //if (boat->gun() == 3081)
@@ -531,7 +553,25 @@ void Scenario::update(float elapsedTime)
 
     m_effectManager.update(elapsedTime);
 
+    for (const auto &torpedo : m_torpedoes)
+        torpedo->update(elapsedTime);
+    m_torpedoes.remove_if([this](const std::unique_ptr<Torpedo> &torpedo) {
+        if (!torpedo->isDone())
+            return false;
+        m_collisionManager.removeObject(torpedo.get());
+        return true;
+    });
+    m_decoys.erase(std::remove_if(m_decoys.begin(), m_decoys.end(), [this](const Decoy &d) { return d.until < m_time; }), m_decoys.end());
+
     m_sonar.update(elapsedTime);
+
+    // positional sounds are heard from the player
+    sfx::SoundSystem::get()->setListener(m_position.x, m_position.y, m_position.z,
+                                         m_player->dir().x, m_player->dir().y, m_player->dir().z,
+                                         m_player->up().x, m_player->up().y, m_player->up().z);
+    if (!m_engineSounds)
+        m_engineSounds.reset(new EngineSounds(this));
+    m_engineSounds->update();
 }
 
 
@@ -603,6 +643,8 @@ void Scenario::draw()
     for (const auto &object : m_objects)
         if (object->isEnabled())
             object->draw();
+    for (const auto &torpedo : m_torpedoes)
+        torpedo->draw();
 
     m_effectManager.draw();
 }
@@ -686,6 +728,20 @@ void Scenario::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_Space)
         m_player->fire();
+    // turret orders: F5-F8 for turret 1, F9-F12 for turret 2 (attack my target, sync, search and destroy, stop)
+    if (e->key() >= Qt::Key_F5 && e->key() <= Qt::Key_F12)
+    {
+        const int index = e->key() >= Qt::Key_F9 ? 1 : 0;
+        const PlayerTurret::Order orders[4] = { PlayerTurret::Order::Attack, PlayerTurret::Order::Sync, PlayerTurret::Order::Search, PlayerTurret::Order::Stop };
+        if (PlayerTurret *turret = m_player->turret(index))
+            turret->setOrder(orders[(e->key() - Qt::Key_F5) % 4]);
+    }
+    if (e->key() == Qt::Key_Tab)
+        m_player->fireTorpedo();
+    if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter)
+        m_player->selectNextTorpedo();
+    if (e->key() == Qt::Key_Backspace || e->key() == Qt::Key_D)
+        m_player->dropBuzzer();
 }
 
 
@@ -742,6 +798,89 @@ QStringList Scenario::loadReport() const
 void Scenario::loadIssue(const QString &text)
 {
     m_loadIssues << text;
+}
+
+
+// Friendly fire: hits on units that aren't hostile to the player (faction 8), aren't destroy objectives or mines
+// get escalating warnings (texts 67-70, at most one every 3 s); each friendly kill is reported (71),
+// and the third fails the mission (89).
+void Scenario::playerHit(ActiveObject *unit, bool destroyed)
+{
+    int id = -1;
+    for (const auto &record : m_records)
+        if (record.object == unit)
+            id = record.id;
+    if (id < 0 || m_conditionManager.iff(id) < 0 || isHostile(PlayerFaction, m_conditionManager.iff(id)) || m_conditionManager.isDestroyTarget(id) || dynamic_cast<Mine *>(unit))
+        return;
+
+    auto say = [this, unit](int text) {
+        m_conditionManager.addCondRadio(unit->position(), txt::StringTable::get(txt::StringFight(text)))->complete();
+    };
+    if (destroyed)
+    {
+        m_friendlyKills++;
+        say(71);
+        if (m_friendlyKills >= 3)
+        {
+            say(89);
+            m_conditionManager.fail();
+        }
+    }
+    else if (m_time - m_lastFriendlyWarning >= 3.0f)
+    {
+        say(67 + std::min(m_friendlyWarnings, 3));
+        m_friendlyWarnings++;
+        m_lastFriendlyWarning = m_time;
+    }
+}
+
+
+Torpedo* Scenario::launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target)
+{
+    if (!TorpedoType::get(type))
+        return nullptr;
+    m_torpedoes.emplace_back(new Torpedo(this, type, position, direction, speed, owner, target));
+    m_torpedoesLaunched++;
+    // turrets and guns can shoot it down
+    m_collisionManager.addObject(m_torpedoes.back().get());
+    sfx::SampleMap::playAt(sfx::Sample::Torpedo_Launch, position.x, position.y, position.z);
+    return m_torpedoes.back().get();
+}
+
+
+int Scenario::threatsTo(const ActiveObject *unit) const
+{
+    return std::count_if(m_torpedoes.begin(), m_torpedoes.end(), [unit](const std::unique_ptr<Torpedo> &torpedo) {
+        return !torpedo->isDone() && torpedo->target() == unit;
+    });
+}
+
+
+void Scenario::addDecoy(const Vector3D &position, float seconds)
+{
+    m_decoys.push_back({ position, m_time + seconds });
+}
+
+
+bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const
+{
+    float nearest = range;
+    bool found = false;
+    auto consider = [&](const Vector3D &candidate) {
+        const float distance = glm::length(candidate - position);
+        if (distance < nearest)
+        {
+            nearest = distance;
+            decoy = candidate;
+            found = true;
+        }
+    };
+    for (const Decoy &d : m_decoys)
+        consider(d.position);
+    for (const auto &torpedo : m_torpedoes)
+        if (torpedo.get() != self && !torpedo->isDone() && torpedo->type().isDecoy())
+            consider(torpedo->position());
+    return found;
 }
 
 

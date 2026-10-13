@@ -21,6 +21,7 @@
 #include <QKeyEvent>
 #include <functional>
 #include <map>
+#include <list>
 #include <vector>
 #include "util/geometry2d.h"
 #include "util/geometry3d.h"
@@ -40,6 +41,10 @@ namespace game { class Boat; }
 
 namespace fight {
 
+
+class EngineSounds;
+class Torpedo;
+
 class Object;
 class NavPoint;
 
@@ -47,6 +52,7 @@ class Scenario : public util::DeferredDeletable
 {
 public:
     Scenario(const QString &name);
+    ~Scenario();
 
 public:
     struct ObjectRecord
@@ -75,16 +81,28 @@ public:
     float depth() const { return m_depth - m_position.z; }
     float time() const { return m_time; }
     int buzzers() const { return m_buzzers; }
+    bool useBuzzer() { if (m_buzzers <= 0) return false; m_buzzers--; return true; }
     bool blink() const { return static_cast<int>(m_time/0.5f)%2 == 0; }
     int endType() const { return m_endType; }
 
     int playerId() const { return m_playerId; }
+    // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
+    void playerHit(ActiveObject *unit, bool destroyed);
     void destroyPlayer() { m_eventPlayerDestroyed.complete(); }
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
     Player* player() const { return m_player.get(); }
 
     Surface& surface() { return m_surface; }
+
+    // torpedoes in the water; homing ones turn to decoys (buzzers, the Torch) that are nearer than their target
+    Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
+    const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
+    int torpedoesLaunched() const { return m_torpedoesLaunched; }
+    // homing torpedoes on their way to the unit
+    int threatsTo(const ActiveObject *unit) const;
+    void addDecoy(const Vector3D &position, float seconds);
+    bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
 
     // the water current at a position (m/s), blended between the current cells
     Vector3D current(const Vector3D &position) const;
@@ -102,7 +120,10 @@ public:
     std::vector<std::unique_ptr<Object>>::const_iterator begin() const { return m_objects.cbegin(); }
     std::vector<std::unique_ptr<Object>>::const_iterator end() const { return m_objects.cend(); }
     std::vector<NavPoint*>& navPoints() { return m_navPoints; }
+    // the player is faction 8: every mission's attitude matrix makes the enemies hostile to it
+    static const int PlayerFaction = 8;
     bool isFriend(int iffX, int iffY) const { return m_attitudeMatrix[iffY][iffX] == 0; }
+    bool isHostile(int iffA, int iffB) const { return iffA >= 0 && iffA < 9 && iffB >= 0 && iffB < 9 && m_attitudeMatrix[iffB][iffA] == 2; }
 
 public:
     void setBoat(game::Boat *boat);
@@ -161,6 +182,11 @@ private:
     std::vector<std::unique_ptr<Object>> m_objects;
     std::vector<ObjectRecord> m_records;
     std::vector<CurrentCell> m_currentCells;
+    std::unique_ptr<EngineSounds> m_engineSounds;
+    std::list<std::unique_ptr<Torpedo>> m_torpedoes;
+    int m_torpedoesLaunched = 0;
+    struct Decoy { Vector3D position; float until; };
+    std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<Object*> m_lightSources;
     std::vector<NavPoint*> m_navPoints;
@@ -168,6 +194,9 @@ private:
     char m_attitudeMatrix[9][9];
     int m_endType;
     int m_playerId;
+    int m_friendlyWarnings = 0;
+    int m_friendlyKills = 0;
+    float m_lastFriendlyWarning = -100;
     ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;

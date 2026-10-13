@@ -113,6 +113,9 @@ quint32 SoundSystem::acquire(Sound *sound)
 
     quint32 source;
     alGenSources(1, &source);
+    // attached to the listener unless the sound is given a position
+    alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+    alSource3f(source, AL_POSITION, 0, 0, 0);
     m_sources.insert(source, sound);
     return source;
 }
@@ -132,6 +135,14 @@ void SoundSystem::pauseAll()
 
     foreach (Sound* sound, m_sources)
         sound->pause();
+}
+
+
+void SoundSystem::setListener(float x, float y, float z, float fx, float fy, float fz, float ux, float uy, float uz)
+{
+    const ALfloat orientation[6] = { fx, fy, fz, ux, uy, uz };
+    alListener3f(AL_POSITION, x, y, z);
+    alListenerfv(AL_ORIENTATION, orientation);
 }
 
 

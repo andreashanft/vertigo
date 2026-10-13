@@ -55,11 +55,11 @@ So the plan builds those basics first.
 | 1.1 | Load every unit type: complete the type table ([appendix A](#a-dtyp--object-file)), use a placeholder instead of skipping a unit, always register objectives | S | 63 missions get their missing units (**done**: cargo ships are placeholder boxes until 1.6, tanks are static until 1.6) |
 | 1.2 | Missing condition types ("any unit of faction X attacked", order chaining, protect-only objectives, nav-point objectives), a real failure path, fix the endless "mission failed" voice. Ship together with 1.1 | S–M | Missions become winnable (**done**; "attacked" fires on any hit until 1.4) |
 | 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders (**done** for boats and bombers; tanks follow in 1.6, collisions between units come with the orders) |
-| 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions |
+| 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions (**done**: attacker passed through guns, projectiles and damage; "attacked" only for hits by another unit; the player is hit per side (front, left, right, back) and destroyed when a side drops below zero; destroyed units explode, sized by the unit) |
 | 1.5 | Mission end: Esc menu, failure and death screens (texts already exist), restart / abort / load. Keep "skip mission" as a debug key until missions are winnable | M | Proper campaign flow (**done**; the player can only be destroyed by `--destroy` until 1.4) |
 | 1.6 | Tanks (ground-following, 22 missions) and cargo ships (built from blocks, 36 missions; start with static hulls) | M / M–L | Escort targets, dust clouds (**tanks done**: tanks and crawlers drive on the ground, tilt with it at most `MaxClimbingAngle`, and run their orders; the turret is drawn but doesn't aim yet. Cargo ships are still placeholder boxes) |
-| 1.7 | Enemy guns, using the gun and volley settings in the object files | M | Orders 4, 6, 7, 8 |
-| 1.8 | Torpedoes: 22 types, magazines, fire key, lock (none / noise / optic, 0–6 s), homing, decoys, enemy torpedo towers | L | Torpedo HUD, trails, cluster torpedo, turrets |
+| 1.7 | Enemy guns, using the gun and volley settings in the object files | M | Orders 4, 6, 7, 8 (**done**: `UnitGun` with `[StaticGun]` muzzles and `[VolleyGun]` rhythm; the mission's `gun` key picks the model (0–13, 14 is "No Gun"); boats fire from the nose, tanks along their heading, towers from a turret that turns towards its target at the turret's rates. Who fires when is up to the orders) |
+| 1.8 | Torpedoes: 22 types, magazines, fire key, lock (none / noise / optic, 0–6 s), homing, decoys, enemy torpedo towers | L | Torpedo HUD, trails, cluster torpedo, turrets (**done**; the data only has lock types 0 and 1) |
 
 ## Phase 2 – Currents (M, can run alongside Phase 1)
 
@@ -101,6 +101,20 @@ circling, with terrain look-ahead.
 
 Order of work: 1, 2, 9 → 3 → 5 → (needs 1.4 and 1.7) → 7, 8 → 4 → 6 → 10 → 11.
 
+**Combat orders (milestone 3):** 7 and 8 for towers (nearest hostile within
+`rad`, on the side `car` 0–7 or all around for 8–10; or the unit `ene`), turning
+the turret and firing once it points at the target, leading moving targets; 4
+for boats (approach a side of the target at the align radius, attack run with
+an aim error from `AttackProbabilityHit`, break off, using the `[Attack]`
+settings; no closer than 35 m, and the way goes round the target) and tanks
+(drive at the target, fire when aligned); patrol while the target isn't there;
+6 waits at its point until the target is within 300 m or the unit is hit,
+then attacks; 11 destroys the unit after `dur` (`con` 1: counted from being
+boarded). Hostility is the attitude matrix (2 = hostile), the player is
+faction 0. 10 (milestone 4) flies to the unit `ene`, docks on top of it for
+`dur` seconds and then completes its "boarded" event. Still missing: orders for
+cargo ships.
+
 **Done:** orders 1, 2, 9, 3 and 5 for boats and bombers (`fight/orders.cpp`),
 with "stop when" conditions per slot. A slot ends when its break condition is
 met, or when it is finished: Goto and GotoWithArrive on arrival (20 m), Wait,
@@ -116,12 +130,12 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 |---|---|---|---|
 | Pause | P key stops mission time and sounds, shows the PAUSE image (**done**) | S | – |
 | Voxel radar | 120×100 terrain view ahead of the boat, inside the master monitor | M | – |
-| Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages | M | Full rows need 1.8 |
-| Icons | Current, radiation (probably shallow depth; unverified), locked | S each | Phase 2, 1.8 |
-| Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice | S | 1.4, 1.8 |
-| Friendly fire | Escalating radio warnings; the third friendly kill fails the mission | M | 1.4, 1.5 |
-| Torpedo lock + countdown | Lock ring, countdown from the torpedo's lock time, beep and "torpedo ready" voice | S | 1.8 |
-| Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets | L | 1.4, 1.8 |
+| Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages (**done** except F1–F4 and the lamps: armor page from the four side images per damage level, laid out as a 64×64 silhouette; systems page with ARMO/GUN/TORP/TUR1/TUR2, ammunition and the gun states RDY/ARM/FIR/JAM/EMP/ENE; with two monitors one shows each page, I switches) | M | Full rows need 1.8 |
+| Icons | Current, radiation (probably shallow depth; unverified), locked (**lock and current done**; radiation open) | S each | Phase 2, 1.8 |
+| Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice (**done**: ALERT blinks for 3 s after a hit, with the alert beep; THREAT blinks while homing torpedoes follow the player, with the threat beep and the voice for each new one) | S | 1.4, 1.8 |
+| Friendly fire | Escalating radio warnings; the third friendly kill fails the mission (**done**: friends are faction 0 units that aren't destroy objectives or mines; warnings 67–70 at most every 3 s, kills 71, the third kill 89 and failure; `~` texts are red) | M | 1.4, 1.5 |
+| Torpedo lock + countdown | Lock ring, countdown from the torpedo's lock time, beep and "torpedo ready" voice (**done**: the target must stay locked and within 40° of the nose; the ring turns yellow when complete) | S | 1.8 |
+| Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets (**done**: orders attack my target / sync / search and destroy / stop; Claw targets attacking torpedoes, Punisher hostile vessels, Eraser both; scan, lock time, accuracy and volleys from GLOBWEAP `[SoftwareN]`; states from `[TurretStateN]`; torpedoes can be shot down; brackets green scanning, yellow locking, red firing; turrets aim instantly) | L | 1.4, 1.8 |
 
 ## Phase 5 – Effects
 
@@ -133,14 +147,19 @@ crawlers, towers, buildings, cargo ships: "orders not run").
   - Add limits and distance culling.
 - **Explosions with debris and bodies (M, needs 1.4):** explosion sized to the
   object, 4–10 debris parts, the three "Cadaver" sprites for crewed vessels,
-  sparks on hits. Test: `s00105`.
+  sparks on hits. Test: `s00105`. **Done** (without the particle pool): the
+  billboard loader reads `LifeTime`, `Friction`, `Lift` and `Min/MaxVelocity`;
+  `Debris` pieces fly off, slow down, sink (`Lift` × 4 m/s²) and settle on the
+  ground until their `LifeTime` ends.
 - **Dust clouds (S):** ground-dust sprites behind moving tanks and crawlers.
   Needs 1.6 and moving units.
 - **Torpedo trails (S, needs 1.8):** the data's "torpedo-bubble" sprite,
-  spawned every ~60 ms.
+  spawned every ~60 ms. **Done.**
 - **Cluster torpedo (M, needs 1.8):** the Ripper (torpedo 18). The data has no
   submunition values, so the burst has to be designed: several flare shots, or
-  area damage of 7600 within ~31 m.
+  area damage of 7600 within ~31 m. **Done** as area damage: the Ripper bursts
+  on impact, at the end of its run or within 25 m of a unit, damaging
+  everything within 31 m except its launcher (7600, half at the edge).
 
 ## Phase 6 – Nearby engine sounds (M)
 
@@ -150,6 +169,12 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 - Pick the sample by unit class (enemy, bomber, biont and big-ship engines
   exist); raise pitch with speed, as for the player's engine.
 
+**Done:** sounds are attached to the listener by default; the listener follows
+the player; enemy gunfire, hits and explosions play where they happen;
+`EngineSounds` loops the engines of the 4 nearest moving units within 300 m
+(scouts enemy engine 1, bombers/tanks/crawlers enemy engine 2, bionts the
+biont engine, cargo ships the big-ship engine), pitch rising with speed.
+
 ## Milestones
 
 1. **Every mission loads and can end properly:** Phase 0, steps 1.1, 1.2 and
@@ -157,9 +182,12 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 2. **The world moves:** step 1.3, orders 1/2/9/3/5, currents, tanks, voxel
    radar, dust clouds.
 3. **The world fights back:** steps 1.4 and 1.7, orders 7/8/4/6, explosions,
-   alert, friendly fire, slave monitor, engine sounds.
+   alert, friendly fire, slave monitor, engine sounds. (**Done**, without the
+   particle pool, the slave monitor's F1–F4 pages and lamps, and THREAT,
+   which needs torpedoes.)
 4. **Torpedoes:** step 1.8, lock HUD, threat and locked icons, trails, cluster
-   torpedo, turret targeting, orders 10/11.
+   torpedo, turret targeting, orders 10/11. (**Done**; turrets aim instantly,
+   tank turrets don't aim yet, the radiation icon is open.)
 5. **Cargo ships and a balancing pass** against the original.
 
 ## Open questions and how to settle them
@@ -247,6 +275,52 @@ installation (`goggame-1436955893.hashdb`, 1,774 entries, all verified
 
 The hash database comes with the installation, so it only shows the files are
 what that GOG installer shipped; obtain the installer from GOG itself.
+
+## iPad port
+
+Nothing in the engine rules out an iPad version (assessed October 2026): the
+code is portable C++, the video and sound decoders are our own, matrices are
+computed with glm, and the 566 MB of game data fit easily. As on the desktop,
+players bring their own game data. Most steps pay off on the desktop too, so
+they can land on master one by one.
+
+| # | Step | Effort | Notes |
+|---|---|---|---|
+| P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion |
+| P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below |
+| P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) |
+| P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import |
+| P5 | iOS build | S | `qt_add_executable` with an Info.plist, icons and signing. Qt 6 for iOS comes from the Qt online installer, not Homebrew. Test in the iPad simulator first |
+| P6 | Data import | S (M with the CD image) | Replaces the folder dialog: show the app's Documents folder in the Files app (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`) and look for `DAT`, `GFX`, `SFX`, `TXT` and `VFX` there. Optionally import straight from `game.gog` and the GOG installation |
+| P7 | App lifecycle and audio session | S | Pause the mission and save the settings when the app goes to the background (`closeEvent` never comes on iOS), and make no GL calls while in the background. Set an `AVAudioSession` category and suspend the OpenAL context during interruptions (calls, Siri) |
+| P8 | Keyboard | S | A hardware keyboard works as is, but older Magic Keyboards for iPad have no Esc and no F keys (F5–F12 are the turret orders), so add second bindings. Bring up the on-screen keyboard for save-game names |
+| P9 | Game controller | M | GameController.framework through a small Objective-C++ bridge (Qt 6 has no gamepad module), or SDL3. The sticks feed the analog `m_left`/`m_right`/`m_up`/`m_down` in `Scenario`. There are more actions than buttons, so turret orders and torpedo selection need a menu or button combinations. Useful on the desktop too |
+| P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as Qt turns taps into mouse clicks; hover highlights only show with a trackpad or Pencil |
+
+Order of work: P1 → P2 → P3 → P4 on the desktop, then P5–P8 (playable with a
+hardware keyboard), then P9 and P10.
+
+Platform notes:
+
+- OpenGL ES (deprecated since iOS 12) and OpenAL (deprecated since iOS 13) are
+  still in the iOS 27 SDK (checked with Xcode 27.0, October 2026). Should
+  Apple remove them, ANGLE's Metal backend runs the same OpenGL ES 3 code, and
+  OpenAL Soft replaces OpenAL.
+- The game is 4:3, iPad screens are between 4:3 (13" Air) and about 3:2
+  (mini), so the bars at the sides stay small. During missions, defer the
+  system's edge gestures so a swipe from the bottom doesn't leave the game.
+
+Distribution: the GPL is generally read as incompatible with the App Store
+and TestFlight terms (VLC was removed in 2011 for this reason), and an
+exception would need every copyright holder. So players install it
+themselves:
+
+- built from source in Xcode: a free Apple ID signs it for 7 days, a paid
+  developer account for a year;
+- as an unsigned IPA built by CI, installed with AltStore or SideStore
+  (re-signed every 7 days with a free Apple ID);
+- in the EU through AltStore PAL, which needs a developer account and Apple's
+  notarization.
 
 ## Risks
 

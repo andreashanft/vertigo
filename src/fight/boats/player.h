@@ -21,6 +21,7 @@
 
 #include "simpleboat.h"
 #include "fight/weapons/gun.h"
+#include "playerturret.h"
 #include <memory>
 
 
@@ -41,9 +42,25 @@ public:
 
 public:
     int shield(int index) const { return m_shield[index]; };
+    const Gun& playerGun() const { return m_gun; }
+
+    // torpedoes: Tab fires the selected one, Enter selects the next; homing ones need the target
+    // locked (and in front) for their lock time; Backspace/D drops a buzzer (a decoy)
+    void fireTorpedo();
+    void selectNextTorpedo();
+    void dropBuzzer();
+    const std::vector<int>& torpedoes() const { return m_torpedoItems; } // item numbers 1-22
+    int selectedTorpedo() const { return m_selectedTorpedo; }            // index, -1 if none
+    bool torpedoReady() const;
+    ActiveObject* lockTarget() const { return m_lockTarget; }
+    float lockProgress() const; // 0-1, 1 when a homing torpedo would follow the target
+    float lockRemaining() const; // seconds until the lock is complete
+    PlayerTurret* turret(int index) const { return index >= 0 && index < 2 ? m_turrets[index].get() : nullptr; }
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
     float roll() const { return m_roll; };
+    // mission time of the last hit, -1 if never hit
+    float lastHit() const { return m_lastHit; }
     float speed() const { return m_speed; };
     float noise() const;
     float range() const;
@@ -51,7 +68,7 @@ public:
     void setDebugBoost(float debugBoost) { m_debugBoost = debugBoost; }
 
 public:
-    virtual void damage(int kinetic, int shock, const Vector3D &position);
+    void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();
     bool update(float elapsedTime);
 
@@ -60,7 +77,19 @@ public:
     void fireStop();
 
 private:
+    game::Boat *m_boat;
+    std::vector<int> m_torpedoItems;
+    int m_selectedTorpedo;
+    float m_torpedoReady;
+    float m_rearmingTime;
+    ActiveObject *m_lockTarget;
+    float m_lockTime;
+    bool m_lockAnnounced;
+    int m_threats;
+    bool m_threatBlink;
+
     int m_shield[4];
+    float m_lastHit = -1;
     int m_shieldMax[4];
 
     EngineState m_engineState;
@@ -81,8 +110,7 @@ private:
 
     bool m_firing;
     Gun m_gun;
-    std::unique_ptr<Gun> m_tur1;
-    std::unique_ptr<Gun> m_tur2;
+    std::unique_ptr<PlayerTurret> m_turrets[2];
 };
 
 

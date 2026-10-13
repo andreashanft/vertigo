@@ -23,6 +23,7 @@
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
+#include "fight/boats/playerturret.h"
 #include "game/boat.h"
 #include "gfx/image.h"
 
@@ -46,6 +47,9 @@
 #include "debugoverlay.h"
 #include "missionmenu.h"
 #include "pause.h"
+#include "alert.h"
+#include "slavemonitor.h"
+#include "symbols.h"
 #include "sfx/soundsystem.h"
 #include "txt/stringtable.h"
 
@@ -116,6 +120,30 @@ void HUD::load(game::Boat *boat)
     file.setSection("radiomessage");
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
+
+    // status monitors: with two, one shows the armor and one the systems; I switches the pages
+    m_slaveMonitors.clear();
+    for (int i = 0; i < 2; i++)
+    {
+        file.setSection(QString("slavemonitor%1").arg(i));
+        if (!file.contains("X1"))
+            continue;
+        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Armor : SlaveMonitor::Page::Systems);
+        m_children.emplace_back(monitor);
+        m_slaveMonitors.push_back(monitor);
+    }
+
+    file.setSection("hudalertblock");
+    Alert *alert = new Alert(this, readRect(file));
+    m_children.emplace_back(alert);
+
+    file.setSection("hudthreatblock");
+    Threat *threat = new Threat(this, readRect(file));
+    m_children.emplace_back(threat);
+
+    file.setSection("hudsymbolblock1");
+    Symbols *symbols = new Symbols(this, readRect(file));
+    m_children.emplace_back(symbols);
 
     file.setSection("hudpauseblock");
     Pause *pause = new Pause(this, readRect(file));
@@ -215,7 +243,7 @@ void HUD::step(float elapsedTime)
     if (!m_scenario)
         return;
 
-    setFrozen(m_paused || m_menu->page() != MissionMenu::Page::None);
+    setFrozen(m_paused || m_menu->pauses());
     if (m_frozen)
         elapsedTime = 0;
     while (elapsedTime > 0.0f) {
@@ -394,7 +422,10 @@ void HUD::keyPressEvent(QKeyEvent *e)
     if (!m_scenario)
         return;
 
-    if (m_menu->page() != MissionMenu::Page::None)
+    // the turret menu only takes digits, Esc and O; everything else still steers the boat
+    const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
+    const bool menuKey = (e->key() >= Qt::Key_0 && e->key() <= Qt::Key_9) || e->key() == Qt::Key_Escape || e->key() == Qt::Key_O;
+    if (m_menu->page() != MissionMenu::Page::None && (!turretMenu || menuKey))
     {
         switch (m_menu->keyPressEvent(e->key()))
         {
@@ -410,6 +441,15 @@ void HUD::keyPressEvent(QKeyEvent *e)
         case MissionMenu::Action::Load:
             leave(m_eventLoad);
             break;
+        case MissionMenu::Action::TurretOrder:
+            {
+                const fight::PlayerTurret::Order orders[4] = { fight::PlayerTurret::Order::Attack, fight::PlayerTurret::Order::Sync,
+                                                               fight::PlayerTurret::Order::Search, fight::PlayerTurret::Order::Stop };
+                for (int i = 0; i < 2; i++)
+                    if ((m_menu->turret() == i || m_menu->turret() < 0) && m_scenario->player()->turret(i))
+                        m_scenario->player()->turret(i)->setOrder(orders[m_menu->turretOrder()]);
+            }
+            break;
         }
         return;
     }
@@ -417,6 +457,12 @@ void HUD::keyPressEvent(QKeyEvent *e)
     if (e->key() == Qt::Key_Escape)
     {
         m_menu->open(MissionMenu::Page::Main);
+        return;
+    }
+    if (e->key() == Qt::Key_O)
+    {
+        m_menu->setTurrets((m_scenario->player()->turret(0) ? 1 : 0) + (m_scenario->player()->turret(1) ? 1 : 0));
+        m_menu->open(MissionMenu::Page::Turrets);
         return;
     }
     // Ctrl+D, Cmd+D on macOS
@@ -471,6 +517,9 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_L)
         m_scenario->target().lockReticle();
+    if (e->key() == Qt::Key_I)
+        for (SlaveMonitor *monitor : m_slaveMonitors)
+            monitor->togglePage();
     if (e->key() == Qt::Key_A)
     {
         if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)

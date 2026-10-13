@@ -20,12 +20,18 @@
 
 
 #include "object.h"
+#include <memory>
+
+
+namespace txt { class DesFile; }
 
 
 namespace fight {
 
 
 class Scenario;
+class UnitGun;
+class Orders;
 
 
 class ActiveObject : public Object
@@ -45,6 +51,7 @@ public:
 public:
     ActiveObject(Scenario *scenario);
     ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info);
+    ~ActiveObject();
 
 public:
     ConditionEvent* eventDestroy() { return &m_eventDestroy; }
@@ -70,7 +77,26 @@ public:
     const Vector3D& velocity() const { return m_velocity; }
 
 public:
-    virtual void damage(int kinetic, int shock, const Vector3D &position);
+    Orders* orders() const { return m_orders.get(); }
+    void setOrders(Orders *orders);
+    bool update(float elapsedTime);
+
+    // the unit's gun (none by default): model from the mission's "gun" key, -1 for the file's default
+    virtual void arm(int model, txt::DesFile &file) {}
+    UnitGun* gun() const { return m_unitGun.get(); }
+    void setTrigger(bool trigger) { m_trigger = trigger; }
+    bool trigger() const { return m_trigger; }
+    // units with a turret turn it towards the point
+    virtual void aimAt(const Vector3D &point) {}
+
+    // torpedoes (the mission's tor and ntor keys); fireTorpedo() launches one when reloaded,
+    // following the target if the type homes, otherwise straight along the direction
+    void setTorpedoes(int type, int count) { m_torpedoType = type; m_torpedoCount = count; }
+    bool hasTorpedoes() const { return m_torpedoCount > 0 && m_torpedoType >= 0; }
+    bool fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction);
+
+    // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
+    virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
     void identify();
 
@@ -92,6 +118,13 @@ protected:
     int m_shockShieldMax;
 
     Vector3D m_velocity;
+
+    std::unique_ptr<Orders> m_orders;
+    std::unique_ptr<UnitGun> m_unitGun;
+    bool m_trigger = false;
+    int m_torpedoType = -1;
+    int m_torpedoCount = 0;
+    float m_torpedoReady = 0;
 };
 
 

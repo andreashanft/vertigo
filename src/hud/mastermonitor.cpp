@@ -57,7 +57,7 @@ void MasterMonitor::draw()
     fight::ActiveObject *object = target.locked();
     if (object != nullptr)
     {
-        isFriend = m_hud->scenario()->isFriend(0, object->iff());
+        isFriend = m_hud->scenario()->isFriend(fight::Scenario::PlayerFaction, object->iff());
         txtName = object->name();
         if (m_hud->scenario()->sonar().detectActivity())
             txtAction = "activity not implemented";

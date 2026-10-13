@@ -51,13 +51,14 @@ int main(int argc, char *argv[])
     const QCommandLineOption timeoutOption("timeout", "End test mode after this many seconds.", "seconds");
     const QCommandLineOption overlayOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     const QCommandLineOption destroyOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
-    const QCommandLineOption keysOption("keys", "Press keys at the given seconds (test mode), e.g. 2=Esc,3=2,4=Alt+A.", "time=key");
+    const QCommandLineOption keysOption("keys", "Press keys at the given seconds (test mode), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
     const QCommandLineOption driveOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     const QCommandLineOption traceOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     const QCommandLineOption headlessOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
+    const QCommandLineOption fireOption("fire", "Let these units fire their guns (test mode); towers aim at the player.", "ids");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, headlessOption, checkOption, itemsOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -83,15 +84,24 @@ int main(int argc, char *argv[])
     }
     foreach (const QString &value, parser.values(keysOption)) {
         foreach (const QString &item, value.split(',', QString::SkipEmptyParts)) {
-            const int separator = item.indexOf('=');
-            bool ok = false;
-            const float time = item.left(separator).toFloat(&ok);
-            const QKeySequence key(item.mid(separator + 1));
-            if (separator < 0 || !ok || key.isEmpty()) {
-                QTextStream(stderr) << "Invalid --keys value " << item << ", expected time=key\n";
+            // time=key or time=key/hold
+            const QRegExp format("([\\d.]+)=([^/]+)(/([\\d.]+))?");
+            const QKeySequence key(format.exactMatch(item) ? format.cap(2) : QString());
+            if (key.isEmpty()) {
+                QTextStream(stderr) << "Invalid --keys value " << item << ", expected time=key[/seconds]\n";
                 return game::Vertigo::ExitUsage;
             }
-            options.keys.emplace_back(time, key);
+            options.keys.push_back({ format.cap(1).toFloat(), key, format.cap(4).toFloat() });
+        }
+    }
+    foreach (const QString &value, parser.values(fireOption)) {
+        foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
+            bool ok = false;
+            options.fire.push_back(id.toInt(&ok));
+            if (!ok) {
+                QTextStream(stderr) << "Invalid --fire value " << id << ", expected unit ids\n";
+                return game::Vertigo::ExitUsage;
+            }
         }
     }
     foreach (const QString &value, parser.values(traceOption)) {

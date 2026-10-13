@@ -16,6 +16,9 @@
  ***************************************************************************/
 
 #include "player.h"
+#include "txt/desfile.h"
+#include "fight/effects/effectmanager.h"
+#include "fight/weapons/torpedo.h"
 #include "fight/scenario.h"
 #include "game/boat.h"
 
@@ -29,8 +32,16 @@
 namespace fight {
 
 
+static ActiveObject::ObjectInfo playerInfo()
+{
+    ActiveObject::ObjectInfo info;
+    info.iff = Scenario::PlayerFaction;
+    return info;
+}
+
+
 Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
-    SimpleBoat(scenario, boat->boatFile(), ObjectInfo(), yaw),
+    SimpleBoat(scenario, boat->boatFile(), playerInfo(), yaw),
     m_engineState(EngineRunning),
     m_speed(0),
     m_debugBoost(0),
@@ -39,8 +50,25 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_currentNoise1(0),
     m_currentNoise2(0),
     m_firing(false),
-    m_gun(scenario, boat->gun() - 3073)
+    m_gun(scenario, boat->gun() - 3073, this),
+    m_boat(boat),
+    m_torpedoItems(boat->torpedoes()),
+    m_selectedTorpedo(boat->torpedoes().empty() ? -1 : 0),
+    m_torpedoReady(0),
+    m_rearmingTime(5),
+    m_lockTarget(nullptr),
+    m_lockTime(0),
+    m_lockAnnounced(false),
+    m_threats(0),
+    m_threatBlink(false)
 {
+    if (boat->magazine() >= 1025)
+    {
+        txt::DesFile weapons("vfx:sobjects/globweap.des");
+        weapons.setSection(QString("torpedomagazine%1").arg(boat->magazine() - 1025));
+        m_rearmingTime = weapons.value("rearmingtime", 5).toFloat();
+    }
+
     int i;
     txt::DesFile &file = boat->boatFile();
 
@@ -77,21 +105,13 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_gun.addMuzzles(Vector3D(0, 3.0f, 0), boat->gun());
     m_gun.setDefect(boat->defects()[game::Boat::DefectGun]);
     if (boat->tur1() != 0)
-    {
-        m_tur1.reset(new Gun(m_scenario, boat->tur1() - 3073));
-        m_tur1->addMuzzles(Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->tur1());
-        m_tur1->setDefect(boat->defects()[game::Boat::DefectTur1]);
-    }
+        m_turrets[0].reset(new PlayerTurret(m_scenario, this, boat->tur1(), boat->tur1soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->defects()[game::Boat::DefectTur1]));
     if (boat->tur2() != 0)
-    {
-        m_tur2.reset(new Gun(m_scenario, boat->tur2() - 3073));
-        m_tur2->addMuzzles(Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->tur2());
-        m_tur2->setDefect(boat->defects()[game::Boat::DefectTur2]);
-    }
+        m_turrets[1].reset(new PlayerTurret(m_scenario, this, boat->tur2(), boat->tur2soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->defects()[game::Boat::DefectTur2]));
 
     sfx::SampleMap::get(sfx::Sample::Engine).playLoop();
 
-    m_scenario->collisionManager().removeObject(this);
+    // the player stays in the collision checks, so others' shots can hit it; its own checks ignore it
 }
 
 
@@ -114,22 +134,96 @@ float Player::range() const
 }
 
 
-void Player::damage(int kinetic, int shock, const Vector3D &position)
+void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
-    Vector3D dirDamage = glm::normalize(position - m_position);
-    float cosY = glm::dot(dirDamage, dir());
-    if (cosY > 0.9)
-        m_shield[0] -= kinetic;
-    else if (cosY < -0.9)
-        m_shield[3] -= kinetic;
-    else
+    if (attacker && attacker != this)
+        m_eventAttack.complete();
+
+    // the side that was hit: 0 front, 1 left, 2 right, 3 back
+    int side = 0;
+    const Vector3D hit = position - m_position;
+    if (glm::length(hit) > 1e-3f)
     {
-        float cosZ = glm::dot(dirDamage, up());
-        if (cosZ > 0)
-            m_shield[1] -= kinetic;
+        const float front = glm::dot(hit, dir());
+        const float right = glm::dot(hit, this->right());
+        if (glm::abs(front) >= glm::abs(right))
+            side = front > 0 ? 0 : 3;
         else
-            m_shield[2] -= kinetic;
+            side = right > 0 ? 2 : 1;
     }
+    m_shield[side] -= kinetic;
+    if (kinetic > 0)
+    {
+        m_lastHit = m_scenario->time();
+        sfx::SampleMap::get(sfx::Sample::Alert).play();
+    }
+    if (m_shield[side] < 0)
+        destroy();
+}
+
+
+bool Player::torpedoReady() const
+{
+    return m_selectedTorpedo >= 0 && m_scenario->time() >= m_torpedoReady;
+}
+
+
+float Player::lockProgress() const
+{
+    const TorpedoType *type = m_selectedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_selectedTorpedo] - 1) : nullptr;
+    if (!type || type->lockType == 0 || !m_lockTarget)
+        return 0;
+    return type->lockDelay > 0 ? std::min(1.0f, m_lockTime/type->lockDelay) : 1.0f;
+}
+
+
+float Player::lockRemaining() const
+{
+    const TorpedoType *type = m_selectedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_selectedTorpedo] - 1) : nullptr;
+    return type ? std::max(0.0f, type->lockDelay - m_lockTime) : 0;
+}
+
+
+void Player::fireTorpedo()
+{
+    if (!torpedoReady())
+    {
+        sfx::SampleMap::get(sfx::Sample::Error).play();
+        return;
+    }
+    const int type = m_torpedoItems[m_selectedTorpedo] - 1;
+    ActiveObject *target = lockProgress() >= 1.0f ? m_lockTarget : nullptr;
+    m_scenario->launchTorpedo(type, m_position + dir()*4.0f - up()*1.0f, dir(), glm::length(m_velocity), this, target);
+
+    m_torpedoItems.erase(m_torpedoItems.begin() + m_selectedTorpedo);
+    m_boat->useTorpedo(m_selectedTorpedo);
+    if (m_selectedTorpedo >= int(m_torpedoItems.size()))
+        m_selectedTorpedo = int(m_torpedoItems.size()) - 1;
+    m_torpedoReady = m_scenario->time() + m_rearmingTime;
+    m_lockTime = 0;
+}
+
+
+void Player::selectNextTorpedo()
+{
+    if (m_torpedoItems.empty())
+        return;
+    m_selectedTorpedo = (m_selectedTorpedo + 1) % int(m_torpedoItems.size());
+    m_lockTime = 0;
+}
+
+
+void Player::dropBuzzer()
+{
+    if (!m_scenario->useBuzzer())
+    {
+        sfx::SampleMap::get(sfx::Sample::Error).play();
+        return;
+    }
+    m_boat->useBuzzer();
+    const Vector3D position = m_position - dir()*5.0f;
+    m_scenario->addDecoy(position, 12.0f);
+    m_scenario->effectManager().addDebris(Effects::Debris_22, position, -dir());
 }
 
 
@@ -210,13 +304,13 @@ bool Player::update(float elapsedTime)
         bool colSurface = m_scenario->surface().testCollision(m_position, m_position + delta, 1.5f, posSurface, normSurface);
 
         Vector3D posObject, normObject;
-        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject);
+        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this);
 
         if (colObject && (!colSurface || glm::length2(posObject - m_position) < glm::length2(posSurface - m_position)))
         {
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(colObject);
             if (activeObject)
-                activeObject->damage(m_kineticStrength, m_shockStrength, posObject - normObject*1.5f);
+                activeObject->damage(m_kineticStrength, m_shockStrength, posObject - normObject*1.5f, this);
             damage(colObject->kineticStrength(), colObject->shockStrength(), posObject - normObject*1.5f);
             sfx::SampleMap::get(sfx::Sample::Boat_Collision).playInstance();
             m_velocity -= 2*glm::dot(m_velocity, normObject)*normObject;
@@ -237,26 +331,50 @@ bool Player::update(float elapsedTime)
         break;
     }
 
+    updateBox();
     m_speed = path/elapsedTime*3.6f;
     if (glm::dot(dir(), vel) < 0)
         m_speed = -m_speed;
 
 
+    // torpedo lock: the target must stay locked and in front for the selected torpedo's lock time
+    ActiveObject *target = m_scenario->target().locked();
+    if (target != m_lockTarget)
+    {
+        m_lockTarget = target;
+        m_lockTime = 0;
+    }
+    if (m_lockTarget && glm::dot(dir(), glm::normalize(m_lockTarget->center() - m_position)) > std::cos(glm::radians(40.0f)))
+        m_lockTime += elapsedTime;
+    else
+        m_lockTime = 0;
+    // a beep when locking starts, beep and voice when a homing torpedo would follow
+    const float progress = lockProgress();
+    if (progress > 0 && m_lockTime <= elapsedTime)
+        sfx::SampleMap::get(sfx::Sample::LockOn).play();
+    if (progress >= 1 && !m_lockAnnounced)
+    {
+        sfx::SampleMap::get(sfx::Sample::TorpedoLockOn).play();
+        sfx::SampleMap::get(sfx::Sample::Voice_TorpedoReady).play();
+    }
+    m_lockAnnounced = progress >= 1;
+
+    // homing torpedoes on their way: the voice for each new one, and a beep each time the THREAT icon blinks on
+    const int threats = m_scenario->threatsTo(this);
+    if (threats > m_threats)
+        sfx::SampleMap::get(sfx::Sample::Voice_TorpedoThreat).play();
+    const bool blink = m_scenario->blink();
+    if (threats > 0 && blink && !m_threatBlink)
+        sfx::SampleMap::get(sfx::Sample::Threat).play();
+    m_threatBlink = blink;
+    m_threats = threats;
+
     m_gun.update(elapsedTime);
     if (m_firing && m_gun.state() == Gun::StateReady)
         m_gun.fire(m_position, dir(), up(), right());
-    if (m_tur1)
-    {
-        m_tur1->update(elapsedTime);
-        if (m_firing && m_tur1->state() == Gun::StateReady)
-            m_tur1->fire(m_position, dir(), up(), right());
-    }
-    if (m_tur2)
-    {
-        m_tur2->update(elapsedTime);
-        if (m_firing && m_tur2->state() == Gun::StateReady)
-            m_tur2->fire(m_position, dir(), up(), right());
-    }
+    for (auto &turret : m_turrets)
+        if (turret)
+            turret->update(elapsedTime, m_firing);
 
     return false;
 }
