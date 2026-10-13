@@ -90,6 +90,7 @@ private:
 
     int m_shield[4];
     float m_lastHit = -1;
+    bool m_grounded = false;    // touching the ground in the last step
     int m_shieldMax[4];
 
     EngineState m_engineState;

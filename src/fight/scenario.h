@@ -36,6 +36,7 @@
 #include "modulemanager.h"
 #include "sonar.h"
 #include "target.h"
+#include "headmotion.h"
 
 namespace game { class Boat; }
 
@@ -116,6 +117,10 @@ public:
     std::vector<ConditionRadio*>& radio() { return m_radio; }
     Sonar& sonar() { return m_sonar; }
     Target& target() { return m_target; }
+    // the pilot's head in the cockpit (shown by the 3D cockpit only)
+    HeadMotion& headMotion() { return m_headMotion; }
+    // an explosion near the player shakes the cockpit; strength 1 for a torpedo
+    void explosionAt(const Vector3D &position, float strength);
 
     std::vector<std::unique_ptr<Object>>::const_iterator begin() const { return m_objects.cbegin(); }
     std::vector<std::unique_ptr<Object>>::const_iterator end() const { return m_objects.cend(); }
@@ -127,9 +132,12 @@ public:
 
 public:
     void setBoat(game::Boat *boat);
-    void setRect(const RectF &rect, const Vector2D &center);
+    // fovY: vertical view angle of the 640x480 view in degrees
+    void setRect(const RectF &rect, const Vector2D &center, float fovY = 60.0f);
     void update(float elapsedTime);
     void draw();
+    // with another projection and camera, e.g. a wider view or the pilot's head moved
+    void draw(const Matrix &projection, const Matrix &camera);
     void keyPressEvent(QKeyEvent *);
     void keyReleaseEvent(QKeyEvent *);
 
@@ -176,6 +184,7 @@ private:
     std::vector<ConditionRadio*> m_radio;
     Sonar m_sonar;
     Target m_target;
+    HeadMotion m_headMotion;
 
     QString m_name;
     QStringList m_loadIssues;

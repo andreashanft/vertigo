@@ -26,6 +26,11 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 
+#include <memory>
+
+
+class QOpenGLFramebufferObject;
+
 
 namespace fight { class Scenario; class ActiveObject; }
 namespace game { class Boat; }
@@ -38,12 +43,26 @@ namespace hud {
 class SonarMonitor;
 class MissionMenu;
 class SlaveMonitor;
+class Cockpit3D;
 
 
 class HUD : public game::Renderer
 {
 public:
+    // the cockpit: the original 2D art, or the 3D model built from it by data/3D-cockpits
+    enum class CockpitMode { Art, Model };
+
+public:
     HUD();
+    ~HUD();
+
+public:
+    // saved in the setting "cockpit/mode" ("2d" or "3d"); save = false changes it for this run only
+    static CockpitMode cockpitMode();
+    static void setCockpitMode(CockpitMode mode, bool save);
+    // how strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (setting "cockpit/shake")
+    static float headMotion();
+    static void setHeadMotion(float strength, bool save);
 
 public:
     // the player leaves the mission: accomplished (autopilot), abort the game, restart the mission, load the last save
@@ -56,6 +75,8 @@ public:
     util::event<>& eventDied() { return m_eventDied; }
 
     void setDebugOverlay(bool visible);
+    // the 3D cockpit is selected and there is a model for the boat's cockpit
+    bool showsModel() const;
 
     game::Boat* boat() const { return m_boat; }
     fight::Scenario* scenario() const { return m_scenario; }
@@ -93,6 +114,7 @@ private:
     void setFrozen(bool frozen);
     void updateMissionState();
     void leave(util::event<> &event);
+    bool drawModel(qreal pixelRatio);
 
 private:
     util::event<> m_eventSuccess;
@@ -111,6 +133,11 @@ private:
     Rect m_rectGL;
     RectF m_rectHUD;
     Point m_center;
+    Vector2D m_centerNDC;   // m_center in the 640x480 view's normalized device coordinates
+    float m_focal;          // of the cockpit art's camera, in pixels of the 640x480 view
+
+    std::shared_ptr<Cockpit3D> m_model;
+    std::unique_ptr<QOpenGLFramebufferObject> m_instruments;   // the instruments, projected onto the model
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;
     Matrix m_integerScaleProjectionMatrixInverted;

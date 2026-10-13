@@ -21,6 +21,7 @@
 #include "util/file.h"
 
 #include "items.h"
+#include "hud/hud.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -58,7 +59,10 @@ int main(int argc, char *argv[])
     const QCommandLineOption fireOption("fire", "Let these units fire their guns (test mode); towers aim at the player.", "ids");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption });
+    const QCommandLineOption cockpitOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
+    const QCommandLineOption shakeOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
+    const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), e.g. 3=front.png.", "time=file");
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption, cockpitOption, shakeOption, screenshotOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -72,6 +76,31 @@ int main(int argc, char *argv[])
     options.timeout = parser.value(timeoutOption).toInt();
     options.debugOverlay = parser.isSet(overlayOption);
     options.headless = parser.isSet(headlessOption);
+    if (parser.isSet(cockpitOption)) {
+        const QString cockpit = parser.value(cockpitOption).toLower();
+        if (cockpit != "2d" && cockpit != "3d") {
+            QTextStream(stderr) << "Invalid --cockpit value " << cockpit << ", expected 2d or 3d\n";
+            return game::Vertigo::ExitUsage;
+        }
+        hud::HUD::setCockpitMode(cockpit == "3d" ? hud::HUD::CockpitMode::Model : hud::HUD::CockpitMode::Art, false);
+    }
+    if (parser.isSet(shakeOption)) {
+        bool ok = false;
+        const float shake = parser.value(shakeOption).toFloat(&ok);
+        if (!ok || shake < 0) {
+            QTextStream(stderr) << "Invalid --shake value " << parser.value(shakeOption) << ", expected a factor of 0 or more\n";
+            return game::Vertigo::ExitUsage;
+        }
+        hud::HUD::setHeadMotion(shake, false);
+    }
+    foreach (const QString &value, parser.values(screenshotOption)) {
+        const QRegExp format("([\\d.]+)=(.+)");
+        if (!format.exactMatch(value)) {
+            QTextStream(stderr) << "Invalid --screenshot value " << value << ", expected time=file\n";
+            return game::Vertigo::ExitUsage;
+        }
+        options.screenshots.push_back({ format.cap(1).toFloat(), format.cap(2) });
+    }
     foreach (const QString &value, parser.values(destroyOption)) {
         foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
             bool ok = false;

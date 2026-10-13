@@ -520,9 +520,9 @@ void Scenario::setBoat(game::Boat *boat)
 }
 
 
-void Scenario::setRect(const RectF &rect, const Vector2D &center)
+void Scenario::setRect(const RectF &rect, const Vector2D &center, float fovY)
 {
-    m_projectionMatrix = glm::translate(Vector3D(center, 0)) * glm::perspective(glm::radians(60.0f), float(rect.width / rect.height), 0.1f, 500.0f);
+    m_projectionMatrix = glm::translate(Vector3D(center, 0)) * glm::perspective(glm::radians(fovY), float(rect.width / rect.height), 0.1f, 500.0f);
     m_projectionMatrixInverted = glm::inverse(m_projectionMatrix);
 }
 
@@ -542,6 +542,7 @@ void Scenario::update(float elapsedTime)
 
     m_cameraMatrixInverted = Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_position, 1));
     m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
+    m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
 
     m_conditionManager.update(elapsedTime);
 
@@ -575,7 +576,29 @@ void Scenario::update(float elapsedTime)
 }
 
 
+void Scenario::explosionAt(const Vector3D &position, float strength)
+{
+    if (!m_player || playerDestroyed())
+        return;
+    // felt up to 80 m away, pushing the boat away from the blast
+    const Vector3D away = m_position - position;
+    const float distance = glm::length(away);
+    const float felt = strength*std::max(0.0f, 1.0f - distance/80.0f);
+    if (felt <= 0)
+        return;
+    m_headMotion.shake(felt);
+    if (distance > 1e-3f)
+        m_headMotion.jolt(away/distance*felt*4.0f);
+}
+
+
 void Scenario::draw()
+{
+    draw(m_projectionMatrix, m_cameraMatrix);
+}
+
+
+void Scenario::draw(const Matrix &projection, const Matrix &camera)
 {
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CW);
@@ -587,10 +610,10 @@ void Scenario::draw()
     glEnable(GL_DEPTH_TEST);
 
     glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_projectionMatrix));
+    glLoadMatrixf(glm::value_ptr(projection));
 
     glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(glm::value_ptr(m_cameraMatrix));
+    glLoadMatrixf(glm::value_ptr(camera));
 
     GLfloat global_ambient[] = { 0.5f, 0.5f, 1.0f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);

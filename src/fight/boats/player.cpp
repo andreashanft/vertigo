@@ -27,6 +27,8 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtx/norm.hpp>
+#include <algorithm>
+#include <cmath>
 
 
 namespace fight {
@@ -154,6 +156,8 @@ void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObje
     m_shield[side] -= kinetic;
     if (kinetic > 0)
     {
+        // a shot rattles the cockpit a little, a torpedo fully
+        m_scenario->headMotion().shake(std::min(1.0f, std::sqrt(kinetic/2000.0f)));
         m_lastHit = m_scenario->time();
         sfx::SampleMap::get(sfx::Sample::Alert).play();
     }
@@ -298,6 +302,7 @@ bool Player::update(float elapsedTime)
     float path = 0;
 
     int count = 0;
+    bool grounded = false;
     while (glm::length2(delta) > 1e-5f && count < 5)
     {
         Vector3D posSurface, normSurface;
@@ -313,11 +318,18 @@ bool Player::update(float elapsedTime)
                 activeObject->damage(m_kineticStrength, m_shockStrength, posObject - normObject*1.5f, this);
             damage(colObject->kineticStrength(), colObject->shockStrength(), posObject - normObject*1.5f);
             sfx::SampleMap::get(sfx::Sample::Boat_Collision).playInstance();
-            m_velocity -= 2*glm::dot(m_velocity, normObject)*normObject;
+            const Vector3D bounce = -2*glm::dot(m_velocity, normObject)*normObject;
+            m_scenario->headMotion().jolt(bounce);
+            m_velocity += bounce;
             delta = posObject - m_position;
         }
         else if (colSurface)
         {
+            // touching down: the part of the motion into the ground stops at once
+            const float into = -glm::dot(vel, normSurface);
+            if (!m_grounded && into > 0)
+                m_scenario->headMotion().jolt(into*normSurface);
+            grounded = true;
             delta -= posSurface - m_position;
             path += glm::length(posSurface - m_position);
             m_position = posSurface;
@@ -330,6 +342,11 @@ bool Player::update(float elapsedTime)
         m_position += delta;
         break;
     }
+
+    // scraping along the ground rattles the cockpit
+    if (grounded)
+        m_scenario->headMotion().shake(std::min(0.4f, glm::length(vel)/40.0f));
+    m_grounded = grounded;
 
     updateBox();
     m_speed = path/elapsedTime*3.6f;
