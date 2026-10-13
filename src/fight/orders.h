@@ -89,6 +89,7 @@ private:
     float m_startTime;
     Vector3D m_point;  // current patrol point
     int m_pointHeight;
+    float m_pointTime; // when the patrol point was picked
 };
 
 

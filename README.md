@@ -51,6 +51,10 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   reaching them.
 - `--trace 2062,2055` prints these units' map cell, height above ground,
   speed and current order every second.
+- `--headless` runs the mission without a window and without sound, in
+  simulated time as fast as possible (use it with `--timeout`; all test
+  times are then mission seconds). Automated runs with a window and
+  `--timeout` don't take the focus.
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
   Esc menu (here: restart the mission).
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning

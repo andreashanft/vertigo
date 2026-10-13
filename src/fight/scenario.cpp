@@ -34,6 +34,7 @@
 #include "objects/simpleobject.h"
 
 #include "boats/simpleboat.h"
+#include "boats/tank.h"
 
 #include <QGLContext>
 #include <QTime>
@@ -181,8 +182,7 @@ Scenario::Scenario(const QString &name) :
 
         case TypeTank:
             {
-                // TODO: ground following, turret (roadmap step 1.6)
-                object = new SimpleObject(this, objectDes, info);
+                object = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
                 object->setPosition(getPosition());
             }
             break;
@@ -235,7 +235,8 @@ Scenario::Scenario(const QString &name) :
         case TypeCrawler:
             {
                 objectDes.load("vfx:sobjects/gvehicle.des");
-                object = new SimpleObject(this, objectDes, info);
+                desName = "gvehicle";
+                object = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
                 object->setPosition(getPosition());
             }
             break;

@@ -90,6 +90,8 @@ protected:
     Vector3D m_angleFriction;
 
     float m_collisionRadius; // for terrain collisions
+    float m_minClimbingAngle; // steepest dive and climb in radians (for ground vehicles: the most they tilt)
+    float m_maxClimbingAngle;
 
     std::unique_ptr<Orders> m_orders;
 };

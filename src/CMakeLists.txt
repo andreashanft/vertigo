@@ -69,6 +69,8 @@ set(SOURCES
     fight/boats/player.h
     fight/boats/simpleboat.cpp
     fight/boats/simpleboat.h
+    fight/boats/tank.cpp
+    fight/boats/tank.h
 
     fight/surface/betaspline.cpp
     fight/surface/betaspline.h

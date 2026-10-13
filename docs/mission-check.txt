@@ -2,7 +2,6 @@ s00101: 49 objects
   2x order not implemented: ambush
   2x order not implemented: attack
   7x orders not run: typ 2052
-  6x orders not run: typ 2053
   2x orders not run: typ 2059
   4x orders not run: typ 2062
   20x unread key: movable#/ai
@@ -20,7 +19,6 @@ s00101: 49 objects
 s00102: 54 objects
   2x order not implemented: attack
   7x orders not run: typ 2052
-  6x orders not run: typ 2053
   2x orders not run: typ 2059
   4x orders not run: typ 2062
   22x unread key: movable#/ai
@@ -52,9 +50,7 @@ s00103: 28 objects
   1x unread section: cd
 s00104: 44 objects
   4x order not implemented: attack
-  1x orders not run: typ 2051
   6x orders not run: typ 2052
-  3x orders not run: typ 2053
   2x orders not run: typ 2062
   1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 72
@@ -101,7 +97,6 @@ s00106: 27 objects
 s00201: 35 objects
   2x order not implemented: ambush
   8x order not implemented: attack
-  4x orders not run: typ 2051
   4x orders not run: typ 2052
   1x orders not run: typ 2059
   16x unread key: movable#/ai
@@ -135,8 +130,7 @@ s00202: 104 objects
   1x unread section: cd
   63x unread section: current#
 s00203: 83 objects
-  14x order not implemented: attack
-  2x orders not run: typ 2051
+  16x order not implemented: attack
   12x unread key: movable#/ai
   77x unread key: movable#/diff
   65x unread key: movable#/dis
@@ -166,8 +160,7 @@ s00204: 21 objects
   1x unread section: cd
   55x unread section: current#
 s00205: 14 objects
-  6x order not implemented: attack
-  1x orders not run: typ 2051
+  7x order not implemented: attack
   2x orders not run: typ 2062
   7x unread key: movable#/ai
   2x unread key: movable#/card
@@ -183,8 +176,6 @@ s00205: 14 objects
   1x unread section: cd
 s00301: 72 objects
   24x order not implemented: attack
-  3x orders not run: typ 2051
-  5x orders not run: typ 2053
   11x orders not run: typ 2062
   37x unread key: movable#/ai
   11x unread key: movable#/card
@@ -203,7 +194,6 @@ s00301: 72 objects
 s00302: 10 objects
   5x order not implemented: ambush
   9x order not implemented: attack
-  2x orders not run: typ 2051
   9x unread key: movable#/ai
   9x unread key: movable#/diff
   9x unread key: movable#/eint
@@ -216,7 +206,6 @@ s00302: 10 objects
   1x unread section: cd
 s00303: 15 objects
   5x order not implemented: attack
-  2x orders not run: typ 2053
   9x unread key: movable#/ai
   9x unread key: movable#/diff
   9x unread key: movable#/eint
@@ -245,7 +234,6 @@ s00304: 6 objects
   1x unread section: cd
 s00401: 196 objects
   12x order not implemented: attack
-  2x orders not run: typ 2051
   7x orders not run: typ 2052
   8x orders not run: typ 2059
   14x orders not run: typ 2062
@@ -270,7 +258,6 @@ s00402: 44 objects
   1x condition: Empty faction 1
   8x order not implemented: attack
   5x orders not run: typ 2052
-  2x orders not run: typ 2053
   15x unread key: movable#/ai
   15x unread key: movable#/diff
   15x unread key: movable#/eint
@@ -284,7 +271,6 @@ s00402: 44 objects
   1x unread section: cd
 s00403: 39 objects
   2x order not implemented: attack
-  3x orders not run: typ 2051
   5x orders not run: typ 2062
   19x unread key: movable#/ai
   5x unread key: movable#/card
@@ -301,9 +287,7 @@ s00403: 39 objects
 s00404: 57 objects
   8x condition: Objective not found 14
   5x order not implemented: attack
-  5x orders not run: typ 2051
   7x orders not run: typ 2052
-  2x orders not run: typ 2053
   4x orders not run: typ 2062
   33x unread key: movable#/ai
   4x unread key: movable#/card
@@ -320,7 +304,6 @@ s00404: 57 objects
 s00405: 180 objects
   6x order not implemented: ambush
   4x order not implemented: attack
-  13x orders not run: typ 2051
   10x orders not run: typ 2052
   10x orders not run: typ 2059
   5x orders not run: typ 2062
@@ -341,9 +324,7 @@ s00405: 180 objects
 s00406: 178 objects
   3x order not implemented: attack
   1x order not implemented: gotowithinfiltrate
-  3x orders not run: typ 2051
   5x orders not run: typ 2052
-  3x orders not run: typ 2053
   5x orders not run: typ 2059
   11x orders not run: typ 2062
   36x unread key: movable#/ai
@@ -432,9 +413,8 @@ s00703: 21 objects
   1x unread section: cd
   15x unread section: current#
 s00704: 113 objects
-  4x order not implemented: attack
+  9x order not implemented: attack
   2x order not implemented: gotowithinfiltrate
-  2x orders not run: typ 2051
   4x orders not run: typ 2052
   3x orders not run: typ 2059
   3x orders not run: typ 2062
@@ -473,8 +453,7 @@ s00705: 21 objects
   1x unread section: cd
   15x unread section: current#
 s00706: 38 objects
-  46x order not implemented: attack
-  3x orders not run: typ 2051
+  49x order not implemented: attack
   1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 78
   32x unread key: movable#/ai
@@ -534,7 +513,6 @@ s00903: 75 objects
 s01001: 27 objects
   9x order not implemented: attack
   1x order not implemented: gotowithinfiltrate
-  2x orders not run: typ 2051
   1x orders not run: typ 2059
   1x orders not run: typ 2062
   2x orders not run: typ 2063
@@ -604,7 +582,6 @@ s01201: 62 objects
   1x unread section: cd
 s01202: 22 objects
   6x order not implemented: attack
-  3x orders not run: typ 2051
   6x orders not run: typ 2062
   11x unread key: movable#/ai
   6x unread key: movable#/card
@@ -636,8 +613,7 @@ s01203: 75 objects
   21x unread key: movable#/tor
   1x unread section: cd
 s01301: 84 objects
-  4x order not implemented: attack
-  1x orders not run: typ 2051
+  5x order not implemented: attack
   2x orders not run: typ 2052
   4x orders not run: typ 2059
   5x orders not run: typ 2062
@@ -660,7 +636,6 @@ s01301: 84 objects
   1x unread section: cd
 s01302: 43 objects
   14x order not implemented: attack
-  2x orders not run: typ 2053
   5x orders not run: typ 2062
   5x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
@@ -681,7 +656,6 @@ s01302: 43 objects
   23x unread key: movable#/tor
   1x unread section: cd
 s01303: 55 objects
-  2x orders not run: typ 2053
   5x orders not run: typ 2062
   5x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
@@ -704,7 +678,6 @@ s01303: 55 objects
 s01304: 74 objects
   3x order not implemented: attack
   2x order not implemented: gotowithinfiltrate
-  2x orders not run: typ 2053
   5x orders not run: typ 2062
   1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 83
@@ -723,7 +696,6 @@ s01304: 74 objects
   26x unread key: movable#/tor
   1x unread section: cd
 s01305: 36 objects
-  2x orders not run: typ 2053
   5x orders not run: typ 2062
   1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 84
@@ -741,7 +713,6 @@ s01305: 36 objects
   1x unread section: cd
 s01306: 124 objects
   1x order not implemented: ambush
-  4x orders not run: typ 2051
   15x orders not run: typ 2052
   15x orders not run: typ 2059
   4x orders not run: typ 2062
@@ -762,7 +733,6 @@ s01306: 124 objects
   45x unread section: current#
 s01307: 27 objects
   4x order not implemented: attack
-  2x orders not run: typ 2053
   4x orders not run: typ 2062
   1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 68
@@ -793,8 +763,6 @@ s01308: 6 objects
 s01501: 66 objects
   5x order not implemented: attack
   2x order not implemented: gotowithinfiltrate
-  2x orders not run: typ 2051
-  5x orders not run: typ 2053
   1x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 84
   50x unread key: movable#/ai
@@ -904,7 +872,7 @@ s01801: 147 objects
   151x unread section: current#
 s01802: 158 objects
   2x condition: Objective not found 24
-  20x orders not run: typ 2051
+  4x order not implemented: attack
   11x orders not run: typ 2052
   8x orders not run: typ 2059
   30x orders not run: typ 2062
@@ -1218,7 +1186,6 @@ strai0: 129 objects
   45x unread key: movable#/tor
   1x unread section: cd
 strai1: 197 objects
-  29x orders not run: typ 2051
   14x orders not run: typ 2052
   48x unread key: movable#/ai
   48x unread key: movable#/diff
@@ -1232,8 +1199,7 @@ strai1: 197 objects
   48x unread key: movable#/tor
   1x unread section: cd
 strai2: 140 objects
-  39x order not implemented: attack
-  5x orders not run: typ 2051
+  44x order not implemented: attack
   6x orders not run: typ 2063
   1x placeholder: typ 2063 dtyp 71
   1x placeholder: typ 2063 dtyp 73
@@ -1254,10 +1220,8 @@ strai2: 140 objects
   1x unread section: cd
   80x unread section: current#
 strai3: 227 objects
-  11x order not implemented: attack
-  17x orders not run: typ 2051
+  14x order not implemented: attack
   9x orders not run: typ 2052
-  9x orders not run: typ 2053
   21x orders not run: typ 2059
   6x orders not run: typ 2062
   83x unread key: movable#/ai
@@ -1291,13 +1255,11 @@ Total: 71 missions, 4981 objects
   882x unread key: movable#/num
   424x unread key: movable#/card
   423x orders not run: typ 2062
-  380x order not implemented: attack
+  404x order not implemented: attack
   303x orders not run: typ 2052
   133x orders not run: typ 2059
-  127x orders not run: typ 2051
   71x unread section: cd
   70x orders not run: typ 2063
-  53x orders not run: typ 2053
   37x order not implemented: ambush
   24x order not implemented: gotowithinfiltrate
   12x condition: Objective not found #

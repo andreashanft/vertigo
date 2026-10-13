@@ -48,6 +48,8 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
 
     m_maxAngleVelocity = Vector3D(file.value("MaxAngleVelocityB").toFloat(), file.value("MaxAngleVelocityC").toFloat(), file.value("MaxAngleVelocityA").toFloat());
     m_angleFriction = Vector3D(-file.value("AngleFrictionB").toFloat(), -file.value("AngleFrictionC").toFloat(), -file.value("AngleFrictionA").toFloat());
+    m_minClimbingAngle = glm::radians(file.value("MinClimbingAngle", 20).toFloat());
+    m_maxClimbingAngle = glm::radians(file.value("MaxClimbingAngle", 20).toFloat());
 
     // a sphere that fits into the hull, so the boat can get close to the ground
     const Vector3D dim = m_localBox.dim();
@@ -78,7 +80,7 @@ void SimpleBoat::steerTo(const Vector3D &point, float speed)
     // positive turns to the right (yaw) and pitch the nose down
     const float yawError = std::atan2(local.x, local.y);
     const float pitch = std::asin(glm::clamp(dir().z, -1.0f, 1.0f));
-    const float targetPitch = glm::clamp(std::atan2(way.z, 40.0f), -0.6f, 0.6f);
+    const float targetPitch = glm::clamp(std::atan2(way.z, 40.0f), -m_minClimbingAngle, m_maxClimbingAngle);
     m_turnVelocity = Vector3D(glm::clamp(2.0f*(pitch - targetPitch), -1.0f, 1.0f), 0, glm::clamp(1.5f*yawError, -1.0f, 1.0f));
 
     // slow down while turning towards a point to the side or behind

@@ -54,9 +54,10 @@ int main(int argc, char *argv[])
     const QCommandLineOption keysOption("keys", "Press keys at the given seconds (test mode), e.g. 2=Esc,3=2,4=Alt+A.", "time=key");
     const QCommandLineOption driveOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     const QCommandLineOption traceOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
+    const QCommandLineOption headlessOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, checkOption, itemsOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, headlessOption, checkOption, itemsOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -69,6 +70,7 @@ int main(int argc, char *argv[])
     options.boat = parser.value(boatOption).toInt();
     options.timeout = parser.value(timeoutOption).toInt();
     options.debugOverlay = parser.isSet(overlayOption);
+    options.headless = parser.isSet(headlessOption);
     foreach (const QString &value, parser.values(destroyOption)) {
         foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
             bool ok = false;

@@ -210,6 +210,24 @@ void HUD::start(fight::Scenario *scenario)
 }
 
 
+void HUD::step(float elapsedTime)
+{
+    if (!m_scenario)
+        return;
+
+    setFrozen(m_paused || m_menu->page() != MissionMenu::Page::None);
+    if (m_frozen)
+        elapsedTime = 0;
+    while (elapsedTime > 0.0f) {
+        const float step = std::min(elapsedTime, 0.02f);
+        m_scenario->update(step);
+        elapsedTime -= step;
+    }
+
+    updateMissionState();
+}
+
+
 void HUD::setFrozen(bool frozen)
 {
     if (frozen == m_frozen)
@@ -325,20 +343,11 @@ void HUD::draw()
         return;
     }
 
-    setFrozen(m_paused || m_menu->page() != MissionMenu::Page::None);
-
-    int ticks = SDL_GetTicks();
+    const int ticks = SDL_GetTicks();
     // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
-    float elapsedTime = m_frozen ? 0.0f : std::min((ticks - m_lastTicks)/1000.0f, 0.25f);
+    step(std::min((ticks - m_lastTicks)/1000.0f, 0.25f));
     m_lastTicks = ticks;
-    while (elapsedTime > 0.0f) {
-        const float step = std::min(elapsedTime, 0.02f);
-        m_scenario->update(step);
-        elapsedTime -= step;
-    }
-
-    updateMissionState();
-    // a handler of the events above may have ended the mission
+    // a handler of the events in step() may have ended the mission
     if (!m_scenario)
     {
         setupGL(true);

@@ -135,6 +135,12 @@ void SoundSystem::pauseAll()
 }
 
 
+void SoundSystem::setVolume(float volume)
+{
+    alListenerf(AL_GAIN, volume);
+}
+
+
 void SoundSystem::resumeAll()
 {
     foreach (Sound* sound, m_sources)
