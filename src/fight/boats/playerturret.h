@@ -50,6 +50,7 @@ public:
     void setOrder(Order order);
     State state() const { return m_state; }
     QString stateName() const;
+    QString stateText() const;  // the state written out (GLOBWEAP verbose)
     QString softwareName() const { return m_software.shortName; }
     const Gun& gun() const { return m_gun; }
     // nullptr once the target is gone (a torpedo is deleted when it explodes)

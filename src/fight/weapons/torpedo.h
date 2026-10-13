@@ -36,6 +36,7 @@ struct TorpedoType
 {
     QString name;
     QString shortName;
+    QString image;          // its picture in GFX/IMG/COCKPIT, e.g. stanley2
     int lockType = 0;       // 0 none (straight), 1 noise (homing)
     float lockDelay = 0;    // seconds the target must be locked before launch
     QString model;

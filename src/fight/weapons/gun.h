@@ -60,6 +60,7 @@ public:
     bool usesAmmo() const { return m_energyDemand == 0.0f; }
     const QString& shortName() const { return m_shortName; }
     QString stateName() const { return GunStates ? GunStates[m_state].shortName : QString(); }
+    QString stateText() const { return GunStates ? GunStates[m_state].longName : QString(); }
     State state() const { return m_state; }
 
     void setDefect(float defect) { m_defect = defect; }

@@ -78,19 +78,37 @@ PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int 
 }
 
 
-QString PlayerTurret::stateName() const
+namespace {
+
+// GLOBWEAP [TurretStateN]: short (true) or verbose names
+const QStringList& turretStateNames(bool brief)
 {
-    static QStringList names;
-    if (names.isEmpty())
+    static QStringList shortNames, verboseNames;
+    if (shortNames.isEmpty())
     {
         txt::DesFile file("vfx:sobjects/globweap.des");
         for (int i = 0; i < 9; i++)
         {
             file.setSection(QString("turretstate%1").arg(i));
-            names << file.value("short").toString();
+            shortNames << file.value("short").toString();
+            verboseNames << file.value("verbose").toString();
         }
     }
-    return names.value(int(m_state));
+    return brief ? shortNames : verboseNames;
+}
+
+}
+
+
+QString PlayerTurret::stateName() const
+{
+    return turretStateNames(true).value(int(m_state));
+}
+
+
+QString PlayerTurret::stateText() const
+{
+    return turretStateNames(false).value(int(m_state));
 }
 
 

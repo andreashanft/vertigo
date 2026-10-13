@@ -49,106 +49,96 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
 }
 
 
-void SlaveMonitor::togglePage()
-{
-    if (m_detail != Detail::None)
-        m_detail = Detail::None;
-    else
-        m_page = m_page == Page::Armor ? Page::Systems : Page::Armor;
-}
-
-
 void SlaveMonitor::draw()
 {
     const Rect rect = m_hud->projectCenter(m_rect);
-    m_lamp.draw(m_page == Page::Armor && m_detail == Detail::None);
-    if (m_detail != Detail::None)
-        drawDetail(rect);
-    else if (m_page == Page::Armor)
-        drawArmor(rect);
-    else
-        drawSystems(rect);
+    m_lamp.draw(m_page == Page::Armor);
+    switch (m_page)
+    {
+    case Page::Weapon: drawWeapon(rect); break;
+    case Page::Armor: drawArmor(rect); break;
+    case Page::Systems: drawSystems(rect); break;
+    }
 }
 
 
-gfx::Texture* SlaveMonitor::picture(int item)
+gfx::Texture* SlaveMonitor::picture(const QString &name)
 {
-    const game::Items::Item *info = game::Items::get(item);
-    if (!info)
+    if (name.isEmpty())
         return nullptr;
-    auto it = m_pictures.find(item);
+    auto it = m_pictures.find(name);
     if (it == m_pictures.end())
-        it = m_pictures.emplace(item, gfx::Texture(m_hud->getImage(info->imgname), true)).first;
+        it = m_pictures.emplace(name, gfx::Texture(m_hud->getImage(name), true)).first;
     return it->second.isValid() ? &it->second : nullptr;
 }
 
 
-void SlaveMonitor::drawDetail(const Rect &rect)
+// three centred lines (the system, its state, and for the magazine the selected torpedo), with
+// the picture of the gun or torpedo below
+void SlaveMonitor::drawWeapon(const Rect &rect)
 {
     const fight::Player *player = m_hud->scenario()->player();
     const game::Boat *boat = m_hud->boat();
-    gfx::Font &font = m_hud->fontGreen();
-    auto ammo = [](const fight::Gun &gun) { return gun.usesAmmo() ? QString::number(gun.ammo()) : QString("--"); };
-
-    int item = 0;
-    QString title;
     QStringList lines;
-    float condition = 1;
-    switch (m_detail)
+    QString image;
+    auto itemName = [](int item) {
+        const game::Items::Item *info = game::Items::get(item);
+        return info ? info->longname : QString("---");
+    };
+    auto itemImage = [](int item) {
+        const game::Items::Item *info = game::Items::get(item);
+        return info ? info->imgname : QString();
+    };
+    switch (m_weapon)
     {
-    case Detail::Gun:
-        item = boat->gun();
-        title = "GUN";
-        lines << ammo(player->playerGun()) << player->playerGun().stateName();
-        condition = boat->defects()[game::Boat::DefectGun];
+    case Weapon::Gun:
+        lines << itemName(boat->gun()) << player->playerGun().stateText()
+              << (player->playerGun().usesAmmo() ? QString::number(player->playerGun().ammo()) : QString());
+        image = itemImage(boat->gun());
         break;
-    case Detail::Magazine:
+    case Weapon::Magazine:
         {
-            // the magazine, with the selected torpedo, how many are left and whether it is ready
-            item = boat->magazine();
-            title = "TORP";
             const int selected = player->selectedTorpedo();
             const fight::TorpedoType *torpedo = selected >= 0 ? fight::TorpedoType::get(player->torpedoes()[selected] - 1) : nullptr;
+            // GLOBWEAP [TorpedoMagazineStateN]: Ready, Rearming, Empty
+            lines << itemName(boat->magazine()) << (!torpedo ? "EMPTY" : player->torpedoReady() ? "READY" : "REARMING");
             if (torpedo)
-                lines << torpedo->shortName << QString::number(player->torpedoes().size()) << (player->torpedoReady() ? "RDY" : "ARM");
-            else
-                lines << "--" << "0" << "EMP";
-            condition = boat->defects()[game::Boat::DefectToMa];
+            {
+                lines << torpedo->name;
+                image = torpedo->image;
+            }
         }
         break;
-    case Detail::Turret1:
-    case Detail::Turret2:
+    case Weapon::Turret1:
+    case Weapon::Turret2:
         {
-            const int index = m_detail == Detail::Turret1 ? 0 : 1;
-            item = index == 0 ? boat->tur1() : boat->tur2();
-            title = QString("TUR%1").arg(index + 1);
+            const int index = m_weapon == Weapon::Turret1 ? 0 : 1;
+            const int item = index == 0 ? boat->tur1() : boat->tur2();
             const fight::PlayerTurret *turret = player->turret(index);
+            lines << (turret ? itemName(item) : QString("TUR%1").arg(index + 1));
             if (turret)
-                lines << turret->softwareName() << ammo(turret->gun()) << turret->stateName();
-            condition = boat->defects()[index == 0 ? game::Boat::DefectTur1 : game::Boat::DefectTur2];
+            {
+                lines << turret->stateText();
+                const game::Items::Item *software = game::Items::get(index == 0 ? boat->tur1soft() : boat->tur2soft());
+                if (software)
+                    lines << software->longname;
+                image = itemImage(item);
+            }
+            else
+                lines << "---";
         }
         break;
-    case Detail::None:
-        return;
     }
 
-    // the name on top, the picture on the left, the values beside it
-    const game::Items::Item *info = game::Items::get(item);
-    font.draw(info ? info->longname : title, Rect(rect.x, rect.y + 3, rect.width, -1), true, false);
-    if (gfx::Texture *texture = picture(item))
-        texture->draw(rect.x + 4, rect.y + rect.height - 4 - texture->height());
-    if (!info)
-    {
-        font.draw("---", Rect(rect.x, rect.y + rect.height/2, rect.width, -1), true, false);
-        return;
-    }
-    lines << QString("%1%").arg(int(100*condition + 0.5f));
-    int y = rect.y + 16;
+    gfx::Font &font = m_hud->fontGreen();
+    int y = rect.y + m_tableTopLeft.y;
     for (const QString &line : lines)
     {
-        font.draw(line, rect.x + 56, y);
-        y += m_spacingY;
+        font.draw(line.toUpper(), Rect(rect.x, y, rect.width, -1), true, false);
+        y += m_spacingY - 1;
     }
+    if (gfx::Texture *texture = picture(image))
+        texture->draw(rect.x + (rect.width - texture->width())/2, std::max(y, rect.y + rect.height - 2 - texture->height()));
 }
 
 
@@ -173,6 +163,17 @@ void SlaveMonitor::drawArmor(const Rect &rect)
         case 3: texture.draw(x, y + 64 - texture.height()); break;
         }
     }
+
+    // the title, and what is left of each side around the silhouette: front above, back below
+    gfx::Font &font = m_hud->fontGreen();
+    auto percent = [player](int side) {
+        return QString("%1%").arg(player->shieldMax(side) > 0 ? std::max(0, 100*player->shield(side)/player->shieldMax(side)) : 0);
+    };
+    font.draw("ARMOR STATE", Rect(rect.x, rect.y + 2, rect.width, -1), true, false);
+    font.draw(percent(0), Rect(rect.x, rect.y + 12, rect.width, -1), true, false);
+    font.draw(percent(3), Rect(rect.x, rect.y + rect.height - 10, rect.width, -1), true, false);
+    font.draw(percent(1), rect.x + 3, rect.y + rect.height/2 - 3);
+    font.draw(percent(2), rect.x + rect.width - 3 - font.width(percent(2)), rect.y + rect.height/2 - 3);
 }
 
 

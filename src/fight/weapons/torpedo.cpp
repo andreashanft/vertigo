@@ -59,6 +59,7 @@ const std::vector<TorpedoType>& TorpedoType::all()
         weapons.setSection(QString("torpedo%1").arg(i));
         type.name = weapons.value("longname").toString();
         type.shortName = weapons.value("shortname").toString();
+        type.image = weapons.value("imagename").toString().section('\\', -1).section('.', 0, 0).toLower();
         type.lockType = weapons.value("locktype", 0).toInt();
         type.lockDelay = weapons.value("lockdelay", 0).toFloat();
 
