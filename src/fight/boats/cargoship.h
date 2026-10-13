@@ -36,7 +36,8 @@ class UnitGun;
 // against a side of an earlier one (ConnectSide: left 1, right 2, front 4, back 8, top 16,
 // bottom 32) and has its own shield. Blocks of the big ships carry gun turrets ([TurretN]),
 // which fire at hostile units on their side of the hull. The ship moves like a boat, with its
-// orders; it is destroyed when its own shield is used up or all of its blocks are.
+// orders; it is destroyed when its own shield is used up or all of its blocks are. When a block
+// goes, the parts of the hull no longer joined to its largest part break off and sink.
 class CargoShip : public SimpleBoat
 {
 public:
@@ -53,6 +54,7 @@ public:
     bool update(float elapsedTime);
     void draw();
     void arm(int model, txt::DesFile &file) {}
+    bool engagesHostiles() const { return false; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();
@@ -87,6 +89,18 @@ private:
         float nextScan = 0;
     };
 
+    // a block that broke off: it sinks, tumbling, and explodes on the ground
+    struct Wreck
+    {
+        int block;
+        Vector3D position;      // world position of the block's origin
+        glm::mat3 orientation;  // block -> world rotation
+        Vector3D velocity;
+        Vector3D spinAxis;
+        float spinRate;
+        float time = 0;
+    };
+
     // ship coordinates <-> the turret's mount frame (turned over for turrets under the hull)
     static Vector3D toMount(const ShipTurret &turret, const Vector3D &v) { return turret.below ? Vector3D(-v.x, v.y, -v.z) : v; }
     Vector3D toWorld(const Vector3D &local) const { return m_position + m_orientationInverted*local; }
@@ -98,10 +112,14 @@ private:
     void destroyBlock(Block &block);
     void destroyTurret(ShipTurret &turret);
     void updateLocalBox();
+    void breakApart();
+    void updateWrecks(float elapsedTime);
+    void explodeWreck(const Wreck &wreck);
 
 private:
     std::vector<Block> m_blocks;
     std::vector<ShipTurret> m_turrets;
+    std::vector<Wreck> m_wrecks;
 };
 
 

@@ -112,7 +112,11 @@ settings; no closer than 35 m, and the way goes round the target) and tanks
 then attacks; 11 destroys the unit after `dur` (`con` 1: counted from being
 boarded). Hostility is the attitude matrix (2 = hostile), the player is
 faction 8 (every mission makes the enemies hostile to 8). 10 (milestone 4) flies to the unit `ene`, docks on top of it for
-`dur` seconds and then completes its "boarded" event. Cargo ships (milestone 5) run the boat orders.
+`dur` seconds and then completes its "boarded" event. Cargo ships (milestone 5) run the boat orders. Patrol and Escort units
+(milestone 5) also attack hostile units within their sensor range `senr`
+(100 m if unset) and return to their order once the target is gone or more
+than 2.5 sensor ranges away. The sensor type `sen` (optical, passive,
+active) isn't told apart yet. Cargo ships leave this to their turrets.
 
 **Done:** orders 1, 2, 9, 3 and 5 for boats and bombers (`fight/orders.cpp`),
 with "stop when" conditions per slot. A slot ends when its break condition is
@@ -395,7 +399,9 @@ Damage is not documented, so this is a guess. A hit damages the nearest turret
 (within 3 m) or block. A block or turret whose shield runs out explodes and is
 removed, together with the turrets on it. The ship's own `[Defense]` shield
 takes every hit, and the ship is destroyed when that shield or all its blocks
-are gone. The kinematics in the ship files copy the bomber's, so big ships turn
+are gone. When a block goes, the blocks no longer joined to the largest
+remaining part (by touching boxes) break off, sink tumbling, and explode on
+the ground. The kinematics in the ship files copy the bomber's, so big ships turn
 at most 0.15 rad/s and climb at most 5°.
 
 ### B. Orders

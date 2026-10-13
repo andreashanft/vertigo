@@ -35,6 +35,7 @@ namespace {
 
 // a unit counts as having arrived within this horizontal distance (metres)
 const float ArriveDistance = 20.0f;
+const float EngageLeash = 2.5f;     // patrols give up a target this many sensor ranges away
 // durations from this on mean "forever"
 const int Forever = 100000;
 // guns fire when they point at the target within this angle (radians)
@@ -82,6 +83,8 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_attackEnd(0),
     m_ambushed(false),
     m_torpedoRun(false),
+    m_engaged(nullptr),
+    m_nextScan(0),
     m_dockStart(-1)
 {
     if (!m_slots.empty())
@@ -96,6 +99,7 @@ void Orders::start(int slot)
     m_attack = Attack::Approach;
     m_attackEnd = 0;
     m_ambushed = false;
+    m_engaged = nullptr;
     m_dockStart = -1;
     m_unit->setTrigger(false);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
@@ -115,7 +119,9 @@ QString Orders::state() const
         return QString();
     QString text = OrderSlot::name(m_slots[m_current].type);
     const int type = m_slots[m_current].type;
-    if ((type == OrderSlot::Attack || (type == OrderSlot::Ambush && m_ambushed)) && m_attackEnd > 0)
+    if (m_engaged)
+        text += " engaging";
+    if ((type == OrderSlot::Attack || (type == OrderSlot::Ambush && m_ambushed) || m_engaged) && m_attackEnd > 0)
         text += m_attack == Attack::Approach ? " approach" : m_attack == Attack::Attack ? " attack" : " break";
     if (m_unit->trigger())
         text += " firing";
@@ -479,6 +485,31 @@ void Orders::update()
     // the rest needs a unit that can move
     if (!m_boat)
         return;
+
+    // patrols and escorts attack hostile units within their sensor range (senr, 100 m if unset),
+    // and go back to their order when the target is gone or has got away
+    if ((slot.type == OrderSlot::Patrol || slot.type == OrderSlot::Escort) && m_boat->engagesHostiles())
+    {
+        const float sensorRange = m_unit->sensorRange() > 0 ? m_unit->sensorRange() : 100.0f;
+        if (m_engaged && (!isAlive(m_engaged) || glm::length(m_engaged->position() - m_unit->position()) > EngageLeash*sensorRange))
+        {
+            m_engaged = nullptr;
+            m_attackEnd = 0;
+            m_unit->setTrigger(false);
+            if (slot.type == OrderSlot::Patrol)
+                pickPatrolPoint();
+        }
+        if (!m_engaged && m_scenario->time() >= m_nextScan)
+        {
+            m_nextScan = m_scenario->time() + 1.0f;
+            m_engaged = nearestHostile(sensorRange, -1);
+        }
+        if (m_engaged)
+        {
+            updateAttack(m_engaged, m_boat->maxVelocity());
+            return;
+        }
+    }
 
     switch (slot.type)
     {
