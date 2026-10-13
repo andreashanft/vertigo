@@ -34,9 +34,10 @@ namespace hud {
 
 // The terrain around the boat as a small 3D view inside the master monitor (cockpit
 // [VoxelRadar0]), as in the original: a square patch turning with the boat, seen from behind and
-// above, shaded with the cockpit's shading table (VFX/TEXTURE/VOX_nnn.S16) and with nothing
-// around it, so the monitor shows through. Buildings are orange blocks, the sonar contacts lines
-// up from the ground: red hostile, green friendly, blue neutral.
+// above, shaded by height with the cockpit's shading table (VFX/TEXTURE/VOX_nnn.S16), low ground
+// dark and peaks bright, and with nothing around it, so the monitor shows through. Buildings are
+// orange blocks; the boat is an orange line up from the ground and the sonar contacts lines in
+// red (hostile), green (friendly) or blue (neutral).
 //
 // How the original uses its settings is still to be compared: here Projection is the angle the
 // view looks down at and the patch reaches WorldMaxY cells to each side of the boat; WorldMinY
@@ -51,6 +52,8 @@ public:
     bool isValid() const { return m_valid; }
     // relative to the master monitor
     const Rect& rect() const { return m_rect; }
+    // keeps the view above a line of the monitor (from the top of rect())
+    void limitHeight(int height);
 
     void draw(fight::Scenario *scenario, const RectF &window);
 

@@ -47,9 +47,9 @@ const int LightLevels = 64;
 const int Orange = 64;
 // the patch is drawn as a grid of quads
 const int GridSteps = 32;
-// the patch fills this part of the view's width, its centre this far down
-const float PatchWidth = 0.8f;
-const float CentreRow = 0.62f;
+// the patch at the boat's ground level fills at most this part of the view
+const float PatchWidth = 0.9f;
+const float PatchHeight = 0.9f;
 
 }
 
@@ -79,6 +79,16 @@ VoxelRadar::VoxelRadar(txt::DesFile &file)
 }
 
 
+void VoxelRadar::limitHeight(int height)
+{
+    if (m_valid && height > 0 && height < m_rect.height)
+    {
+        m_rect.height = height;
+        m_image = QImage(m_rect.width, m_rect.height, QImage::Format_ARGB32);
+    }
+}
+
+
 QRgb VoxelRadar::shade(int fog, int light) const
 {
     return m_table[glm::clamp(fog, 0, FogRows - 1)*Entries + light];
@@ -103,11 +113,27 @@ void VoxelRadar::render(fight::Scenario *scenario)
     const Vector3D viewRight(right, 0);
     const Vector3D viewUp = glm::cross(viewRight, viewForward);
     const float width = m_image.width(), height = m_image.height();
-    const float focal = PatchWidth*0.5f*width*distance/extent;
-    auto project = [&](const Vector3D &p) {
+
+    // fitted so that the patch, flat at the boat's ground level, fills the view and sits on its
+    // bottom edge
+    auto view = [&](const Vector3D &p) {
         const Vector3D v = p - eye;
         const float z = std::max(glm::dot(v, viewForward), 1.0f);
-        return QPointF(0.5f*width + focal*glm::dot(v, viewRight)/z, CentreRow*height - focal*glm::dot(v, viewUp)/z);
+        return Vector2D(glm::dot(v, viewRight)/z, glm::dot(v, viewUp)/z);
+    };
+    Vector2D low(1e9f), high(-1e9f);
+    for (const float x : { -extent, extent })
+        for (const float y : { -extent, extent })
+        {
+            const Vector2D v = view(target + Vector3D(right*x + forward*y, 0));
+            low = glm::min(low, v);
+            high = glm::max(high, v);
+        }
+    const float focal = std::min(PatchWidth*width/(high.x - low.x), PatchHeight*height/(high.y - low.y));
+    const Vector2D centre(0.5f*width - focal*0.5f*(low.x + high.x), height - 1 + focal*low.y);
+    auto project = [&](const Vector3D &p) {
+        const Vector2D v = view(p);
+        return QPointF(centre.x + focal*v.x, centre.y - focal*v.y);
     };
     auto inPatch = [&](const Vector3D &p) {
         const Vector2D way(p - boat);
@@ -118,23 +144,25 @@ void VoxelRadar::render(fight::Scenario *scenario)
     QPainter painter(&m_image);
     painter.setPen(Qt::NoPen);
 
-    // the terrain, from the far edge to the near one so that nearer quads cover what lies behind
-    const Vector3D light = glm::normalize(Vector3D(-0.5f, 0.4f, 0.75f));
+    // the terrain, from the far edge to the near one so that nearer quads cover what lies behind;
+    // the lowest ground on the patch is dark, the highest bright
     const float step = 2*extent/GridSteps;
     Vector3D points[GridSteps + 1][GridSteps + 1];
+    float lowest = 1e9f, highest = -1e9f;
     for (int j = 0; j <= GridSteps; j++)
         for (int i = 0; i <= GridSteps; i++)
         {
             const Vector2D p = Vector2D(boat) + right*(i*step - extent) + forward*(j*step - extent);
             points[j][i] = Vector3D(p, surface.heightAt(p.x, p.y));
+            lowest = std::min(lowest, points[j][i].z);
+            highest = std::max(highest, points[j][i].z);
         }
+    const float range = std::max(highest - lowest, 10.0f);
     for (int j = GridSteps - 1; j >= 0; j--)
         for (int i = 0; i < GridSteps; i++)
         {
-            const Vector3D centre = (points[j][i] + points[j + 1][i + 1])*0.5f;
-            Vector3D normal;
-            surface.heightAt(centre.x, centre.y, normal);
-            const int level = glm::clamp(int(12 + 50*std::max(0.0f, glm::dot(normal, light))), 0, LightLevels - 1);
+            const float z = 0.25f*(points[j][i].z + points[j][i + 1].z + points[j + 1][i].z + points[j + 1][i + 1].z);
+            const int level = glm::clamp(int(8 + 54*(z - lowest)/range), 0, LightLevels - 1);
             // slightly darker towards the far edge
             painter.setBrush(QColor(shade(FogRows - 1 - (j*6)/GridSteps, level)));
             const QPointF quad[4] = { project(points[j][i]), project(points[j][i + 1]), project(points[j + 1][i + 1]), project(points[j + 1][i]) };
@@ -192,6 +220,8 @@ void VoxelRadar::render(fight::Scenario *scenario)
         painter.setPen(entry.isFriend ? QColor(64, 200, 64) : hostile ? QColor(232, 32, 24) : QColor(64, 96, 255));
         painter.drawLine(project(Vector3D(position.x, position.y, surface.heightAt(position.x, position.y))), project(position));
     }
+    painter.setPen(orange);
+    painter.drawLine(project(target), project(boat));
 }
 
 

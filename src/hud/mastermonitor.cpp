@@ -40,6 +40,8 @@ MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::Des
     m_lamp(hud, file),
     m_voxelRadar(file)
 {
+    // above the cargo line at the bottom
+    m_voxelRadar.limitHeight(rect.height - 14 - m_voxelRadar.rect().y);
 }
 
 
