@@ -44,6 +44,29 @@ Tools:
   the original (grey lines every 10 px, yellow every 50 px) for tracing shapes.
 - `tools/export_art.py -- --cockpit NNN`: the art as a plain PNG with the window area filled
   in, ready for an image upscaler (see below).
+- `tools/install.py` (plain Python 3): copies the textured models to Vertigo (see below).
+
+## Using the models in Vertigo
+
+```sh
+python3 tools/install.py              # out/NNN/cockpit_NNN_textured_x4plus8k.glb if there is one,
+                                      # else cockpit_NNN_textured.glb
+build/vertigo s00101 --cockpit 3d     # or Alt+V in a mission
+```
+
+`install.py` copies one model per cockpit to `3d-cockpits/cockpit_NNN.glb` in Vertigo's data
+directory (or the setting `cockpit/directory`, or `--dest`). Vertigo reads the GLB itself and
+uses the following:
+
+- **Meshes and texture.** Everything with the projected texture, the `Glass` material only as
+  a surface for the HUD, and node transforms. The `HUD_MasterHUD` plane is skipped.
+- **Camera.** The eye at rest is the origin. The world and the model are drawn with the camera
+  of the cockpit art.
+- **Instruments.** The HUD's instruments are rendered into a texture covering the 640×480 view
+  and projected onto the model from the eye. At rest that reproduces the 2D layout. When the
+  head moves, the instruments stay on their screens and panels.
+
+See the main README for the options (head motion, settings).
 
 ## How the models are built
 
@@ -131,7 +154,8 @@ Seen from the eye, the textured models are nearly indistinguishable from the ori
 - **Hidden surfaces.** Surfaces the original never shows get a colour-matched fallback. A visible
   stepped seam remains where it meets the projected art.
 - **Not done yet.** PBR materials and normal maps, LODs (standalone headsets need the hoses and
-  hull decimated), live screen content, and loading the models in Vertigo (glTF plus OpenXR).
+  hull decimated), and VR (OpenXR, stereo rendering). Vertigo shows the models (see above); a
+  VR renderer could reuse its instrument texture, which is already mapped onto the screens.
 
 ### Upscaling (evaluated on cockpit 000)
 
