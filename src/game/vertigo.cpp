@@ -28,6 +28,7 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <QKeyEvent>
 #include <QMap>
 #include <QTextStream>
 #include <iostream>
@@ -83,6 +84,13 @@ int Vertigo::start(const Options &options)
         hud->eventSuccess() += [this, &result]() { result = ExitSuccess; m_window.close(); };
         hud->eventAbort() += [this, &result]() { result = ExitAborted; m_window.close(); };
         hud->eventFailure() += [this, &result]() { result = ExitFailed; m_window.close(); };
+        hud->eventDied() += [this, &result]() { result = ExitDied; m_window.close(); };
+        // there is no saved game in test mode
+        hud->eventLoad() += [this, &result]() { result = ExitAborted; m_window.close(); };
+        hud->eventRestart() += [&]() {
+            scenario.reset(new fight::Scenario(options.scenario));
+            hud->start(scenario.get());
+        };
         hud->setDebugOverlay(options.debugOverlay);
         hud->load(boat.get());
         scenario.reset(new fight::Scenario(options.scenario));
@@ -91,6 +99,7 @@ int Vertigo::start(const Options &options)
     }
 
     std::vector<int> destroy = options.destroy;
+    auto keys = options.keys;
     QElapsedTimer timer;
     timer.start();
 
@@ -103,6 +112,10 @@ int Vertigo::start(const Options &options)
         if (scenario && !destroy.empty() && timer.elapsed() >= 1000) {
             for (const int id : destroy) {
                 bool found = false;
+                if (id == scenario->playerId()) {
+                    scenario->player()->destroy();
+                    found = true;
+                }
                 for (const auto &record : scenario->objectRecords()) {
                     fight::ActiveObject *object = dynamic_cast<fight::ActiveObject *>(record.object);
                     if (record.id == id && object) {
@@ -115,6 +128,18 @@ int Vertigo::start(const Options &options)
                     std::cerr << "--destroy: no unit " << id << std::endl;
             }
             destroy.clear();
+        }
+        for (auto it = keys.begin(); scenario && it != keys.end(); ) {
+            if (timer.elapsed() < it->first*1000) {
+                ++it;
+                continue;
+            }
+            const int key = it->second[0] & ~Qt::KeyboardModifierMask;
+            const Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(it->second[0] & Qt::KeyboardModifierMask);
+            const QString text = key < 0x80 ? QString(QChar(key)).toLower() : QString();
+            QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyPress, key, modifiers, text));
+            QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyRelease, key, modifiers, text));
+            it = keys.erase(it);
         }
         if (scenario && result == ExitAborted && scenario->conditionManager().failed())
             result = ExitFailed;
@@ -135,7 +160,7 @@ int Vertigo::start(const Options &options)
         for (const auto &record : scenario->objectRecords())
             if (record.object->isEnabled())
                 enabled++;
-        static const char *results[] = { "success", "failed", "aborted", "timeout" };
+        static const char *results[] = { "success", "failed", "aborted", "timeout", "died" };
         std::cout << options.scenario.toUtf8().constData() << ": " << results[result]
                   << " after " << timer.elapsed()/1000.0 << " s, " << enabled << "/" << scenario->objectRecords().size()
                   << " units enabled, " << scenario->radio().size() << " radio messages" << std::endl;

@@ -175,6 +175,10 @@ set(SOURCES
     hud/autopilot.h
     hud/debugoverlay.cpp
     hud/debugoverlay.h
+    hud/missionmenu.cpp
+    hud/missionmenu.h
+    hud/pause.cpp
+    hud/pause.h
     hud/horizon.cpp
     hud/horizon.h
 

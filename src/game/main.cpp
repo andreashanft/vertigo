@@ -42,17 +42,19 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription(
         "Open-source clone of Archimedean Dynasty / Schleichfahrt.\n\n"
         "Starting a mission directly (test mode) ends with exit code 0 on success,\n"
-        "1 if the mission failed, 2 if it was aborted and 3 on --timeout.");
+        "1 if the mission failed, 2 if it was aborted, 3 on --timeout and 4 if the\n"
+        "player was destroyed.");
     parser.addHelpOption();
     parser.addPositionalArgument("mission", "Start this mission directly (test mode), e.g. s00101.", "[mission]");
     const QCommandLineOption boatOption("boat", "Boat in test mode: 2049 Hiob, 2050 Gator, 2051 Zorn, 2052 Succubus.", "type");
     const QCommandLineOption equipOption("equip", "Install items in test mode, e.g. GUN=3082,TUR1=3074 (repeatable, see --list-items).", "mounting=model");
     const QCommandLineOption timeoutOption("timeout", "End test mode after this many seconds.", "seconds");
     const QCommandLineOption overlayOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
-    const QCommandLineOption destroyOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068.", "ids");
+    const QCommandLineOption destroyOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
+    const QCommandLineOption keysOption("keys", "Press keys at the given seconds (test mode), e.g. 2=Esc,3=2,4=Alt+A.", "time=key");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, checkOption, itemsOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, checkOption, itemsOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -73,6 +75,19 @@ int main(int argc, char *argv[])
                 QTextStream(stderr) << "Invalid --destroy value " << id << ", expected unit ids\n";
                 return game::Vertigo::ExitUsage;
             }
+        }
+    }
+    foreach (const QString &value, parser.values(keysOption)) {
+        foreach (const QString &item, value.split(',', QString::SkipEmptyParts)) {
+            const int separator = item.indexOf('=');
+            bool ok = false;
+            const float time = item.left(separator).toFloat(&ok);
+            const QKeySequence key(item.mid(separator + 1));
+            if (separator < 0 || !ok || key.isEmpty()) {
+                QTextStream(stderr) << "Invalid --keys value " << item << ", expected time=key\n";
+                return game::Vertigo::ExitUsage;
+            }
+            options.keys.emplace_back(time, key);
         }
     }
     foreach (const QString &value, parser.values(equipOption)) {

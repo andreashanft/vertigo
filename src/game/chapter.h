@@ -114,7 +114,9 @@ private:
     void gameOver();
     void startScenario();
     void finishMission();
-    void failMission();
+    void abortMission();
+    void restartMission();
+    void loadLastSave();
 
 public:
     static Chapter* get() { Q_ASSERT(m_singleton); return m_singleton; }

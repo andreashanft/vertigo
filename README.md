@@ -47,15 +47,23 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   the sonar, green ones are enabled but not detected, red ones not enabled yet.
 - `--destroy 2064,2068` destroys these units (scenario ids, shown by the
   overlay) one second into the mission, to test objectives and conditions.
-- The mission ends as soon as it is accomplished (no need to press Alt+A) or
-  10 seconds after it failed. The exit code tells how it ended: 0 success,
-  1 failed, 2 aborted (Esc or window closed), 3 `--timeout` reached. A summary
-  line with the time, enabled units and radio messages is printed at the end:
+  The player's id destroys the player.
+- `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
+  Esc menu (here: restart the mission).
+- The mission ends as soon as it is accomplished (no need to press Alt+A), 10
+  seconds after it failed, or 3 seconds after the player was destroyed. The
+  exit code tells how it ended: 0 success, 1 failed, 2 aborted (Esc menu or
+  window closed), 3 `--timeout` reached, 4 player destroyed. A summary line
+  with the time, enabled units and radio messages is printed at the end:
 
   ```
   $ vertigo s01805 --destroy 2064,2068,2069,2071 --timeout 5
   s01805: timeout after 5.006 s, 43/51 units enabled, 2 radio messages
   ```
+
+In a mission, Esc opens the mission menu (continue, abort the game, restart
+the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
+skips the mission as if it had been accomplished, for debugging.
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
 everything the loader skips or ignores: unsupported object types, unread

@@ -44,6 +44,10 @@
 #include "autopilot.h"
 #include "horizon.h"
 #include "debugoverlay.h"
+#include "missionmenu.h"
+#include "pause.h"
+#include "sfx/soundsystem.h"
+#include "txt/stringtable.h"
 
 
 namespace hud {
@@ -53,6 +57,12 @@ HUD::HUD() :
     m_scenario(nullptr),
     m_debugOverlay(nullptr),
     m_debugOverlayVisible(false),
+    m_menu(nullptr),
+    m_paused(false),
+    m_frozen(false),
+    m_successShown(false),
+    m_failureShown(false),
+    m_deathTime(-1),
     m_colorTable("gfx:pal/gui/border.pal"),
     m_fontGreen("gfx:fnt/cpit1ahc.fnt", m_colorTable, true, false),
     m_fontRed("gfx:fnt/cpit1bhc.fnt", m_colorTable, true, false),
@@ -106,6 +116,13 @@ void HUD::load(game::Boat *boat)
     file.setSection("radiomessage");
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
+
+    file.setSection("hudpauseblock");
+    Pause *pause = new Pause(this, readRect(file));
+    m_children.emplace_back(pause);
+
+    m_menu = new MissionMenu(this, m_center);
+    m_children.emplace_back(m_menu);
 
     m_integerScale = true;
 
@@ -184,6 +201,73 @@ void HUD::start(fight::Scenario *scenario)
     m_scenario->setBoat(m_boat);
     m_lastTicks = SDL_GetTicks();
     m_navPoint = -1;
+    m_paused = false;
+    m_frozen = false;
+    m_successShown = false;
+    m_failureShown = false;
+    m_deathTime = -1;
+    m_menu->open(MissionMenu::Page::None);
+}
+
+
+void HUD::setFrozen(bool frozen)
+{
+    if (frozen == m_frozen)
+        return;
+    m_frozen = frozen;
+    if (frozen)
+        sfx::SoundSystem::get()->pauseAll();
+    else
+        sfx::SoundSystem::get()->resumeAll();
+}
+
+
+void HUD::updateMissionState()
+{
+    auto text = [](int n) { return txt::StringTable::get(txt::StringFight(n)).trimmed(); };
+    const fight::ConditionManager &conditions = m_scenario->conditionManager();
+    const MissionMenu::Page page = m_menu->page();
+
+    if (m_scenario->playerDestroyed())
+    {
+        if (m_deathTime < 0)
+        {
+            m_deathTime = m_scenario->time();
+            m_menu->notice({ text(13) }, 3.0f);
+        }
+        else if (m_scenario->time() >= m_deathTime + 3.0f && page != MissionMenu::Page::Died)
+        {
+            m_menu->open(MissionMenu::Page::Died);
+            m_eventDied();
+        }
+        return;
+    }
+
+    if (conditions.failed() && !m_failureShown)
+    {
+        m_failureShown = true;
+        m_menu->notice({ text(12) }, 10.0f);
+    }
+    if (conditions.failureEnded() && page != MissionMenu::Page::GameOver)
+    {
+        m_menu->open(MissionMenu::Page::GameOver);
+        m_eventFailure();
+    }
+    if (conditions.autopilot() && !m_successShown)
+    {
+        m_successShown = true;
+        m_menu->notice({ text(11) }, 4.0f);
+    }
+}
+
+
+void HUD::leave(util::event<> &event)
+{
+    // paused sounds would never play again
+    setFrozen(false);
+    m_paused = false;
+    m_scenario = nullptr;
+    event();
 }
 
 
@@ -241,9 +325,11 @@ void HUD::draw()
         return;
     }
 
+    setFrozen(m_paused || m_menu->page() != MissionMenu::Page::None);
+
     int ticks = SDL_GetTicks();
     // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
-    float elapsedTime = std::min((ticks - m_lastTicks)/1000.0f, 0.25f);
+    float elapsedTime = m_frozen ? 0.0f : std::min((ticks - m_lastTicks)/1000.0f, 0.25f);
     m_lastTicks = ticks;
     while (elapsedTime > 0.0f) {
         const float step = std::min(elapsedTime, 0.02f);
@@ -251,10 +337,12 @@ void HUD::draw()
         elapsedTime -= step;
     }
 
-    if (m_scenario->conditionManager().failureEnded())
+    updateMissionState();
+    // a handler of the events above may have ended the mission
+    if (!m_scenario)
     {
-        m_scenario = nullptr;
-        m_eventFailure();
+        setupGL(true);
+        m_cockpit.doDraw();
         return;
     }
 
@@ -280,6 +368,13 @@ void HUD::draw()
     glMatrixMode(GL_MODELVIEW);
     m_noScaleWidget.doDraw();
 
+    m_integerScale = true;
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
+    glMatrixMode(GL_MODELVIEW);
+    m_menu->doDraw();
+    m_integerScale = false;
+
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
 }
@@ -290,10 +385,29 @@ void HUD::keyPressEvent(QKeyEvent *e)
     if (!m_scenario)
         return;
 
+    if (m_menu->page() != MissionMenu::Page::None)
+    {
+        switch (m_menu->keyPressEvent(e->key()))
+        {
+        case MissionMenu::Action::None:
+        case MissionMenu::Action::Continue:
+            break;
+        case MissionMenu::Action::Abort:
+            leave(m_eventAbort);
+            break;
+        case MissionMenu::Action::Restart:
+            leave(m_eventRestart);
+            break;
+        case MissionMenu::Action::Load:
+            leave(m_eventLoad);
+            break;
+        }
+        return;
+    }
+
     if (e->key() == Qt::Key_Escape)
     {
-        m_scenario = nullptr;
-        m_eventAbort();
+        m_menu->open(MissionMenu::Page::Main);
         return;
     }
     // Ctrl+D, Cmd+D on macOS
@@ -302,6 +416,19 @@ void HUD::keyPressEvent(QKeyEvent *e)
         setDebugOverlay(!m_debugOverlayVisible);
         return;
     }
+    // debug: Ctrl+K (Cmd+K on macOS) skips the mission as if it had been accomplished
+    if (e->key() == Qt::Key_K && (e->modifiers() & Qt::ControlModifier))
+    {
+        leave(m_eventSuccess);
+        return;
+    }
+    if (e->key() == Qt::Key_P)
+    {
+        m_paused = !m_paused;
+        return;
+    }
+    if (m_paused || m_scenario->playerDestroyed())
+        return;
     if (e->key() == Qt::Key_N)
     {
         if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
@@ -341,10 +468,10 @@ void HUD::keyPressEvent(QKeyEvent *e)
         {
             if (m_scenario->conditionManager().autopilot())
             {
-                m_scenario = nullptr;
-                m_eventSuccess();
+                leave(m_eventSuccess);
                 return;
             }
+            m_menu->notice({ txt::StringTable::get(txt::Fight31), txt::StringTable::get(txt::Fight32) }, 3.0f);
         }
     }
 

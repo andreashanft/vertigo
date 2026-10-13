@@ -52,6 +52,7 @@ public:
 
 public:
     virtual void damage(int kinetic, int shock, const Vector3D &position);
+    void destroy();
     bool update(float elapsedTime);
 
     void engineToggle();

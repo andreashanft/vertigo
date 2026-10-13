@@ -23,6 +23,7 @@
 #include "txt/desfile.h"
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QSettings>
 
 
@@ -70,9 +71,9 @@ Chapter::Chapter(const QString &name, std::function<void(Renderer*)> funcSetRend
     m_tasksFile.load("dat:story/tasks.des");
 
     m_HUD->eventSuccess() += [this]() { finishMission(); };
-    // TODO: Esc still counts as success until missions can be completed (roadmap step 1.5)
-    m_HUD->eventAbort() += [this]() { finishMission(); };
-    m_HUD->eventFailure() += [this]() { failMission(); };
+    m_HUD->eventAbort() += [this]() { abortMission(); };
+    m_HUD->eventRestart() += [this]() { restartMission(); };
+    m_HUD->eventLoad() += [this]() { loadLastSave(); };
 }
 
 
@@ -464,14 +465,38 @@ void Chapter::finishMission()
 }
 
 
-void Chapter::failMission()
+void Chapter::abortMission()
 {
     Q_ASSERT(m_scenario);
     m_scenario->deleteLater();
     m_scenario = NULL;
 
-    // TODO: failure screen with restart, abort and load (roadmap step 1.5); until then restart from the briefing
+    quit();
+}
+
+
+void Chapter::restartMission()
+{
+    Q_ASSERT(m_scenario);
+    m_scenario->deleteLater();
+    m_scenario = NULL;
+
     startMission();
+}
+
+
+void Chapter::loadLastSave()
+{
+    Q_ASSERT(m_scenario);
+    if (!QFile::exists(QString("%1/save/%2.des").arg(dataLocation(), m_name))) {
+        restartMission();
+        return;
+    }
+
+    m_scenario->deleteLater();
+    m_scenario = NULL;
+
+    load(m_name);
 }
 
 

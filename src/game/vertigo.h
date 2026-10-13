@@ -26,6 +26,8 @@
 #include "gfx/fontmanager.h"
 #include "sfx/soundsystem.h"
 
+#include <QKeySequence>
+
 namespace game {
 
 class Vertigo
@@ -39,6 +41,7 @@ public:
         int timeout = 0;                                // test mode time limit in seconds
         bool debugOverlay = false;
         std::vector<int> destroy;                       // test mode: destroy these units after one second
+        std::vector<std::pair<float, QKeySequence>> keys; // test mode: press these keys at these times (seconds)
         bool check = false;                             // report what the mission loader ignores
         QStringList checkScenarios;                     // empty = all missions
     };
@@ -49,6 +52,7 @@ public:
         ExitFailed = 1,
         ExitAborted = 2,
         ExitTimeout = 3,
+        ExitDied = 4,
         ExitUsage = 64,
     };
 
