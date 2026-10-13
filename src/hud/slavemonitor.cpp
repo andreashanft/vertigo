@@ -21,6 +21,8 @@
 #include "fight/weapons/gun.h"
 #include "fight/weapons/torpedo.h"
 #include "txt/desfile.h"
+#include "game/boat.h"
+#include "game/items.h"
 
 
 namespace hud {
@@ -31,6 +33,7 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
     m_hud(hud),
     m_rect(file.value("X1").toInt(), file.value("Y1").toInt(), file.value("Width").toInt(), file.value("Height").toInt()),
     m_page(page),
+    m_lamp(hud, file),
     m_tableTopLeft(file.value("WS_TopLeftX").toInt(), file.value("WS_TopLeftY").toInt()),
     m_nameX(file.value("WS_NameX").toInt()),
     m_ammoX(file.value("WS_AmmoX").toInt()),
@@ -46,13 +49,106 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
 }
 
 
+void SlaveMonitor::togglePage()
+{
+    if (m_detail != Detail::None)
+        m_detail = Detail::None;
+    else
+        m_page = m_page == Page::Armor ? Page::Systems : Page::Armor;
+}
+
+
 void SlaveMonitor::draw()
 {
     const Rect rect = m_hud->projectCenter(m_rect);
-    if (m_page == Page::Armor)
+    m_lamp.draw(m_page == Page::Armor && m_detail == Detail::None);
+    if (m_detail != Detail::None)
+        drawDetail(rect);
+    else if (m_page == Page::Armor)
         drawArmor(rect);
     else
         drawSystems(rect);
+}
+
+
+gfx::Texture* SlaveMonitor::picture(int item)
+{
+    const game::Items::Item *info = game::Items::get(item);
+    if (!info)
+        return nullptr;
+    auto it = m_pictures.find(item);
+    if (it == m_pictures.end())
+        it = m_pictures.emplace(item, gfx::Texture(m_hud->getImage(info->imgname), true)).first;
+    return it->second.isValid() ? &it->second : nullptr;
+}
+
+
+void SlaveMonitor::drawDetail(const Rect &rect)
+{
+    const fight::Player *player = m_hud->scenario()->player();
+    const game::Boat *boat = m_hud->boat();
+    gfx::Font &font = m_hud->fontGreen();
+    auto ammo = [](const fight::Gun &gun) { return gun.usesAmmo() ? QString::number(gun.ammo()) : QString("--"); };
+
+    int item = 0;
+    QString title;
+    QStringList lines;
+    float condition = 1;
+    switch (m_detail)
+    {
+    case Detail::Gun:
+        item = boat->gun();
+        title = "GUN";
+        lines << ammo(player->playerGun()) << player->playerGun().stateName();
+        condition = boat->defects()[game::Boat::DefectGun];
+        break;
+    case Detail::Magazine:
+        {
+            // the magazine, with the selected torpedo, how many are left and whether it is ready
+            item = boat->magazine();
+            title = "TORP";
+            const int selected = player->selectedTorpedo();
+            const fight::TorpedoType *torpedo = selected >= 0 ? fight::TorpedoType::get(player->torpedoes()[selected] - 1) : nullptr;
+            if (torpedo)
+                lines << torpedo->shortName << QString::number(player->torpedoes().size()) << (player->torpedoReady() ? "RDY" : "ARM");
+            else
+                lines << "--" << "0" << "EMP";
+            condition = boat->defects()[game::Boat::DefectToMa];
+        }
+        break;
+    case Detail::Turret1:
+    case Detail::Turret2:
+        {
+            const int index = m_detail == Detail::Turret1 ? 0 : 1;
+            item = index == 0 ? boat->tur1() : boat->tur2();
+            title = QString("TUR%1").arg(index + 1);
+            const fight::PlayerTurret *turret = player->turret(index);
+            if (turret)
+                lines << turret->softwareName() << ammo(turret->gun()) << turret->stateName();
+            condition = boat->defects()[index == 0 ? game::Boat::DefectTur1 : game::Boat::DefectTur2];
+        }
+        break;
+    case Detail::None:
+        return;
+    }
+
+    // the name on top, the picture on the left, the values beside it
+    const game::Items::Item *info = game::Items::get(item);
+    font.draw(info ? info->longname : title, Rect(rect.x, rect.y + 3, rect.width, -1), true, false);
+    if (gfx::Texture *texture = picture(item))
+        texture->draw(rect.x + 4, rect.y + rect.height - 4 - texture->height());
+    if (!info)
+    {
+        font.draw("---", Rect(rect.x, rect.y + rect.height/2, rect.width, -1), true, false);
+        return;
+    }
+    lines << QString("%1%").arg(int(100*condition + 0.5f));
+    int y = rect.y + 16;
+    for (const QString &line : lines)
+    {
+        font.draw(line, rect.x + 56, y);
+        y += m_spacingY;
+    }
 }
 
 

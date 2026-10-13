@@ -22,6 +22,7 @@
 #include "util/geometry2d.h"
 #include "ui/widget.h"
 #include "voxelradar.h"
+#include "lamp.h"
 
 
 namespace hud {
@@ -44,6 +45,7 @@ private:
     HUD *m_hud;
     Rect m_rect;
     Rect m_observationRect;
+    Lamp m_lamp;                // upper slot: a target, lower slot: the voxel radar (read before it)
     VoxelRadar m_voxelRadar;    // shown while no target is locked
 };
 

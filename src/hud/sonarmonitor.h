@@ -22,6 +22,10 @@
 #include "util/geometry2d.h"
 #include "ui/widget.h"
 #include "gfx/texture.h"
+#include "lamp.h"
+
+
+namespace txt { class DesFile; }
 
 
 namespace hud {
@@ -33,7 +37,8 @@ class HUD;
 class SonarMonitor : public ui::Widget
 {
 public:
-    SonarMonitor(HUD *hud, Point point, int radius, int scale);
+    // the lamp beside it (from the monitor's section) lights its upper slot while the active sonar is on
+    SonarMonitor(HUD *hud, const txt::DesFile &file, int scale);
 
 public:
     int scale() const { return m_scale; }
@@ -53,6 +58,7 @@ private:
     gfx::Texture m_friend;
     gfx::Texture m_enemy;
     gfx::Texture m_target;
+    Lamp m_lamp;
 };
 
 

@@ -313,11 +313,11 @@ void HUD::load(game::Boat *boat)
     m_children.emplace_back(masterMonitor);
 
     file.setSection("roundmonitor0");
-    m_sonar1 = new SonarMonitor(this, Point(file.value("X1").toInt(), file.value("Y1").toInt()), file.value("Radius").toInt(), 360);
+    m_sonar1 = new SonarMonitor(this, file, 360);
     m_children.emplace_back(m_sonar1);
 
     file.setSection("roundmonitor1");
-    m_sonar2 = new SonarMonitor(this, Point(file.value("X1").toInt(), file.value("Y1").toInt()), file.value("Radius").toInt(), 180);
+    m_sonar2 = new SonarMonitor(this, file, 180);
     m_children.emplace_back(m_sonar2);
 
     m_integerScale = false;
@@ -741,6 +741,15 @@ void HUD::keyPressEvent(QKeyEvent *e)
     if (e->key() == Qt::Key_I)
         for (SlaveMonitor *monitor : m_slaveMonitors)
             monitor->togglePage();
+    // F1-F4: the gun, the magazine or a turret in detail, on the systems monitor
+    if (e->key() >= Qt::Key_F1 && e->key() <= Qt::Key_F4 && !(e->modifiers() & Qt::AltModifier) && !m_slaveMonitors.empty())
+    {
+        SlaveMonitor *monitor = m_slaveMonitors.back();
+        for (SlaveMonitor *candidate : m_slaveMonitors)
+            if (candidate->page() == SlaveMonitor::Page::Systems)
+                monitor = candidate;
+        monitor->showDetail(SlaveMonitor::Detail(int(SlaveMonitor::Detail::Gun) + e->key() - Qt::Key_F1));
+    }
     if (e->key() == Qt::Key_A)
     {
         if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)

@@ -22,6 +22,8 @@
 #include "util/geometry2d.h"
 #include "ui/widget.h"
 #include "gfx/texture.h"
+#include "lamp.h"
+#include <map>
 
 
 namespace txt { class DesFile; }
@@ -35,16 +37,23 @@ class HUD;
 
 // A cockpit status monitor: the armor page (the boat's silhouette per side, coloured by
 // the damage of that side) or the systems page (name, ammunition and state of each weapon).
+// F1-F4 show one system in detail instead: its picture, name, ammunition, state and condition.
+// The lamp beside it lights its upper slot for the armor page.
 class SlaveMonitor : public ui::Widget
 {
 public:
     enum class Page { Armor, Systems };
+    enum class Detail { None, Gun, Magazine, Turret1, Turret2 };
 
 public:
     SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page);
 
 public:
-    void togglePage() { m_page = m_page == Page::Armor ? Page::Systems : Page::Armor; }
+    Page page() const { return m_page; }
+    // back from a detail page, or to the other page
+    void togglePage();
+    // shows the detail page, or goes back if it is already shown
+    void showDetail(Detail detail) { m_detail = m_detail == detail ? Detail::None : detail; }
 
 protected:
     void draw();
@@ -52,11 +61,17 @@ protected:
 private:
     void drawArmor(const Rect &rect);
     void drawSystems(const Rect &rect);
+    void drawDetail(const Rect &rect);
+    // the item's picture (GFX/IMG/COCKPIT), loaded once
+    gfx::Texture* picture(int item);
 
 private:
     HUD *m_hud;
     Rect m_rect;
     Page m_page;
+    Detail m_detail = Detail::None;
+    Lamp m_lamp;
+    std::map<int, gfx::Texture> m_pictures;
     gfx::Texture m_armor[4][4]; // damage level 1-4, side front/left/right/back
     Point m_tableTopLeft;
     int m_nameX;

@@ -133,7 +133,7 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 |---|---|---|---|
 | Pause | P key stops mission time and sounds, shows the PAUSE image (**done**) | S | – |
 | Voxel radar | 120×100 terrain view ahead of the boat, inside the master monitor (**done** in milestone 6, while no target is locked: a ray per column over the height map, shaded and fogged with `VOX_000.S16` (32 fog rows of 256 RGB565 colours from offset 0x31a; 0–63 a light ramp, 64–66 marker colours), the boat and the sonar contacts marked. The view runs from 5 cells behind the boat to 20 ahead (`WorldMinY`/`WorldMaxY`), with `Projection` as half the view angle and the horizon at row `FlightY`; how the original uses these is to be compared) | M | – |
-| Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages (**done** except F1–F4 and the lamps: armor page from the four side images per damage level, laid out as a 64×64 silhouette; systems page with ARMO/GUN/TORP/TUR1/TUR2, ammunition and the gun states RDY/ARM/FIR/JAM/EMP/ENE; with two monitors one shows each page, I switches) | M | Full rows need 1.8 |
+| Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages (**done**; F1–F4 and the lamps since milestone 6: F1–F4 show the gun, the magazine or a turret in detail on the systems monitor (picture, name, ammunition or torpedo, state, condition), again or I goes back. The lamps (`*.D16`, two RGB565 frames lighting the lower or the upper slot) show the monitor's mode: armor page, target locked, active sonar; what they show in the original is to be compared. Armor page from the four side images per damage level, laid out as a 64×64 silhouette; systems page with ARMO/GUN/TORP/TUR1/TUR2, ammunition and the gun states RDY/ARM/FIR/JAM/EMP/ENE; with two monitors one shows each page, I switches) | M | Full rows need 1.8 |
 | Icons | Current, radiation (probably shallow depth; unverified), locked (**lock and current done**; radiation open) | S each | Phase 2, 1.8 |
 | Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice (**done**: ALERT blinks for 3 s after a hit, with the alert beep; THREAT blinks while homing torpedoes follow the player, with the threat beep and the voice for each new one) | S | 1.4, 1.8 |
 | Friendly fire | Escalating radio warnings; the third friendly kill fails the mission (**done**: friends are units not hostile to the player's faction 8 that aren't destroy objectives or mines; warnings 67–70 at most every 3 s, kills 71, the third kill 89 and failure; `~` texts are red) | M | 1.4, 1.5 |
@@ -506,6 +506,8 @@ no unit defines (S00404, S01802, S02003, S02006).
   124–167 m below the surface, so it is probably "too close to the surface".
 
 ### E. HUD data not used yet
+
+Since milestone 6 the voxel radar, the lamps and the weapon pictures are used.
 
 - Cockpit sections in `VFX/COCKPIT/00n.DES`: `[VoxelRadar0]`,
   `[HUDAlertBlock]`, `[HUDThreatBlock]`, `[HUDPauseBlock]`,

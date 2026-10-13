@@ -34,6 +34,7 @@ MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::Des
     m_hud(hud),
     m_rect(rect),
     m_observationRect(observationRect),
+    m_lamp(hud, file),
     m_voxelRadar(file)
 {
 }
@@ -94,6 +95,7 @@ void MasterMonitor::draw()
         txtNoise = "0";
     }
 
+    m_lamp.draw(target.isLocked());
     if (!target.isLocked() && m_voxelRadar.isValid())
     {
         const Rect &radar = m_voxelRadar.rect();
