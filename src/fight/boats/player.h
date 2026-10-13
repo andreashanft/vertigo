@@ -86,6 +86,7 @@ private:
     float m_lockTime;
     bool m_lockAnnounced;
     int m_threats;
+    bool m_threatBlink;
 
     int m_shield[4];
     float m_lastHit = -1;

@@ -801,7 +801,7 @@ void Scenario::loadIssue(const QString &text)
 }
 
 
-// Friendly fire: hits on units of the player's faction (0) that aren't destroy objectives or mines
+// Friendly fire: hits on units that aren't hostile to the player (faction 8), aren't destroy objectives or mines
 // get escalating warnings (texts 67-70, at most one every 3 s); each friendly kill is reported (71),
 // and the third fails the mission (89).
 void Scenario::playerHit(ActiveObject *unit, bool destroyed)
@@ -810,7 +810,7 @@ void Scenario::playerHit(ActiveObject *unit, bool destroyed)
     for (const auto &record : m_records)
         if (record.object == unit)
             id = record.id;
-    if (id < 0 || m_conditionManager.iff(id) != 0 || m_conditionManager.isDestroyTarget(id) || dynamic_cast<Mine *>(unit))
+    if (id < 0 || m_conditionManager.iff(id) < 0 || isHostile(PlayerFaction, m_conditionManager.iff(id)) || m_conditionManager.isDestroyTarget(id) || dynamic_cast<Mine *>(unit))
         return;
 
     auto say = [this, unit](int text) {

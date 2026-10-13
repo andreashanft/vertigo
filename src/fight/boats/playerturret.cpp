@@ -143,14 +143,14 @@ ActiveObject* PlayerTurret::search() const
     if (m_software.torpedoes)
         for (const auto &torpedo : m_scenario->torpedoes())
             if (!torpedo->isDone() && torpedo->owner() != m_player &&
-                (torpedo->target() == m_player || (torpedo->owner() && m_scenario->isHostile(0, torpedo->owner()->iff()))))
+                (torpedo->target() == m_player || (torpedo->owner() && m_scenario->isHostile(Scenario::PlayerFaction, torpedo->owner()->iff()))))
                 consider(torpedo.get());
     if (m_software.vessels)
         for (const auto &record : m_scenario->objectRecords())
         {
             ActiveObject *unit = dynamic_cast<ActiveObject *>(record.object);
             const bool vessel = dynamic_cast<SimpleBoat *>(unit) || dynamic_cast<TurretBase *>(unit);
-            if (vessel && isValid(unit) && m_scenario->isHostile(0, unit->iff()))
+            if (vessel && isValid(unit) && m_scenario->isHostile(Scenario::PlayerFaction, unit->iff()))
                 consider(unit);
         }
     return nearest;

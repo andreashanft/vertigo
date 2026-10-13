@@ -32,8 +32,16 @@
 namespace fight {
 
 
+static ActiveObject::ObjectInfo playerInfo()
+{
+    ActiveObject::ObjectInfo info;
+    info.iff = Scenario::PlayerFaction;
+    return info;
+}
+
+
 Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
-    SimpleBoat(scenario, boat->boatFile(), ObjectInfo(), yaw),
+    SimpleBoat(scenario, boat->boatFile(), playerInfo(), yaw),
     m_engineState(EngineRunning),
     m_speed(0),
     m_debugBoost(0),
@@ -51,7 +59,8 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_lockTarget(nullptr),
     m_lockTime(0),
     m_lockAnnounced(false),
-    m_threats(0)
+    m_threats(0),
+    m_threatBlink(false)
 {
     if (boat->magazine() >= 1025)
     {
@@ -350,12 +359,14 @@ bool Player::update(float elapsedTime)
     }
     m_lockAnnounced = progress >= 1;
 
-    // homing torpedoes on their way: the threat beep, and the voice for each new one
+    // homing torpedoes on their way: the voice for each new one, and a beep each time the THREAT icon blinks on
     const int threats = m_scenario->threatsTo(this);
     if (threats > m_threats)
         sfx::SampleMap::get(sfx::Sample::Voice_TorpedoThreat).play();
-    if (threats > 0)
+    const bool blink = m_scenario->blink();
+    if (threats > 0 && blink && !m_threatBlink)
         sfx::SampleMap::get(sfx::Sample::Threat).play();
+    m_threatBlink = blink;
     m_threats = threats;
 
     m_gun.update(elapsedTime);
