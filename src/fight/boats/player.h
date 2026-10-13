@@ -42,6 +42,17 @@ public:
 public:
     int shield(int index) const { return m_shield[index]; };
     const Gun& playerGun() const { return m_gun; }
+
+    // torpedoes: Tab fires the selected one, Enter selects the next; homing ones need the target
+    // locked (and in front) for their lock time; Backspace/D drops a buzzer (a decoy)
+    void fireTorpedo();
+    void selectNextTorpedo();
+    void dropBuzzer();
+    const std::vector<int>& torpedoes() const { return m_torpedoItems; } // item numbers 1-22
+    int selectedTorpedo() const { return m_selectedTorpedo; }            // index, -1 if none
+    bool torpedoReady() const;
+    ActiveObject* lockTarget() const { return m_lockTarget; }
+    float lockProgress() const; // 0-1, 1 when a homing torpedo would follow the target
     const Gun* turret(int index) const { return index == 0 ? m_tur1.get() : m_tur2.get(); }
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
@@ -64,6 +75,14 @@ public:
     void fireStop();
 
 private:
+    game::Boat *m_boat;
+    std::vector<int> m_torpedoItems;
+    int m_selectedTorpedo;
+    float m_torpedoReady;
+    float m_rearmingTime;
+    ActiveObject *m_lockTarget;
+    float m_lockTime;
+
     int m_shield[4];
     float m_lastHit = -1;
     int m_shieldMax[4];

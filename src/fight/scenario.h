@@ -21,6 +21,7 @@
 #include <QKeyEvent>
 #include <functional>
 #include <map>
+#include <list>
 #include <vector>
 #include "util/geometry2d.h"
 #include "util/geometry3d.h"
@@ -42,6 +43,7 @@ namespace fight {
 
 
 class EngineSounds;
+class Torpedo;
 
 class Object;
 class NavPoint;
@@ -79,6 +81,7 @@ public:
     float depth() const { return m_depth - m_position.z; }
     float time() const { return m_time; }
     int buzzers() const { return m_buzzers; }
+    bool useBuzzer() { if (m_buzzers <= 0) return false; m_buzzers--; return true; }
     bool blink() const { return static_cast<int>(m_time/0.5f)%2 == 0; }
     int endType() const { return m_endType; }
 
@@ -91,6 +94,12 @@ public:
     Player* player() const { return m_player.get(); }
 
     Surface& surface() { return m_surface; }
+
+    // torpedoes in the water; homing ones turn to decoys (buzzers, the Torch) that are nearer than their target
+    Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
+    const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
+    void addDecoy(const Vector3D &position, float seconds);
+    bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
 
     // the water current at a position (m/s), blended between the current cells
     Vector3D current(const Vector3D &position) const;
@@ -170,6 +179,9 @@ private:
     std::vector<ObjectRecord> m_records;
     std::vector<CurrentCell> m_currentCells;
     std::unique_ptr<EngineSounds> m_engineSounds;
+    std::list<std::unique_ptr<Torpedo>> m_torpedoes;
+    struct Decoy { Vector3D position; float until; };
+    std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<Object*> m_lightSources;
     std::vector<NavPoint*> m_navPoints;

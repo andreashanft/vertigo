@@ -42,7 +42,7 @@ enum class Sample
     Engine,
     Shoot_MaximumImpact,
     Shoot_PlasmaGun,
-    Sample14,
+    Torpedo_Launch,
     Explosion_Ground,
     Explosion_Small,
     Explosion_EMS,

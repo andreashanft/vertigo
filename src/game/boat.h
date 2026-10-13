@@ -77,6 +77,9 @@ public:
     void repair(int model, const QString& mounting, float amount);
     void buy(int model, const QString& mounting);
     void sell(int model, int index, const QString& mounting);
+    // used up in a mission
+    void useTorpedo(int index) { if (index >= 0 && index < int(m_torpedoes.size())) m_torpedoes.erase(m_torpedoes.begin() + index); }
+    void useBuzzer() { if (!m_buzzers.empty()) m_buzzers.pop_back(); }
 
     void upgrade(int type);
 

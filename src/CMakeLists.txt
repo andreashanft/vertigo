@@ -87,6 +87,8 @@ set(SOURCES
 
     fight/weapons/gun.cpp
     fight/weapons/gun.h
+    fight/weapons/torpedo.cpp
+    fight/weapons/torpedo.h
     fight/weapons/unitgun.cpp
     fight/weapons/unitgun.h
 

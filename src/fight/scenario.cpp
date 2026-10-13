@@ -19,6 +19,7 @@
 #include "module.h"
 #include "orders.h"
 #include "enginesounds.h"
+#include "weapons/torpedo.h"
 #include "sfx/soundsystem.h"
 #include "surface/element.h"
 #include "surface/betaspline.h"
@@ -547,6 +548,11 @@ void Scenario::update(float elapsedTime)
 
     m_effectManager.update(elapsedTime);
 
+    for (const auto &torpedo : m_torpedoes)
+        torpedo->update(elapsedTime);
+    m_torpedoes.remove_if([](const std::unique_ptr<Torpedo> &torpedo) { return torpedo->isDone(); });
+    m_decoys.erase(std::remove_if(m_decoys.begin(), m_decoys.end(), [this](const Decoy &d) { return d.until < m_time; }), m_decoys.end());
+
     m_sonar.update(elapsedTime);
 
     // positional sounds are heard from the player
@@ -627,6 +633,8 @@ void Scenario::draw()
     for (const auto &object : m_objects)
         if (object->isEnabled())
             object->draw();
+    for (const auto &torpedo : m_torpedoes)
+        torpedo->draw();
 
     m_effectManager.draw();
 }
@@ -710,6 +718,12 @@ void Scenario::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_Space)
         m_player->fire();
+    if (e->key() == Qt::Key_Tab)
+        m_player->fireTorpedo();
+    if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter)
+        m_player->selectNextTorpedo();
+    if (e->key() == Qt::Key_Backspace || e->key() == Qt::Key_D)
+        m_player->dropBuzzer();
 }
 
 
@@ -800,6 +814,44 @@ void Scenario::playerHit(ActiveObject *unit, bool destroyed)
         m_friendlyWarnings++;
         m_lastFriendlyWarning = m_time;
     }
+}
+
+
+Torpedo* Scenario::launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target)
+{
+    if (!TorpedoType::get(type))
+        return nullptr;
+    m_torpedoes.emplace_back(new Torpedo(this, type, position, direction, speed, owner, target));
+    sfx::SampleMap::playAt(sfx::Sample::Torpedo_Launch, position.x, position.y, position.z);
+    return m_torpedoes.back().get();
+}
+
+
+void Scenario::addDecoy(const Vector3D &position, float seconds)
+{
+    m_decoys.push_back({ position, m_time + seconds });
+}
+
+
+bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const
+{
+    float nearest = range;
+    bool found = false;
+    auto consider = [&](const Vector3D &candidate) {
+        const float distance = glm::length(candidate - position);
+        if (distance < nearest)
+        {
+            nearest = distance;
+            decoy = candidate;
+            found = true;
+        }
+    };
+    for (const Decoy &d : m_decoys)
+        consider(d.position);
+    for (const auto &torpedo : m_torpedoes)
+        if (torpedo.get() != self && !torpedo->isDone() && torpedo->type().isDecoy())
+            consider(torpedo->position());
+    return found;
 }
 
 
