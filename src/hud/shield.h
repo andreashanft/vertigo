@@ -31,8 +31,8 @@ class HUD;
 
 
 // The armor symbol beside the sonar symbol (HUDSHIE1-9): a bar per side of the boat around the
-// centre, green, yellow below half of the side's armor, red below a quarter, and white for a
-// moment when the side is hit. The thresholds are estimates, to be compared with the original.
+// centre, green, yellow below three quarters of the side's armor, red below a quarter, and white
+// for a moment when the side is hit.
 class Shield : public ui::Widget
 {
 public:

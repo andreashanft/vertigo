@@ -51,7 +51,7 @@ void Shield::draw()
         m_last[side] = armor;
         const float left = player->shieldMax(side) > 0 ? float(armor)/player->shieldMax(side) : 0;
         const bool hit = m_hit[side] >= 0 && time - m_hit[side] < 0.25f && time >= m_hit[side];
-        const int colour = hit ? 1 : left > 0.5f ? 0 : left > 0.25f ? 2 : 3;
+        const int colour = hit ? 1 : left > 0.75f ? 0 : left > 0.25f ? 2 : 3;
         const bool lying = side == 0 || side == 3;
         gfx::Texture &bar = m_shield[1 + 2*colour + (lying ? 1 : 0)];
         switch (side)

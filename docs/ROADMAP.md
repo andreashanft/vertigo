@@ -250,6 +250,8 @@ and Succubus cockpits) after milestone 6.
 | D12 | Unknown marker | A red circle with a cross, apart from the locked target (shots in combat), sometimes outside the HUD frame; not one of HUDAIMH, HUDTARG, HUDTURR, HUDPOI* | – (identify first) |
 | D13 | Hits | Plasma hits light up as large blue-white flashes; explosions close by fill much of the view | Smaller hit effects (compare sizes) |
 | D14 | Armor symbol (HUDSHIE1-9, beside the sonar symbol) | A bar per side in green, white, yellow or red | Always green (found after the comparison) |
+| D15 | ALERT | Probably only while the boat is critical (a side below about 5 %) | Blinks for 3 s after every hit (to fine-tune later) |
+| D16 | THREAT | Yellow (HUDTHREY) | Was red (HUDTHREA, whose use is unknown); yellow now |
 
 D1–D11 and D14 are done (D12 and D13 remain): the radar, monitors, aim help,
 cargo-ship blocks, `u` and the armor symbol now follow the screenshots.

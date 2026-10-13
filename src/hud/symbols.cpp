@@ -29,7 +29,7 @@ Threat::Threat(HUD *hud, Rect rect) :
     ui::Widget(hud->widget()),
     m_hud(hud),
     m_rect(rect),
-    m_threat(hud->getImage("hudthrea"), true)
+    m_threat(hud->getImage("hudthrey"), true)
 {
 }
 

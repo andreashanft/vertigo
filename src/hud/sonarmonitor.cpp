@@ -29,12 +29,11 @@
 namespace hud {
 
 
+// a 4x4 dot
 void fill(int *data, int color)
 {
-    data[5] = color;
-    data[6] = color;
-    data[9] = color;
-    data[10] = color;
+    for (int i = 0; i < 16; i++)
+        data[i] = color;
 }
 
 SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale) :
