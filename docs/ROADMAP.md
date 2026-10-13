@@ -229,6 +229,31 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    settings, the lamps and the dust sprite mean in the original is to be
    compared then. Test mode gained `--near` to start next to a unit.)
 
+## Differences to the original's cockpit (screenshots, October 2026)
+
+Compared with six screenshots of the original (English version; Hiob, Gator
+and Succubus cockpits) after milestone 6.
+
+| # | Area | Original | Vertigo now |
+|---|---|---|---|
+| D1 | Voxel radar: when | Always shown in the lower part of the master monitor, also with a target locked (the target's picture sits above it) | Only while no target is locked |
+| D2 | Voxel radar: look | A square patch of terrain around the boat, turning with the heading, seen obliquely from above; nothing beyond it and no background, so the monitor's grid shows through. Terrain in light grey to white, slopes darker; no blue fog | Perspective view to the horizon, filled with the water colour, fogged to blue |
+| D3 | Voxel radar: objects | Buildings as orange blocks with their height; units as vertical lines from the ground up to them: red hostile, green friendly, blue (probably neutral or the player) | Coloured dots for sonar contacts and the boat |
+| D4 | Slave monitors: assignment | The first monitor (left) shows a weapon page, the second (right) the armor; Hiob's single monitor shows the weapon page | First armor, second systems table; Hiob's shows the armor |
+| D5 | Weapon page | Centred lines: item name, state as a word (`READY`), the selected torpedo's long name (`THRESHER SHARK I`); the picture of the torpedo below. Shown by default for the magazine; F1–F4 presumably switch it to gun, magazine, turrets | Detail page only after F1–F4, with the magazine's picture, short names and `RDY` beside the picture |
+| D6 | Armor page | Title `ARMOR STATE`, the silhouette in the middle, the percentage of each side around it (front above, back below, left and right beside it) | Silhouette only |
+| D7 | Master monitor: activity | Second line shows what the target does: `GOTO`, `PATROLLING`, `ATTACKING` | `activity not implemented` (with the sonar's activity detection) |
+| D8 | Master monitor: weapons | `G:` the target's gun short name (`VEN1`), `T:` its torpedoes | `NIMP` |
+| D9 | Aim help (HUDAIMH) | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame | Drawn on the target's centre |
+| D10 | Sonar monitors | A dotted red line from the centre towards the locked target | Only a symbol on the target, inside the range |
+| D11 | Target lock | `u` locks the nearest enemy (HELP0-2.TXT) | Not implemented (L locks what is in the reticle, N the next nav point) |
+| D12 | Unknown marker | A red circle with a cross, apart from the locked target (shots in combat), sometimes outside the HUD frame; not one of HUDAIMH, HUDTARG, HUDTURR, HUDPOI* | – (identify first) |
+| D13 | Hits | Plasma hits light up as large blue-white flashes; explosions close by fill much of the view | Smaller hit effects (compare sizes) |
+
+Already alike: lock ring with name, distance, shield bars and sensor icon;
+turret brackets; heading tape; THREAT; the lamps beside the sonar monitors lit;
+the master monitor's target picture, D/H/V/N and R.
+
 ## Open questions and how to settle them
 
 | Unknown | How |
