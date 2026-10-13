@@ -35,6 +35,7 @@
 #include "objects/turretbase.h"
 #include "objects/navpoint.h"
 #include "objects/placeholder.h"
+#include "boats/cargoship.h"
 #include "objects/simpleobject.h"
 
 #include "boats/simpleboat.h"
@@ -302,12 +303,21 @@ Scenario::Scenario(const QString &name) :
             break;
 
         case TypeCargoShip:
+            {
+                CargoShip *ship = new CargoShip(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                object = ship;
+                // high enough for the hull to clear the ground
+                Vector3D pos = getPosition();
+                pos.z += std::max(20.0f, ship->draught() + 5.0f);
+                object->setPosition(pos);
+            }
+            break;
+
         default:
             {
-                // TODO: cargo ships are assembled from blocks (roadmap step 1.6)
                 loadIssue(QString("placeholder: typ %1 dtyp %2").arg(type).arg(dType));
                 placeholderSections << section;
-                object = new Placeholder(this, objectDes, info, type == TypeCargoShip ? 24.0f : 4.0f);
+                object = new Placeholder(this, objectDes, info, 4.0f);
                 object->setPosition(getPosition());
             }
         }
