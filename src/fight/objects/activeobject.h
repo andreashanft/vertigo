@@ -89,6 +89,12 @@ public:
     // units with a turret turn it towards the point
     virtual void aimAt(const Vector3D &point) {}
 
+    // torpedoes (the mission's tor and ntor keys); fireTorpedo() launches one when reloaded,
+    // following the target if the type homes, otherwise straight along the direction
+    void setTorpedoes(int type, int count) { m_torpedoType = type; m_torpedoCount = count; }
+    bool hasTorpedoes() const { return m_torpedoCount > 0 && m_torpedoType >= 0; }
+    bool fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction);
+
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
@@ -116,6 +122,9 @@ protected:
     std::unique_ptr<Orders> m_orders;
     std::unique_ptr<UnitGun> m_unitGun;
     bool m_trigger = false;
+    int m_torpedoType = -1;
+    int m_torpedoCount = 0;
+    float m_torpedoReady = 0;
 };
 
 

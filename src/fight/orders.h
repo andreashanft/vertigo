@@ -114,6 +114,8 @@ private:
     float m_attackEnd;   // when the current attack state ends
     Vector3D m_offset;   // approach side, or the aim error for this attack run
     bool m_ambushed;     // an ambush has been triggered
+    bool m_torpedoRun;   // this attack run may fire a torpedo
+    float m_dockStart;   // GotoWithInfiltrate: when the unit docked at its target, -1 while on its way
 };
 
 

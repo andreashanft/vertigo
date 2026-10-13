@@ -65,7 +65,7 @@ QString OrderSlot::name(int type)
 
 bool OrderSlot::isImplemented(int type)
 {
-    return type != None && type != GotoWithInfiltrate;
+    return type != None;
 }
 
 
@@ -80,7 +80,9 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_pointTime(0),
     m_attack(Attack::Approach),
     m_attackEnd(0),
-    m_ambushed(false)
+    m_ambushed(false),
+    m_torpedoRun(false),
+    m_dockStart(-1)
 {
     if (!m_slots.empty())
         start(0);
@@ -94,6 +96,7 @@ void Orders::start(int slot)
     m_attack = Attack::Approach;
     m_attackEnd = 0;
     m_ambushed = false;
+    m_dockStart = -1;
     m_unit->setTrigger(false);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
         pickPatrolPoint();
@@ -247,6 +250,9 @@ void Orders::updateTurret(ActiveObject *target, float range, int sector)
     turret->aimAt(point);
     const float gunRange = m_unit->gun() ? std::min(range, m_unit->gun()->range()) : 0;
     m_unit->setTrigger(m_unit->gun() && aligned(turret->aim(), point, gunRange));
+    // torpedo towers: a torpedo whenever reloaded and pointing at the target
+    if (m_unit->hasTorpedoes() && aligned(turret->aim(), target->center(), range))
+        m_unit->fireTorpedo(target, turret->aim()*4.0f + m_unit->position() + Vector3D(0, 0, 4), turret->aim());
 }
 
 
@@ -276,6 +282,7 @@ void Orders::startAttackState(Attack state, ActiveObject *target)
         break;
     case Attack::Attack:
         {
+            m_torpedoRun = random() < settings.torpedoProbability;
             // a miss by up to 8 m, the less likely to hit the larger
             const float error = (1 - settings.hitProbability)*8.0f*random();
             const float angle = random()*glm::two_pi<float>();
@@ -376,6 +383,10 @@ void Orders::updateAttack(ActiveObject *target, float speed)
             const float distance = glm::length(point - m_unit->position());
             m_boat->steerTo(point, speed);
             m_unit->setTrigger(aligned(m_boat->dir(), point, range));
+            // one torpedo per run, if the dice said so, when pointing at the target from up to 250 m
+            if (m_torpedoRun && m_unit->hasTorpedoes() && aligned(m_boat->dir(), target->center(), 250.0f) &&
+                m_unit->fireTorpedo(target, m_unit->position() + m_boat->dir()*6.0f, m_boat->dir()))
+                m_torpedoRun = false;
             // break off early enough not to ram the target
             if (distance < 50.0f || m_scenario->time() > m_attackEnd)
                 startAttackState(Attack::Break, target);
@@ -403,7 +414,9 @@ void Orders::update()
             next();
             continue;
         }
-        const bool timed = slot.type != OrderSlot::Goto && slot.type != OrderSlot::GotoWithArrive && slot.type != OrderSlot::Explode;
+        // dur is the docking time for GotoWithInfiltrate
+        const bool timed = slot.type != OrderSlot::Goto && slot.type != OrderSlot::GotoWithArrive && slot.type != OrderSlot::Explode &&
+                           slot.type != OrderSlot::GotoWithInfiltrate;
         if (timed && slot.dur < Forever && m_scenario->time() - m_startTime >= slot.dur)
         {
             next();
@@ -525,6 +538,35 @@ void Orders::update()
             }
             point.z = altitude(point, slot.mih);
             m_boat->steerTo(point, speed);
+        }
+        break;
+
+    case OrderSlot::GotoWithInfiltrate:
+        {
+            // fly to the target, dock on top of it for dur seconds, then it has been boarded
+            ActiveObject *target = findUnit(slot.ene);
+            if (!isAlive(target))
+            {
+                next();
+                return;
+            }
+            m_unit->setTrigger(false);
+            const Vector3D dock(target->center().x, target->center().y, target->box().maxPoint().z + 3.0f);
+            const float distance = glm::length(dock - m_unit->position());
+            if (distance < 12.0f)
+            {
+                if (m_dockStart < 0)
+                    m_dockStart = m_scenario->time();
+                m_boat->hold();
+                if (m_scenario->time() - m_dockStart >= slot.dur)
+                {
+                    target->eventBoard()->complete();
+                    next();
+                }
+                break;
+            }
+            m_dockStart = -1;
+            m_boat->steerTo(dock, std::min(speed, 2.0f + 0.3f*distance));
         }
         break;
 

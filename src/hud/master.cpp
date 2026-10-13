@@ -16,6 +16,8 @@
  ***************************************************************************/
 
 #include "master.h"
+#include "fight/boats/playerturret.h"
+#include <cmath>
 #include "hud.h"
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
@@ -46,6 +48,9 @@ Master::Master(HUD *hud, Rect rect) :
     m_passiveBlue(hud->getImage("hudscnpb"), false),
     m_passiveGreen(hud->getImage("hudscnpg"), false),
     m_passiveRed(hud->getImage("hudscnpr"), false),
+    m_turretGreen(hud->getImage("hudturgr"), false),
+    m_turretYellow(hud->getImage("hudturye"), false),
+    m_turretRed(hud->getImage("hudturre"), false),
     m_lockActiveYellow(hud->getImage("hudlocaa"), false),
     m_lockActiveGreen(hud->getImage("hudlocag"), false),
     m_lockActiveRed(hud->getImage("hudlocar"), false),
@@ -89,6 +94,23 @@ void Master::draw()
     {
         Vector4D point4 = m * Vector4D(target.lockedNavPoint()->position(), 1);
         drawPoint(point4, rect, true, true, true);
+    }
+
+    // the turrets' targets
+    for (int i = 0; i < 2; i++)
+    {
+        const fight::PlayerTurret *turret = m_hud->scenario()->player()->turret(i);
+        if (!turret || !turret->target())
+            continue;
+        const Vector4D point4 = m * Vector4D(turret->target()->center(), 1);
+        if (point4.z > 0)
+            continue;
+        const Point point = glm::round(Vector2D(point4)/point4.w);
+        const fight::PlayerTurret::State state = turret->state();
+        gfx::Texture &bracket = state == fight::PlayerTurret::State::Locking ? m_turretYellow :
+                                state == fight::PlayerTurret::State::Firing || state == fight::PlayerTurret::State::Volley ||
+                                state == fight::PlayerTurret::State::Rearming ? m_turretRed : m_turretGreen;
+        bracket.draw(point.x - bracket.width()/2, point.y - bracket.height()/2, &m_clipRect);
     }
 
     if (m_hud->navPoint() >= 0)
@@ -152,13 +174,21 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
     }
     else
     {
-        if (!isPassive)
+        fight::Target &target = m_hud->scenario()->target();
+        const fight::Player *player = m_hud->scenario()->player();
+        const bool torpedoLock = target.locked() && player->lockTarget() == target.locked() && player->lockProgress() > 0;
+
+        if (torpedoLock && player->lockProgress() >= 1)
+            // a homing torpedo would follow this target
+            tex = isPassive ? &m_lockPassiveYellow : &m_lockActiveYellow;
+        else if (!isPassive)
             tex = isFriend && m_hud->scenario()->blink() ? &m_lockActiveGreen : &m_lockActiveRed;
         else
             tex = isFriend && m_hud->scenario()->blink() ? &m_lockPassiveGreen : &m_lockPassiveRed;
         tex->draw(point.x - tex->width()/2, point.y - tex->height()/2, &m_clipRect);
 
-        fight::Target &target = m_hud->scenario()->target();
+        if (torpedoLock && player->lockProgress() < 1)
+            m_hud->fontYellow().draw(QString::number(int(std::ceil(player->lockRemaining()))), Rect(point.x - 100, point.y + 38, 200, -1), true, false, &m_clipRect);
 
         if (!isPassive)
             m_hud->fontGreen().draw(QString("%1M").arg(static_cast<int>(glm::round(target.distance()))), Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);

@@ -19,6 +19,7 @@
 #include "hud.h"
 #include "fight/scenario.h"
 #include "fight/weapons/gun.h"
+#include "fight/weapons/torpedo.h"
 #include "txt/desfile.h"
 
 
@@ -102,9 +103,22 @@ void SlaveMonitor::drawSystems(const Rect &rect)
         armor += player->shieldMax(side) > 0 ? std::max(0, 100*player->shield(side)/player->shieldMax(side)) : 0;
     row("ARMO", "--", QString("%1%").arg(armor/4));
     gunRow("GUN", &player->playerGun());
-    row("TORP", "--", "---"); // TODO: torpedoes (roadmap step 1.8)
-    gunRow("TUR1", player->turret(0));
-    gunRow("TUR2", player->turret(1));
+    // the selected torpedo, how many are left, ready or rearming
+    const fight::TorpedoType *torpedo = player->selectedTorpedo() >= 0 ? fight::TorpedoType::get(player->torpedoes()[player->selectedTorpedo()] - 1) : nullptr;
+    if (torpedo)
+        row(torpedo->shortName, QString::number(player->torpedoes().size()), player->torpedoReady() ? "RDY" : "ARM");
+    else
+        row("TORP", "--", "EMP");
+    // turrets: their state (SYN, SCA, LOC, FIR, VOL, STP, ...)
+    for (int i = 0; i < 2; i++)
+    {
+        const fight::PlayerTurret *turret = player->turret(i);
+        const QString name = QString("TUR%1").arg(i + 1);
+        if (turret)
+            row(name, turret->gun().usesAmmo() ? QString::number(turret->gun().ammo()) : QString("--"), turret->stateName());
+        else
+            row(name, "--", "---");
+    }
 }
 
 

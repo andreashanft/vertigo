@@ -70,6 +70,8 @@ set(SOURCES
     fight/objects/turretbase.h
 
     fight/boats/player.cpp
+    fight/boats/playerturret.cpp
+    fight/boats/playerturret.h
     fight/boats/player.h
     fight/boats/simpleboat.cpp
     fight/boats/simpleboat.h
@@ -87,6 +89,8 @@ set(SOURCES
 
     fight/weapons/gun.cpp
     fight/weapons/gun.h
+    fight/weapons/torpedo.cpp
+    fight/weapons/torpedo.h
     fight/weapons/unitgun.cpp
     fight/weapons/unitgun.h
 
@@ -184,6 +188,8 @@ set(SOURCES
     hud/slavemonitor.cpp
     hud/slavemonitor.h
     hud/sonarmonitor.cpp
+    hud/symbols.cpp
+    hud/symbols.h
     hud/sonarmonitor.h
     hud/autopilot.cpp
     hud/autopilot.h

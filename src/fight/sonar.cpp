@@ -180,7 +180,7 @@ void Sonar::update(float elapsedTime)
         SonarEntry &entry = m_sonarEntries.back();
         entry.object = object;
         entry.distance = dist;
-        entry.isFriend = !m_iff || m_scenario->isFriend(0, object->iff());
+        entry.isFriend = !m_iff || m_scenario->isFriend(Scenario::PlayerFaction, object->iff());
         entry.isPassive = passive;
     }
 

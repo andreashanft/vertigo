@@ -95,6 +95,35 @@ MissionMenu::Action MissionMenu::keyPressEvent(int key)
             m_page = Page::Main;
         break;
 
+    case Page::Turrets:
+        if (key == Qt::Key_0 || key == Qt::Key_Escape || key == Qt::Key_O || m_turretCount == 0)
+            m_page = Page::None;
+        else if (key == Qt::Key_1)
+            m_page = Page::Turret1;
+        else if (key == Qt::Key_2 && m_turretCount > 1)
+            m_page = Page::Turret2;
+        else if (key == Qt::Key_3)
+        {
+            m_turret = -1;
+            m_turretOrder = 0;
+            m_page = Page::None;
+            return Action::TurretOrder;
+        }
+        break;
+
+    case Page::Turret1:
+    case Page::Turret2:
+        if (key >= Qt::Key_1 && key <= Qt::Key_4)
+        {
+            m_turret = m_page == Page::Turret1 ? 0 : 1;
+            m_turretOrder = key - Qt::Key_1;
+            m_page = Page::None;
+            return Action::TurretOrder;
+        }
+        if (key == Qt::Key_0 || key == Qt::Key_Escape)
+            m_page = Page::Turrets;
+        break;
+
     case Page::GameOver:
     case Page::Died:
         if (key == Qt::Key_1)
@@ -131,6 +160,15 @@ std::vector<MissionMenu::Line> MissionMenu::lines() const
         return { { text(12).trimmed(), red }, { text(63), red }, { text(64), option }, { text(65), option }, { text(66), option } };
     case Page::Died:
         return { { text(57), red }, { text(58), red }, { text(64), option }, { text(65), option }, { text(66), option } };
+    case Page::Turrets:
+        if (m_turretCount == 0)
+            return { { text(38), title }, { text(39), red } };
+        if (m_turretCount == 1)
+            return { { text(38), title }, { text(40), option }, { text(42), option }, { text(34), option } };
+        return { { text(38), title }, { text(40), option }, { text(41), option }, { text(42), option }, { text(34), option } };
+    case Page::Turret1:
+    case Page::Turret2:
+        return { { text(m_page == Page::Turret1 ? 43 : 44), title }, { text(45), option }, { text(46), option }, { text(47), option }, { text(48), option }, { text(34), option } };
     }
 
     std::vector<Line> notice;

@@ -21,6 +21,7 @@
 #include "fight/effects/effectmanager.h"
 #include "fight/weapons/unitgun.h"
 #include "fight/orders.h"
+#include "fight/weapons/torpedo.h"
 #include "fight/boats/simpleboat.h"
 #include <glm/geometric.hpp>
 #include <algorithm>
@@ -58,6 +59,18 @@ ActiveObject::~ActiveObject()
 void ActiveObject::setOrders(Orders *orders)
 {
     m_orders.reset(orders);
+}
+
+
+bool ActiveObject::fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction)
+{
+    const TorpedoType *type = TorpedoType::get(m_torpedoType);
+    if (!type || m_torpedoCount <= 0 || m_scenario->time() < m_torpedoReady)
+        return false;
+    m_scenario->launchTorpedo(m_torpedoType, position, direction, glm::length(m_velocity), this, type->lockType != 0 ? target : nullptr);
+    m_torpedoCount--;
+    m_torpedoReady = m_scenario->time() + 6.0f;
+    return true;
 }
 
 
