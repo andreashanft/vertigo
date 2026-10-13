@@ -154,15 +154,20 @@ void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObje
             side = right > 0 ? 2 : 1;
     }
     m_shield[side] -= kinetic;
+    // a shot rattles the cockpit a little, a torpedo fully
     if (kinetic > 0)
-    {
-        // a shot rattles the cockpit a little, a torpedo fully
         m_scenario->headMotion().shake(std::min(1.0f, std::sqrt(kinetic/2000.0f)));
-        m_lastHit = m_scenario->time();
-        sfx::SampleMap::get(sfx::Sample::Alert).play();
-    }
     if (m_shield[side] < 0)
         destroy();
+}
+
+
+bool Player::isCritical() const
+{
+    for (int side = 0; side < 4; side++)
+        if (m_shieldMax[side] > 0 && m_shield[side] < m_shieldMax[side]/10)
+            return true;
+    return false;
 }
 
 
@@ -233,7 +238,6 @@ void Player::dropBuzzer()
 
 void Player::destroy()
 {
-    // TODO: called from damage() once the player can be destroyed (roadmap step 1.4)
     m_scenario->destroyPlayer();
 }
 
@@ -385,6 +389,15 @@ bool Player::update(float elapsedTime)
         sfx::SampleMap::get(sfx::Sample::Threat).play();
     m_threatBlink = blink;
     m_threats = threats;
+
+    // critical: the voice once, then the alert beep with each blink of ALERT
+    const bool critical = isCritical();
+    if (critical && !m_critical)
+        sfx::SampleMap::get(sfx::Sample::Voice_SystemCollapse).play();
+    else if (critical && blink && !m_alertBlink)
+        sfx::SampleMap::get(sfx::Sample::Alert).play();
+    m_alertBlink = blink;
+    m_critical = critical;
 
     m_gun.update(elapsedTime);
     if (m_firing && m_gun.state() == Gun::StateReady)

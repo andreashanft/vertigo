@@ -21,6 +21,11 @@
 
 #include "util/geometry2d.h"
 #include "ui/widget.h"
+#include "voxelradar.h"
+#include "lamp.h"
+#include "gfx/texture.h"
+#include <QString>
+#include <map>
 
 
 namespace hud {
@@ -32,7 +37,7 @@ class HUD;
 class MasterMonitor : public ui::Widget
 {
 public:
-    MasterMonitor(HUD *hud, Rect rect, Rect observationRect);
+    MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::DesFile &file);
 
 public:
 
@@ -43,6 +48,9 @@ private:
     HUD *m_hud;
     Rect m_rect;
     Rect m_observationRect;
+    Lamp m_lamp;                // upper slot while a target is locked (read before the voxel radar)
+    VoxelRadar m_voxelRadar;
+    std::map<QString, gfx::Texture> m_pictures;  // of big ships, loaded once
 };
 
 

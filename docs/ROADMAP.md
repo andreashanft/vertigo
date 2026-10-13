@@ -54,10 +54,10 @@ So the plan builds those basics first.
 |---|---|---|---|
 | 1.1 | Load every unit type: complete the type table ([appendix A](#a-dtyp--object-file)), use a placeholder instead of skipping a unit, always register objectives | S | 63 missions get their missing units (**done**: cargo ships are placeholder boxes until 1.6, tanks are static until 1.6) |
 | 1.2 | Missing condition types ("any unit of faction X attacked", order chaining, protect-only objectives, nav-point objectives), a real failure path, fix the endless "mission failed" voice. Ship together with 1.1 | S–M | Missions become winnable (**done**; "attacked" fires on any hit until 1.4) |
-| 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders (**done** for boats and bombers; tanks follow in 1.6, collisions between units come with the orders) |
+| 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders (**done** for boats and bombers; tanks follow in 1.6; since milestone 6 moving units also slide along other units, towers and buildings instead of passing through them, except cargo ships, which push through, and a boarding boat docking on its target) |
 | 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions (**done**: attacker passed through guns, projectiles and damage; "attacked" only for hits by another unit; the player is hit per side (front, left, right, back) and destroyed when a side drops below zero; destroyed units explode, sized by the unit) |
 | 1.5 | Mission end: Esc menu, failure and death screens (texts already exist), restart / abort / load. Keep "skip mission" as a debug key until missions are winnable | M | Proper campaign flow (**done**; the player can only be destroyed by `--destroy` until 1.4) |
-| 1.6 | Tanks (ground-following, 22 missions) and cargo ships (built from blocks, 36 missions; start with static hulls) | M / M–L | Escort targets, dust clouds (**tanks done**: tanks and crawlers drive on the ground, tilt with it at most `MaxClimbingAngle`, and run their orders; the turret is drawn but doesn't aim yet. Cargo ships are built from their blocks in milestone 5) |
+| 1.6 | Tanks (ground-following, 22 missions) and cargo ships (built from blocks, 36 missions; start with static hulls) | M / M–L | Escort targets, dust clouds (**tanks done**: tanks and crawlers drive on the ground, tilt with it at most `MaxClimbingAngle`, and run their orders; since milestone 6 their turret (the `Gun` module or the `GunTurret`) turns towards the target at 1.5 rad/s and the gun fires along it. Cargo ships are built from their blocks in milestone 5) |
 | 1.7 | Enemy guns, using the gun and volley settings in the object files | M | Orders 4, 6, 7, 8 (**done**: `UnitGun` with `[StaticGun]` muzzles and `[VolleyGun]` rhythm; the mission's `gun` key picks the model (0–13, 14 is "No Gun"); boats fire from the nose, tanks along their heading, towers from a turret that turns towards its target at the turret's rates. Who fires when is up to the orders) |
 | 1.8 | Torpedoes: 22 types, magazines, fire key, lock (none / noise / optic, 0–6 s), homing, decoys, enemy torpedo towers | L | Torpedo HUD, trails, cluster torpedo, turrets (**done**; the data only has lock types 0 and 1) |
 
@@ -132,13 +132,13 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 | Item | What it is | Effort | Needs |
 |---|---|---|---|
 | Pause | P key stops mission time and sounds, shows the PAUSE image (**done**) | S | – |
-| Voxel radar | 120×100 terrain view ahead of the boat, inside the master monitor | M | – |
-| Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages (**done** except F1–F4 and the lamps: armor page from the four side images per damage level, laid out as a 64×64 silhouette; systems page with ARMO/GUN/TORP/TUR1/TUR2, ammunition and the gun states RDY/ARM/FIR/JAM/EMP/ENE; with two monitors one shows each page, I switches) | M | Full rows need 1.8 |
+| Voxel radar | 120×100 terrain view inside the master monitor (**done** in milestone 6, as in the original's screenshots: always shown, below the target's picture; a square patch of the height map reaching `WorldMaxY` cells to each side of the boat, turning with it, seen in perspective from behind at `Projection` degrees down, drawn with a depth buffer (so nearer ground hides what lies behind it) onto no background and fitted above the cargo line; shaded by height (low ground dark, peaks bright) with `VOX_000.S16` (32 fog rows of 256 RGB565 colours from offset 0x31a; 0–63 a light ramp, 64 orange); drawn with the height map's own grid and rendered at three times the resolution, then averaged down, so the ground moves smoothly without flickering against the lines; buildings as orange blocks, water currents as blue boxes, the boat as an orange line up from the ground, sonar contacts as lines in red (hostile), green (friendly), blue (neutral) or grey (the locked target), debris (trash) as green lines. `WorldMinY` and `FlightY` are still unused) |
+| Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages (**done**; F1–F4 and the lamps since milestone 6: as in the original, the first monitor shows a weapon page (the magazine by default; F1–F4 pick gun, magazine or a turret: name, state written out, the selected torpedo or the turret's software, and the picture of the gun or torpedo) and the second the armor page (`ARMOR STATE`, each side's percentage around the silhouette), which I switches to the systems table; a single monitor steps through all three with I. The lamps (`*.D16`, two RGB565 frames lighting the lower or the upper slot) show the monitor's mode: armor page, target locked, active sonar; what they show in the original is to be compared. Armor page from the four side images per damage level, laid out as a 64×64 silhouette; systems page with ARMO/GUN/TORP/TUR1/TUR2, ammunition and the gun states RDY/ARM/FIR/JAM/EMP/ENE; with two monitors one shows each page, I switches) | M | Full rows need 1.8 |
 | Icons | Current, radiation (probably shallow depth; unverified), locked (**lock and current done**; radiation open) | S each | Phase 2, 1.8 |
 | Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice (**done**: ALERT blinks for 3 s after a hit, with the alert beep; THREAT blinks while homing torpedoes follow the player, with the threat beep and the voice for each new one) | S | 1.4, 1.8 |
 | Friendly fire | Escalating radio warnings; the third friendly kill fails the mission (**done**: friends are units not hostile to the player's faction 8 that aren't destroy objectives or mines; warnings 67–70 at most every 3 s, kills 71, the third kill 89 and failure; `~` texts are red) | M | 1.4, 1.5 |
 | Torpedo lock + countdown | Lock ring, countdown from the torpedo's lock time, beep and "torpedo ready" voice (**done**: the target must stay locked and within 40° of the nose; the ring turns yellow when complete) | S | 1.8 |
-| Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets (**done**: orders attack my target / sync / search and destroy / stop; Claw targets attacking torpedoes, Punisher hostile vessels, Eraser both; scan, lock time, accuracy and volleys from GLOBWEAP `[SoftwareN]`; states from `[TurretStateN]`; torpedoes can be shot down; brackets green scanning, yellow locking, red firing; turrets aim instantly) | L | 1.4, 1.8 |
+| Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets (**done**: orders attack my target / sync / search and destroy / stop; Claw targets attacking torpedoes, Punisher hostile vessels, Eraser both; scan, lock time, accuracy and volleys from GLOBWEAP `[SoftwareN]`; states from `[TurretStateN]`; torpedoes can be shot down; brackets green scanning, yellow locking, red firing; turrets turn at 1.5 rad/s, as the turret models do, and fire once they point at the target (milestone 6)) | L | 1.4, 1.8 |
 
 ## Phase 5 – Effects
 
@@ -148,6 +148,12 @@ crawlers, towers, buildings, cargo ships: "orders not run").
   - Replace one heavyweight object per particle with lightweight pooled
     particles drawn in batches.
   - Add limits and distance culling.
+
+  **Done** (milestone 6): `Particles` holds explosions, debris, bubbles,
+  torpedo trails and dust in one pool of 3,000 and draws them in one batch
+  per texture. Bubbles and dust only use three quarters of it; nothing is
+  spawned or drawn beyond 220 m (the fog ends at 200 m) or drawn behind the
+  camera. Projectiles stay objects, as they collide.
 - **Explosions with debris and bodies (M, needs 1.4):** explosion sized to the
   object, 4–10 debris parts, the three "Cadaver" sprites for crewed vessels,
   sparks on hits. Test: `s00105`. **Done** (without the particle pool): the
@@ -155,7 +161,10 @@ crawlers, towers, buildings, cargo ships: "orders not run").
   `Debris` pieces fly off, slow down, sink (`Lift` × 4 m/s²) and settle on the
   ground until their `LifeTime` ends.
 - **Dust clouds (S):** ground-dust sprites behind moving tanks and crawlers.
-  Needs 1.6 and moving units.
+  Needs 1.6 and moving units. **Done** (milestone 6): moving tanks and crawlers stir up
+  the "bodenstaub" sprites (EXPLOSIO 18–20, by the vehicle's size) behind
+  their tracks, more often the faster they go; the dust plays slowly and
+  drifts up. Which sprite the original uses is still to be checked.
 - **Torpedo trails (S, needs 1.8):** the data's "torpedo-bubble" sprite,
   spawned every ~60 ms. **Done.**
 - **Cluster torpedo (M, needs 1.8):** the Ripper (torpedo 18). The data has no
@@ -212,6 +221,44 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    recharge for energy guns (`EnergyDemand` and the gun state "EnergyDelay"
    exist, the pool doesn't), tower accuracy, and cargo-ship placement and
    turret size.)
+6. **Loose ends:** what earlier milestones left out: voxel radar, dust
+   clouds and the particle pool, the slave monitor's F1–F4 pages and lamps,
+   turrets that turn at their rates (player and tanks), collisions between
+   units. The radiation icon and the sensor type wait for the alignment with
+   the original, which comes near the end. (**Done**; what the voxel radar's
+   settings, the lamps and the dust sprite mean in the original is to be
+   compared then. Test mode gained `--near` to start next to a unit.)
+
+## Differences to the original's cockpit (screenshots, October 2026)
+
+Compared with six screenshots of the original (English version; Hiob, Gator
+and Succubus cockpits) after milestone 6.
+
+| # | Area | Original | Vertigo now |
+|---|---|---|---|
+| D1 | Voxel radar: when | Always shown in the lower part of the master monitor, also with a target locked (the target's picture sits above it) | Only while no target is locked |
+| D2 | Voxel radar: look | A square patch of terrain around the boat, turning with the heading, seen obliquely from above; nothing beyond it and no background, so the monitor's grid shows through. Terrain in light grey to white, slopes darker; no blue fog | Perspective view to the horizon, filled with the water colour, fogged to blue |
+| D3 | Voxel radar: objects | Buildings as orange blocks with their height; units as vertical lines from the ground up to them: red hostile, green friendly, blue (probably neutral or the player) | Coloured dots for sonar contacts and the boat |
+| D4 | Slave monitors: assignment | The first monitor (left) shows a weapon page, the second (right) the armor; Hiob's single monitor shows the weapon page | First armor, second systems table; Hiob's shows the armor |
+| D5 | Weapon page | Centred lines: item name, state as a word (`READY`), the selected torpedo's long name (`THRESHER SHARK I`); the picture of the torpedo below. Shown by default for the magazine; F1–F4 presumably switch it to gun, magazine, turrets | Detail page only after F1–F4, with the magazine's picture, short names and `RDY` beside the picture |
+| D6 | Armor page | Title `ARMOR STATE`, the silhouette in the middle, the percentage of each side around it (front above, back below, left and right beside it) | Silhouette only |
+| D7 | Master monitor: activity | Second line shows what the target does: `GOTO`, `PATROLLING`, `ATTACKING` | `activity not implemented` (with the sonar's activity detection) |
+| D8 | Master monitor: weapons | `G:` the target's gun short name (`VEN1`), `T:` its torpedoes | `NIMP` |
+| D9 | Aim help (HUDAIMH) | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame | Drawn on the target's centre |
+| D10 | Cargo ships | Each block is a sonar contact and target of its own (a row of dots on the sonar, a bracket per block) | One contact for the whole ship |
+| D11 | Target lock | `u` locks the nearest enemy (HELP0-2.TXT) | Not implemented (L locks what is in the reticle, N the next nav point) |
+| D12 | Unknown marker | A red circle with a cross, apart from the locked target (shots in combat), sometimes outside the HUD frame; not one of HUDAIMH, HUDTARG, HUDTURR, HUDPOI* | – (identify first) |
+| D13 | Hits | Plasma hits light up as large blue-white flashes; explosions close by fill much of the view | Smaller hit effects (compare sizes) |
+| D14 | Armor symbol (HUDSHIE1-9, beside the sonar symbol) | A bar per side: green, yellow below 75 %, red below 50 %, gone below 25 %, white when hit | Done |
+| D15 | ALERT | Only while a side's armor is below 10 %, with the voice "system collapse" (SMPMAP 72) | Done: blinks while critical, the voice when it starts, the alert beep with each blink |
+| D16 | THREAT | Yellow (HUDTHREY) | Was red (HUDTHREA, whose use is unknown); yellow now |
+
+D1–D11 and D14 are done (D12 and D13 remain): the radar, monitors, aim help,
+cargo-ship blocks, `u` and the armor symbol now follow the screenshots.
+
+Already alike: lock ring with name, distance, shield bars and sensor icon;
+turret brackets; heading tape; THREAT; the lamps beside the sonar monitors lit;
+the master monitor's target picture, D/H/V/N and R.
 
 ## Open questions and how to settle them
 
@@ -395,13 +442,15 @@ long ships turn around their middle and their sterns don't sweep over nearby
 units. Turrets fire at hostile units on their side of the hull within `senr` and the
 gun's range.
 
-Damage is not documented, so this is a guess. A hit damages the nearest turret
-(within 3 m) or block. A block or turret whose shield runs out explodes and is
-removed, together with the turrets on it. The ship's own `[Defense]` shield
-takes every hit, and the ship is destroyed when that shield or all its blocks
-are gone. When a block goes, the blocks no longer joined to the largest
-remaining part (by touching boxes) break off, sink tumbling, and explode on
-the ground. The kinematics in the ship files copy the bomber's, so big ships turn
+As in the original (from its screenshots), a big ship takes hits as a whole on
+its own `[Defense]` shield (cargo ships 20,000–60,000, Big Fat Mama
+10,000,000); once that is used up it counts as destroyed at once, stops, and
+its blocks blow up one after another (every 0.3–0.7 s, in random order).
+Each block is a sonar contact and target of its own. The master monitor
+shows a picture instead of the model, chosen by the ship file's comment:
+`SHPSEACO` (bship0), `SHPTRITO` (1, 8), `SHPPOLAR` (2, 9), `SHPINDER`
+(Star of Bengalia, 3, 10), `SHPBIONT` (4, 7), `SHPBFM` (5, 6), `SHPCONTF`
+(cship0–9). The kinematics in the ship files copy the bomber's, so big ships turn
 at most 0.15 rad/s and climb at most 5°.
 
 ### B. Orders
@@ -492,6 +541,8 @@ no unit defines (S00404, S01802, S02003, S02006).
   124–167 m below the surface, so it is probably "too close to the surface".
 
 ### E. HUD data not used yet
+
+Since milestone 6 the voxel radar, the lamps and the weapon pictures are used.
 
 - Cockpit sections in `VFX/COCKPIT/00n.DES`: `[VoxelRadar0]`,
   `[HUDAlertBlock]`, `[HUDThreatBlock]`, `[HUDPauseBlock]`,

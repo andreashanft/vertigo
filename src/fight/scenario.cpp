@@ -338,6 +338,7 @@ Scenario::Scenario(const QString &name) :
         case TypeCargoShip:
             {
                 CargoShip *ship = new CargoShip(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                ship->setPicture(CargoShip::pictureFor(desName));
                 object = ship;
                 // high enough for the hull to clear the ground
                 Vector3D pos = getPosition();
@@ -359,6 +360,9 @@ Scenario::Scenario(const QString &name) :
         {
             m_objects.emplace_back(object);
             m_records.push_back({ id, type, desName, object });
+            if (CargoShip *ship = dynamic_cast<CargoShip *>(object))
+                for (CargoSegment *segment : ship->createSegments())
+                    m_objects.emplace_back(segment);
             object->disable();
             entry.condTrigger = object->condEnable();
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(object);

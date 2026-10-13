@@ -59,7 +59,10 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
   Esc menu (here: restart the mission). `5=Space/0.1` holds a key for 0.1 s;
   keys like Space (fire) or the arrows need that to have an effect.
-- `--fire 2050` lets units fire their guns; towers aim at the player.
+- `--fire 2050` lets units fire their guns; towers and tanks aim at the
+  player.
+- `--near 2050` enables this unit and starts the player 40 m from it, looking
+  at it, e.g. to watch it with `--screenshot`.
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
   at a fraction of their maximum turn rate (the sign picks the direction),
   instead of following their orders.

@@ -20,6 +20,9 @@
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/objects/navpoint.h"
+#include "fight/weapons/torpedo.h"
+#include "fight/weapons/unitgun.h"
+#include "fight/orders.h"
 #include "txt/stringtable.h"
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -29,12 +32,16 @@
 namespace hud {
 
 
-MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect) :
+MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::DesFile &file) :
     ui::Widget(hud->widget()),
     m_hud(hud),
     m_rect(rect),
-    m_observationRect(observationRect)
+    m_observationRect(observationRect),
+    m_lamp(hud, file),
+    m_voxelRadar(file)
 {
+    // above the cargo line at the bottom
+    m_voxelRadar.limitHeight(rect.height - 14 - m_voxelRadar.rect().y);
 }
 
 
@@ -59,8 +66,14 @@ void MasterMonitor::draw()
     {
         isFriend = m_hud->scenario()->isFriend(fight::Scenario::PlayerFaction, object->iff());
         txtName = object->name();
+        // what it does: its orders, or paralyzed
         if (m_hud->scenario()->sonar().detectActivity())
-            txtAction = "activity not implemented";
+        {
+            if (object->eventParalyze()->isCompleted() && object->shockShield() < 0)
+                txtAction = txt::StringTable::get(txt::Fight81);
+            else if (object->orders())
+                txtAction = txt::StringTable::get(object->orders()->activity());
+        }
         if (object->isIdentified())
             txtCargo = object->cargo();
         else
@@ -71,15 +84,18 @@ void MasterMonitor::draw()
         int height = static_cast<int>(glm::round(object->center().z - m_hud->scenario()->surface().heightAt(object->center().x, object->center().y)));
         txtHeight = QString("%1M").arg(height);
 
-        txtVelocity = QString("%1KMH").arg(static_cast<int>(glm::round(glm::length(object->velocity()))));
+        txtVelocity = QString("%1KMH").arg(static_cast<int>(glm::round(3.6f*glm::length(object->velocity()))));
         txtNoise = QString("%1").arg(object->noise());
 
         if (m_hud->scenario()->sonar().detectRange() && !target.isPassive() && object->sensor() > 0)
             txtRange = QString("%1M").arg(object->sensorRange());
         if (m_hud->scenario()->sonar().detectWeapons() && !target.isPassive())
         {
-            txtGun = "NIMP";
-            txtTorpedo = "NIMP";
+            // the short names of its gun and torpedoes (GLOBWEAP)
+            if (object->gun())
+                txtGun = object->gun()->shortName();
+            if (const fight::TorpedoType *torpedo = object->hasTorpedoes() ? fight::TorpedoType::get(object->torpedoType()) : nullptr)
+                txtTorpedo = torpedo->shortName;
         }
     }
 
@@ -93,7 +109,28 @@ void MasterMonitor::draw()
         txtNoise = "0";
     }
 
-    if (target.isLocked())
+    m_lamp.draw(target.isLocked());
+    // the voxel radar below, the target's picture above it
+    if (m_voxelRadar.isValid())
+    {
+        const Rect &radar = m_voxelRadar.rect();
+        const Point topLeft = m_hud->project(m_rect.pos() + radar.pos());
+        const Point bottomRight = m_hud->project(m_rect.pos() + radar.pos() + Point(radar.width, radar.height));
+        m_voxelRadar.draw(m_hud->scenario(), RectF(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y));
+    }
+
+    fight::ActiveObject *pictured = target.locked();
+    const QString picture = pictured ? pictured->observationImage() : QString();
+    if (!picture.isEmpty())
+    {
+        // big ships: a picture of the ship (SHP*.IMG, the size of the observation area)
+        auto it = m_pictures.find(picture);
+        if (it == m_pictures.end())
+            it = m_pictures.emplace(picture, gfx::Texture(m_hud->getImage(picture), true)).first;
+        const Point observeCenter = m_hud->project(m_rect.pos() + m_observationRect.center());
+        it->second.draw(observeCenter.x - it->second.width()/2, observeCenter.y - it->second.height()/2);
+    }
+    else if (target.isLocked())
     {
         Point observePos = m_hud->project(m_rect.pos() + m_observationRect.pos());
         Point observeCenter = m_hud->project(m_rect.pos() + m_observationRect.center());
@@ -113,7 +150,7 @@ void MasterMonitor::draw()
         glFrontFace(GL_CW);
         glMatrixMode(GL_MODELVIEW);
         glLoadMatrixf(glm::value_ptr(m));
-        obj->draw();
+        obj->drawPreview();
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         glDisable(GL_CULL_FACE);

@@ -30,7 +30,9 @@ class Turret;
 
 
 // A ground vehicle (tanks and crawlers): drives on the ground, tilts with it
-// (at most MaxClimbingAngle) and steers by turning only.
+// (at most MaxClimbingAngle) and steers by turning only. Its turret (the Gun module or the
+// GunTurret) turns towards what the orders aim at and back to the front when they stop aiming.
+// Moving, it stirs up dust behind its tracks.
 class Tank : public SimpleBoat
 {
 public:
@@ -44,10 +46,16 @@ public:
     void arm(int model, txt::DesFile &file);
     bool isGroundVehicle() const { return true; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
+    void aimAt(const Vector3D &point);
+    Vector3D gunDirection() const;
 
 private:
     float ground(float x, float y) const;
     void alignToGround();
+    void updateTurret(float elapsedTime);
+    void stirUpDust(float elapsedTime);
+    // the turret's yaw and pitch applied to model coordinates
+    glm::mat3 turretRotation() const;
 
 private:
     float m_heading;          // radians, 0 is +y, increasing to the right
@@ -57,6 +65,14 @@ private:
     Module *m_gun;            // a fixed gun model (Cluster/Gun) ...
     Vector3D m_gunOffset;
     std::unique_ptr<Turret> m_turret; // ... or a turret (GunTurret)
+    Vector3D m_pivot;         // what the turret turns around (model coordinates)
+    float m_turretRate;       // rad/s
+    float m_turretYaw;        // relative to the hull, positive to the right
+    float m_turretPitch;
+    float m_targetYaw;
+    float m_targetPitch;
+    float m_aimHold;          // seconds until the turret returns to the front
+    float m_dustTime;         // until the next puff of dust
 };
 
 

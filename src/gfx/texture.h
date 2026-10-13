@@ -45,6 +45,7 @@ public:
     int width() const;
     int height() const;
     QSize size() const;
+    unsigned int id() const;
     void bind();
     void fromImage(const QImage &image, bool smooth = true);
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
@@ -74,6 +75,7 @@ public:
     bool isValid() const { return m_texture != 0; }
     int width() const { return m_width; }
     int height() const { return m_height; }
+    unsigned int id() const { return m_texture; }
     void bind();
     void setFilter(bool smooth);
     void fromImage(const QImage &image, bool smooth);
@@ -129,6 +131,12 @@ inline int Texture::height() const
 inline QSize Texture::size() const
 {
     return QSize(width(), height());
+}
+
+
+inline unsigned int Texture::id() const
+{
+    return d->id();
 }
 
 

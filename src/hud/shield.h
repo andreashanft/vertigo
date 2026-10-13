@@ -30,6 +30,9 @@ namespace hud {
 class HUD;
 
 
+// The armor symbol beside the sonar symbol (HUDSHIE1-9): a bar per side of the boat around the
+// centre: green, yellow below three quarters of the side's armor, red below half, gone below a
+// quarter, and white for a moment when the side is hit.
 class Shield : public ui::Widget
 {
 public:
@@ -42,6 +45,8 @@ private:
     HUD *m_hud;
     Rect m_rect;
     std::vector<gfx::Texture> m_shield;
+    int m_last[4] = { -1, -1, -1, -1 };  // each side's armor when last drawn
+    float m_hit[4] = { -1, -1, -1, -1 };  // when each side was last hit
 };
 
 

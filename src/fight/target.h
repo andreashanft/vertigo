@@ -50,6 +50,8 @@ public:
 
     void lockReset();
     void lockReticle();
+    // the nearest hostile unit the sonar detects (and can tell apart)
+    void lockNearestEnemy();
     void lockNavPoint(NavPoint *navPoint);
 
 private:

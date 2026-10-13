@@ -64,6 +64,8 @@ public:
 public:
     virtual bool update(float elapsedTime);
     virtual void draw();
+    // the object alone, in world coordinates, for the master monitor's picture of the target
+    virtual void drawPreview() { draw(); }
     virtual bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
 
 protected:

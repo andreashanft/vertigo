@@ -21,6 +21,7 @@
 
 #include "util/geometry3d.h"
 #include <QString>
+#include "txt/stringtable.h"
 #include <vector>
 
 
@@ -75,6 +76,11 @@ public:
     const OrderSlot* currentSlot() const { return m_current >= 0 ? &m_slots[m_current] : nullptr; }
     // a short description of what the unit does, for the debug overlay
     QString state() const;
+    // what the unit does, as the master monitor shows it (FIGHTEXT 72-84: attacking, waiting,
+    // guarding, on its way, escorting, infiltrating, exploding)
+    txt::StringFight activity() const;
+    // the unit it is docking on (GotoWithInfiltrate), which it mustn't bump into
+    ActiveObject* dockingTarget() const;
     void update();
 
 private:

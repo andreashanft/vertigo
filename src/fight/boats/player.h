@@ -60,7 +60,8 @@ public:
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
     float roll() const { return m_roll; };
     // mission time of the last hit, -1 if never hit
-    float lastHit() const { return m_lastHit; }
+    // a side's armor is below 10 %: ALERT, with the "system collapse" voice when it starts
+    bool isCritical() const;
     float speed() const { return m_speed; };
     float noise() const;
     float range() const;
@@ -87,9 +88,10 @@ private:
     bool m_lockAnnounced;
     int m_threats;
     bool m_threatBlink;
+    bool m_critical = false;
+    bool m_alertBlink = false;
 
     int m_shield[4];
-    float m_lastHit = -1;
     bool m_grounded = false;    // touching the ground in the last step
     int m_shieldMax[4];
 

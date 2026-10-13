@@ -251,14 +251,15 @@ void HUD::load(game::Boat *boat)
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
 
-    // status monitors: with two, one shows the armor and one the systems; I switches the pages
+    // status monitors: with two, the first shows a weapon and the second the armor (I switches it
+    // to the systems and back); a single one shows a weapon (I steps through all three pages)
     m_slaveMonitors.clear();
     for (int i = 0; i < 2; i++)
     {
         file.setSection(QString("slavemonitor%1").arg(i));
         if (!file.contains("X1"))
             continue;
-        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Armor : SlaveMonitor::Page::Systems);
+        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Weapon : SlaveMonitor::Page::Armor);
         m_children.emplace_back(monitor);
         m_slaveMonitors.push_back(monitor);
     }
@@ -309,15 +310,15 @@ void HUD::load(game::Boat *boat)
     m_children.emplace_back(energyBar);
 
     file.setSection("mastermonitor");
-    MasterMonitor *masterMonitor = new MasterMonitor(this, readRect(file), Rect(file.value("ObservationX1").toInt(), file.value("ObservationY1").toInt(), file.value("ObservationWidth").toInt(), file.value("ObservationHeight").toInt()));
+    MasterMonitor *masterMonitor = new MasterMonitor(this, readRect(file), Rect(file.value("ObservationX1").toInt(), file.value("ObservationY1").toInt(), file.value("ObservationWidth").toInt(), file.value("ObservationHeight").toInt()), file);
     m_children.emplace_back(masterMonitor);
 
     file.setSection("roundmonitor0");
-    m_sonar1 = new SonarMonitor(this, Point(file.value("X1").toInt(), file.value("Y1").toInt()), file.value("Radius").toInt(), 360);
+    m_sonar1 = new SonarMonitor(this, file, 360);
     m_children.emplace_back(m_sonar1);
 
     file.setSection("roundmonitor1");
-    m_sonar2 = new SonarMonitor(this, Point(file.value("X1").toInt(), file.value("Y1").toInt()), file.value("Radius").toInt(), 180);
+    m_sonar2 = new SonarMonitor(this, file, 180);
     m_children.emplace_back(m_sonar2);
 
     m_integerScale = false;
@@ -738,9 +739,27 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_L)
         m_scenario->target().lockReticle();
-    if (e->key() == Qt::Key_I)
-        for (SlaveMonitor *monitor : m_slaveMonitors)
-            monitor->togglePage();
+    if (e->key() == Qt::Key_U)
+        m_scenario->target().lockNearestEnemy();
+    if (e->key() == Qt::Key_I && !m_slaveMonitors.empty())
+    {
+        SlaveMonitor *monitor = m_slaveMonitors.back();
+        switch (monitor->page())
+        {
+        case SlaveMonitor::Page::Weapon: monitor->setPage(SlaveMonitor::Page::Armor); break;
+        case SlaveMonitor::Page::Armor: monitor->setPage(SlaveMonitor::Page::Systems); break;
+        case SlaveMonitor::Page::Systems:
+            monitor->setPage(m_slaveMonitors.size() > 1 ? SlaveMonitor::Page::Armor : SlaveMonitor::Page::Weapon);
+            break;
+        }
+    }
+    // F1-F4: the gun, the magazine or a turret on the weapon page
+    if (e->key() >= Qt::Key_F1 && e->key() <= Qt::Key_F4 && !(e->modifiers() & Qt::AltModifier) && !m_slaveMonitors.empty())
+    {
+        SlaveMonitor *monitor = m_slaveMonitors.front();
+        monitor->setPage(SlaveMonitor::Page::Weapon);
+        monitor->showWeapon(SlaveMonitor::Weapon(e->key() - Qt::Key_F1));
+    }
     if (e->key() == Qt::Key_A)
     {
         if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)

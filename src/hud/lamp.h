@@ -15,28 +15,44 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
-#ifndef FIGHT_DEBRIS_H
-#define FIGHT_DEBRIS_H
+#ifndef HUD_LAMP_H
+#define HUD_LAMP_H
 
 
-#include "effect.h"
+#include "util/geometry2d.h"
+#include "gfx/texture.h"
 
 
-namespace fight {
+namespace txt { class DesFile; }
 
 
-// A piece of a destroyed unit: flies off, slows down in the water, sinks and settles on the ground.
-class Debris : public Effect
+namespace hud {
+
+
+class HUD;
+
+
+// The indicator lamp beside a cockpit monitor (Lamp* keys of its section): its file (*.D16)
+// holds two frames of RGB565 pixels, the first lighting the lower slot and the second the
+// upper one, so it shows which of two modes the monitor is in.
+class Lamp
 {
 public:
-    Debris(Scenario *scenario, Billboard *billboard, const Vector3D &velocity);
+    Lamp(HUD *hud, const txt::DesFile &file);
 
 public:
-    bool update(float elapsedTime);
+    bool isValid() const { return m_valid; }
+    void draw(bool upper);
+
+private:
+    HUD *m_hud;
+    Rect m_rect;
+    gfx::Texture m_frames[2];
+    bool m_valid = false;
 };
 
 
-} // namespace fight
+} // namespace hud
 
 
-#endif // FIGHT_DEBRIS_H
+#endif // HUD_LAMP_H

@@ -50,6 +50,7 @@ public:
     void setOrder(Order order);
     State state() const { return m_state; }
     QString stateName() const;
+    QString stateText() const;  // the state written out (GLOBWEAP verbose)
     QString softwareName() const { return m_software.shortName; }
     const Gun& gun() const { return m_gun; }
     // nullptr once the target is gone (a torpedo is deleted when it explodes)
@@ -74,6 +75,10 @@ private:
     bool isValid(ActiveObject *target) const;
     bool isTorpedo(const ActiveObject *target) const;
     Vector3D mountPosition() const;
+    Vector3D toWorld(const Vector3D &local) const;
+    Vector3D toLocal(const Vector3D &world) const;
+    // turns towards the world direction, returns whether the turret points there
+    bool turnTo(const Vector3D &direction, float elapsedTime);
 
 private:
     Scenario *m_scenario;
@@ -90,6 +95,7 @@ private:
     int m_shots;           // fired in the current volley
     float m_volleyEnd;     // the pause after a volley ends then
     Vector3D m_aimError;
+    Vector3D m_aim;        // where the turret points, in the boat's coordinates
 };
 
 

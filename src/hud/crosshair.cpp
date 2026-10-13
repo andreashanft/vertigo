@@ -18,6 +18,7 @@
 #include "crosshair.h"
 #include "hud.h"
 #include "fight/scenario.h"
+#include "fight/boats/player.h"
 #include "fight/objects/activeobject.h"
 
 namespace hud {
@@ -42,7 +43,14 @@ void Crosshair::draw()
     fight::Target &target = m_hud->scenario()->target();
     if (target.isLocked())
     {
+        // where to shoot: ahead of a moving target by the time the gun's shots need to get there
+        // (shots don't take on the boat's speed)
         Vector3D aimPoint = target.position();
+        const fight::ActiveObject *unit = target.locked();
+        const float speed = m_hud->scenario()->player()->playerGun().projectileSpeed();
+        if (unit && speed > 0)
+            for (int i = 0; i < 3; i++)
+                aimPoint = target.position() + unit->velocity()*(glm::length(aimPoint - m_hud->scenario()->position())/speed);
 
         Matrix m = m_hud->hudProjectionMatrixInverted() * m_hud->scenario()->projectionMatrix() * m_hud->scenario()->cameraMatrix();
         Vector4D point4 = m * Vector4D(aimPoint, 1);

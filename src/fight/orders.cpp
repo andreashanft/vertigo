@@ -113,6 +113,44 @@ void Orders::next()
 }
 
 
+txt::StringFight Orders::activity() const
+{
+    if (m_current < 0)
+        return txt::Fight79;
+    if (m_engaged)
+        return txt::Fight77;
+    switch (m_slots[m_current].type)
+    {
+    case OrderSlot::Attack:
+    case OrderSlot::CardinalAttack:
+        return txt::Fight77;
+    case OrderSlot::Ambush:
+        return m_ambushed ? txt::Fight77 : txt::Fight79;
+    case OrderSlot::Patrol:
+    case OrderSlot::CardinalPatrol:
+        return txt::Fight80;
+    case OrderSlot::Goto:
+    case OrderSlot::GotoWithArrive:
+        return txt::Fight82;
+    case OrderSlot::Escort:
+        return txt::Fight83;
+    case OrderSlot::GotoWithInfiltrate:
+        return txt::Fight84;
+    case OrderSlot::Explode:
+        return txt::Fight72;
+    default:
+        return txt::Fight79;
+    }
+}
+
+
+ActiveObject* Orders::dockingTarget() const
+{
+    const OrderSlot *slot = currentSlot();
+    return slot && slot->type == OrderSlot::GotoWithInfiltrate ? findUnit(slot->ene) : nullptr;
+}
+
+
 QString Orders::state() const
 {
     if (m_current < 0)
@@ -339,7 +377,8 @@ void Orders::updateAttack(ActiveObject *target, float speed)
         const Vector3D point = lead(target);
         const float distance = glm::length(point - m_unit->position());
         m_boat->steerTo(point, distance > 0.6f*range ? speed : 0.3f*speed);
-        m_unit->setTrigger(aligned(m_boat->dir(), point, range));
+        m_boat->aimAt(point);
+        m_unit->setTrigger(aligned(m_boat->gunDirection(), point, range));
         return;
     }
 

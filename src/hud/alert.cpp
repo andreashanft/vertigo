@@ -18,16 +18,10 @@
 #include "alert.h"
 #include "hud.h"
 #include "fight/scenario.h"
+#include "fight/boats/player.h"
 
 
 namespace hud {
-
-
-namespace {
-
-const float AlertDuration = 3.0f;
-
-}
 
 
 Alert::Alert(HUD *hud, Rect rect) :
@@ -42,8 +36,8 @@ Alert::Alert(HUD *hud, Rect rect) :
 void Alert::draw()
 {
     fight::Scenario *scenario = m_hud->scenario();
-    const float lastHit = scenario->player()->lastHit();
-    if (lastHit >= 0 && scenario->time() - lastHit < AlertDuration && scenario->blink())
+    // blinking while a side's armor is below 10 %
+    if (scenario->player()->isCritical() && scenario->blink())
     {
         const Rect rect = m_hud->projectCenter(m_rect);
         m_alert.draw(rect.x, rect.y);

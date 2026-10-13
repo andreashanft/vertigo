@@ -41,16 +41,14 @@ set(SOURCES
     fight/effects/billboard.h
     fight/effects/effect.cpp
     fight/effects/effect.h
-    fight/effects/debris.cpp
-    fight/effects/debris.h
     fight/effects/effectmanager.cpp
     fight/effects/effectmanager.h
     fight/effects/projectile.cpp
     fight/effects/projectile.h
     fight/effects/trash.cpp
     fight/effects/trash.h
-    fight/effects/bubble.cpp
-    fight/effects/bubble.h
+    fight/effects/particles.cpp
+    fight/effects/particles.h
 
     fight/objects/activeobject.cpp
     fight/objects/activeobject.h
@@ -193,6 +191,10 @@ set(SOURCES
     hud/master.h
     hud/mastermonitor.cpp
     hud/mastermonitor.h
+    hud/voxelradar.cpp
+    hud/lamp.cpp
+    hud/lamp.h
+    hud/voxelradar.h
     hud/slavemonitor.cpp
     hud/slavemonitor.h
     hud/sonarmonitor.cpp

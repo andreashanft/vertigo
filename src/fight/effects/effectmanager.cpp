@@ -17,16 +17,28 @@
 
 #include "effectmanager.h"
 #include "projectile.h"
-#include "bubble.h"
-#include "debris.h"
 #include "fight/scenario.h"
+#include <glm/gtx/norm.hpp>
 
 
 namespace fight {
 
 
+namespace {
+
+const int Bubbles = 100;
+
+float random()
+{
+    return qrand()/float(RAND_MAX);
+}
+
+}
+
+
 EffectManager::EffectManager(Scenario *scenario) :
-    m_scenario(scenario)
+    m_scenario(scenario),
+    m_particles(scenario)
 {
     txt::DesFile file;
     
@@ -64,23 +76,24 @@ Billboard* EffectManager::getBillboard(Effects effect)
 }
 
 
-Effect* EffectManager::addEffect(Effects effect, const Vector3D &position, float angle, float scale)
+void EffectManager::addEffect(Effects effect, const Vector3D &position, float angle, float scale)
 {
-    Effect *object = new Effect(m_scenario, getBillboard(effect), angle, scale);
-    m_effects.emplace_back(object);
-    object->setPosition(position);
-    return object;
+    m_particles.add(getBillboard(effect), Particles::Motion::Animation, position, Vector3D(0), angle, scale);
 }
 
 
-Effect* EffectManager::addDebris(Effects debris, const Vector3D &position, const Vector3D &direction)
+void EffectManager::addDebris(Effects debris, const Vector3D &position, const Vector3D &direction)
 {
     Billboard *billboard = getBillboard(debris);
-    const float speed = billboard->minVelocity() + (billboard->maxVelocity() - billboard->minVelocity())*qrand()/float(RAND_MAX);
-    Debris *object = new Debris(m_scenario, billboard, direction*speed);
-    m_effects.emplace_back(object);
-    object->setPosition(position);
-    return object;
+    const float speed = billboard->minVelocity() + (billboard->maxVelocity() - billboard->minVelocity())*random();
+    m_particles.add(billboard, Particles::Motion::Debris, position, direction*speed, qrand()%360);
+}
+
+
+void EffectManager::addDust(const Vector3D &position, int size, const Vector3D &velocity)
+{
+    const Effects dust = Effects(int(Effects::Explosion_18) + glm::clamp(size, 0, 2));
+    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity, qrand()%360);
 }
 
 
@@ -98,27 +111,25 @@ Projectile* EffectManager::addProjectile(Effects projectile, const Vector3D &pos
 void EffectManager::update(float elapsedTime)
 {
     m_effects.remove_if([elapsedTime](const std::unique_ptr<Effect> &effect) { return effect->update(elapsedTime); });
-    m_bubbles.remove_if([elapsedTime](const std::unique_ptr<Effect> &bubble) { return bubble->update(elapsedTime); });
+    m_particles.update(elapsedTime);
 
-    while (m_bubbles.size() < 100)
+    // bubbles around the player, each at its own height of a rise from 50 m below
+    Billboard *bubble = getBillboard(Effects::Bubble_0);
+    for (int i = m_particles.count(Particles::Motion::Bubble); i < Bubbles; i++)
     {
-        Bubble *bubble = new Bubble(m_scenario, getBillboard(Effects::Bubble_0));
-        m_bubbles.emplace_back(bubble);
-        Vector3D pos = m_scenario->position();
-        pos.x += qrand()%100 - 50;
-        pos.y += qrand()%100 - 50;
-        pos.z -= 50;
-        bubble->setPosition(pos);
-        if (bubble->update(0))
-            m_bubbles.pop_back();
+        Vector3D position = m_scenario->position() + Vector3D(qrand()%100 - 50, qrand()%100 - 50, -50);
+        const float time = glm::distance2(m_scenario->position(), position)/200.0f*random();
+        position.z += time*bubble->velocity();
+        if (glm::distance2(m_scenario->position(), position) <= 50.0f*50.0f &&
+            !m_particles.add(bubble, Particles::Motion::Bubble, position, Vector3D(0), 0, 2, time))
+            break;
     }
 }
 
 
 void EffectManager::draw()
 {
-    for (const auto &bubble : m_bubbles)
-        bubble->draw();
+    m_particles.draw();
     for (const auto &effect : m_effects)
         effect->draw();
 }

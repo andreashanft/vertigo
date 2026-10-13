@@ -19,6 +19,7 @@
 #include "soundsystem.h"
 #include <al.h>
 #include <QFile>
+#include <random>
 
 
 namespace sfx {
@@ -119,7 +120,11 @@ void Sound::play()
 
     alSourcei(m_source, AL_LOOPING, AL_FALSE);
     if (m_randomPitch > 0)
-        alSourcef(m_source, AL_PITCH, 1 - m_randomPitch*qrand()/RAND_MAX);
+    {
+        // a generator of its own: sounds mustn't change the game's random numbers (test runs repeat)
+        static std::minstd_rand random;
+        alSourcef(m_source, AL_PITCH, 1 - m_randomPitch*std::uniform_real_distribution<float>(0, 1)(random));
+    }
     alSourcei(m_source, AL_BUFFER, m_buffer);
     alSourcePlay(m_source);
 }

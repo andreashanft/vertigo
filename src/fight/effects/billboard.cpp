@@ -138,9 +138,29 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
 
 
 
-void Billboard::draw(const Vector3D &position, float angle, float scale, float time, const Matrix &cameraMatrixInverted)
+void Billboard::quad(const Vector3D &position, float angle, float scale, float time, const glm::mat3 &camera,
+                     Vector3D corners[4], const Vector2D *&texCoords, gfx::Texture *&texture)
 {
-    int currentStage = static_cast<int>(time/m_displayTime)%m_stages.size();
+    Stage &stage = m_stages[static_cast<int>(time/m_displayTime)%m_stages.size()];
+    const float c = std::cos(glm::radians(angle)), s = std::sin(glm::radians(angle));
+    const float size = m_scale*scale;
+    for (int i = 0; i < 4; i++)
+    {
+        // the frame's offset and size, turned by the angle, 2 m in front of the position
+        const Vector2D v = (Vector2D(square[i]) + stage.offset)*stage.scale;
+        corners[i] = position + (camera[0]*(c*v.x - s*v.y) + camera[1]*(s*v.x + c*v.y))*size + camera[2]*2.0f;
+    }
+    texCoords = stage.texCoords;
+    texture = &stage.texture;
+}
+
+
+void Billboard::draw(const Vector3D &position, float angle, float scale, float time, const glm::mat3 &camera)
+{
+    Vector3D corners[4];
+    const Vector2D *texCoords;
+    gfx::Texture *texture;
+    quad(position, angle, scale, time, camera, corners, texCoords, texture);
 
     glEnable(GL_TEXTURE_2D);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -151,24 +171,16 @@ void Billboard::draw(const Vector3D &position, float angle, float scale, float t
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_NOTEQUAL, 0.0);
 
-    glPushMatrix();
-    glTranslatef(position.x, position.y, position.z);
-    glMultMatrixf(glm::value_ptr(cameraMatrixInverted));
-    glScalef(m_scale*scale, m_scale*scale, 1);
-    glRotatef(angle, 0, 0, 1);
-    glScalef(m_stages[currentStage].scale.x, m_stages[currentStage].scale.y, 1);
-    glTranslatef(m_stages[currentStage].offset.x, m_stages[currentStage].offset.y, 2);
-
-    m_stages[currentStage].texture.bind();
-    glVertexPointer(3, GL_FLOAT, 0, square);
-    glTexCoordPointer(2, GL_FLOAT, 0, m_stages[currentStage].texCoords);
+    texture->bind();
+    glVertexPointer(3, GL_FLOAT, 0, corners);
+    glTexCoordPointer(2, GL_FLOAT, 0, texCoords);
     glDrawArrays(GL_QUADS, 0, 4);
-
-    glPopMatrix();
 
     if (m_blendColor)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_ALPHA_TEST);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 

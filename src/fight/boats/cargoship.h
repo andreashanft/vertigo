@@ -27,17 +27,45 @@
 namespace fight {
 
 
+class CargoShip;
 class Module;
 class Turret;
 class UnitGun;
 
 
+// One block of a cargo ship as a sonar contact and target of its own, as in the original: the
+// ship moves it along and keeps it enabled while the block is there. It shows the ship's shield
+// and picture; hits land on the ship's hull.
+class CargoSegment : public ActiveObject
+{
+public:
+    CargoSegment(Scenario *scenario, CargoShip *ship, int block, const ObjectInfo &info);
+
+public:
+    void place(const BoundingBox &box, const Vector3D &velocity, int shield, int shieldMax);
+    float noise() const;
+    bool update(float elapsedTime) { return false; }
+    void draw() {}
+    void drawPreview();
+    bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal) { return false; }
+    void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr) {}
+    void destroy() {}
+    void identify();
+    QString observationImage() const;
+
+private:
+    CargoShip *m_ship;
+    int m_block;
+};
+
+
 // A big ship assembled from blocks (cship*/bship* files, [CargoBlockN]): each block is placed
 // against a side of an earlier one (ConnectSide: left 1, right 2, front 4, back 8, top 16,
-// bottom 32) and has its own shield. Blocks of the big ships carry gun turrets ([TurretN]),
-// which fire at hostile units on their side of the hull. The ship moves like a boat, with its
-// orders; it is destroyed when its own shield is used up or all of its blocks are. When a block
-// goes, the parts of the hull no longer joined to its largest part break off and sink.
+// bottom 32). Blocks of the big ships carry gun turrets ([TurretN]), which fire at hostile units
+// on their side of the hull. The ship moves like a boat, with its orders. As in the original it
+// takes hits as a whole, on its own shield; when that is used up it counts as destroyed, stops,
+// and its blocks blow up one after another. The master monitor shows a picture of it (SHP*.IMG)
+// rather than its model.
 class CargoShip : public SimpleBoat
 {
 public:
@@ -55,6 +83,15 @@ public:
     void draw();
     void arm(int model, txt::DesFile &file) {}
     bool engagesHostiles() const { return false; }
+    bool isContact() const { return false; }
+    QString observationImage() const { return m_picture; }
+    // the master monitor's picture for a ship file (cship*, bship*)
+    static QString pictureFor(const QString &desName);
+    void setPicture(const QString &picture) { m_picture = picture; }
+    // the blocks as sonar contacts; the scenario owns them
+    std::vector<CargoSegment *> createSegments();
+    void drawBlock(int index);
+    bool collidesWithObjects() const { return false; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();
@@ -66,8 +103,8 @@ private:
         float scale;        // metres per model unit
         Vector3D position;  // ship coordinates (metres)
         BoundingBox box;    // ship coordinates
-        int shield;
         bool destroyed = false;
+        CargoSegment *segment = nullptr;
     };
 
     struct ShipTurret
@@ -83,22 +120,9 @@ private:
         float restYaw;
         float turnRate;
         float range;
-        int shield;
         bool destroyed = false;
         ActiveObject *target = nullptr;
         float nextScan = 0;
-    };
-
-    // a block that broke off: it sinks, tumbling, and explodes on the ground
-    struct Wreck
-    {
-        int block;
-        Vector3D position;      // world position of the block's origin
-        glm::mat3 orientation;  // block -> world rotation
-        Vector3D velocity;
-        Vector3D spinAxis;
-        float spinRate;
-        float time = 0;
     };
 
     // ship coordinates <-> the turret's mount frame (turned over for turrets under the hull)
@@ -109,17 +133,18 @@ private:
     void updateTurret(ShipTurret &turret, float elapsedTime);
     ActiveObject* findTarget(const ShipTurret &turret) const;
     bool isTargetValid(const ActiveObject *unit) const;
-    void destroyBlock(Block &block);
-    void destroyTurret(ShipTurret &turret);
+    // blows up the next block of the sequence that follows the ship's destruction
+    void explodeNextBlock();
     void updateLocalBox();
-    void breakApart();
-    void updateWrecks(float elapsedTime);
-    void explodeWreck(const Wreck &wreck);
+    void updateSegments();
 
 private:
     std::vector<Block> m_blocks;
     std::vector<ShipTurret> m_turrets;
-    std::vector<Wreck> m_wrecks;
+    QString m_picture;
+    bool m_exploding = false;
+    std::vector<int> m_explosionOrder;  // the blocks still to blow up, the next one last
+    float m_nextExplosion = 0;
 };
 
 

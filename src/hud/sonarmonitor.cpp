@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "sonarmonitor.h"
+#include "txt/desfile.h"
 #include "hud.h"
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
@@ -28,20 +29,20 @@
 namespace hud {
 
 
+// a 3x3 dot in a 4x4 image
 void fill(int *data, int color)
 {
-    data[5] = color;
-    data[6] = color;
-    data[9] = color;
-    data[10] = color;
+    for (int i = 0; i < 16; i++)
+        data[i] = i % 4 < 3 && i < 12 ? color : 0;
 }
 
-SonarMonitor::SonarMonitor(HUD *hud, Point point, int radius, int scale) :
+SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale) :
     ui::Widget(hud->widget()),
     m_hud(hud),
-    m_point(point),
-    m_radius(radius),
-    m_scale(scale)
+    m_point(file.value("X1").toInt(), file.value("Y1").toInt()),
+    m_radius(file.value("Radius").toInt()),
+    m_scale(scale),
+    m_lamp(hud, file)
 {
     int data[16] = {0};
     int colors[] = { 0x0084a8, 0x985c20, 0x388040, 0x0000a0, 0x888c88 };
@@ -60,6 +61,7 @@ SonarMonitor::SonarMonitor(HUD *hud, Point point, int radius, int scale) :
 
 void SonarMonitor::draw()
 {
+    m_lamp.draw(m_hud->scenario()->sonar().isActive());
     Point point = m_hud->project(m_point);
     int radius = (m_hud->project(m_point + Point(0, m_radius)) - point).y;
     float scale = static_cast<float>(radius)/m_scale;
