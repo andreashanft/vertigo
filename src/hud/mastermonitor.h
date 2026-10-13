@@ -45,8 +45,8 @@ private:
     HUD *m_hud;
     Rect m_rect;
     Rect m_observationRect;
-    Lamp m_lamp;                // upper slot: a target, lower slot: the voxel radar (read before it)
-    VoxelRadar m_voxelRadar;    // shown while no target is locked
+    Lamp m_lamp;                // upper slot while a target is locked (read before the voxel radar)
+    VoxelRadar m_voxelRadar;
 };
 
 

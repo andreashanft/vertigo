@@ -17,12 +17,15 @@
 
 #include "voxelradar.h"
 #include "fight/scenario.h"
+#include "fight/sonar.h"
 #include "fight/boats/player.h"
 #include "fight/objects/activeobject.h"
+#include "fight/objects/building.h"
 #include "txt/desfile.h"
 
 #include <QFile>
 #include <QGLContext>
+#include <QPainter>
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
@@ -36,14 +39,17 @@ namespace hud {
 namespace {
 
 // VOX_nnn.S16: 32 rows of 256 RGB565 colours from 0x31a on, from the farthest (the water's
-// colour) to the nearest; in each row 0-63 is a ramp from dark to light and 64-66 are marker
-// colours.
+// colour) to the nearest; in each row 0-63 is a ramp from dark to light and 64 is orange.
 const int TableOffset = 0x31a;
 const int FogRows = 32;
 const int Entries = 256;
 const int LightLevels = 64;
-const int MarkerBoat = 64;
-const int MarkerContact = 65;
+const int Orange = 64;
+// the patch is drawn as a grid of quads
+const int GridSteps = 32;
+// the patch fills this part of the view's width, its centre this far down
+const float PatchWidth = 0.8f;
+const float CentreRow = 0.62f;
 
 }
 
@@ -54,10 +60,8 @@ VoxelRadar::VoxelRadar(txt::DesFile &file)
     if (!file.contains("width"))
         return;
     m_rect = Rect(file.value("StartX").toInt(), file.value("StartY").toInt(), file.value("Width").toInt(), file.value("Height").toInt());
-    m_behind = -file.value("WorldMinY", -5).toFloat();
-    m_ahead = file.value("WorldMaxY", 20).toFloat();
-    m_focal = 0.5f*m_rect.width/std::tan(glm::radians(file.value("Projection", 30).toFloat()));
-    m_horizon = file.value("FlightY", 16).toInt();
+    m_elevation = glm::radians(file.value("Projection", 30).toFloat());
+    m_extent = file.value("WorldMaxY", 20).toFloat();
 
     QFile table(QString("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString()));
     const QByteArray data = table.open(QIODevice::ReadOnly) ? table.readAll() : QByteArray();
@@ -81,71 +85,113 @@ QRgb VoxelRadar::shade(int fog, int light) const
 }
 
 
-void VoxelRadar::mark(int x, int y, QRgb color)
-{
-    for (int dy = -1; dy <= 1; dy++)
-        for (int dx = -1; dx <= 1; dx++)
-            if (x + dx >= 0 && x + dx < m_image.width() && y + dy >= 0 && y + dy < m_image.height())
-                m_image.setPixel(x + dx, y + dy, color);
-}
-
-
-// A ray per column, marching from near to far over the height map; each sample fills the
-// column from the lowest row not drawn yet up to its height, so nearer terrain hides what
-// lies behind it.
 void VoxelRadar::render(fight::Scenario *scenario)
 {
     fight::Surface &surface = scenario->surface();
-    const float cell = surface.scale().x;
     const Vector3D boat = scenario->position();
     Vector2D forward(scenario->player()->dir());
     forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : Vector2D(0, 1);
     const Vector2D right(forward.y, -forward.x);
+    const float extent = m_extent*surface.scale().x;
 
-    // the eye: behind the boat and above it, so the boat is near the bottom of the view
-    const Vector2D eye = Vector2D(boat) - forward*m_behind*cell;
-    const float eyeHeight = std::max(boat.z, surface.heightAt(eye.x, eye.y)) + 2*cell;
-    const float nearest = 0.5f*m_behind*cell;
-    const float farthest = (m_behind + m_ahead)*cell;
-    const int width = m_image.width();
-    const int height = m_image.height();
-    const Vector3D light = glm::normalize(Vector3D(-0.6f, 0.5f, 0.5f));
+    // the eye looks down at the ground under the boat from behind; in perspective, so the far
+    // edge of the patch comes out narrower than the near one
+    const float distance = 3.5f*extent;
+    const Vector3D target(boat.x, boat.y, surface.heightAt(boat.x, boat.y));
+    const Vector3D eye = target - Vector3D(forward, 0)*distance*std::cos(m_elevation) + Vector3D(0, 0, distance*std::sin(m_elevation));
+    const Vector3D viewForward = glm::normalize(target - eye);
+    const Vector3D viewRight(right, 0);
+    const Vector3D viewUp = glm::cross(viewRight, viewForward);
+    const float width = m_image.width(), height = m_image.height();
+    const float focal = PatchWidth*0.5f*width*distance/extent;
+    auto project = [&](const Vector3D &p) {
+        const Vector3D v = p - eye;
+        const float z = std::max(glm::dot(v, viewForward), 1.0f);
+        return QPointF(0.5f*width + focal*glm::dot(v, viewRight)/z, CentreRow*height - focal*glm::dot(v, viewUp)/z);
+    };
+    auto inPatch = [&](const Vector3D &p) {
+        const Vector2D way(p - boat);
+        return std::abs(glm::dot(way, right)) <= extent && std::abs(glm::dot(way, forward)) <= extent;
+    };
 
-    m_image.fill(shade(0, 0));
-    for (int x = 0; x < width; x++)
-    {
-        const Vector2D ray = forward + right*((x + 0.5f - 0.5f*width)/m_focal);
-        int lowest = height;    // rows from here down are drawn
-        for (float z = nearest; z < farthest && lowest > 0; z += 1.0f + z*0.012f)
+    m_image.fill(Qt::transparent);
+    QPainter painter(&m_image);
+    painter.setPen(Qt::NoPen);
+
+    // the terrain, from the far edge to the near one so that nearer quads cover what lies behind
+    const Vector3D light = glm::normalize(Vector3D(-0.5f, 0.4f, 0.75f));
+    const float step = 2*extent/GridSteps;
+    Vector3D points[GridSteps + 1][GridSteps + 1];
+    for (int j = 0; j <= GridSteps; j++)
+        for (int i = 0; i <= GridSteps; i++)
         {
-            const Vector2D point = eye + ray*z;
+            const Vector2D p = Vector2D(boat) + right*(i*step - extent) + forward*(j*step - extent);
+            points[j][i] = Vector3D(p, surface.heightAt(p.x, p.y));
+        }
+    for (int j = GridSteps - 1; j >= 0; j--)
+        for (int i = 0; i < GridSteps; i++)
+        {
+            const Vector3D centre = (points[j][i] + points[j + 1][i + 1])*0.5f;
             Vector3D normal;
-            const float ground = surface.heightAt(point.x, point.y, normal);
-            const int row = int(m_horizon + m_focal*(eyeHeight - ground)/z);
-            if (row >= lowest)
-                continue;
-            const int fog = FogRows - 1 - int((FogRows - 1)*(z - nearest)/(farthest - nearest));
-            const int level = glm::clamp(int(4 + 44*std::max(0.0f, glm::dot(normal, light))), 0, LightLevels - 1);
-            const QRgb color = shade(fog, level);
-            for (int y = std::max(row, 0); y < lowest; y++)
-                m_image.setPixel(x, y, color);
-            lowest = std::max(row, 0);
+            surface.heightAt(centre.x, centre.y, normal);
+            const int level = glm::clamp(int(12 + 50*std::max(0.0f, glm::dot(normal, light))), 0, LightLevels - 1);
+            // slightly darker towards the far edge
+            painter.setBrush(QColor(shade(FogRows - 1 - (j*6)/GridSteps, level)));
+            const QPointF quad[4] = { project(points[j][i]), project(points[j][i + 1]), project(points[j + 1][i + 1]), project(points[j + 1][i]) };
+            painter.drawPolygon(quad, 4);
+        }
+
+    // buildings on the patch as orange blocks (their boxes, in the patch's frame and cut off at its
+    // edges), the faces farther away first
+    const QColor orange(shade(FogRows - 1, Orange));
+    auto toPatch = [&](const Vector3D &p) { const Vector2D way(p - boat); return Vector2D(glm::dot(way, right), glm::dot(way, forward)); };
+    auto fromPatch = [&](float x, float y, float z) { return Vector3D(Vector2D(boat) + right*x + forward*y, z); };
+    for (const auto &object : *scenario)
+    {
+        const fight::Building *building = dynamic_cast<const fight::Building *>(object.get());
+        if (!building || !building->isEnabled())
+            continue;
+        const Vector3D a = building->box().minPoint(), b = building->box().maxPoint();
+        Vector2D low(1e9f), high(-1e9f);
+        for (const Vector3D &corner : { a, Vector3D(a.x, b.y, 0), Vector3D(b.x, a.y, 0), b })
+        {
+            low = glm::min(low, toPatch(corner));
+            high = glm::max(high, toPatch(corner));
+        }
+        low = glm::max(low, Vector2D(-extent));
+        high = glm::min(high, Vector2D(extent));
+        if (low.x >= high.x || low.y >= high.y)
+            continue;
+        const float z0 = a.z, z1 = b.z;
+        struct Face { Vector3D corners[4]; QColor color; float depth; };
+        Face faces[5] = {
+            { { fromPatch(low.x, low.y, z1), fromPatch(high.x, low.y, z1), fromPatch(high.x, high.y, z1), fromPatch(low.x, high.y, z1) }, orange.lighter(130), 0 },
+            { { fromPatch(low.x, low.y, z0), fromPatch(high.x, low.y, z0), fromPatch(high.x, low.y, z1), fromPatch(low.x, low.y, z1) }, orange, 0 },
+            { { fromPatch(low.x, high.y, z0), fromPatch(high.x, high.y, z0), fromPatch(high.x, high.y, z1), fromPatch(low.x, high.y, z1) }, orange, 0 },
+            { { fromPatch(low.x, low.y, z0), fromPatch(low.x, high.y, z0), fromPatch(low.x, high.y, z1), fromPatch(low.x, low.y, z1) }, orange.darker(130), 0 },
+            { { fromPatch(high.x, low.y, z0), fromPatch(high.x, high.y, z0), fromPatch(high.x, high.y, z1), fromPatch(high.x, low.y, z1) }, orange.darker(130), 0 },
+        };
+        for (Face &face : faces)
+            face.depth = glm::length((face.corners[0] + face.corners[2])*0.5f - eye);
+        std::sort(faces, faces + 5, [](const Face &x, const Face &y) { return x.depth > y.depth; });
+        for (const Face &face : faces)
+        {
+            painter.setBrush(face.color);
+            const QPointF quad[4] = { project(face.corners[0]), project(face.corners[1]), project(face.corners[2]), project(face.corners[3]) };
+            painter.drawPolygon(quad, 4);
         }
     }
 
-    // the boat and the sonar contacts, where they are in the view
-    auto project = [&](const Vector3D &position, int marker) {
-        const Vector2D way = Vector2D(position) - eye;
-        const float z = glm::dot(way, forward);
-        if (z < nearest || z > farthest)
-            return;
-        const int x = int(0.5f*width + m_focal*glm::dot(way, right)/z);
-        const int y = int(m_horizon + m_focal*(eyeHeight - position.z)/z);
-        mark(x, y, shade(FogRows - 1, marker));
-    };
+    // the sonar contacts on the patch: a line from the ground up to each
     for (const auto &entry : scenario->sonar())
-        project(entry.object->center(), MarkerContact);
-    project(boat, MarkerBoat);
+    {
+        const Vector3D position = entry.object->center();
+        if (!inPatch(position))
+            continue;
+        const bool hostile = scenario->isHostile(fight::Scenario::PlayerFaction, entry.object->iff());
+        painter.setPen(entry.isFriend ? QColor(64, 200, 64) : hostile ? QColor(232, 32, 24) : QColor(64, 96, 255));
+        painter.drawLine(project(Vector3D(position.x, position.y, surface.heightAt(position.x, position.y))), project(position));
+    }
 }
 
 

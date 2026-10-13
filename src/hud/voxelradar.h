@@ -32,13 +32,15 @@ namespace fight { class Scenario; }
 namespace hud {
 
 
-// The terrain ahead of the boat as a small perspective view inside the master monitor
-// (cockpit [VoxelRadar0]), shaded and fogged with the cockpit's shading table
-// (VFX/TEXTURE/VOX_nnn.S16), with the boat and the sonar contacts marked.
+// The terrain around the boat as a small 3D view inside the master monitor (cockpit
+// [VoxelRadar0]), as in the original: a square patch turning with the boat, seen from behind and
+// above, shaded with the cockpit's shading table (VFX/TEXTURE/VOX_nnn.S16) and with nothing
+// around it, so the monitor shows through. Buildings are orange blocks, the sonar contacts lines
+// up from the ground: red hostile, green friendly, blue neutral.
 //
-// How the original uses the settings is still to be compared: here the view looks from
-// -WorldMinY cells behind the boat to WorldMaxY cells ahead of it, Projection is half the
-// horizontal view angle in degrees and FlightY the row of the horizon.
+// How the original uses its settings is still to be compared: here Projection is the angle the
+// view looks down at and the patch reaches WorldMaxY cells to each side of the boat; WorldMinY
+// and FlightY aren't used yet.
 class VoxelRadar
 {
 public:
@@ -55,15 +57,12 @@ public:
 private:
     void render(fight::Scenario *scenario);
     QRgb shade(int fog, int light) const;
-    void mark(int x, int y, QRgb color);
 
 private:
     bool m_valid = false;
     Rect m_rect;
-    float m_behind = 5;     // cells
-    float m_ahead = 20;     // cells
-    float m_focal = 104;    // pixels
-    int m_horizon = 16;     // row
+    float m_elevation = 0.52f;  // radians the view looks down
+    float m_extent = 20;        // cells from the boat to each side of the patch
     std::vector<QRgb> m_table;  // FogRows x Entries, fog row 0 is the farthest
     QImage m_image;
     gfx::Texture m_texture;

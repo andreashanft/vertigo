@@ -108,7 +108,8 @@ void MasterMonitor::draw()
     }
 
     m_lamp.draw(target.isLocked());
-    if (!target.isLocked() && m_voxelRadar.isValid())
+    // the voxel radar below, the target's picture above it
+    if (m_voxelRadar.isValid())
     {
         const Rect &radar = m_voxelRadar.rect();
         const Point topLeft = m_hud->project(m_rect.pos() + radar.pos());
