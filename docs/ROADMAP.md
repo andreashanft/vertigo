@@ -249,6 +249,10 @@ and Succubus cockpits) after milestone 6.
 | D11 | Target lock | `u` locks the nearest enemy (HELP0-2.TXT) | Not implemented (L locks what is in the reticle, N the next nav point) |
 | D12 | Unknown marker | A red circle with a cross, apart from the locked target (shots in combat), sometimes outside the HUD frame; not one of HUDAIMH, HUDTARG, HUDTURR, HUDPOI* | – (identify first) |
 | D13 | Hits | Plasma hits light up as large blue-white flashes; explosions close by fill much of the view | Smaller hit effects (compare sizes) |
+| D14 | Armor symbol (HUDSHIE1-9, beside the sonar symbol) | A bar per side in green, white, yellow or red | Always green (found after the comparison) |
+
+D1–D11 and D14 are done (D12 and D13 remain): the radar, monitors, aim help,
+cargo-ship blocks, `u` and the armor symbol now follow the screenshots.
 
 Already alike: lock ring with name, distance, shield bars and sensor icon;
 turret brackets; heading tape; THREAT; the lamps beside the sonar monitors lit;
