@@ -68,12 +68,9 @@ private:
     Rect m_rect;
     float m_elevation = 0.52f;  // radians the view looks down
     float m_extent = 20;        // cells from the boat to each side of the patch
-    // following the boat smoothly: the heights the shades span, the heading and the ground level
-    // the view is centred on
-    float m_lowest = 1, m_highest = 0;
-    Vector2D m_heading = Vector2D(0);
-    float m_ground = 0;
+    float m_lowest = 1, m_highest = 0;  // the heights the shades span, following the patch
     float m_time = 0;
+    std::vector<float> m_depth;         // per pixel
     std::vector<QRgb> m_table;  // FogRows x Entries, fog row 0 is the farthest
     QImage m_image;
     gfx::Texture m_texture;
