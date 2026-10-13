@@ -132,6 +132,11 @@ void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObje
             side = right > 0 ? 2 : 1;
     }
     m_shield[side] -= kinetic;
+    if (kinetic > 0)
+    {
+        m_lastHit = m_scenario->time();
+        sfx::SampleMap::get(sfx::Sample::Alert).play();
+    }
     if (m_shield[side] < 0)
         destroy();
 }

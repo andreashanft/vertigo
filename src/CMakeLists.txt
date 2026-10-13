@@ -170,6 +170,8 @@ set(SOURCES
     hud/shield.cpp
     hud/shield.h
     hud/activesonar.cpp
+    hud/alert.cpp
+    hud/alert.h
     hud/activesonar.h
     hud/master.cpp
     hud/master.h

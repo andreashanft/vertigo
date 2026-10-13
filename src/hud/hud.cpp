@@ -46,6 +46,7 @@
 #include "debugoverlay.h"
 #include "missionmenu.h"
 #include "pause.h"
+#include "alert.h"
 #include "sfx/soundsystem.h"
 #include "txt/stringtable.h"
 
@@ -116,6 +117,10 @@ void HUD::load(game::Boat *boat)
     file.setSection("radiomessage");
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
+
+    file.setSection("hudalertblock");
+    Alert *alert = new Alert(this, readRect(file));
+    m_children.emplace_back(alert);
 
     file.setSection("hudpauseblock");
     Pause *pause = new Pause(this, readRect(file));

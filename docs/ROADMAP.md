@@ -130,7 +130,7 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 | Voxel radar | 120×100 terrain view ahead of the boat, inside the master monitor | M | – |
 | Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages | M | Full rows need 1.8 |
 | Icons | Current, radiation (probably shallow depth; unverified), locked | S each | Phase 2, 1.8 |
-| Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice | S | 1.4, 1.8 |
+| Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice (**ALERT done**: blinks for 3 s after a hit, with the alert beep; THREAT needs 1.8) | S | 1.4, 1.8 |
 | Friendly fire | Escalating radio warnings; the third friendly kill fails the mission | M | 1.4, 1.5 |
 | Torpedo lock + countdown | Lock ring, countdown from the torpedo's lock time, beep and "torpedo ready" voice | S | 1.8 |
 | Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets | L | 1.4, 1.8 |
