@@ -217,25 +217,13 @@ void VoxelRadar::render(fight::Scenario *scenario)
         for (size_t k = 1; k + 1 < screen.size(); k++)
             fillTriangle(screen[0], screen[k], screen[k + 1], colour);
     };
-    // a line from the ground up to a position on the patch, hidden where something nearer is
+    // lines from the ground up to positions on the patch; drawn at the end, at the radar's own
+    // resolution so they stay crisp, and hidden where something nearer is
+    struct Line { Vector3D foot, top; QRgb colour; };
+    std::vector<Line> lines;
     auto drawLine = [&](const Vector3D &position, QRgb colour) {
-        if (!inPatch(position))
-            return;
-        const Vector3D a = project(Vector3D(position.x, position.y, ground(position.x, position.y))), b = project(position);
-        // one pixel of the radar wide
-        const int steps = int(std::max(std::abs(b.x - a.x), std::abs(b.y - a.y))) + 1;
-        for (int k = 0; k <= steps; k++)
-        {
-            const Vector3D p = a + (b - a)*(float(k)/steps);
-            for (int dy = 0; dy < SuperSample; dy++)
-                for (int dx = 0; dx < SuperSample; dx++)
-                {
-                    const int x = int(std::floor(p.x - 0.5f*SuperSample)) + dx + 1, y = int(std::floor(p.y)) + dy - SuperSample/2;
-                    if (x < 0 || x >= width || y < 0 || y >= height || p.z > m_depth[y*width + x] + 0.5f*step)
-                        continue;
-                    reinterpret_cast<QRgb *>(m_fine.scanLine(y))[x] = colour;
-                }
-        }
+        if (inPatch(position))
+            lines.push_back({ project(Vector3D(position.x, position.y, ground(position.x, position.y))), project(position), colour });
     };
 
     // the terrain cells, cut at the patch's edges
@@ -369,6 +357,23 @@ void VoxelRadar::render(fight::Scenario *scenario)
                 }
             }
             out[x] = a > 0 ? qRgba(r/a, g/a, b/a, a/(SuperSample*SuperSample)) : 0;
+        }
+    }
+
+    for (const Line &line : lines)
+    {
+        const Vector3D a = line.foot/float(SuperSample), b = line.top/float(SuperSample);
+        const int steps = int(std::max(std::abs(b.x - a.x), std::abs(b.y - a.y))) + 1;
+        for (int k = 0; k <= steps; k++)
+        {
+            const Vector3D p = line.foot + (line.top - line.foot)*(float(k)/steps);
+            const int x = int(std::floor(p.x/SuperSample)), y = int(std::floor(p.y/SuperSample));
+            if (x < 0 || x >= m_image.width() || y < 0 || y >= m_image.height())
+                continue;
+            // the depth in the middle of the radar pixel
+            if (p.z > m_depth[(y*SuperSample + SuperSample/2)*width + x*SuperSample + SuperSample/2] + 0.5f*step)
+                continue;
+            reinterpret_cast<QRgb *>(m_image.scanLine(y))[x] = line.colour;
         }
     }
 }
