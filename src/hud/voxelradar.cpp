@@ -153,16 +153,21 @@ void VoxelRadar::render(fight::Scenario *scenario)
         const float z = std::max(glm::dot(v, viewForward), 1.0f);
         return Vector3D(glm::dot(v, viewRight)/z, glm::dot(v, viewUp)/z, z);
     };
+    // (worked out in the view's own frame, so the fit is exactly the same from frame to frame:
+    // the boat, at the view's centre, then stays in the middle of the same radar pixel and its
+    // line doesn't flicker between two columns)
     Vector2D low(1e9f), high(-1e9f);
     for (const float x : { -extent, extent })
         for (const float y : { -extent, extent })
         {
-            const Vector2D v(view(target + Vector3D(right*x + forward*y, 0)));
+            const float depth = distance + y*std::cos(m_elevation);
+            const Vector2D v(x/depth, y*std::sin(m_elevation)/depth);
             low = glm::min(low, v);
             high = glm::max(high, v);
         }
     const float focal = std::min(PatchWidth*width/(high.x - low.x), PatchHeight*height/(high.y - low.y));
-    const Vector2D centre(0.5f*width - focal*0.5f*(low.x + high.x), height - 1 + focal*low.y);
+    auto pixelMiddle = [](float x) { return (std::floor(x/SuperSample) + 0.5f)*SuperSample; };
+    const Vector2D centre(pixelMiddle(0.5f*width - focal*0.5f*(low.x + high.x)), pixelMiddle(height - 1 + focal*low.y));
     // screen x, y and the depth
     auto project = [&](const Vector3D &p) {
         const Vector3D v = view(p);
@@ -370,8 +375,9 @@ void VoxelRadar::render(fight::Scenario *scenario)
             const int x = int(std::floor(p.x/SuperSample)), y = int(std::floor(p.y/SuperSample));
             if (x < 0 || x >= m_image.width() || y < 0 || y >= m_image.height())
                 continue;
-            // the depth in the middle of the radar pixel
-            if (p.z > m_depth[(y*SuperSample + SuperSample/2)*width + x*SuperSample + SuperSample/2] + 0.5f*step)
+            // the depth of what is drawn right where the line passes
+            const int fx = glm::clamp(int(p.x), 0, width - 1), fy = glm::clamp(int(p.y), 0, height - 1);
+            if (p.z > m_depth[fy*width + fx] + 0.5f*step)
                 continue;
             reinterpret_cast<QRgb *>(m_image.scanLine(y))[x] = line.colour;
         }
