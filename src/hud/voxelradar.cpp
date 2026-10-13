@@ -30,6 +30,7 @@
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
+#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -48,6 +49,7 @@ const int LightLevels = 64;
 const int Orange = 64;
 // the patch is drawn with the height map's cells at this size (patch widths)
 const int GridSteps = 32;
+const int HeadingSteps = 128;
 // the patch at the boat's ground level fills at most this part of the view
 const float PatchWidth = 0.9f;
 const float PatchHeight = 0.9f;
@@ -105,11 +107,17 @@ void VoxelRadar::render(fight::Scenario *scenario)
     const Vector3D boat = scenario->position();
     const float extent = m_extent*surface.scale().x;
     const float step = 2*extent/GridSteps;
-    Vector2D forward(scenario->player()->dir());
-    forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : Vector2D(0, 1);
+    // The view moves in steps, so the ground is drawn the same way frame after frame and doesn't
+    // flicker against the boat's line, which moves smoothly within it: its centre snaps to the
+    // height map's grid and its heading to one of HeadingSteps directions.
+    const Vector2D dir(scenario->player()->dir());
+    const float heading = glm::length(dir) > 1e-3f ? std::atan2(dir.x, dir.y) : 0.0f;
+    const float snapped = std::round(heading/glm::two_pi<float>()*HeadingSteps)*glm::two_pi<float>()/HeadingSteps;
+    const Vector2D forward(std::sin(snapped), std::cos(snapped));
     const Vector2D right(forward.y, -forward.x);
-    auto toPatch = [&](const Vector3D &p) { const Vector2D way(p - boat); return Vector2D(glm::dot(way, right), glm::dot(way, forward)); };
-    auto fromPatch = [&](float x, float y, float z) { return Vector3D(Vector2D(boat) + right*x + forward*y, z); };
+    const Vector2D middle(std::round(boat.x/step)*step, std::round(boat.y/step)*step);
+    auto toPatch = [&](const Vector3D &p) { const Vector2D way = Vector2D(p) - middle; return Vector2D(glm::dot(way, right), glm::dot(way, forward)); };
+    auto fromPatch = [&](float x, float y, float z) { return Vector3D(middle + right*x + forward*y, z); };
     auto inPatch = [&](const Vector3D &p) {
         const Vector2D local = toPatch(p);
         return std::abs(local.x) <= extent && std::abs(local.y) <= extent;
@@ -117,7 +125,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
 
     // the height map's own grid (so the shading stays with the ground as the boat moves); lines
     // stand on it, so they meet the terrain as drawn
-    const int first[2] = { int(std::floor((boat.x - 1.5f*extent)/step)), int(std::floor((boat.y - 1.5f*extent)/step)) };
+    const int first[2] = { int(std::floor((middle.x - 1.5f*extent)/step)), int(std::floor((middle.y - 1.5f*extent)/step)) };
     const int count = int(3*extent/step) + 2;
     std::vector<float> heights(count*count);
     for (int j = 0; j < count; j++)
@@ -133,7 +141,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
     // the eye looks down at the ground under the boat from behind; in perspective, so the far
     // edge of the patch comes out narrower than the near one
     const float distance = 3.5f*extent;
-    const Vector3D target(boat.x, boat.y, ground(boat.x, boat.y));
+    const Vector3D target(middle, ground(middle.x, middle.y));
     const Vector3D eye = target - Vector3D(forward, 0)*distance*std::cos(m_elevation) + Vector3D(0, 0, distance*std::sin(m_elevation));
     const Vector3D viewForward = glm::normalize(target - eye);
     const Vector3D viewRight(right, 0);
