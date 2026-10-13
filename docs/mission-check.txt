@@ -1,0 +1,3558 @@
+s00101: 49 objects
+  20x unread key: movable#/ai
+  4x unread key: movable#/card
+  24x unread key: movable#/diff
+  20x unread key: movable#/eint
+  20x unread key: movable#/eng
+  20x unread key: movable#/gun
+  24x unread key: movable#/inte
+  20x unread key: movable#/ntor
+  384x unread key: movable#/o#bccond#
+  192x unread key: movable#/o#bcdel
+  384x unread key: movable#/o#bcdep#
+  192x unread key: movable#/o#bcop
+  384x unread key: movable#/o#bcref#
+  10x unread key: movable#/o#car
+  25x unread key: movable#/o#dur
+  4x unread key: movable#/o#ene
+  2x unread key: movable#/o#hei
+  11x unread key: movable#/o#mah
+  11x unread key: movable#/o#mih
+  17x unread key: movable#/o#rad
+  13x unread key: movable#/o#refx
+  13x unread key: movable#/o#refy
+  192x unread key: movable#/o#typ
+  13x unread key: movable#/o#vel
+  22x unread key: movable#/pz
+  29x unread key: movable#/sle
+  20x unread key: movable#/tor
+  1x unread section: cd
+s00102: 54 objects
+  22x unread key: movable#/ai
+  4x unread key: movable#/card
+  26x unread key: movable#/diff
+  22x unread key: movable#/eint
+  22x unread key: movable#/eng
+  22x unread key: movable#/gun
+  26x unread key: movable#/inte
+  22x unread key: movable#/ntor
+  416x unread key: movable#/o#bccond#
+  208x unread key: movable#/o#bcdel
+  416x unread key: movable#/o#bcdep#
+  208x unread key: movable#/o#bcop
+  416x unread key: movable#/o#bcref#
+  9x unread key: movable#/o#car
+  35x unread key: movable#/o#dur
+  3x unread key: movable#/o#ene
+  7x unread key: movable#/o#hei
+  18x unread key: movable#/o#mah
+  18x unread key: movable#/o#mih
+  27x unread key: movable#/o#rad
+  25x unread key: movable#/o#refx
+  25x unread key: movable#/o#refy
+  208x unread key: movable#/o#typ
+  25x unread key: movable#/o#vel
+  23x unread key: movable#/pz
+  26x unread key: movable#/sle
+  22x unread key: movable#/tor
+  1x unread section: cd
+s00103: 28 objects
+  9x unread key: movable#/ai
+  2x unread key: movable#/card
+  11x unread key: movable#/diff
+  9x unread key: movable#/eint
+  9x unread key: movable#/eng
+  9x unread key: movable#/gun
+  11x unread key: movable#/inte
+  9x unread key: movable#/ntor
+  176x unread key: movable#/o#bccond#
+  88x unread key: movable#/o#bcdel
+  176x unread key: movable#/o#bcdep#
+  88x unread key: movable#/o#bcop
+  176x unread key: movable#/o#bcref#
+  6x unread key: movable#/o#car
+  17x unread key: movable#/o#dur
+  2x unread key: movable#/o#hei
+  3x unread key: movable#/o#mah
+  3x unread key: movable#/o#mih
+  9x unread key: movable#/o#rad
+  5x unread key: movable#/o#refx
+  5x unread key: movable#/o#refy
+  88x unread key: movable#/o#typ
+  5x unread key: movable#/o#vel
+  17x unread key: movable#/pz
+  11x unread key: movable#/sle
+  9x unread key: movable#/tor
+  1x unread section: cd
+s00104: 42 objects
+  2x condition: Undefined object 2077
+  1x condition: Undefined object 2079
+  1x skipped movable: typ 2051 dtyp 3
+  1x skipped movable: typ 2063 dtyp 72
+  20x unread key: movable#/ai
+  2x unread key: movable#/card
+  22x unread key: movable#/diff
+  20x unread key: movable#/eint
+  20x unread key: movable#/eng
+  20x unread key: movable#/gun
+  22x unread key: movable#/inte
+  20x unread key: movable#/ntor
+  352x unread key: movable#/o#bccond#
+  176x unread key: movable#/o#bcdel
+  352x unread key: movable#/o#bcdep#
+  176x unread key: movable#/o#bcop
+  352x unread key: movable#/o#bcref#
+  6x unread key: movable#/o#car
+  39x unread key: movable#/o#dur
+  4x unread key: movable#/o#ene
+  16x unread key: movable#/o#hei
+  16x unread key: movable#/o#mah
+  16x unread key: movable#/o#mih
+  22x unread key: movable#/o#rad
+  32x unread key: movable#/o#refx
+  32x unread key: movable#/o#refy
+  176x unread key: movable#/o#typ
+  32x unread key: movable#/o#vel
+  18x unread key: movable#/pz
+  22x unread key: movable#/sle
+  20x unread key: movable#/tor
+  1x unread section: cd
+s00105: 1 objects
+  1x unread key: movable#/ai
+  1x unread key: movable#/diff
+  1x unread key: movable#/eint
+  1x unread key: movable#/eng
+  1x unread key: movable#/gun
+  1x unread key: movable#/inte
+  1x unread key: movable#/ntor
+  16x unread key: movable#/o#bccond#
+  8x unread key: movable#/o#bcdel
+  16x unread key: movable#/o#bcdep#
+  8x unread key: movable#/o#bcop
+  16x unread key: movable#/o#bcref#
+  1x unread key: movable#/o#dur
+  1x unread key: movable#/o#ene
+  1x unread key: movable#/o#mah
+  1x unread key: movable#/o#mih
+  1x unread key: movable#/o#rad
+  1x unread key: movable#/o#refx
+  1x unread key: movable#/o#refy
+  8x unread key: movable#/o#typ
+  1x unread key: movable#/o#vel
+  1x unread key: movable#/sle
+  1x unread key: movable#/tor
+  1x unread section: cd
+s00106: 27 objects
+  8x unread key: movable#/ai
+  2x unread key: movable#/card
+  10x unread key: movable#/diff
+  8x unread key: movable#/eint
+  8x unread key: movable#/eng
+  8x unread key: movable#/gun
+  10x unread key: movable#/inte
+  8x unread key: movable#/ntor
+  160x unread key: movable#/o#bccond#
+  80x unread key: movable#/o#bcdel
+  160x unread key: movable#/o#bcdep#
+  80x unread key: movable#/o#bcop
+  160x unread key: movable#/o#bcref#
+  8x unread key: movable#/o#car
+  16x unread key: movable#/o#dur
+  2x unread key: movable#/o#ene
+  2x unread key: movable#/o#mah
+  2x unread key: movable#/o#mih
+  6x unread key: movable#/o#rad
+  2x unread key: movable#/o#refx
+  2x unread key: movable#/o#refy
+  80x unread key: movable#/o#typ
+  2x unread key: movable#/o#vel
+  17x unread key: movable#/pz
+  10x unread key: movable#/sle
+  8x unread key: movable#/tor
+  1x unread section: cd
+s00201: 31 objects
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  4x skipped movable: typ 2051 dtyp 2
+  12x unread key: movable#/ai
+  26x unread key: movable#/diff
+  14x unread key: movable#/dis
+  12x unread key: movable#/eint
+  12x unread key: movable#/eng
+  12x unread key: movable#/gun
+  12x unread key: movable#/inte
+  12x unread key: movable#/ntor
+  14x unread key: movable#/num
+  192x unread key: movable#/o#bccond#
+  96x unread key: movable#/o#bcdel
+  192x unread key: movable#/o#bcdep#
+  96x unread key: movable#/o#bcop
+  192x unread key: movable#/o#bcref#
+  7x unread key: movable#/o#car
+  19x unread key: movable#/o#dur
+  10x unread key: movable#/o#ene
+  2x unread key: movable#/o#hei
+  12x unread key: movable#/o#mah
+  12x unread key: movable#/o#mih
+  15x unread key: movable#/o#rad
+  14x unread key: movable#/o#refx
+  14x unread key: movable#/o#refy
+  96x unread key: movable#/o#typ
+  14x unread key: movable#/o#vel
+  4x unread key: movable#/pz
+  26x unread key: movable#/sle
+  12x unread key: movable#/tor
+  1x unread section: cd
+s00202: 101 objects
+  1x condition: Objective not found 11
+  4x condition: Undefined object 2077
+  4x condition: Undefined object 2110
+  1x condition: Undefined object 2129
+  3x skipped movable: typ 2062 dtyp 52
+  19x unread key: movable#/ai
+  1x unread key: movable#/card
+  20x unread key: movable#/diff
+  19x unread key: movable#/eint
+  19x unread key: movable#/eng
+  19x unread key: movable#/gun
+  20x unread key: movable#/inte
+  19x unread key: movable#/ntor
+  320x unread key: movable#/o#bccond#
+  160x unread key: movable#/o#bcdel
+  320x unread key: movable#/o#bcdep#
+  160x unread key: movable#/o#bcop
+  320x unread key: movable#/o#bcref#
+  1x unread key: movable#/o#con
+  26x unread key: movable#/o#dur
+  23x unread key: movable#/o#ene
+  25x unread key: movable#/o#mah
+  25x unread key: movable#/o#mih
+  24x unread key: movable#/o#rad
+  24x unread key: movable#/o#refx
+  24x unread key: movable#/o#refy
+  160x unread key: movable#/o#typ
+  25x unread key: movable#/o#vel
+  79x unread key: movable#/pz
+  20x unread key: movable#/sle
+  19x unread key: movable#/tor
+  1x unread section: cd
+  63x unread section: current#
+s00203: 81 objects
+  1x condition: Undefined object 2128
+  1x condition: Undefined object 2129
+  2x skipped movable: typ 2051 dtyp 65
+  10x unread key: movable#/ai
+  75x unread key: movable#/diff
+  65x unread key: movable#/dis
+  10x unread key: movable#/eint
+  10x unread key: movable#/eng
+  10x unread key: movable#/gun
+  10x unread key: movable#/inte
+  10x unread key: movable#/ntor
+  65x unread key: movable#/num
+  160x unread key: movable#/o#bccond#
+  80x unread key: movable#/o#bcdel
+  160x unread key: movable#/o#bcdep#
+  80x unread key: movable#/o#bcop
+  160x unread key: movable#/o#bcref#
+  16x unread key: movable#/o#dur
+  14x unread key: movable#/o#ene
+  16x unread key: movable#/o#mah
+  16x unread key: movable#/o#mih
+  16x unread key: movable#/o#rad
+  16x unread key: movable#/o#refx
+  16x unread key: movable#/o#refy
+  80x unread key: movable#/o#typ
+  16x unread key: movable#/o#vel
+  4x unread key: movable#/pz
+  75x unread key: movable#/sle
+  10x unread key: movable#/tor
+  1x unread section: cd
+s00204: 21 objects
+  11x unread key: movable#/ai
+  11x unread key: movable#/diff
+  11x unread key: movable#/eint
+  11x unread key: movable#/eng
+  11x unread key: movable#/gun
+  11x unread key: movable#/inte
+  11x unread key: movable#/ntor
+  176x unread key: movable#/o#bccond#
+  88x unread key: movable#/o#bcdel
+  176x unread key: movable#/o#bcdep#
+  88x unread key: movable#/o#bcop
+  176x unread key: movable#/o#bcref#
+  6x unread key: movable#/o#car
+  15x unread key: movable#/o#dur
+  4x unread key: movable#/o#ene
+  7x unread key: movable#/o#hei
+  5x unread key: movable#/o#mah
+  5x unread key: movable#/o#mih
+  11x unread key: movable#/o#rad
+  12x unread key: movable#/o#refx
+  12x unread key: movable#/o#refy
+  88x unread key: movable#/o#typ
+  12x unread key: movable#/o#vel
+  9x unread key: movable#/pz
+  11x unread key: movable#/sle
+  11x unread key: movable#/tor
+  1x unread section: cd
+  55x unread section: current#
+s00205: 11 objects
+  1x condition: Condition reference not found 0
+  1x condition: Objective not found 26
+  1x condition: Undefined object 0
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  2x condition: Undefined object 2059
+  1x condition: Unhandled condition dep 39 2
+  1x skipped movable: typ 2051 dtyp 2
+  2x skipped movable: typ 2062 dtyp 45
+  6x unread key: movable#/ai
+  6x unread key: movable#/diff
+  6x unread key: movable#/eint
+  6x unread key: movable#/eng
+  6x unread key: movable#/gun
+  6x unread key: movable#/inte
+  6x unread key: movable#/ntor
+  96x unread key: movable#/o#bccond#
+  48x unread key: movable#/o#bcdel
+  96x unread key: movable#/o#bcdep#
+  48x unread key: movable#/o#bcop
+  96x unread key: movable#/o#bcref#
+  9x unread key: movable#/o#dur
+  6x unread key: movable#/o#ene
+  6x unread key: movable#/o#mah
+  6x unread key: movable#/o#mih
+  6x unread key: movable#/o#rad
+  6x unread key: movable#/o#refx
+  6x unread key: movable#/o#refy
+  48x unread key: movable#/o#typ
+  6x unread key: movable#/o#vel
+  5x unread key: movable#/pz
+  6x unread key: movable#/sle
+  6x unread key: movable#/tor
+  1x unread section: cd
+s00301: 60 objects
+  1x condition: Condition reference not found 1
+  4x condition: Undefined object 1
+  1x condition: Undefined object 2053
+  4x condition: Undefined object 2065
+  4x condition: Undefined object 2066
+  4x condition: Undefined object 2067
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2092
+  4x condition: Undefined object 2099
+  4x condition: Undefined object 2100
+  4x condition: Undefined object 2101
+  4x condition: Undefined object 2102
+  4x condition: Undefined object 2103
+  4x condition: Unhandled condition dep 2 2
+  1x skipped movable: typ 2051 dtyp 2
+  2x skipped movable: typ 2051 dtyp 4
+  9x skipped movable: typ 2062 dtyp 46
+  34x unread key: movable#/ai
+  2x unread key: movable#/card
+  52x unread key: movable#/diff
+  16x unread key: movable#/dis
+  34x unread key: movable#/eint
+  34x unread key: movable#/eng
+  34x unread key: movable#/gun
+  36x unread key: movable#/inte
+  34x unread key: movable#/ntor
+  16x unread key: movable#/num
+  576x unread key: movable#/o#bccond#
+  288x unread key: movable#/o#bcdel
+  576x unread key: movable#/o#bcdep#
+  288x unread key: movable#/o#bcop
+  576x unread key: movable#/o#bcref#
+  60x unread key: movable#/o#dur
+  24x unread key: movable#/o#ene
+  57x unread key: movable#/o#mah
+  57x unread key: movable#/o#mih
+  57x unread key: movable#/o#rad
+  57x unread key: movable#/o#refx
+  57x unread key: movable#/o#refy
+  288x unread key: movable#/o#typ
+  57x unread key: movable#/o#vel
+  6x unread key: movable#/pz
+  54x unread key: movable#/sle
+  34x unread key: movable#/tor
+  1x unread section: cd
+s00302: 8 objects
+  2x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  2x skipped movable: typ 2051 dtyp 3
+  7x unread key: movable#/ai
+  7x unread key: movable#/diff
+  7x unread key: movable#/eint
+  7x unread key: movable#/eng
+  7x unread key: movable#/gun
+  7x unread key: movable#/inte
+  7x unread key: movable#/ntor
+  112x unread key: movable#/o#bccond#
+  56x unread key: movable#/o#bcdel
+  112x unread key: movable#/o#bcdep#
+  56x unread key: movable#/o#bcop
+  112x unread key: movable#/o#bcref#
+  5x unread key: movable#/o#car
+  19x unread key: movable#/o#dur
+  14x unread key: movable#/o#ene
+  1x unread key: movable#/o#hei
+  17x unread key: movable#/o#mah
+  17x unread key: movable#/o#mih
+  12x unread key: movable#/o#rad
+  18x unread key: movable#/o#refx
+  18x unread key: movable#/o#refy
+  56x unread key: movable#/o#typ
+  18x unread key: movable#/o#vel
+  7x unread key: movable#/sle
+  7x unread key: movable#/tor
+  1x unread section: cd
+s00303: 15 objects
+  1x condition: Unachievable objective 2051 1
+  9x unread key: movable#/ai
+  9x unread key: movable#/diff
+  9x unread key: movable#/eint
+  9x unread key: movable#/eng
+  9x unread key: movable#/gun
+  9x unread key: movable#/inte
+  9x unread key: movable#/ntor
+  144x unread key: movable#/o#bccond#
+  72x unread key: movable#/o#bcdel
+  144x unread key: movable#/o#bcdep#
+  72x unread key: movable#/o#bcop
+  144x unread key: movable#/o#bcref#
+  9x unread key: movable#/o#dur
+  5x unread key: movable#/o#ene
+  10x unread key: movable#/o#hei
+  7x unread key: movable#/o#mah
+  7x unread key: movable#/o#mih
+  7x unread key: movable#/o#rad
+  17x unread key: movable#/o#refx
+  17x unread key: movable#/o#refy
+  72x unread key: movable#/o#typ
+  17x unread key: movable#/o#vel
+  5x unread key: movable#/pz
+  9x unread key: movable#/sle
+  9x unread key: movable#/tor
+  1x unread section: cd
+  71x unread section: current#
+s00304: 5 objects
+  3x condition: Undefined object 2048
+  1x skipped movable: typ 2063 dtyp 72
+  5x unread key: movable#/ai
+  5x unread key: movable#/diff
+  5x unread key: movable#/eint
+  5x unread key: movable#/eng
+  5x unread key: movable#/gun
+  5x unread key: movable#/inte
+  5x unread key: movable#/ntor
+  80x unread key: movable#/o#bccond#
+  40x unread key: movable#/o#bcdel
+  80x unread key: movable#/o#bcdep#
+  40x unread key: movable#/o#bcop
+  80x unread key: movable#/o#bcref#
+  10x unread key: movable#/o#dur
+  7x unread key: movable#/o#ene
+  10x unread key: movable#/o#mah
+  10x unread key: movable#/o#mih
+  10x unread key: movable#/o#rad
+  10x unread key: movable#/o#refx
+  10x unread key: movable#/o#refy
+  40x unread key: movable#/o#typ
+  10x unread key: movable#/o#vel
+  10x unread key: movable#/sle
+  5x unread key: movable#/tor
+  1x unread section: cd
+s00401: 165 objects
+  1x condition: Undefined object 2063
+  1x condition: Undefined object 2064
+  1x condition: Undefined object 2065
+  1x condition: Undefined object 2066
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2068
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2075
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2235
+  1x condition: Undefined object 2236
+  1x condition: Undefined object 2237
+  1x condition: Undefined object 2238
+  1x condition: Undefined object 2239
+  1x condition: Undefined object 2240
+  1x condition: Undefined object 2241
+  1x condition: Undefined object 2242
+  1x condition: Undefined object 2243
+  1x condition: Undefined object 2244
+  1x condition: Undefined object 2245
+  1x condition: Undefined object 2246
+  2x skipped movable: typ 2049 dtyp 11
+  13x skipped movable: typ 2049 dtyp 13
+  1x skipped movable: typ 2050 dtyp 42
+  2x skipped movable: typ 2051 dtyp 65
+  12x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 68
+  15x unread key: movable#/ai
+  2x unread key: movable#/card
+  150x unread key: movable#/diff
+  133x unread key: movable#/dis
+  15x unread key: movable#/eint
+  15x unread key: movable#/eng
+  15x unread key: movable#/gun
+  17x unread key: movable#/inte
+  15x unread key: movable#/ntor
+  133x unread key: movable#/num
+  272x unread key: movable#/o#bccond#
+  136x unread key: movable#/o#bcdel
+  272x unread key: movable#/o#bcdep#
+  136x unread key: movable#/o#bcop
+  272x unread key: movable#/o#bcref#
+  15x unread key: movable#/o#car
+  25x unread key: movable#/o#dur
+  15x unread key: movable#/o#rad
+  136x unread key: movable#/o#typ
+  14x unread key: movable#/pz
+  150x unread key: movable#/sle
+  15x unread key: movable#/tor
+  1x unread section: cd
+  13x unread section: current#
+s00402: 33 objects
+  1x condition: Abnormal condition 5120
+  1x condition: Condition reference not found 1
+  1x condition: Undefined object 1
+  1x condition: Undefined object 2061
+  2x condition: Undefined object 2064
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2084
+  3x condition: Undefined object 2086
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  2x condition: Undefined object 2091
+  2x condition: Undefined object 2092
+  1x condition: Undefined object 2093
+  1x condition: Unhandled condition dep 39 2
+  7x skipped movable: typ 2049 dtyp 11
+  1x skipped movable: typ 2049 dtyp 13
+  3x skipped movable: typ 2052 dtyp 6
+  4x unread key: movable#/ai
+  4x unread key: movable#/diff
+  4x unread key: movable#/eint
+  4x unread key: movable#/eng
+  4x unread key: movable#/gun
+  4x unread key: movable#/inte
+  4x unread key: movable#/ntor
+  64x unread key: movable#/o#bccond#
+  32x unread key: movable#/o#bcdel
+  64x unread key: movable#/o#bcdep#
+  32x unread key: movable#/o#bcop
+  64x unread key: movable#/o#bcref#
+  2x unread key: movable#/o#car
+  9x unread key: movable#/o#dur
+  9x unread key: movable#/o#hei
+  2x unread key: movable#/o#rad
+  9x unread key: movable#/o#refx
+  9x unread key: movable#/o#refy
+  32x unread key: movable#/o#typ
+  9x unread key: movable#/o#vel
+  28x unread key: movable#/pz
+  4x unread key: movable#/sle
+  4x unread key: movable#/tor
+  1x unread section: cd
+s00403: 17 objects
+  1x condition: Objective not found 10
+  1x condition: Objective not found 11
+  3x condition: Objective not found 6
+  1x condition: Objective not found 8
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2050
+  1x condition: Undefined object 2051
+  1x condition: Undefined object 2052
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2054
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2075
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2085
+  8x skipped movable: typ 2049 dtyp 11
+  6x skipped movable: typ 2049 dtyp 13
+  1x skipped movable: typ 2051 dtyp 2
+  2x skipped movable: typ 2051 dtyp 3
+  5x skipped movable: typ 2062 dtyp 46
+  2x unread key: movable#/ai
+  2x unread key: movable#/diff
+  2x unread key: movable#/eint
+  2x unread key: movable#/eng
+  2x unread key: movable#/gun
+  2x unread key: movable#/inte
+  2x unread key: movable#/ntor
+  32x unread key: movable#/o#bccond#
+  16x unread key: movable#/o#bcdel
+  32x unread key: movable#/o#bcdep#
+  16x unread key: movable#/o#bcop
+  32x unread key: movable#/o#bcref#
+  3x unread key: movable#/o#dur
+  3x unread key: movable#/o#mah
+  3x unread key: movable#/o#mih
+  3x unread key: movable#/o#rad
+  3x unread key: movable#/o#refx
+  3x unread key: movable#/o#refy
+  16x unread key: movable#/o#typ
+  3x unread key: movable#/o#vel
+  14x unread key: movable#/pz
+  2x unread key: movable#/sle
+  2x unread key: movable#/tor
+  1x unread section: cd
+s00404: 28 objects
+  1x condition: Objective not found 14
+  1x condition: Objective not found 22
+  1x condition: Objective not found 6
+  4x condition: Objective not found 8
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2054
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2065
+  1x condition: Undefined object 2066
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2077
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2094
+  1x condition: Undefined object 2095
+  1x condition: Undefined object 2096
+  1x condition: Undefined object 2097
+  1x condition: Undefined object 2098
+  1x condition: Undefined object 2099
+  1x condition: Undefined object 2100
+  3x condition: Undefined object 2101
+  1x condition: Undefined object 2102
+  1x condition: Undefined object 2104
+  1x condition: Undefined object 2105
+  1x condition: Undefined object 2106
+  1x condition: Undefined object 2107
+  8x skipped movable: typ 2049 dtyp 11
+  9x skipped movable: typ 2049 dtyp 13
+  1x skipped movable: typ 2050 dtyp 42
+  5x skipped movable: typ 2051 dtyp 3
+  3x skipped movable: typ 2052 dtyp 6
+  3x skipped movable: typ 2062 dtyp 49
+  7x unread key: movable#/ai
+  1x unread key: movable#/card
+  8x unread key: movable#/diff
+  7x unread key: movable#/eint
+  7x unread key: movable#/eng
+  7x unread key: movable#/gun
+  8x unread key: movable#/inte
+  7x unread key: movable#/ntor
+  128x unread key: movable#/o#bccond#
+  64x unread key: movable#/o#bcdel
+  128x unread key: movable#/o#bcdep#
+  64x unread key: movable#/o#bcop
+  128x unread key: movable#/o#bcref#
+  4x unread key: movable#/o#car
+  19x unread key: movable#/o#dur
+  1x unread key: movable#/o#ene
+  9x unread key: movable#/o#hei
+  3x unread key: movable#/o#mah
+  3x unread key: movable#/o#mih
+  7x unread key: movable#/o#rad
+  12x unread key: movable#/o#refx
+  12x unread key: movable#/o#refy
+  64x unread key: movable#/o#typ
+  12x unread key: movable#/o#vel
+  17x unread key: movable#/pz
+  8x unread key: movable#/sle
+  7x unread key: movable#/tor
+  1x unread section: cd
+s00405: 153 objects
+  6x condition: Objective not found 22
+  1x condition: Undefined object 2159
+  1x condition: Undefined object 2160
+  1x condition: Undefined object 2163
+  1x condition: Undefined object 2166
+  1x condition: Undefined object 2167
+  1x condition: Undefined object 2175
+  1x condition: Undefined object 2176
+  1x condition: Undefined object 2177
+  1x condition: Undefined object 2178
+  1x condition: Undefined object 2179
+  1x condition: Undefined object 2180
+  1x condition: Undefined object 2216
+  1x condition: Undefined object 2217
+  1x condition: Undefined object 2218
+  1x condition: Undefined object 2242
+  1x condition: Undefined object 2246
+  1x condition: Undefined object 2261
+  1x condition: Undefined object 2262
+  1x condition: Undefined object 2263
+  1x condition: Undefined object 2264
+  1x condition: Undefined object 2265
+  1x condition: Undefined object 2269
+  1x condition: Undefined object 2272
+  1x condition: Undefined object 2288
+  1x condition: Undefined object 2289
+  1x condition: Undefined object 2290
+  1x condition: Undefined object 2291
+  1x skipped movable: typ 2049 dtyp 11
+  9x skipped movable: typ 2049 dtyp 13
+  2x skipped movable: typ 2051 dtyp 2
+  5x skipped movable: typ 2051 dtyp 3
+  2x skipped movable: typ 2051 dtyp 4
+  4x skipped movable: typ 2051 dtyp 65
+  1x skipped movable: typ 2052 dtyp 6
+  3x skipped movable: typ 2062 dtyp 46
+  19x unread key: movable#/ai
+  2x unread key: movable#/card
+  150x unread key: movable#/diff
+  129x unread key: movable#/dis
+  19x unread key: movable#/eint
+  19x unread key: movable#/eng
+  19x unread key: movable#/gun
+  21x unread key: movable#/inte
+  19x unread key: movable#/ntor
+  129x unread key: movable#/num
+  336x unread key: movable#/o#bccond#
+  168x unread key: movable#/o#bcdel
+  336x unread key: movable#/o#bcdep#
+  168x unread key: movable#/o#bcop
+  336x unread key: movable#/o#bcref#
+  19x unread key: movable#/o#car
+  28x unread key: movable#/o#dur
+  19x unread key: movable#/o#rad
+  168x unread key: movable#/o#typ
+  204x unread key: movable#/sle
+  19x unread key: movable#/tor
+  1x unread section: cd
+  63x unread section: current#
+s00406: 148 objects
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2135
+  1x condition: Undefined object 2136
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2138
+  1x condition: Undefined object 2140
+  1x condition: Undefined object 2141
+  1x condition: Undefined object 2145
+  1x condition: Undefined object 2146
+  1x condition: Undefined object 2147
+  1x condition: Undefined object 2148
+  1x condition: Undefined object 2150
+  1x condition: Undefined object 2151
+  1x condition: Undefined object 2152
+  1x condition: Undefined object 2154
+  1x condition: Undefined object 2155
+  1x condition: Undefined object 2156
+  1x condition: Undefined object 2158
+  1x condition: Undefined object 2159
+  1x condition: Undefined object 2160
+  1x condition: Undefined object 2161
+  1x condition: Undefined object 2162
+  1x condition: Undefined object 2164
+  1x condition: Undefined object 2165
+  1x condition: Undefined object 2166
+  1x condition: Undefined object 2179
+  1x condition: Undefined object 2181
+  1x condition: Undefined object 2182
+  1x condition: Undefined object 2183
+  6x skipped movable: typ 2049 dtyp 11
+  6x skipped movable: typ 2049 dtyp 13
+  5x skipped movable: typ 2050 dtyp 42
+  2x skipped movable: typ 2051 dtyp 3
+  1x skipped movable: typ 2051 dtyp 4
+  1x skipped movable: typ 2052 dtyp 6
+  4x skipped movable: typ 2062 dtyp 46
+  3x skipped movable: typ 2062 dtyp 49
+  2x skipped movable: typ 2062 dtyp 51
+  15x unread key: movable#/ai
+  2x unread key: movable#/card
+  70x unread key: movable#/diff
+  53x unread key: movable#/dis
+  15x unread key: movable#/eint
+  15x unread key: movable#/eng
+  15x unread key: movable#/gun
+  17x unread key: movable#/inte
+  15x unread key: movable#/ntor
+  53x unread key: movable#/num
+  272x unread key: movable#/o#bccond#
+  136x unread key: movable#/o#bcdel
+  272x unread key: movable#/o#bcdep#
+  136x unread key: movable#/o#bcop
+  272x unread key: movable#/o#bcref#
+  9x unread key: movable#/o#car
+  29x unread key: movable#/o#dur
+  1x unread key: movable#/o#ene
+  17x unread key: movable#/o#hei
+  4x unread key: movable#/o#mah
+  4x unread key: movable#/o#mih
+  12x unread key: movable#/o#rad
+  20x unread key: movable#/o#refx
+  20x unread key: movable#/o#refy
+  136x unread key: movable#/o#typ
+  21x unread key: movable#/o#vel
+  75x unread key: movable#/pz
+  70x unread key: movable#/sle
+  15x unread key: movable#/tor
+  1x unread section: cd
+  27x unread section: current#
+s00601: 7 objects
+  11x condition: Undefined object 2049
+  1x condition: Undefined object 2052
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2054
+  4x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2059
+  3x condition: Undefined object 2060
+  1x condition: Undefined object 2062
+  5x condition: Undefined object 2066
+  2x skipped movable: typ 2049 dtyp 11
+  3x skipped movable: typ 2049 dtyp 13
+  1x skipped movable: typ 2049 dtyp 15
+  3x skipped movable: typ 2050 dtyp 42
+  1x skipped movable: typ 2050 dtyp 44
+  1x skipped movable: typ 2063 dtyp 91
+  5x unread key: movable#/ai
+  5x unread key: movable#/diff
+  5x unread key: movable#/eint
+  5x unread key: movable#/eng
+  5x unread key: movable#/gun
+  5x unread key: movable#/inte
+  5x unread key: movable#/ntor
+  80x unread key: movable#/o#bccond#
+  40x unread key: movable#/o#bcdel
+  80x unread key: movable#/o#bcdep#
+  40x unread key: movable#/o#bcop
+  80x unread key: movable#/o#bcref#
+  13x unread key: movable#/o#dur
+  3x unread key: movable#/o#ene
+  5x unread key: movable#/o#esc
+  3x unread key: movable#/o#hei
+  8x unread key: movable#/o#mah
+  8x unread key: movable#/o#mih
+  3x unread key: movable#/o#rad
+  6x unread key: movable#/o#refx
+  6x unread key: movable#/o#refy
+  40x unread key: movable#/o#typ
+  11x unread key: movable#/o#vel
+  5x unread key: movable#/o#xof
+  5x unread key: movable#/o#yof
+  5x unread key: movable#/o#zof
+  5x unread key: movable#/sle
+  5x unread key: movable#/tor
+  1x unread section: cd
+s00701: 25 objects
+  1x condition: Condition reference not found 7
+  4x condition: Undefined object 7
+  4x condition: Unhandled condition dep 2 2
+  18x unread key: movable#/ai
+  3x unread key: movable#/card
+  21x unread key: movable#/diff
+  18x unread key: movable#/eint
+  18x unread key: movable#/eng
+  18x unread key: movable#/gun
+  21x unread key: movable#/inte
+  18x unread key: movable#/ntor
+  336x unread key: movable#/o#bccond#
+  168x unread key: movable#/o#bcdel
+  336x unread key: movable#/o#bcdep#
+  168x unread key: movable#/o#bcop
+  336x unread key: movable#/o#bcref#
+  11x unread key: movable#/o#car
+  32x unread key: movable#/o#dur
+  10x unread key: movable#/o#ene
+  10x unread key: movable#/o#mah
+  10x unread key: movable#/o#mih
+  21x unread key: movable#/o#rad
+  10x unread key: movable#/o#refx
+  10x unread key: movable#/o#refy
+  168x unread key: movable#/o#typ
+  10x unread key: movable#/o#vel
+  2x unread key: movable#/pz
+  22x unread key: movable#/sle
+  18x unread key: movable#/tor
+  1x unread section: cd
+  15x unread section: current#
+s00702: 17 objects
+  1x condition: Condition reference not found 1
+  1x condition: Objective not found 6
+  2x condition: Undefined object 1
+  2x condition: Undefined object 2069
+  2x condition: Undefined object 2070
+  2x condition: Undefined object 2071
+  2x condition: Undefined object 2072
+  3x condition: Undefined object 2075
+  2x condition: Unhandled condition dep 2 2
+  3x skipped movable: typ 2049 dtyp 11
+  2x skipped movable: typ 2049 dtyp 13
+  11x unread key: movable#/ai
+  3x unread key: movable#/card
+  14x unread key: movable#/diff
+  11x unread key: movable#/eint
+  11x unread key: movable#/eng
+  11x unread key: movable#/gun
+  14x unread key: movable#/inte
+  11x unread key: movable#/ntor
+  224x unread key: movable#/o#bccond#
+  112x unread key: movable#/o#bcdel
+  224x unread key: movable#/o#bcdep#
+  112x unread key: movable#/o#bcop
+  224x unread key: movable#/o#bcref#
+  11x unread key: movable#/o#car
+  22x unread key: movable#/o#dur
+  11x unread key: movable#/o#rad
+  112x unread key: movable#/o#typ
+  2x unread key: movable#/pz
+  18x unread key: movable#/sle
+  11x unread key: movable#/tor
+  1x unread section: cd
+  15x unread section: current#
+s00703: 17 objects
+  1x condition: Objective not found 22
+  4x condition: Undefined object 2066
+  2x condition: Undefined object 2069
+  2x condition: Undefined object 2070
+  2x condition: Undefined object 2072
+  1x skipped movable: typ 2049 dtyp 11
+  3x skipped movable: typ 2049 dtyp 13
+  11x unread key: movable#/ai
+  3x unread key: movable#/card
+  14x unread key: movable#/diff
+  11x unread key: movable#/eint
+  11x unread key: movable#/eng
+  11x unread key: movable#/gun
+  14x unread key: movable#/inte
+  11x unread key: movable#/ntor
+  224x unread key: movable#/o#bccond#
+  112x unread key: movable#/o#bcdel
+  224x unread key: movable#/o#bcdep#
+  112x unread key: movable#/o#bcop
+  224x unread key: movable#/o#bcref#
+  11x unread key: movable#/o#car
+  22x unread key: movable#/o#dur
+  11x unread key: movable#/o#rad
+  112x unread key: movable#/o#typ
+  2x unread key: movable#/pz
+  15x unread key: movable#/sle
+  11x unread key: movable#/tor
+  1x unread section: cd
+  15x unread section: current#
+s00704: 98 objects
+  1x condition: Undefined object 2062
+  1x condition: Undefined object 2073
+  7x condition: Undefined object 2084
+  1x condition: Undefined object 2098
+  1x condition: Undefined object 2100
+  1x condition: Undefined object 2101
+  1x condition: Undefined object 2102
+  1x condition: Undefined object 2103
+  1x condition: Undefined object 2108
+  1x condition: Undefined object 2127
+  1x condition: Undefined object 2142
+  1x condition: Undefined object 2143
+  1x condition: Undefined object 2148
+  1x condition: Undefined object 2150
+  1x condition: Undefined object 2153
+  7x skipped movable: typ 2049 dtyp 11
+  5x skipped movable: typ 2049 dtyp 13
+  1x skipped movable: typ 2050 dtyp 42
+  1x skipped movable: typ 2051 dtyp 3
+  1x skipped movable: typ 2051 dtyp 4
+  25x unread key: movable#/ai
+  3x unread key: movable#/card
+  59x unread key: movable#/diff
+  31x unread key: movable#/dis
+  25x unread key: movable#/eint
+  25x unread key: movable#/eng
+  25x unread key: movable#/gun
+  28x unread key: movable#/inte
+  25x unread key: movable#/ntor
+  31x unread key: movable#/num
+  448x unread key: movable#/o#bccond#
+  224x unread key: movable#/o#bcdel
+  448x unread key: movable#/o#bcdep#
+  224x unread key: movable#/o#bcop
+  448x unread key: movable#/o#bcref#
+  50x unread key: movable#/o#car
+  85x unread key: movable#/o#dur
+  44x unread key: movable#/o#ene
+  50x unread key: movable#/o#rad
+  224x unread key: movable#/o#typ
+  34x unread key: movable#/pz
+  59x unread key: movable#/sle
+  25x unread key: movable#/tor
+  1x unread section: cd
+  25x unread section: current#
+s00705: 16 objects
+  1x condition: Abnormal condition 5126
+  2x condition: Undefined object 2066
+  6x condition: Undefined object 2067
+  3x condition: Undefined object 2068
+  2x condition: Undefined object 2069
+  3x condition: Undefined object 2070
+  2x skipped movable: typ 2049 dtyp 11
+  3x skipped movable: typ 2049 dtyp 13
+  11x unread key: movable#/ai
+  3x unread key: movable#/card
+  14x unread key: movable#/diff
+  11x unread key: movable#/eint
+  11x unread key: movable#/eng
+  11x unread key: movable#/gun
+  14x unread key: movable#/inte
+  11x unread key: movable#/ntor
+  224x unread key: movable#/o#bccond#
+  112x unread key: movable#/o#bcdel
+  224x unread key: movable#/o#bcdep#
+  112x unread key: movable#/o#bcop
+  224x unread key: movable#/o#bcref#
+  11x unread key: movable#/o#car
+  20x unread key: movable#/o#dur
+  11x unread key: movable#/o#rad
+  112x unread key: movable#/o#typ
+  2x unread key: movable#/pz
+  15x unread key: movable#/sle
+  11x unread key: movable#/tor
+  1x unread section: cd
+  15x unread section: current#
+s00706: 11 objects
+  2x condition: Objective not found 22
+  3x condition: Objective not found 24
+  4x condition: Objective not found 26
+  3x condition: Objective not found 28
+  1x condition: Objective not found 8
+  4x condition: Undefined object 2048
+  1x condition: Undefined object 2050
+  1x condition: Undefined object 2051
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2062
+  1x condition: Undefined object 2064
+  1x condition: Undefined object 2065
+  1x condition: Undefined object 2068
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2077
+  1x condition: Undefined object 2078
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2085
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  9x skipped movable: typ 2049 dtyp 11
+  12x skipped movable: typ 2049 dtyp 13
+  2x skipped movable: typ 2050 dtyp 42
+  2x skipped movable: typ 2051 dtyp 3
+  1x skipped movable: typ 2051 dtyp 4
+  1x skipped movable: typ 2063 dtyp 78
+  6x unread key: movable#/ai
+  6x unread key: movable#/diff
+  6x unread key: movable#/eint
+  6x unread key: movable#/eng
+  6x unread key: movable#/gun
+  6x unread key: movable#/inte
+  6x unread key: movable#/ntor
+  96x unread key: movable#/o#bccond#
+  48x unread key: movable#/o#bcdel
+  96x unread key: movable#/o#bcdep#
+  48x unread key: movable#/o#bcop
+  96x unread key: movable#/o#bcref#
+  17x unread key: movable#/o#dur
+  9x unread key: movable#/o#ene
+  12x unread key: movable#/o#hei
+  15x unread key: movable#/o#mah
+  15x unread key: movable#/o#mih
+  15x unread key: movable#/o#rad
+  27x unread key: movable#/o#refx
+  27x unread key: movable#/o#refy
+  48x unread key: movable#/o#typ
+  27x unread key: movable#/o#vel
+  6x unread key: movable#/sle
+  6x unread key: movable#/tor
+  1x unread section: cd
+s00902: 65 objects
+  1x condition: Condition reference not found 4
+  2x condition: Objective not found 22
+  1x condition: Objective not found 23
+  1x condition: Objective not found 25
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2075
+  1x condition: Undefined object 2076
+  3x condition: Undefined object 2078
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  1x condition: Undefined object 4
+  1x condition: Unhandled condition dep 2 2
+  6x skipped movable: typ 2049 dtyp 15
+  4x skipped movable: typ 2062 dtyp 45
+  8x unread key: movable#/ai
+  1x unread key: movable#/card
+  48x unread key: movable#/diff
+  39x unread key: movable#/dis
+  8x unread key: movable#/eint
+  8x unread key: movable#/eng
+  8x unread key: movable#/gun
+  9x unread key: movable#/inte
+  8x unread key: movable#/ntor
+  39x unread key: movable#/num
+  144x unread key: movable#/o#bccond#
+  72x unread key: movable#/o#bcdel
+  144x unread key: movable#/o#bcdep#
+  72x unread key: movable#/o#bcop
+  144x unread key: movable#/o#bcref#
+  4x unread key: movable#/o#car
+  14x unread key: movable#/o#dur
+  2x unread key: movable#/o#ene
+  2x unread key: movable#/o#mah
+  2x unread key: movable#/o#mih
+  4x unread key: movable#/o#rad
+  2x unread key: movable#/o#refx
+  2x unread key: movable#/o#refy
+  72x unread key: movable#/o#typ
+  2x unread key: movable#/o#vel
+  17x unread key: movable#/pz
+  48x unread key: movable#/sle
+  8x unread key: movable#/tor
+  1x unread section: cd
+  68x unread section: current#
+s00903: 62 objects
+  1x condition: Condition reference not found 1
+  3x condition: Objective not found 6
+  1x condition: Unachievable objective 2115 1
+  1x condition: Undefined object 1
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  2x condition: Undefined object 2113
+  4x condition: Undefined object 2114
+  2x condition: Undefined object 2116
+  2x condition: Undefined object 2117
+  2x condition: Undefined object 2118
+  2x condition: Undefined object 2119
+  1x condition: Undefined object 2122
+  1x condition: Undefined object 2123
+  1x condition: Undefined object 2124
+  1x condition: Unhandled condition dep 2 2
+  5x skipped movable: typ 2049 dtyp 15
+  2x skipped movable: typ 2049 dtyp 88
+  1x skipped movable: typ 2049 dtyp 89
+  4x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 71
+  4x unread key: movable#/ai
+  1x unread key: movable#/card
+  44x unread key: movable#/diff
+  39x unread key: movable#/dis
+  4x unread key: movable#/eint
+  4x unread key: movable#/eng
+  4x unread key: movable#/gun
+  5x unread key: movable#/inte
+  4x unread key: movable#/ntor
+  39x unread key: movable#/num
+  80x unread key: movable#/o#bccond#
+  40x unread key: movable#/o#bcdel
+  80x unread key: movable#/o#bcdep#
+  40x unread key: movable#/o#bcop
+  80x unread key: movable#/o#bcref#
+  3x unread key: movable#/o#car
+  10x unread key: movable#/o#dur
+  2x unread key: movable#/o#ene
+  2x unread key: movable#/o#mah
+  2x unread key: movable#/o#mih
+  4x unread key: movable#/o#rad
+  1x unread key: movable#/o#refx
+  1x unread key: movable#/o#refy
+  40x unread key: movable#/o#typ
+  2x unread key: movable#/o#vel
+  17x unread key: movable#/pz
+  44x unread key: movable#/sle
+  4x unread key: movable#/tor
+  1x unread section: cd
+  68x unread section: current#
+s01001: 16 objects
+  4x condition: Objective not found 6
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  3x condition: Undefined object 2063
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2074
+  3x condition: Undefined object 2075
+  1x condition: Undefined object 2076
+  1x skipped movable: typ 2049 dtyp 13
+  4x skipped movable: typ 2049 dtyp 88
+  2x skipped movable: typ 2049 dtyp 89
+  2x skipped movable: typ 2051 dtyp 3
+  1x skipped movable: typ 2063 dtyp 81
+  1x skipped movable: typ 2063 dtyp 85
+  10x unread key: movable#/ai
+  1x unread key: movable#/card
+  11x unread key: movable#/diff
+  10x unread key: movable#/eint
+  10x unread key: movable#/eng
+  10x unread key: movable#/gun
+  11x unread key: movable#/inte
+  10x unread key: movable#/ntor
+  176x unread key: movable#/o#bccond#
+  88x unread key: movable#/o#bcdel
+  176x unread key: movable#/o#bcdep#
+  88x unread key: movable#/o#bcop
+  176x unread key: movable#/o#bcref#
+  1x unread key: movable#/o#car
+  21x unread key: movable#/o#dur
+  4x unread key: movable#/o#ene
+  2x unread key: movable#/o#esc
+  3x unread key: movable#/o#hei
+  12x unread key: movable#/o#mah
+  12x unread key: movable#/o#mih
+  10x unread key: movable#/o#rad
+  12x unread key: movable#/o#refx
+  12x unread key: movable#/o#refy
+  88x unread key: movable#/o#typ
+  15x unread key: movable#/o#vel
+  2x unread key: movable#/o#xof
+  2x unread key: movable#/o#yof
+  2x unread key: movable#/o#zof
+  1x unread key: movable#/pz
+  11x unread key: movable#/sle
+  10x unread key: movable#/tor
+  1x unread section: cd
+s01002: 7 objects
+  16x condition: Undefined object 2050
+  1x skipped movable: typ 2063 dtyp 73
+  7x unread key: movable#/ai
+  7x unread key: movable#/diff
+  7x unread key: movable#/eint
+  7x unread key: movable#/eng
+  7x unread key: movable#/gun
+  7x unread key: movable#/inte
+  7x unread key: movable#/ntor
+  112x unread key: movable#/o#bccond#
+  56x unread key: movable#/o#bcdel
+  112x unread key: movable#/o#bcdep#
+  56x unread key: movable#/o#bcop
+  112x unread key: movable#/o#bcref#
+  27x unread key: movable#/o#dur
+  7x unread key: movable#/o#ene
+  9x unread key: movable#/o#esc
+  4x unread key: movable#/o#hei
+  20x unread key: movable#/o#mah
+  20x unread key: movable#/o#mih
+  11x unread key: movable#/o#rad
+  15x unread key: movable#/o#refx
+  15x unread key: movable#/o#refy
+  56x unread key: movable#/o#typ
+  24x unread key: movable#/o#vel
+  9x unread key: movable#/o#xof
+  9x unread key: movable#/o#yof
+  9x unread key: movable#/o#zof
+  7x unread key: movable#/sle
+  7x unread key: movable#/tor
+  1x unread section: cd
+s01101: 11 objects
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 80
+  8x unread key: movable#/ai
+  8x unread key: movable#/diff
+  8x unread key: movable#/eint
+  8x unread key: movable#/eng
+  8x unread key: movable#/gun
+  8x unread key: movable#/inte
+  8x unread key: movable#/ntor
+  128x unread key: movable#/o#bccond#
+  64x unread key: movable#/o#bcdel
+  128x unread key: movable#/o#bcdep#
+  64x unread key: movable#/o#bcop
+  128x unread key: movable#/o#bcref#
+  24x unread key: movable#/o#dur
+  7x unread key: movable#/o#ene
+  2x unread key: movable#/o#esc
+  9x unread key: movable#/o#hei
+  12x unread key: movable#/o#mah
+  12x unread key: movable#/o#mih
+  9x unread key: movable#/o#rad
+  18x unread key: movable#/o#refx
+  18x unread key: movable#/o#refy
+  64x unread key: movable#/o#typ
+  21x unread key: movable#/o#vel
+  2x unread key: movable#/o#xof
+  2x unread key: movable#/o#yof
+  2x unread key: movable#/o#zof
+  8x unread key: movable#/sle
+  8x unread key: movable#/tor
+  1x unread section: cd
+s01201: 33 objects
+  1x condition: Objective not found 24
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2095
+  1x condition: Undefined object 2096
+  1x condition: Undefined object 2097
+  1x condition: Undefined object 2098
+  1x condition: Undefined object 2099
+  1x condition: Undefined object 2100
+  1x condition: Undefined object 2101
+  1x condition: Undefined object 2102
+  1x condition: Undefined object 2103
+  4x condition: Undefined object 2108
+  1x condition: Undefined object 2111
+  1x condition: Undefined object 2112
+  1x condition: Undefined object 2117
+  1x condition: Undefined object 2118
+  1x condition: Undefined object 2120
+  13x skipped movable: typ 2049 dtyp 88
+  13x skipped movable: typ 2049 dtyp 89
+  2x skipped movable: typ 2062 dtyp 46
+  1x skipped movable: typ 2063 dtyp 71
+  8x unread key: movable#/ai
+  8x unread key: movable#/diff
+  8x unread key: movable#/eint
+  8x unread key: movable#/eng
+  8x unread key: movable#/gun
+  8x unread key: movable#/inte
+  8x unread key: movable#/ntor
+  128x unread key: movable#/o#bccond#
+  64x unread key: movable#/o#bcdel
+  128x unread key: movable#/o#bcdep#
+  64x unread key: movable#/o#bcop
+  128x unread key: movable#/o#bcref#
+  5x unread key: movable#/o#car
+  12x unread key: movable#/o#dur
+  2x unread key: movable#/o#ene
+  1x unread key: movable#/o#hei
+  6x unread key: movable#/o#mah
+  6x unread key: movable#/o#mih
+  9x unread key: movable#/o#rad
+  5x unread key: movable#/o#refx
+  5x unread key: movable#/o#refy
+  64x unread key: movable#/o#typ
+  7x unread key: movable#/o#vel
+  23x unread key: movable#/pz
+  13x unread key: movable#/sle
+  8x unread key: movable#/tor
+  1x unread section: cd
+s01202: 8 objects
+  2x condition: Undefined object 2048
+  2x condition: Undefined object 2050
+  1x condition: Undefined object 2051
+  1x condition: Undefined object 2052
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  2x condition: Undefined object 2070
+  2x condition: Undefined object 2071
+  2x condition: Undefined object 2072
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2074
+  1x skipped movable: typ 2049 dtyp 88
+  4x skipped movable: typ 2049 dtyp 89
+  3x skipped movable: typ 2051 dtyp 4
+  5x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2062 dtyp 51
+  3x unread key: movable#/ai
+  3x unread key: movable#/diff
+  3x unread key: movable#/eint
+  3x unread key: movable#/eng
+  3x unread key: movable#/gun
+  3x unread key: movable#/inte
+  3x unread key: movable#/ntor
+  48x unread key: movable#/o#bccond#
+  24x unread key: movable#/o#bcdel
+  48x unread key: movable#/o#bcdep#
+  24x unread key: movable#/o#bcop
+  48x unread key: movable#/o#bcref#
+  6x unread key: movable#/o#dur
+  1x unread key: movable#/o#ene
+  3x unread key: movable#/o#mah
+  3x unread key: movable#/o#mih
+  3x unread key: movable#/o#rad
+  3x unread key: movable#/o#refx
+  3x unread key: movable#/o#refy
+  24x unread key: movable#/o#typ
+  3x unread key: movable#/o#vel
+  5x unread key: movable#/pz
+  6x unread key: movable#/sle
+  3x unread key: movable#/tor
+  1x unread section: cd
+s01203: 63 objects
+  1x condition: Condition reference not found 0
+  1x condition: Undefined object 0
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2080
+  2x condition: Undefined object 2084
+  1x condition: Undefined object 2094
+  5x condition: Undefined object 2098
+  1x condition: Undefined object 2102
+  1x condition: Undefined object 2109
+  2x condition: Undefined object 2118
+  2x condition: Undefined object 2124
+  1x condition: Unhandled condition dep 2 2
+  2x skipped movable: typ 2049 dtyp 89
+  2x skipped movable: typ 2062 dtyp 45
+  5x skipped movable: typ 2062 dtyp 46
+  1x skipped movable: typ 2062 dtyp 49
+  2x skipped movable: typ 2063 dtyp 69
+  19x unread key: movable#/ai
+  13x unread key: movable#/card
+  32x unread key: movable#/diff
+  19x unread key: movable#/eint
+  19x unread key: movable#/eng
+  19x unread key: movable#/gun
+  32x unread key: movable#/inte
+  19x unread key: movable#/ntor
+  512x unread key: movable#/o#bccond#
+  256x unread key: movable#/o#bcdel
+  512x unread key: movable#/o#bcdep#
+  256x unread key: movable#/o#bcop
+  512x unread key: movable#/o#bcref#
+  35x unread key: movable#/o#dur
+  1x unread key: movable#/o#ene
+  29x unread key: movable#/o#hei
+  15x unread key: movable#/o#mah
+  15x unread key: movable#/o#mih
+  14x unread key: movable#/o#rad
+  43x unread key: movable#/o#refx
+  43x unread key: movable#/o#refy
+  256x unread key: movable#/o#typ
+  44x unread key: movable#/o#vel
+  30x unread key: movable#/pz
+  32x unread key: movable#/sle
+  19x unread key: movable#/tor
+  1x unread section: cd
+s01301: 71 objects
+  1x condition: Objective not found 34
+  1x condition: Objective not found 36
+  1x condition: Objective not found 6
+  3x condition: Undefined object 2088
+  2x condition: Undefined object 2090
+  5x condition: Undefined object 2091
+  1x condition: Undefined object 2100
+  1x condition: Undefined object 2104
+  1x condition: Undefined object 2105
+  1x condition: Undefined object 2106
+  1x condition: Undefined object 2107
+  1x condition: Undefined object 2108
+  1x condition: Undefined object 2109
+  1x condition: Undefined object 2110
+  1x condition: Undefined object 2111
+  1x condition: Undefined object 2150
+  4x skipped movable: typ 2051 dtyp 3
+  5x skipped movable: typ 2051 dtyp 4
+  1x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 68
+  2x skipped movable: typ 2063 dtyp 69
+  16x unread key: movable#/ai
+  4x unread key: movable#/card
+  54x unread key: movable#/diff
+  34x unread key: movable#/dis
+  16x unread key: movable#/eint
+  16x unread key: movable#/eng
+  16x unread key: movable#/gun
+  20x unread key: movable#/inte
+  16x unread key: movable#/ntor
+  34x unread key: movable#/num
+  320x unread key: movable#/o#bccond#
+  160x unread key: movable#/o#bcdel
+  320x unread key: movable#/o#bcdep#
+  160x unread key: movable#/o#bcop
+  320x unread key: movable#/o#bcref#
+  6x unread key: movable#/o#car
+  34x unread key: movable#/o#dur
+  11x unread key: movable#/o#ene
+  3x unread key: movable#/o#esc
+  8x unread key: movable#/o#hei
+  16x unread key: movable#/o#mah
+  16x unread key: movable#/o#mih
+  19x unread key: movable#/o#rad
+  21x unread key: movable#/o#refx
+  21x unread key: movable#/o#refy
+  160x unread key: movable#/o#typ
+  24x unread key: movable#/o#vel
+  3x unread key: movable#/o#xof
+  3x unread key: movable#/o#yof
+  3x unread key: movable#/o#zof
+  15x unread key: movable#/pz
+  54x unread key: movable#/sle
+  16x unread key: movable#/tor
+  1x unread section: cd
+s01302: 30 objects
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2062
+  2x condition: Undefined object 2066
+  2x condition: Undefined object 2067
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2078
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  2x skipped movable: typ 2049 dtyp 88
+  1x skipped movable: typ 2049 dtyp 89
+  5x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 68
+  1x skipped movable: typ 2063 dtyp 69
+  1x skipped movable: typ 2063 dtyp 71
+  1x skipped movable: typ 2063 dtyp 72
+  1x skipped movable: typ 2063 dtyp 83
+  20x unread key: movable#/ai
+  20x unread key: movable#/diff
+  20x unread key: movable#/eint
+  20x unread key: movable#/eng
+  20x unread key: movable#/gun
+  20x unread key: movable#/inte
+  20x unread key: movable#/ntor
+  320x unread key: movable#/o#bccond#
+  160x unread key: movable#/o#bcdel
+  320x unread key: movable#/o#bcdep#
+  160x unread key: movable#/o#bcop
+  320x unread key: movable#/o#bcref#
+  35x unread key: movable#/o#dur
+  14x unread key: movable#/o#ene
+  17x unread key: movable#/o#hei
+  21x unread key: movable#/o#mah
+  21x unread key: movable#/o#mih
+  21x unread key: movable#/o#rad
+  38x unread key: movable#/o#refx
+  38x unread key: movable#/o#refy
+  160x unread key: movable#/o#typ
+  38x unread key: movable#/o#vel
+  9x unread key: movable#/pz
+  20x unread key: movable#/sle
+  20x unread key: movable#/tor
+  1x unread section: cd
+s01303: 32 objects
+  1x condition: Condition reference not found 1
+  1x condition: Condition reference not found 6
+  1x condition: Objective not found 22
+  1x condition: Undefined object 1
+  2x condition: Undefined object 2048
+  4x condition: Undefined object 2051
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2062
+  1x condition: Undefined object 2068
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2074
+  3x condition: Undefined object 2075
+  2x condition: Undefined object 2079
+  4x condition: Undefined object 2085
+  3x condition: Undefined object 2086
+  3x condition: Undefined object 2087
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2094
+  1x condition: Undefined object 2095
+  1x condition: Undefined object 2096
+  1x condition: Undefined object 2106
+  1x condition: Undefined object 2107
+  1x condition: Undefined object 2108
+  1x condition: Undefined object 2109
+  4x condition: Undefined object 6
+  5x condition: Unhandled condition dep 2 2
+  4x skipped movable: typ 2049 dtyp 88
+  9x skipped movable: typ 2049 dtyp 89
+  5x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 68
+  1x skipped movable: typ 2063 dtyp 71
+  1x skipped movable: typ 2063 dtyp 72
+  1x skipped movable: typ 2063 dtyp 75
+  1x skipped movable: typ 2063 dtyp 83
+  20x unread key: movable#/ai
+  20x unread key: movable#/diff
+  20x unread key: movable#/eint
+  20x unread key: movable#/eng
+  20x unread key: movable#/gun
+  20x unread key: movable#/inte
+  20x unread key: movable#/ntor
+  320x unread key: movable#/o#bccond#
+  160x unread key: movable#/o#bcdel
+  320x unread key: movable#/o#bcdep#
+  160x unread key: movable#/o#bcop
+  320x unread key: movable#/o#bcref#
+  39x unread key: movable#/o#dur
+  4x unread key: movable#/o#esc
+  23x unread key: movable#/o#hei
+  34x unread key: movable#/o#mah
+  34x unread key: movable#/o#mih
+  30x unread key: movable#/o#rad
+  53x unread key: movable#/o#refx
+  53x unread key: movable#/o#refy
+  160x unread key: movable#/o#typ
+  57x unread key: movable#/o#vel
+  4x unread key: movable#/o#xof
+  4x unread key: movable#/o#yof
+  4x unread key: movable#/o#zof
+  9x unread key: movable#/pz
+  20x unread key: movable#/sle
+  20x unread key: movable#/tor
+  1x unread section: cd
+s01304: 60 objects
+  6x condition: Undefined object 2048
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2062
+  1x condition: Undefined object 2114
+  1x condition: Undefined object 2115
+  1x condition: Undefined object 2116
+  1x condition: Undefined object 2117
+  1x condition: Undefined object 2118
+  1x condition: Undefined object 2119
+  1x condition: Undefined object 2123
+  1x condition: Undefined object 2124
+  3x skipped movable: typ 2049 dtyp 88
+  5x skipped movable: typ 2049 dtyp 89
+  5x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 83
+  18x unread key: movable#/ai
+  50x unread key: movable#/diff
+  32x unread key: movable#/dis
+  18x unread key: movable#/eint
+  18x unread key: movable#/eng
+  18x unread key: movable#/gun
+  18x unread key: movable#/inte
+  18x unread key: movable#/ntor
+  32x unread key: movable#/num
+  288x unread key: movable#/o#bccond#
+  144x unread key: movable#/o#bcdel
+  288x unread key: movable#/o#bcdep#
+  144x unread key: movable#/o#bcop
+  288x unread key: movable#/o#bcref#
+  31x unread key: movable#/o#dur
+  5x unread key: movable#/o#ene
+  27x unread key: movable#/o#hei
+  26x unread key: movable#/o#mah
+  26x unread key: movable#/o#mih
+  24x unread key: movable#/o#rad
+  51x unread key: movable#/o#refx
+  51x unread key: movable#/o#refy
+  144x unread key: movable#/o#typ
+  53x unread key: movable#/o#vel
+  9x unread key: movable#/pz
+  50x unread key: movable#/sle
+  18x unread key: movable#/tor
+  1x unread section: cd
+s01305: 20 objects
+  1x condition: Condition reference not found 0
+  1x condition: Condition reference not found 1
+  1x condition: Undefined object 0
+  1x condition: Undefined object 1
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2062
+  2x condition: Undefined object 2067
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2077
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2085
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  2x condition: Unhandled condition dep 2 2
+  3x skipped movable: typ 2049 dtyp 88
+  7x skipped movable: typ 2049 dtyp 89
+  5x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 84
+  9x unread key: movable#/ai
+  9x unread key: movable#/diff
+  9x unread key: movable#/eint
+  9x unread key: movable#/eng
+  9x unread key: movable#/gun
+  9x unread key: movable#/inte
+  9x unread key: movable#/ntor
+  144x unread key: movable#/o#bccond#
+  72x unread key: movable#/o#bcdel
+  144x unread key: movable#/o#bcdep#
+  72x unread key: movable#/o#bcop
+  144x unread key: movable#/o#bcref#
+  12x unread key: movable#/o#dur
+  18x unread key: movable#/o#hei
+  10x unread key: movable#/o#mah
+  10x unread key: movable#/o#mih
+  10x unread key: movable#/o#rad
+  28x unread key: movable#/o#refx
+  28x unread key: movable#/o#refy
+  72x unread key: movable#/o#typ
+  28x unread key: movable#/o#vel
+  9x unread key: movable#/pz
+  9x unread key: movable#/sle
+  9x unread key: movable#/tor
+  1x unread section: cd
+s01306: 115 objects
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2109
+  1x condition: Undefined object 2110
+  1x condition: Undefined object 2111
+  2x skipped movable: typ 2049 dtyp 88
+  1x skipped movable: typ 2049 dtyp 89
+  3x skipped movable: typ 2051 dtyp 3
+  1x skipped movable: typ 2051 dtyp 4
+  2x skipped movable: typ 2052 dtyp 6
+  29x unread key: movable#/ai
+  4x unread key: movable#/card
+  97x unread key: movable#/diff
+  64x unread key: movable#/dis
+  29x unread key: movable#/eint
+  29x unread key: movable#/eng
+  29x unread key: movable#/gun
+  33x unread key: movable#/inte
+  29x unread key: movable#/ntor
+  64x unread key: movable#/num
+  528x unread key: movable#/o#bccond#
+  264x unread key: movable#/o#bcdel
+  528x unread key: movable#/o#bcdep#
+  264x unread key: movable#/o#bcop
+  528x unread key: movable#/o#bcref#
+  28x unread key: movable#/o#car
+  35x unread key: movable#/o#dur
+  15x unread key: movable#/o#ene
+  1x unread key: movable#/o#mah
+  1x unread key: movable#/o#mih
+  29x unread key: movable#/o#rad
+  1x unread key: movable#/o#refx
+  1x unread key: movable#/o#refy
+  264x unread key: movable#/o#typ
+  1x unread key: movable#/o#vel
+  18x unread key: movable#/pz
+  106x unread key: movable#/sle
+  29x unread key: movable#/tor
+  1x unread section: cd
+  45x unread section: current#
+s01307: 20 objects
+  2x condition: Undefined object 2063
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2068
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2075
+  5x skipped movable: typ 2049 dtyp 14
+  1x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 68
+  2x unread key: movable#/ai
+  3x unread key: movable#/card
+  5x unread key: movable#/diff
+  2x unread key: movable#/eint
+  2x unread key: movable#/eng
+  2x unread key: movable#/gun
+  5x unread key: movable#/inte
+  2x unread key: movable#/ntor
+  80x unread key: movable#/o#bccond#
+  40x unread key: movable#/o#bcdel
+  80x unread key: movable#/o#bcdep#
+  40x unread key: movable#/o#bcop
+  80x unread key: movable#/o#bcref#
+  5x unread key: movable#/o#dur
+  40x unread key: movable#/o#typ
+  14x unread key: movable#/pz
+  5x unread key: movable#/sle
+  2x unread key: movable#/tor
+  1x unread section: cd
+s01308: 1 objects
+  1x condition: Abnormal condition 5120
+  1x condition: Undefined object 2050
+  1x condition: Undefined object 2051
+  1x condition: Undefined object 2052
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2055
+  2x skipped movable: typ 2049 dtyp 88
+  2x skipped movable: typ 2049 dtyp 89
+  1x skipped movable: typ 2062 dtyp 45
+  1x unread key: movable#/ai
+  1x unread key: movable#/diff
+  1x unread key: movable#/eint
+  1x unread key: movable#/eng
+  1x unread key: movable#/gun
+  1x unread key: movable#/inte
+  1x unread key: movable#/ntor
+  16x unread key: movable#/o#bccond#
+  8x unread key: movable#/o#bcdel
+  16x unread key: movable#/o#bcdep#
+  8x unread key: movable#/o#bcop
+  16x unread key: movable#/o#bcref#
+  1x unread key: movable#/o#dur
+  1x unread key: movable#/o#ene
+  1x unread key: movable#/o#hei
+  1x unread key: movable#/o#mah
+  1x unread key: movable#/o#mih
+  1x unread key: movable#/o#rad
+  2x unread key: movable#/o#refx
+  2x unread key: movable#/o#refy
+  8x unread key: movable#/o#typ
+  2x unread key: movable#/o#vel
+  1x unread key: movable#/sle
+  1x unread key: movable#/tor
+  1x unread section: cd
+s01501: 46 objects
+  1x condition: Condition reference not found 3
+  1x condition: Condition reference not found 4
+  8x condition: Objective not found 34
+  3x condition: Undefined object 2048
+  2x condition: Undefined object 2067
+  2x condition: Undefined object 2068
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2075
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2077
+  2x condition: Undefined object 2083
+  1x condition: Undefined object 2084
+  2x condition: Undefined object 2085
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  2x condition: Undefined object 2091
+  1x condition: Undefined object 2100
+  1x condition: Undefined object 2101
+  2x condition: Undefined object 2102
+  1x condition: Undefined object 2114
+  2x condition: Undefined object 2115
+  1x condition: Undefined object 2116
+  2x condition: Undefined object 2117
+  1x condition: Undefined object 3
+  12x condition: Undefined object 4
+  1x condition: Unhandled condition dep 1 2
+  12x condition: Unhandled condition dep 2 2
+  6x skipped movable: typ 2049 dtyp 88
+  11x skipped movable: typ 2049 dtyp 89
+  2x skipped movable: typ 2051 dtyp 3
+  1x skipped movable: typ 2063 dtyp 84
+  31x unread key: movable#/ai
+  31x unread key: movable#/diff
+  31x unread key: movable#/eint
+  31x unread key: movable#/eng
+  31x unread key: movable#/gun
+  31x unread key: movable#/inte
+  31x unread key: movable#/ntor
+  496x unread key: movable#/o#bccond#
+  248x unread key: movable#/o#bcdel
+  496x unread key: movable#/o#bcdep#
+  248x unread key: movable#/o#bcop
+  496x unread key: movable#/o#bcref#
+  39x unread key: movable#/o#dur
+  2x unread key: movable#/o#ene
+  26x unread key: movable#/o#hei
+  35x unread key: movable#/o#mah
+  35x unread key: movable#/o#mih
+  33x unread key: movable#/o#rad
+  59x unread key: movable#/o#refx
+  59x unread key: movable#/o#refy
+  248x unread key: movable#/o#typ
+  61x unread key: movable#/o#vel
+  14x unread key: movable#/pz
+  31x unread key: movable#/sle
+  31x unread key: movable#/tor
+  1x unread section: cd
+s01601: 10 objects
+  1x condition: Objective not found 37
+  5x condition: Undefined object 2050
+  1x condition: Undefined object 2051
+  1x condition: Undefined object 2052
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2060
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2063
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2068
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2075
+  2x condition: Undefined object 2076
+  1x condition: Undefined object 2077
+  1x condition: Undefined object 2078
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  12x skipped movable: typ 2049 dtyp 14
+  1x skipped movable: typ 2049 dtyp 88
+  1x skipped movable: typ 2049 dtyp 89
+  1x skipped movable: typ 2062 dtyp 45
+  1x skipped movable: typ 2063 dtyp 73
+  2x unread key: movable#/ai
+  4x unread key: movable#/card
+  6x unread key: movable#/diff
+  2x unread key: movable#/eint
+  2x unread key: movable#/eng
+  2x unread key: movable#/gun
+  6x unread key: movable#/inte
+  2x unread key: movable#/ntor
+  96x unread key: movable#/o#bccond#
+  48x unread key: movable#/o#bcdel
+  96x unread key: movable#/o#bcdep#
+  48x unread key: movable#/o#bcop
+  96x unread key: movable#/o#bcref#
+  9x unread key: movable#/o#dur
+  2x unread key: movable#/o#ene
+  1x unread key: movable#/o#esc
+  1x unread key: movable#/o#hei
+  3x unread key: movable#/o#mah
+  3x unread key: movable#/o#mih
+  2x unread key: movable#/o#rad
+  3x unread key: movable#/o#refx
+  3x unread key: movable#/o#refy
+  48x unread key: movable#/o#typ
+  4x unread key: movable#/o#vel
+  1x unread key: movable#/o#xof
+  1x unread key: movable#/o#yof
+  1x unread key: movable#/o#zof
+  2x unread key: movable#/pz
+  6x unread key: movable#/sle
+  2x unread key: movable#/tor
+  1x unread section: cd
+s01602: 62 objects
+  1x condition: Objective not found 10
+  3x condition: Objective not found 12
+  2x condition: Objective not found 6
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2050
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2060
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2062
+  1x condition: Undefined object 2063
+  1x condition: Undefined object 2064
+  1x condition: Undefined object 2068
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2094
+  1x condition: Undefined object 2095
+  1x condition: Undefined object 2096
+  1x condition: Undefined object 2097
+  1x condition: Undefined object 2098
+  1x condition: Undefined object 2139
+  1x condition: Undefined object 2140
+  1x condition: Undefined object 2141
+  1x condition: Undefined object 2142
+  1x condition: Undefined object 2143
+  27x skipped movable: typ 2049 dtyp 14
+  1x skipped movable: typ 2063 dtyp 68
+  1x skipped movable: typ 2063 dtyp 72
+  1x skipped movable: typ 2063 dtyp 79
+  22x unread key: movable#/ai
+  4x unread key: movable#/card
+  26x unread key: movable#/diff
+  22x unread key: movable#/eint
+  22x unread key: movable#/eng
+  22x unread key: movable#/gun
+  26x unread key: movable#/inte
+  22x unread key: movable#/ntor
+  416x unread key: movable#/o#bccond#
+  208x unread key: movable#/o#bcdel
+  416x unread key: movable#/o#bcdep#
+  208x unread key: movable#/o#bcop
+  416x unread key: movable#/o#bcref#
+  12x unread key: movable#/o#car
+  52x unread key: movable#/o#dur
+  14x unread key: movable#/o#ene
+  14x unread key: movable#/o#mah
+  14x unread key: movable#/o#mih
+  26x unread key: movable#/o#rad
+  14x unread key: movable#/o#refx
+  14x unread key: movable#/o#refy
+  208x unread key: movable#/o#typ
+  14x unread key: movable#/o#vel
+  33x unread key: movable#/pz
+  26x unread key: movable#/sle
+  22x unread key: movable#/tor
+  1x unread section: cd
+s01701: 27 objects
+  1x condition: Condition reference not found 2
+  1x condition: Condition reference not found 3
+  1x condition: Undefined object 2
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2063
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2075
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2077
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  2x condition: Undefined object 3
+  3x condition: Unhandled condition dep 2 2
+  6x skipped movable: typ 2049 dtyp 14
+  6x skipped movable: typ 2050 dtyp 44
+  1x skipped movable: typ 2063 dtyp 68
+  1x skipped movable: typ 2063 dtyp 79
+  19x unread key: movable#/ai
+  4x unread key: movable#/card
+  23x unread key: movable#/diff
+  19x unread key: movable#/eint
+  19x unread key: movable#/eng
+  19x unread key: movable#/gun
+  23x unread key: movable#/inte
+  19x unread key: movable#/ntor
+  368x unread key: movable#/o#bccond#
+  184x unread key: movable#/o#bcdel
+  368x unread key: movable#/o#bcdep#
+  184x unread key: movable#/o#bcop
+  368x unread key: movable#/o#bcref#
+  33x unread key: movable#/o#dur
+  9x unread key: movable#/o#ene
+  22x unread key: movable#/o#hei
+  19x unread key: movable#/o#mah
+  19x unread key: movable#/o#mih
+  19x unread key: movable#/o#rad
+  41x unread key: movable#/o#refx
+  41x unread key: movable#/o#refy
+  184x unread key: movable#/o#typ
+  41x unread key: movable#/o#vel
+  2x unread key: movable#/pz
+  23x unread key: movable#/sle
+  19x unread key: movable#/tor
+  1x unread section: cd
+s01702: 39 objects
+  2x condition: Undefined object 2055
+  1x condition: Undefined object 2065
+  5x condition: Undefined object 2069
+  6x condition: Undefined object 2079
+  3x skipped movable: typ 2050 dtyp 44
+  1x skipped movable: typ 2063 dtyp 79
+  31x unread key: movable#/ai
+  4x unread key: movable#/card
+  35x unread key: movable#/diff
+  31x unread key: movable#/eint
+  31x unread key: movable#/eng
+  31x unread key: movable#/gun
+  35x unread key: movable#/inte
+  31x unread key: movable#/ntor
+  560x unread key: movable#/o#bccond#
+  280x unread key: movable#/o#bcdel
+  560x unread key: movable#/o#bcdep#
+  280x unread key: movable#/o#bcop
+  560x unread key: movable#/o#bcref#
+  67x unread key: movable#/o#dur
+  1x unread key: movable#/o#esc
+  8x unread key: movable#/o#hei
+  35x unread key: movable#/o#mah
+  35x unread key: movable#/o#mih
+  34x unread key: movable#/o#rad
+  42x unread key: movable#/o#refx
+  42x unread key: movable#/o#refy
+  280x unread key: movable#/o#typ
+  43x unread key: movable#/o#vel
+  1x unread key: movable#/o#xof
+  1x unread key: movable#/o#yof
+  1x unread key: movable#/o#zof
+  2x unread key: movable#/pz
+  35x unread key: movable#/sle
+  31x unread key: movable#/tor
+  1x unread section: cd
+s01801: 110 objects
+  1x condition: Abnormal condition 5130
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2091
+  2x condition: Undefined object 2109
+  1x condition: Undefined object 2122
+  1x condition: Undefined object 2128
+  1x condition: Undefined object 2129
+  1x condition: Undefined object 2130
+  1x condition: Undefined object 2131
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2133
+  1x condition: Undefined object 2134
+  1x condition: Undefined object 2135
+  1x condition: Undefined object 2136
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2138
+  1x condition: Undefined object 2162
+  1x condition: Undefined object 2163
+  1x condition: Undefined object 2164
+  1x condition: Undefined object 2165
+  1x condition: Undefined object 2169
+  1x condition: Undefined object 2170
+  1x condition: Undefined object 2171
+  1x condition: Undefined object 2172
+  1x condition: Undefined object 2173
+  1x condition: Undefined object 2174
+  2x condition: Undefined object 2180
+  1x condition: Undefined object 2181
+  1x condition: Undefined object 2182
+  1x condition: Undefined object 2186
+  1x condition: Undefined object 2189
+  1x condition: Undefined object 2190
+  1x condition: Undefined object 2191
+  6x skipped movable: typ 2050 dtyp 44
+  28x skipped movable: typ 2062 dtyp 46
+  1x skipped movable: typ 2063 dtyp 72
+  1x skipped movable: typ 2063 dtyp 75
+  1x skipped movable: typ 2063 dtyp 80
+  35x unread key: movable#/ai
+  2x unread key: movable#/card
+  67x unread key: movable#/diff
+  30x unread key: movable#/dis
+  35x unread key: movable#/eint
+  35x unread key: movable#/eng
+  35x unread key: movable#/gun
+  37x unread key: movable#/inte
+  35x unread key: movable#/ntor
+  30x unread key: movable#/num
+  592x unread key: movable#/o#bccond#
+  296x unread key: movable#/o#bcdel
+  592x unread key: movable#/o#bcdep#
+  296x unread key: movable#/o#bcop
+  592x unread key: movable#/o#bcref#
+  19x unread key: movable#/o#car
+  60x unread key: movable#/o#dur
+  7x unread key: movable#/o#hei
+  23x unread key: movable#/o#mah
+  23x unread key: movable#/o#mih
+  42x unread key: movable#/o#rad
+  30x unread key: movable#/o#refx
+  30x unread key: movable#/o#refy
+  296x unread key: movable#/o#typ
+  30x unread key: movable#/o#vel
+  39x unread key: movable#/pz
+  67x unread key: movable#/sle
+  35x unread key: movable#/tor
+  1x unread section: cd
+  151x unread section: current#
+s01802: 104 objects
+  1x condition: Undefined object 2048
+  2x condition: Undefined object 2084
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2104
+  1x condition: Undefined object 2105
+  1x condition: Undefined object 2107
+  1x condition: Undefined object 2108
+  1x condition: Undefined object 2109
+  1x condition: Undefined object 2122
+  1x condition: Undefined object 2128
+  1x condition: Undefined object 2129
+  1x condition: Undefined object 2130
+  1x condition: Undefined object 2131
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2133
+  1x condition: Undefined object 2134
+  1x condition: Undefined object 2135
+  1x condition: Undefined object 2136
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2138
+  1x condition: Undefined object 2156
+  1x condition: Undefined object 2162
+  1x condition: Undefined object 2163
+  1x condition: Undefined object 2164
+  1x condition: Undefined object 2165
+  1x condition: Undefined object 2169
+  1x condition: Undefined object 2175
+  1x condition: Undefined object 2179
+  1x condition: Undefined object 2180
+  1x condition: Undefined object 2181
+  1x condition: Undefined object 2182
+  1x condition: Undefined object 2188
+  1x condition: Undefined object 2189
+  1x condition: Undefined object 2190
+  1x condition: Undefined object 2191
+  1x condition: Undefined object 2192
+  1x condition: Undefined object 2193
+  1x condition: Undefined object 2194
+  1x condition: Undefined object 2195
+  1x condition: Undefined object 2196
+  1x condition: Undefined object 2197
+  1x condition: Undefined object 2198
+  1x condition: Undefined object 2202
+  1x condition: Undefined object 2203
+  1x condition: Undefined object 2204
+  1x condition: Undefined object 2206
+  1x condition: Undefined object 2207
+  1x condition: Undefined object 2208
+  1x condition: Undefined object 2209
+  4x skipped movable: typ 2050 dtyp 44
+  4x skipped movable: typ 2051 dtyp 2
+  11x skipped movable: typ 2051 dtyp 3
+  2x skipped movable: typ 2051 dtyp 4
+  3x skipped movable: typ 2051 dtyp 65
+  28x skipped movable: typ 2062 dtyp 46
+  1x skipped movable: typ 2063 dtyp 72
+  1x skipped movable: typ 2063 dtyp 80
+  31x unread key: movable#/ai
+  2x unread key: movable#/card
+  63x unread key: movable#/diff
+  30x unread key: movable#/dis
+  31x unread key: movable#/eint
+  31x unread key: movable#/eng
+  31x unread key: movable#/gun
+  33x unread key: movable#/inte
+  31x unread key: movable#/ntor
+  30x unread key: movable#/num
+  528x unread key: movable#/o#bccond#
+  264x unread key: movable#/o#bcdel
+  528x unread key: movable#/o#bcdep#
+  264x unread key: movable#/o#bcop
+  528x unread key: movable#/o#bcref#
+  19x unread key: movable#/o#car
+  49x unread key: movable#/o#dur
+  12x unread key: movable#/o#mah
+  12x unread key: movable#/o#mih
+  31x unread key: movable#/o#rad
+  12x unread key: movable#/o#refx
+  12x unread key: movable#/o#refy
+  264x unread key: movable#/o#typ
+  12x unread key: movable#/o#vel
+  38x unread key: movable#/pz
+  63x unread key: movable#/sle
+  31x unread key: movable#/tor
+  1x unread section: cd
+  151x unread section: current#
+s01803: 88 objects
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2078
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2104
+  1x condition: Undefined object 2107
+  1x condition: Undefined object 2108
+  1x condition: Undefined object 2109
+  1x condition: Undefined object 2122
+  1x condition: Undefined object 2128
+  1x condition: Undefined object 2129
+  1x condition: Undefined object 2130
+  1x condition: Undefined object 2131
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2133
+  1x condition: Undefined object 2134
+  1x condition: Undefined object 2135
+  1x condition: Undefined object 2136
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2138
+  1x condition: Undefined object 2156
+  2x condition: Undefined object 2157
+  1x skipped movable: typ 2050 dtyp 43
+  28x skipped movable: typ 2062 dtyp 46
+  1x skipped movable: typ 2063 dtyp 80
+  32x unread key: movable#/ai
+  2x unread key: movable#/card
+  49x unread key: movable#/diff
+  15x unread key: movable#/dis
+  32x unread key: movable#/eint
+  32x unread key: movable#/eng
+  32x unread key: movable#/gun
+  34x unread key: movable#/inte
+  32x unread key: movable#/ntor
+  15x unread key: movable#/num
+  544x unread key: movable#/o#bccond#
+  272x unread key: movable#/o#bcdel
+  544x unread key: movable#/o#bcdep#
+  272x unread key: movable#/o#bcop
+  544x unread key: movable#/o#bcref#
+  19x unread key: movable#/o#car
+  54x unread key: movable#/o#dur
+  6x unread key: movable#/o#hei
+  13x unread key: movable#/o#mah
+  13x unread key: movable#/o#mih
+  32x unread key: movable#/o#rad
+  19x unread key: movable#/o#refx
+  19x unread key: movable#/o#refy
+  272x unread key: movable#/o#typ
+  19x unread key: movable#/o#vel
+  38x unread key: movable#/pz
+  49x unread key: movable#/sle
+  32x unread key: movable#/tor
+  1x unread section: cd
+  124x unread section: current#
+s01804: 88 objects
+  1x condition: Condition reference not found 3
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2078
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2104
+  1x condition: Undefined object 2107
+  1x condition: Undefined object 2108
+  1x condition: Undefined object 2109
+  1x condition: Undefined object 2122
+  1x condition: Undefined object 2128
+  1x condition: Undefined object 2129
+  1x condition: Undefined object 2130
+  1x condition: Undefined object 2131
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2133
+  1x condition: Undefined object 2134
+  1x condition: Undefined object 2135
+  1x condition: Undefined object 2136
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2138
+  12x condition: Undefined object 2156
+  1x condition: Undefined object 2158
+  1x condition: Undefined object 2159
+  1x condition: Undefined object 2167
+  1x condition: Undefined object 2168
+  5x condition: Undefined object 3
+  5x condition: Unhandled condition dep 2 2
+  5x skipped movable: typ 2050 dtyp 44
+  28x skipped movable: typ 2062 dtyp 46
+  1x skipped movable: typ 2063 dtyp 87
+  31x unread key: movable#/ai
+  2x unread key: movable#/card
+  48x unread key: movable#/diff
+  15x unread key: movable#/dis
+  31x unread key: movable#/eint
+  31x unread key: movable#/eng
+  31x unread key: movable#/gun
+  33x unread key: movable#/inte
+  31x unread key: movable#/ntor
+  15x unread key: movable#/num
+  528x unread key: movable#/o#bccond#
+  264x unread key: movable#/o#bcdel
+  528x unread key: movable#/o#bcdep#
+  264x unread key: movable#/o#bcop
+  528x unread key: movable#/o#bcref#
+  19x unread key: movable#/o#car
+  109x unread key: movable#/o#dur
+  72x unread key: movable#/o#mah
+  72x unread key: movable#/o#mih
+  91x unread key: movable#/o#rad
+  72x unread key: movable#/o#refx
+  72x unread key: movable#/o#refy
+  264x unread key: movable#/o#typ
+  72x unread key: movable#/o#vel
+  38x unread key: movable#/pz
+  48x unread key: movable#/sle
+  31x unread key: movable#/tor
+  1x unread section: cd
+  124x unread section: current#
+s01805: 35 objects
+  1x condition: Objective not found 22
+  1x condition: Objective not found 8
+  1x condition: Undefined object 2051
+  1x condition: Undefined object 2052
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2054
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2060
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2090
+  5x condition: Undefined object 2094
+  1x condition: Undefined object 2095
+  1x skipped movable: typ 2050 dtyp 43
+  3x skipped movable: typ 2050 dtyp 44
+  6x skipped movable: typ 2062 dtyp 45
+  5x skipped movable: typ 2062 dtyp 46
+  1x skipped movable: typ 2063 dtyp 69
+  22x unread key: movable#/ai
+  22x unread key: movable#/diff
+  22x unread key: movable#/eint
+  22x unread key: movable#/eng
+  22x unread key: movable#/gun
+  22x unread key: movable#/inte
+  22x unread key: movable#/ntor
+  352x unread key: movable#/o#bccond#
+  176x unread key: movable#/o#bcdel
+  352x unread key: movable#/o#bcdep#
+  176x unread key: movable#/o#bcop
+  352x unread key: movable#/o#bcref#
+  2x unread key: movable#/o#car
+  28x unread key: movable#/o#dur
+  6x unread key: movable#/o#esc
+  20x unread key: movable#/o#hei
+  26x unread key: movable#/o#mah
+  26x unread key: movable#/o#mih
+  22x unread key: movable#/o#rad
+  40x unread key: movable#/o#refx
+  40x unread key: movable#/o#refy
+  176x unread key: movable#/o#typ
+  46x unread key: movable#/o#vel
+  6x unread key: movable#/o#xof
+  6x unread key: movable#/o#yof
+  6x unread key: movable#/o#zof
+  11x unread key: movable#/pz
+  22x unread key: movable#/sle
+  22x unread key: movable#/tor
+  1x unread section: cd
+s01806: 36 objects
+  1x condition: Condition reference not found 4
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2078
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 4
+  1x condition: Unhandled condition dep 2 2
+  3x skipped movable: typ 2049 dtyp 15
+  15x unread key: movable#/ai
+  3x unread key: movable#/card
+  18x unread key: movable#/diff
+  15x unread key: movable#/eint
+  15x unread key: movable#/eng
+  15x unread key: movable#/gun
+  18x unread key: movable#/inte
+  15x unread key: movable#/ntor
+  288x unread key: movable#/o#bccond#
+  144x unread key: movable#/o#bcdel
+  288x unread key: movable#/o#bcdep#
+  144x unread key: movable#/o#bcop
+  288x unread key: movable#/o#bcref#
+  15x unread key: movable#/o#car
+  22x unread key: movable#/o#dur
+  3x unread key: movable#/o#ene
+  5x unread key: movable#/o#hei
+  3x unread key: movable#/o#mah
+  3x unread key: movable#/o#mih
+  14x unread key: movable#/o#rad
+  8x unread key: movable#/o#refx
+  8x unread key: movable#/o#refy
+  144x unread key: movable#/o#typ
+  8x unread key: movable#/o#vel
+  17x unread key: movable#/pz
+  18x unread key: movable#/sle
+  15x unread key: movable#/tor
+  1x unread section: cd
+  78x unread section: current#
+s02001: 43 objects
+  1x condition: Condition reference not found 3
+  1x condition: Undefined object 2060
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 3
+  1x condition: Unhandled condition dep 2 2
+  1x skipped movable: typ 2050 dtyp 44
+  2x skipped movable: typ 2062 dtyp 51
+  2x unread key: movable#/ai
+  4x unread key: movable#/card
+  6x unread key: movable#/diff
+  2x unread key: movable#/eint
+  2x unread key: movable#/eng
+  2x unread key: movable#/gun
+  6x unread key: movable#/inte
+  2x unread key: movable#/ntor
+  96x unread key: movable#/o#bccond#
+  48x unread key: movable#/o#bcdel
+  96x unread key: movable#/o#bcdep#
+  48x unread key: movable#/o#bcop
+  96x unread key: movable#/o#bcref#
+  2x unread key: movable#/o#con
+  10x unread key: movable#/o#dur
+  2x unread key: movable#/o#ene
+  2x unread key: movable#/o#esc
+  4x unread key: movable#/o#mah
+  4x unread key: movable#/o#mih
+  2x unread key: movable#/o#rad
+  2x unread key: movable#/o#refx
+  2x unread key: movable#/o#refy
+  48x unread key: movable#/o#typ
+  4x unread key: movable#/o#vel
+  2x unread key: movable#/o#xof
+  2x unread key: movable#/o#yof
+  2x unread key: movable#/o#zof
+  37x unread key: movable#/pz
+  6x unread key: movable#/sle
+  2x unread key: movable#/tor
+  1x unread section: cd
+s02002: 19 objects
+  1x condition: Objective not found 7
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2054
+  2x condition: Undefined object 2060
+  2x condition: Undefined object 2061
+  2x condition: Undefined object 2062
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2070
+  2x condition: Undefined object 2071
+  1x skipped movable: typ 2050 dtyp 43
+  3x skipped movable: typ 2050 dtyp 44
+  1x skipped movable: typ 2062 dtyp 51
+  1x skipped movable: typ 2063 dtyp 68
+  1x skipped movable: typ 2063 dtyp 69
+  1x skipped movable: typ 2063 dtyp 70
+  10x unread key: movable#/ai
+  2x unread key: movable#/card
+  12x unread key: movable#/diff
+  10x unread key: movable#/eint
+  10x unread key: movable#/eng
+  10x unread key: movable#/gun
+  12x unread key: movable#/inte
+  10x unread key: movable#/ntor
+  192x unread key: movable#/o#bccond#
+  96x unread key: movable#/o#bcdel
+  192x unread key: movable#/o#bcdep#
+  96x unread key: movable#/o#bcop
+  192x unread key: movable#/o#bcref#
+  20x unread key: movable#/o#dur
+  4x unread key: movable#/o#esc
+  4x unread key: movable#/o#hei
+  18x unread key: movable#/o#mah
+  18x unread key: movable#/o#mih
+  14x unread key: movable#/o#rad
+  18x unread key: movable#/o#refx
+  18x unread key: movable#/o#refy
+  96x unread key: movable#/o#typ
+  22x unread key: movable#/o#vel
+  4x unread key: movable#/o#xof
+  4x unread key: movable#/o#yof
+  4x unread key: movable#/o#zof
+  4x unread key: movable#/pz
+  17x unread key: movable#/sle
+  10x unread key: movable#/tor
+  1x unread section: cd
+s02003: 46 objects
+  3x condition: Objective not found 26
+  1x condition: Objective not found 32
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2094
+  1x condition: Undefined object 2100
+  2x skipped movable: typ 2050 dtyp 44
+  2x skipped movable: typ 2062 dtyp 51
+  10x unread key: movable#/ai
+  9x unread key: movable#/card
+  19x unread key: movable#/diff
+  10x unread key: movable#/eint
+  10x unread key: movable#/eng
+  10x unread key: movable#/gun
+  19x unread key: movable#/inte
+  10x unread key: movable#/ntor
+  304x unread key: movable#/o#bccond#
+  152x unread key: movable#/o#bcdel
+  304x unread key: movable#/o#bcdep#
+  152x unread key: movable#/o#bcop
+  304x unread key: movable#/o#bcref#
+  23x unread key: movable#/o#dur
+  4x unread key: movable#/o#esc
+  4x unread key: movable#/o#hei
+  14x unread key: movable#/o#mah
+  14x unread key: movable#/o#mih
+  10x unread key: movable#/o#rad
+  14x unread key: movable#/o#refx
+  14x unread key: movable#/o#refy
+  152x unread key: movable#/o#typ
+  18x unread key: movable#/o#vel
+  4x unread key: movable#/o#xof
+  4x unread key: movable#/o#yof
+  4x unread key: movable#/o#zof
+  26x unread key: movable#/pz
+  19x unread key: movable#/sle
+  10x unread key: movable#/tor
+  1x unread section: cd
+s02004: 53 objects
+  1x condition: Condition reference not found 6
+  3x condition: Objective not found 32
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2085
+  1x condition: Undefined object 2105
+  1x condition: Undefined object 2107
+  1x condition: Undefined object 2112
+  1x condition: Undefined object 6
+  1x condition: Unhandled condition dep 2 2
+  1x skipped movable: typ 2050 dtyp 43
+  2x skipped movable: typ 2062 dtyp 45
+  5x skipped movable: typ 2062 dtyp 51
+  1x skipped movable: typ 2063 dtyp 87
+  9x unread key: movable#/ai
+  5x unread key: movable#/card
+  14x unread key: movable#/diff
+  9x unread key: movable#/eint
+  9x unread key: movable#/eng
+  9x unread key: movable#/gun
+  14x unread key: movable#/inte
+  9x unread key: movable#/ntor
+  224x unread key: movable#/o#bccond#
+  112x unread key: movable#/o#bcdel
+  224x unread key: movable#/o#bcdep#
+  112x unread key: movable#/o#bcop
+  224x unread key: movable#/o#bcref#
+  31x unread key: movable#/o#dur
+  20x unread key: movable#/o#hei
+  18x unread key: movable#/o#mah
+  18x unread key: movable#/o#mih
+  18x unread key: movable#/o#rad
+  38x unread key: movable#/o#refx
+  38x unread key: movable#/o#refy
+  112x unread key: movable#/o#typ
+  38x unread key: movable#/o#vel
+  37x unread key: movable#/pz
+  14x unread key: movable#/sle
+  9x unread key: movable#/tor
+  1x unread section: cd
+s02005: 55 objects
+  1x condition: Objective not found 6
+  1x condition: Undefined object 2060
+  1x condition: Undefined object 2073
+  3x condition: Undefined object 2092
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2096
+  1x condition: Undefined object 2110
+  1x condition: Undefined object 2111
+  1x condition: Undefined object 2114
+  2x skipped movable: typ 2050 dtyp 43
+  3x skipped movable: typ 2050 dtyp 44
+  1x skipped movable: typ 2062 dtyp 45
+  2x skipped movable: typ 2062 dtyp 51
+  12x unread key: movable#/ai
+  4x unread key: movable#/card
+  16x unread key: movable#/diff
+  12x unread key: movable#/eint
+  12x unread key: movable#/eng
+  12x unread key: movable#/gun
+  16x unread key: movable#/inte
+  12x unread key: movable#/ntor
+  256x unread key: movable#/o#bccond#
+  128x unread key: movable#/o#bcdel
+  256x unread key: movable#/o#bcdep#
+  128x unread key: movable#/o#bcop
+  256x unread key: movable#/o#bcref#
+  2x unread key: movable#/o#con
+  31x unread key: movable#/o#dur
+  3x unread key: movable#/o#ene
+  7x unread key: movable#/o#esc
+  18x unread key: movable#/o#hei
+  19x unread key: movable#/o#mah
+  19x unread key: movable#/o#mih
+  12x unread key: movable#/o#rad
+  30x unread key: movable#/o#refx
+  30x unread key: movable#/o#refy
+  128x unread key: movable#/o#typ
+  37x unread key: movable#/o#vel
+  7x unread key: movable#/o#xof
+  7x unread key: movable#/o#yof
+  7x unread key: movable#/o#zof
+  37x unread key: movable#/pz
+  16x unread key: movable#/sle
+  12x unread key: movable#/tor
+  1x unread section: cd
+s02006: 53 objects
+  1x condition: Objective not found 21
+  2x condition: Objective not found 36
+  1x condition: Unachievable objective 2121 3
+  1x condition: Undefined object 2060
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2109
+  1x condition: Undefined object 2112
+  1x condition: Undefined object 2115
+  1x condition: Undefined object 2120
+  1x condition: Undefined object 2122
+  3x skipped movable: typ 2050 dtyp 43
+  3x skipped movable: typ 2050 dtyp 44
+  1x skipped movable: typ 2062 dtyp 45
+  2x skipped movable: typ 2062 dtyp 51
+  10x unread key: movable#/ai
+  4x unread key: movable#/card
+  14x unread key: movable#/diff
+  10x unread key: movable#/eint
+  10x unread key: movable#/eng
+  10x unread key: movable#/gun
+  14x unread key: movable#/inte
+  10x unread key: movable#/ntor
+  224x unread key: movable#/o#bccond#
+  112x unread key: movable#/o#bcdel
+  224x unread key: movable#/o#bcdep#
+  112x unread key: movable#/o#bcop
+  224x unread key: movable#/o#bcref#
+  2x unread key: movable#/o#con
+  16x unread key: movable#/o#dur
+  6x unread key: movable#/o#hei
+  10x unread key: movable#/o#mah
+  10x unread key: movable#/o#mih
+  10x unread key: movable#/o#rad
+  16x unread key: movable#/o#refx
+  16x unread key: movable#/o#refy
+  112x unread key: movable#/o#typ
+  16x unread key: movable#/o#vel
+  37x unread key: movable#/pz
+  14x unread key: movable#/sle
+  10x unread key: movable#/tor
+  1x unread section: cd
+s02007: 65 objects
+  1x condition: Undefined object 2060
+  1x condition: Undefined object 2073
+  2x condition: Undefined object 2092
+  1x condition: Undefined object 2114
+  1x condition: Undefined object 2116
+  1x condition: Undefined object 2118
+  3x skipped movable: typ 2050 dtyp 43
+  2x skipped movable: typ 2062 dtyp 51
+  1x skipped movable: typ 2063 dtyp 87
+  23x unread key: movable#/ai
+  4x unread key: movable#/card
+  27x unread key: movable#/diff
+  23x unread key: movable#/eint
+  23x unread key: movable#/eng
+  23x unread key: movable#/gun
+  27x unread key: movable#/inte
+  23x unread key: movable#/ntor
+  432x unread key: movable#/o#bccond#
+  216x unread key: movable#/o#bcdel
+  432x unread key: movable#/o#bcdep#
+  216x unread key: movable#/o#bcop
+  432x unread key: movable#/o#bcref#
+  2x unread key: movable#/o#con
+  29x unread key: movable#/o#dur
+  13x unread key: movable#/o#hei
+  23x unread key: movable#/o#mah
+  23x unread key: movable#/o#mih
+  23x unread key: movable#/o#rad
+  36x unread key: movable#/o#refx
+  36x unread key: movable#/o#refy
+  216x unread key: movable#/o#typ
+  36x unread key: movable#/o#vel
+  37x unread key: movable#/pz
+  27x unread key: movable#/sle
+  23x unread key: movable#/tor
+  1x unread section: cd
+s02201: 79 objects
+  2x condition: Objective not found 6
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2064
+  2x condition: Undefined object 2069
+  2x condition: Undefined object 2070
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2075
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2077
+  1x condition: Undefined object 2078
+  1x condition: Undefined object 2079
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2094
+  1x condition: Undefined object 2096
+  1x condition: Undefined object 2098
+  1x condition: Undefined object 2099
+  1x condition: Undefined object 2100
+  2x condition: Undefined object 2102
+  1x condition: Undefined object 2108
+  1x condition: Undefined object 2110
+  1x condition: Undefined object 2111
+  1x condition: Undefined object 2112
+  1x condition: Undefined object 2113
+  1x condition: Undefined object 2114
+  1x condition: Undefined object 2117
+  1x condition: Undefined object 2119
+  1x condition: Undefined object 2120
+  1x condition: Undefined object 2121
+  1x condition: Undefined object 2123
+  1x condition: Undefined object 2124
+  1x condition: Undefined object 2128
+  1x condition: Undefined object 2129
+  1x condition: Undefined object 2130
+  1x condition: Undefined object 2171
+  1x condition: Undefined object 2172
+  1x condition: Undefined object 2173
+  1x condition: Undefined object 2174
+  1x condition: Undefined object 2175
+  1x condition: Undefined object 2176
+  1x condition: Undefined object 2177
+  1x condition: Undefined object 2178
+  1x condition: Undefined object 2179
+  1x condition: Undefined object 2180
+  1x condition: Undefined object 2181
+  1x condition: Undefined object 2182
+  1x condition: Undefined object 2183
+  1x condition: Undefined object 2184
+  1x condition: Undefined object 2185
+  1x condition: Undefined object 2186
+  5x skipped movable: typ 2050 dtyp 43
+  27x skipped movable: typ 2052 dtyp 90
+  19x skipped movable: typ 2062 dtyp 52
+  1x skipped movable: typ 2063 dtyp 80
+  2x skipped movable: typ 2063 dtyp 85
+  23x unread key: movable#/ai
+  23x unread key: movable#/diff
+  23x unread key: movable#/eint
+  23x unread key: movable#/eng
+  23x unread key: movable#/gun
+  23x unread key: movable#/inte
+  23x unread key: movable#/ntor
+  368x unread key: movable#/o#bccond#
+  184x unread key: movable#/o#bcdel
+  368x unread key: movable#/o#bcdep#
+  184x unread key: movable#/o#bcop
+  368x unread key: movable#/o#bcref#
+  44x unread key: movable#/o#dur
+  36x unread key: movable#/o#hei
+  31x unread key: movable#/o#mah
+  31x unread key: movable#/o#mih
+  31x unread key: movable#/o#rad
+  67x unread key: movable#/o#refx
+  67x unread key: movable#/o#refy
+  184x unread key: movable#/o#typ
+  67x unread key: movable#/o#vel
+  55x unread key: movable#/pz
+  23x unread key: movable#/sle
+  23x unread key: movable#/tor
+  1x unread section: cd
+s02202: 89 objects
+  1x condition: Condition reference not found 6
+  1x condition: Objective not found 10
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2050
+  1x condition: Undefined object 2052
+  2x condition: Undefined object 2056
+  1x condition: Undefined object 2062
+  1x condition: Undefined object 2063
+  1x condition: Undefined object 2095
+  2x condition: Undefined object 2114
+  2x condition: Undefined object 2115
+  2x condition: Undefined object 2116
+  1x condition: Undefined object 2122
+  1x condition: Undefined object 2123
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2140
+  1x condition: Undefined object 2143
+  1x condition: Undefined object 2144
+  1x condition: Undefined object 2145
+  1x condition: Undefined object 2146
+  1x condition: Undefined object 2147
+  1x condition: Undefined object 2150
+  1x condition: Undefined object 2151
+  1x condition: Undefined object 2152
+  1x condition: Undefined object 2157
+  1x condition: Undefined object 2158
+  1x condition: Undefined object 2159
+  1x condition: Undefined object 2160
+  1x condition: Undefined object 2161
+  2x condition: Undefined object 2162
+  1x condition: Undefined object 2163
+  2x condition: Undefined object 2164
+  2x condition: Undefined object 2165
+  1x condition: Undefined object 2172
+  1x condition: Undefined object 2173
+  1x condition: Undefined object 2175
+  1x condition: Undefined object 2178
+  1x condition: Undefined object 2179
+  1x condition: Undefined object 2181
+  1x condition: Undefined object 2182
+  1x condition: Undefined object 2183
+  1x condition: Undefined object 2185
+  1x condition: Undefined object 2189
+  1x condition: Undefined object 2190
+  1x condition: Undefined object 2191
+  1x condition: Undefined object 2193
+  1x condition: Undefined object 2197
+  1x condition: Undefined object 2203
+  1x condition: Undefined object 2208
+  1x condition: Undefined object 2209
+  1x condition: Undefined object 2212
+  1x condition: Undefined object 2213
+  1x condition: Undefined object 2214
+  1x condition: Undefined object 2215
+  1x condition: Undefined object 2216
+  1x condition: Undefined object 2217
+  1x condition: Undefined object 2218
+  1x condition: Undefined object 2219
+  1x condition: Undefined object 2220
+  1x condition: Undefined object 2221
+  1x condition: Undefined object 2222
+  4x condition: Undefined object 6
+  4x condition: Unhandled condition dep 2 2
+  5x skipped movable: typ 2049 dtyp 15
+  9x skipped movable: typ 2050 dtyp 43
+  2x skipped movable: typ 2050 dtyp 44
+  28x skipped movable: typ 2052 dtyp 90
+  1x skipped movable: typ 2062 dtyp 45
+  11x skipped movable: typ 2062 dtyp 52
+  1x skipped movable: typ 2063 dtyp 80
+  1x skipped movable: typ 2063 dtyp 81
+  3x skipped movable: typ 2063 dtyp 85
+  38x unread key: movable#/ai
+  38x unread key: movable#/diff
+  38x unread key: movable#/eint
+  38x unread key: movable#/eng
+  38x unread key: movable#/gun
+  38x unread key: movable#/inte
+  38x unread key: movable#/ntor
+  608x unread key: movable#/o#bccond#
+  304x unread key: movable#/o#bcdel
+  608x unread key: movable#/o#bcdep#
+  304x unread key: movable#/o#bcop
+  608x unread key: movable#/o#bcref#
+  54x unread key: movable#/o#dur
+  37x unread key: movable#/o#hei
+  40x unread key: movable#/o#mah
+  40x unread key: movable#/o#mih
+  40x unread key: movable#/o#rad
+  77x unread key: movable#/o#refx
+  77x unread key: movable#/o#refy
+  304x unread key: movable#/o#typ
+  77x unread key: movable#/o#vel
+  49x unread key: movable#/pz
+  57x unread key: movable#/sle
+  38x unread key: movable#/tor
+  1x unread section: cd
+s02203: 103 objects
+  1x condition: Objective not found 12
+  1x condition: Objective not found 8
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2070
+  1x condition: Undefined object 2074
+  1x condition: Undefined object 2075
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2080
+  1x condition: Undefined object 2081
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2115
+  1x condition: Undefined object 2119
+  1x condition: Undefined object 2121
+  1x condition: Undefined object 2122
+  1x condition: Undefined object 2123
+  1x condition: Undefined object 2129
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2134
+  1x condition: Undefined object 2145
+  1x condition: Undefined object 2150
+  1x condition: Undefined object 2153
+  1x condition: Undefined object 2154
+  1x condition: Undefined object 2157
+  1x condition: Undefined object 2160
+  1x condition: Undefined object 2172
+  1x condition: Undefined object 2173
+  1x condition: Undefined object 2183
+  1x condition: Undefined object 2184
+  2x condition: Undefined object 2189
+  1x condition: Undefined object 2190
+  1x condition: Undefined object 2194
+  2x condition: Undefined object 2195
+  2x condition: Undefined object 2197
+  2x condition: Undefined object 2198
+  1x condition: Undefined object 2199
+  1x condition: Undefined object 2204
+  1x condition: Undefined object 2205
+  8x skipped movable: typ 2050 dtyp 43
+  4x skipped movable: typ 2050 dtyp 44
+  9x skipped movable: typ 2052 dtyp 90
+  16x skipped movable: typ 2062 dtyp 52
+  1x skipped movable: typ 2063 dtyp 86
+  46x unread key: movable#/ai
+  46x unread key: movable#/diff
+  46x unread key: movable#/eint
+  46x unread key: movable#/eng
+  46x unread key: movable#/gun
+  46x unread key: movable#/inte
+  46x unread key: movable#/ntor
+  736x unread key: movable#/o#bccond#
+  368x unread key: movable#/o#bcdel
+  736x unread key: movable#/o#bcdep#
+  368x unread key: movable#/o#bcop
+  736x unread key: movable#/o#bcref#
+  84x unread key: movable#/o#dur
+  80x unread key: movable#/o#hei
+  76x unread key: movable#/o#mah
+  76x unread key: movable#/o#mih
+  76x unread key: movable#/o#rad
+  156x unread key: movable#/o#refx
+  156x unread key: movable#/o#refy
+  368x unread key: movable#/o#typ
+  156x unread key: movable#/o#vel
+  55x unread key: movable#/pz
+  56x unread key: movable#/sle
+  46x unread key: movable#/tor
+  1x unread section: cd
+s02204: 68 objects
+  1x condition: Condition reference not found 6
+  1x condition: Objective not found 10
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2061
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2071
+  1x condition: Undefined object 2072
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2085
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2092
+  1x condition: Undefined object 2095
+  5x condition: Undefined object 2107
+  3x condition: Undefined object 2108
+  1x condition: Undefined object 2111
+  1x condition: Undefined object 2117
+  1x condition: Undefined object 2119
+  1x condition: Undefined object 2120
+  1x condition: Undefined object 2126
+  1x condition: Undefined object 2127
+  1x condition: Undefined object 2128
+  1x condition: Undefined object 2129
+  1x condition: Undefined object 2131
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2144
+  2x condition: Undefined object 6
+  2x condition: Unhandled condition dep 2 2
+  9x skipped movable: typ 2050 dtyp 43
+  9x skipped movable: typ 2052 dtyp 90
+  4x skipped movable: typ 2062 dtyp 52
+  3x skipped movable: typ 2063 dtyp 82
+  1x skipped movable: typ 2063 dtyp 86
+  1x skipped movable: typ 2063 dtyp 87
+  22x unread key: movable#/ai
+  22x unread key: movable#/diff
+  22x unread key: movable#/eint
+  22x unread key: movable#/eng
+  22x unread key: movable#/gun
+  22x unread key: movable#/inte
+  22x unread key: movable#/ntor
+  352x unread key: movable#/o#bccond#
+  176x unread key: movable#/o#bcdel
+  352x unread key: movable#/o#bcdep#
+  176x unread key: movable#/o#bcop
+  352x unread key: movable#/o#bcref#
+  29x unread key: movable#/o#dur
+  35x unread key: movable#/o#hei
+  28x unread key: movable#/o#mah
+  28x unread key: movable#/o#mih
+  28x unread key: movable#/o#rad
+  63x unread key: movable#/o#refx
+  63x unread key: movable#/o#refy
+  176x unread key: movable#/o#typ
+  63x unread key: movable#/o#vel
+  46x unread key: movable#/pz
+  38x unread key: movable#/sle
+  22x unread key: movable#/tor
+  1x unread section: cd
+s02205: 121 objects
+  1x condition: Condition reference not found 2
+  3x condition: Objective not found 22
+  6x condition: Objective not found 6
+  2x condition: Objective not found 8
+  1x condition: Undefined object 2
+  1x condition: Undefined object 2050
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2093
+  1x condition: Undefined object 2094
+  1x condition: Undefined object 2107
+  1x condition: Undefined object 2117
+  1x condition: Undefined object 2121
+  1x condition: Undefined object 2123
+  1x condition: Undefined object 2124
+  1x condition: Undefined object 2125
+  1x condition: Undefined object 2132
+  1x condition: Undefined object 2144
+  1x condition: Undefined object 2147
+  1x condition: Undefined object 2148
+  1x condition: Undefined object 2151
+  1x condition: Undefined object 2152
+  1x condition: Undefined object 2153
+  1x condition: Undefined object 2154
+  1x condition: Undefined object 2155
+  1x condition: Undefined object 2156
+  1x condition: Undefined object 2161
+  1x condition: Undefined object 2162
+  1x condition: Undefined object 2163
+  1x condition: Undefined object 2164
+  1x condition: Undefined object 2178
+  1x condition: Undefined object 2179
+  1x condition: Undefined object 2180
+  1x condition: Undefined object 2181
+  1x condition: Undefined object 2182
+  1x condition: Undefined object 2183
+  1x condition: Undefined object 2184
+  1x condition: Undefined object 2185
+  1x condition: Undefined object 2187
+  1x condition: Undefined object 2188
+  1x condition: Undefined object 2194
+  1x condition: Undefined object 2195
+  1x condition: Undefined object 2196
+  1x condition: Undefined object 2197
+  1x condition: Undefined object 2198
+  1x condition: Undefined object 2199
+  1x condition: Unhandled condition dep 2 2
+  5x skipped movable: typ 2050 dtyp 42
+  9x skipped movable: typ 2050 dtyp 43
+  23x skipped movable: typ 2052 dtyp 90
+  2x skipped movable: typ 2062 dtyp 45
+  2x skipped movable: typ 2062 dtyp 52
+  1x skipped movable: typ 2063 dtyp 86
+  1x skipped movable: typ 2063 dtyp 87
+  18x unread key: movable#/ai
+  40x unread key: movable#/diff
+  22x unread key: movable#/dis
+  18x unread key: movable#/eint
+  18x unread key: movable#/eng
+  18x unread key: movable#/gun
+  18x unread key: movable#/inte
+  18x unread key: movable#/ntor
+  22x unread key: movable#/num
+  288x unread key: movable#/o#bccond#
+  144x unread key: movable#/o#bcdel
+  288x unread key: movable#/o#bcdep#
+  144x unread key: movable#/o#bcop
+  288x unread key: movable#/o#bcref#
+  21x unread key: movable#/o#dur
+  16x unread key: movable#/o#hei
+  17x unread key: movable#/o#mah
+  17x unread key: movable#/o#mih
+  17x unread key: movable#/o#rad
+  33x unread key: movable#/o#refx
+  33x unread key: movable#/o#refy
+  144x unread key: movable#/o#typ
+  33x unread key: movable#/o#vel
+  76x unread key: movable#/pz
+  46x unread key: movable#/sle
+  18x unread key: movable#/tor
+  1x unread section: cd
+strai0: 84 objects
+  1x condition: Undefined object 2133
+  1x condition: Undefined object 2134
+  1x condition: Undefined object 2135
+  1x condition: Undefined object 2136
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2138
+  1x condition: Undefined object 2139
+  1x condition: Undefined object 2140
+  1x condition: Undefined object 2141
+  1x condition: Undefined object 2142
+  1x condition: Undefined object 2143
+  1x condition: Undefined object 2144
+  1x condition: Undefined object 2145
+  1x condition: Undefined object 2146
+  1x condition: Undefined object 2147
+  1x condition: Undefined object 2148
+  1x condition: Undefined object 2149
+  1x condition: Undefined object 2150
+  1x condition: Undefined object 2151
+  1x condition: Undefined object 2152
+  1x condition: Undefined object 2153
+  1x condition: Undefined object 2154
+  1x condition: Undefined object 2155
+  1x condition: Undefined object 2156
+  1x condition: Undefined object 2157
+  1x condition: Undefined object 2158
+  1x condition: Undefined object 2159
+  1x condition: Undefined object 2160
+  1x condition: Undefined object 2161
+  1x condition: Undefined object 2162
+  1x condition: Undefined object 2163
+  1x condition: Undefined object 2164
+  1x condition: Undefined object 2165
+  1x condition: Undefined object 2166
+  1x condition: Undefined object 2167
+  1x condition: Undefined object 2168
+  1x condition: Undefined object 2169
+  1x condition: Undefined object 2170
+  1x condition: Undefined object 2171
+  1x condition: Undefined object 2172
+  1x condition: Undefined object 2173
+  1x condition: Undefined object 2174
+  1x condition: Undefined object 2175
+  1x condition: Undefined object 2176
+  1x condition: Undefined object 2177
+  45x skipped movable: typ 2049 dtyp 14
+  84x unread key: movable#/pz
+  1x unread section: cd
+strai1: 168 objects
+  1x condition: Undefined object 2048
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2054
+  1x condition: Undefined object 2055
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2058
+  1x condition: Undefined object 2063
+  1x condition: Undefined object 2065
+  1x condition: Undefined object 2066
+  1x condition: Undefined object 2067
+  1x condition: Undefined object 2069
+  1x condition: Undefined object 2115
+  1x condition: Undefined object 2120
+  1x condition: Undefined object 2137
+  1x condition: Undefined object 2230
+  1x condition: Undefined object 2231
+  1x condition: Undefined object 2232
+  1x condition: Undefined object 2233
+  1x condition: Undefined object 2234
+  1x condition: Undefined object 2235
+  1x condition: Undefined object 2236
+  1x condition: Undefined object 2237
+  1x condition: Undefined object 2238
+  1x condition: Undefined object 2241
+  1x condition: Undefined object 2242
+  1x condition: Undefined object 2243
+  1x condition: Undefined object 2244
+  1x condition: Undefined object 2245
+  11x skipped movable: typ 2051 dtyp 2
+  10x skipped movable: typ 2051 dtyp 3
+  8x skipped movable: typ 2051 dtyp 4
+  19x unread key: movable#/ai
+  19x unread key: movable#/diff
+  19x unread key: movable#/eint
+  19x unread key: movable#/eng
+  19x unread key: movable#/gun
+  19x unread key: movable#/inte
+  19x unread key: movable#/ntor
+  304x unread key: movable#/o#bccond#
+  152x unread key: movable#/o#bcdel
+  304x unread key: movable#/o#bcdep#
+  152x unread key: movable#/o#bcop
+  304x unread key: movable#/o#bcref#
+  14x unread key: movable#/o#car
+  19x unread key: movable#/o#dur
+  5x unread key: movable#/o#mah
+  5x unread key: movable#/o#mih
+  19x unread key: movable#/o#rad
+  5x unread key: movable#/o#refx
+  5x unread key: movable#/o#refy
+  152x unread key: movable#/o#typ
+  5x unread key: movable#/o#vel
+  148x unread key: movable#/pz
+  19x unread key: movable#/sle
+  19x unread key: movable#/tor
+  1x unread section: cd
+strai2: 113 objects
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2052
+  1x condition: Undefined object 2053
+  1x condition: Undefined object 2054
+  1x condition: Undefined object 2056
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2068
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2081
+  1x condition: Undefined object 2082
+  1x condition: Undefined object 2083
+  1x condition: Undefined object 2084
+  1x condition: Undefined object 2085
+  1x condition: Undefined object 2086
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  1x condition: Undefined object 2090
+  1x condition: Undefined object 2091
+  1x condition: Undefined object 2100
+  1x condition: Undefined object 2105
+  1x condition: Undefined object 2106
+  1x condition: Undefined object 2111
+  1x condition: Undefined object 2112
+  1x condition: Undefined object 2113
+  1x condition: Undefined object 2114
+  10x skipped movable: typ 2049 dtyp 88
+  6x skipped movable: typ 2049 dtyp 89
+  5x skipped movable: typ 2051 dtyp 4
+  1x skipped movable: typ 2063 dtyp 71
+  1x skipped movable: typ 2063 dtyp 73
+  1x skipped movable: typ 2063 dtyp 77
+  2x skipped movable: typ 2063 dtyp 78
+  1x skipped movable: typ 2063 dtyp 81
+  27x unread key: movable#/ai
+  111x unread key: movable#/diff
+  84x unread key: movable#/dis
+  27x unread key: movable#/eint
+  27x unread key: movable#/eng
+  27x unread key: movable#/gun
+  27x unread key: movable#/inte
+  27x unread key: movable#/ntor
+  84x unread key: movable#/num
+  432x unread key: movable#/o#bccond#
+  216x unread key: movable#/o#bcdel
+  432x unread key: movable#/o#bcdep#
+  216x unread key: movable#/o#bcop
+  432x unread key: movable#/o#bcref#
+  27x unread key: movable#/o#dur
+  23x unread key: movable#/o#ene
+  4x unread key: movable#/o#hei
+  27x unread key: movable#/o#mah
+  27x unread key: movable#/o#mih
+  27x unread key: movable#/o#rad
+  31x unread key: movable#/o#refx
+  31x unread key: movable#/o#refy
+  216x unread key: movable#/o#typ
+  31x unread key: movable#/o#vel
+  111x unread key: movable#/sle
+  27x unread key: movable#/tor
+  1x unread section: cd
+  80x unread section: current#
+strai3: 184 objects
+  1x condition: Undefined object 2049
+  1x condition: Undefined object 2050
+  1x condition: Undefined object 2051
+  1x condition: Undefined object 2054
+  1x condition: Undefined object 2057
+  1x condition: Undefined object 2059
+  1x condition: Undefined object 2073
+  1x condition: Undefined object 2076
+  1x condition: Undefined object 2087
+  1x condition: Undefined object 2088
+  1x condition: Undefined object 2089
+  2x condition: Undefined object 2106
+  2x condition: Undefined object 2109
+  1x condition: Undefined object 2113
+  1x condition: Undefined object 2149
+  1x condition: Undefined object 2158
+  1x condition: Undefined object 2184
+  1x condition: Undefined object 2185
+  1x condition: Undefined object 2186
+  1x condition: Undefined object 2188
+  1x condition: Undefined object 2189
+  1x condition: Undefined object 2190
+  1x condition: Undefined object 2191
+  1x condition: Undefined object 2192
+  1x condition: Undefined object 2193
+  1x condition: Undefined object 2194
+  1x condition: Undefined object 2197
+  1x condition: Undefined object 2198
+  2x condition: Undefined object 2199
+  1x condition: Undefined object 2201
+  2x condition: Undefined object 2202
+  1x condition: Undefined object 2217
+  2x condition: Undefined object 2219
+  1x condition: Undefined object 2238
+  1x condition: Undefined object 2240
+  1x condition: Undefined object 2241
+  1x condition: Undefined object 2256
+  1x condition: Undefined object 2266
+  1x condition: Undefined object 2268
+  1x condition: Undefined object 2279
+  1x condition: Undefined object 2280
+  1x condition: Undefined object 2281
+  1x condition: Undefined object 2282
+  7x skipped movable: typ 2049 dtyp 88
+  11x skipped movable: typ 2049 dtyp 89
+  5x skipped movable: typ 2051 dtyp 2
+  5x skipped movable: typ 2051 dtyp 3
+  7x skipped movable: typ 2051 dtyp 4
+  2x skipped movable: typ 2052 dtyp 6
+  6x skipped movable: typ 2062 dtyp 45
+  46x unread key: movable#/ai
+  83x unread key: movable#/diff
+  37x unread key: movable#/dis
+  46x unread key: movable#/eint
+  46x unread key: movable#/eng
+  46x unread key: movable#/gun
+  46x unread key: movable#/inte
+  46x unread key: movable#/ntor
+  37x unread key: movable#/num
+  736x unread key: movable#/o#bccond#
+  368x unread key: movable#/o#bcdel
+  736x unread key: movable#/o#bcdep#
+  368x unread key: movable#/o#bcop
+  736x unread key: movable#/o#bcref#
+  28x unread key: movable#/o#car
+  46x unread key: movable#/o#dur
+  3x unread key: movable#/o#ene
+  44x unread key: movable#/o#hei
+  10x unread key: movable#/o#mah
+  10x unread key: movable#/o#mih
+  38x unread key: movable#/o#rad
+  54x unread key: movable#/o#refx
+  54x unread key: movable#/o#refy
+  368x unread key: movable#/o#typ
+  54x unread key: movable#/o#vel
+  97x unread key: movable#/pz
+  83x unread key: movable#/sle
+  46x unread key: movable#/tor
+  1x unread section: cd
+
+Total: 71 missions, 3871 objects
+  19760x unread key: movable#/o#bccond#
+  19760x unread key: movable#/o#bcdep#
+  19760x unread key: movable#/o#bcref#
+  9880x unread key: movable#/o#bcdel
+  9880x unread key: movable#/o#bcop
+  9880x unread key: movable#/o#typ
+  2263x unread key: movable#/sle
+  2117x unread key: movable#/diff
+  1987x unread key: movable#/o#dur
+  1674x unread key: movable#/o#vel
+  1634x unread key: movable#/pz
+  1612x unread key: movable#/o#refx
+  1612x unread key: movable#/o#refy
+  1407x condition: Undefined object #
+  1329x unread key: movable#/o#rad
+  1266x unread section: current#
+  1235x unread key: movable#/inte
+  1110x unread key: movable#/ai
+  1110x unread key: movable#/eint
+  1110x unread key: movable#/eng
+  1110x unread key: movable#/gun
+  1110x unread key: movable#/ntor
+  1110x unread key: movable#/tor
+  1025x unread key: movable#/o#mah
+  1025x unread key: movable#/o#mih
+  882x unread key: movable#/dis
+  882x unread key: movable#/num
+  649x unread key: movable#/o#hei
+  394x unread key: movable#/o#car
+  322x unread key: movable#/o#ene
+  145x skipped movable: typ 2062 dtyp 46
+  125x unread key: movable#/card
+  98x condition: Objective not found #
+  96x skipped movable: typ 2052 dtyp 90
+  95x skipped movable: typ 2049 dtyp 14
+  76x skipped movable: typ 2049 dtyp 89
+  73x skipped movable: typ 2049 dtyp 13
+  73x skipped movable: typ 2062 dtyp 45
+  71x unread section: cd
+  60x skipped movable: typ 2049 dtyp 88
+  57x skipped movable: typ 2051 dtyp 3
+  56x skipped movable: typ 2049 dtyp 11
+  55x skipped movable: typ 2062 dtyp 52
+  53x condition: Unhandled condition dep # #
+  52x skipped movable: typ 2050 dtyp 43
+  50x unread key: movable#/o#esc
+  50x unread key: movable#/o#xof
+  50x unread key: movable#/o#yof
+  50x unread key: movable#/o#zof
+  46x skipped movable: typ 2050 dtyp 44
+  38x skipped movable: typ 2051 dtyp 4
+  29x skipped movable: typ 2051 dtyp 2
+  23x condition: Condition reference not found #
+  20x skipped movable: typ 2049 dtyp 15
+  19x skipped movable: typ 2062 dtyp 51
+  18x skipped movable: typ 2050 dtyp 42
+  12x skipped movable: typ 2052 dtyp 6
+  11x skipped movable: typ 2051 dtyp 65
+  9x unread key: movable#/o#con
+  8x skipped movable: typ 2063 dtyp 68
+  7x skipped movable: typ 2062 dtyp 49
+  7x skipped movable: typ 2063 dtyp 69
+  7x skipped movable: typ 2063 dtyp 72
+  6x skipped movable: typ 2063 dtyp 80
+  6x skipped movable: typ 2063 dtyp 85
+  5x skipped movable: typ 2063 dtyp 71
+  5x skipped movable: typ 2063 dtyp 87
+  4x condition: Abnormal condition #
+  3x condition: Unachievable objective # #
+  3x skipped movable: typ 2063 dtyp 73
+  3x skipped movable: typ 2063 dtyp 78
+  3x skipped movable: typ 2063 dtyp 79
+  3x skipped movable: typ 2063 dtyp 81
+  3x skipped movable: typ 2063 dtyp 82
+  3x skipped movable: typ 2063 dtyp 83
+  3x skipped movable: typ 2063 dtyp 86
+  2x skipped movable: typ 2063 dtyp 75
+  2x skipped movable: typ 2063 dtyp 84
+  1x skipped movable: typ 2063 dtyp 70
+  1x skipped movable: typ 2063 dtyp 77
+  1x skipped movable: typ 2063 dtyp 91

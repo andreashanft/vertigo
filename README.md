@@ -31,6 +31,33 @@ make
 Qt has to be found through its real prefix; the symlinks Homebrew creates in
 `/opt/homebrew/lib/cmake` make Qt's CMake files look for `mkspecs` in the wrong place.
 
+## Testing
+
+Vertigo can start a mission directly, which is meant for testing:
+
+```
+vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
+```
+
+- `--boat` picks the boat (2049 Hiob, 2050 Gator, 2051 Zorn, 2052 Succubus),
+  `--equip` installs items (`--list-items` lists them). Otherwise the
+  chapter 1 boat is used.
+- `--overlay` shows the debug overlay with player state and a label for every
+  object (toggle with Ctrl+D, Cmd+D on macOS). Yellow labels are detected by
+  the sonar, green ones are enabled but not detected, red ones not enabled yet.
+- The exit code tells how the mission ended: 0 success, 1 failed, 2 aborted
+  (Esc or window closed), 3 `--timeout` reached.
+
+`vertigo --check [mission...]` loads all missions (or the given ones) and lists
+everything the loader skips or ignores: unsupported object types, unread
+settings and sections, and conditions that can't be resolved. The output for
+the German CD data is kept in [docs/mission-check.txt](docs/mission-check.txt);
+regenerate it after changes to the loader and compare:
+
+```
+build/vertigo --check > docs/mission-check.txt
+```
+
 ## Game data
 
 Vertigo needs the complete game data, including the movies. A GOG installation

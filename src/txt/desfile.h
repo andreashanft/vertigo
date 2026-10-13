@@ -19,6 +19,7 @@
 #define TXT_DESFILE_H
 
 
+#include <QSet>
 #include <QVariant>
 
 
@@ -42,9 +43,15 @@ public:
     QStringList sections() const;
     QStringList keys() const;
 
+    // for load reports: sections never selected and keys never queried
+    bool wasSectionRead(const QString &section) const;
+    QStringList unreadKeys(const QString &section) const;
+
 private:
     QMap<QString, QVariantMap> m_sections;
     QVariantMap *m_section;
+    QString m_sectionName;
+    mutable QMap<QString, QSet<QString>> m_read;
 };
 
 

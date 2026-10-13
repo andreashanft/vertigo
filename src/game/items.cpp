@@ -144,6 +144,14 @@ Items::Item* Items::get(int model)
 }
 
 
+const std::map<int, Items::Item>& Items::all()
+{
+    if (items == NULL)
+        items = new Items();
+    return items->m_items;
+}
+
+
 void Items::insertType(Type type, std::vector<int> &list)
 {
     Station station = Chapter::get()->stations().value(Chapter::get()->currentStation());
