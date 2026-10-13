@@ -51,7 +51,7 @@ public:
     void setDebugBoost(float debugBoost) { m_debugBoost = debugBoost; }
 
 public:
-    virtual void damage(int kinetic, int shock, const Vector3D &position);
+    void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();
     bool update(float elapsedTime);
 

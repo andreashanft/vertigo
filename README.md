@@ -50,14 +50,15 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   The player's id destroys the player; for areas and nav points it counts as
   reaching them.
 - `--trace 2062,2055` prints these units' map cell, height above ground,
-  speed and current order every second; the player's id prints the player
-  with the water current at its position.
+  speed, shield and current order every second; the player's id prints the
+  player with the water current at its position and the four shield sides.
 - `--headless` runs the mission without a window and without sound, in
   simulated time as fast as possible (use it with `--timeout`; all test
   times are then mission seconds). Automated runs with a window and
   `--timeout` don't take the focus.
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
-  Esc menu (here: restart the mission).
+  Esc menu (here: restart the mission). `5=Space/0.1` holds a key for 0.1 s;
+  keys like Space (fire) or the arrows need that to have an effect.
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
   at a fraction of their maximum turn rate (the sign picks the direction),
   instead of following their orders.

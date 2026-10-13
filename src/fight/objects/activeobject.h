@@ -70,7 +70,8 @@ public:
     const Vector3D& velocity() const { return m_velocity; }
 
 public:
-    virtual void damage(int kinetic, int shock, const Vector3D &position);
+    // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
+    virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
     void identify();
 

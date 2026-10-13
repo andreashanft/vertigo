@@ -29,6 +29,7 @@ namespace fight {
 
 
 class Scenario;
+class ActiveObject;
 enum class Effects;
 
 
@@ -44,7 +45,8 @@ public:
     static GunState* GunStates;
 
 public:
-    Gun(Scenario *scenario, int model);
+    // owner: the unit that fires, never hit by its own shots
+    Gun(Scenario *scenario, int model, ActiveObject *owner = nullptr);
 
 public:
     int model() const { return m_model; }
@@ -67,6 +69,7 @@ public:
 
 protected:
     Scenario *m_scenario;
+    ActiveObject *m_owner;
 
     int m_model;
     QString m_longName;

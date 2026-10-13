@@ -72,12 +72,13 @@ Effect* EffectManager::addEffect(Effects effect, const Vector3D &position, float
 }
 
 
-Projectile* EffectManager::addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction)
+Projectile* EffectManager::addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction, ActiveObject *owner)
 {
     Projectile *object = new Projectile(m_scenario, getBillboard(projectile));
     m_effects.emplace_back(object);
     object->setPosition(position);
     object->setDirection(direction);
+    object->setOwner(owner);
     return object;
 }
 

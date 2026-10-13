@@ -18,6 +18,8 @@
 #include "activeobject.h"
 #include "fight/scenario.h"
 #include "sfx/samplemap.h"
+#include "fight/effects/effectmanager.h"
+#include <algorithm>
 
 
 namespace fight {
@@ -44,10 +46,10 @@ ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 }
 
 
-void ActiveObject::damage(int kinetic, int shock, const Vector3D &position)
+void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
-    // TODO: only count hits by another unit once shots know who fired them (roadmap step 1.4)
-    m_eventAttack.complete();
+    if (attacker && attacker != this)
+        m_eventAttack.complete();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;
     if (m_kineticShield < 0)
@@ -64,6 +66,16 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position)
 
 void ActiveObject::destroy()
 {
+    if (m_eventDestroy.isCompleted())
+        return;
+
+    // explosion sized to the object: small, medium or large flash
+    const Vector3D dim = m_box.dim();
+    const float size = std::max(dim.x, std::max(dim.y, dim.z));
+    const Effects explosion = size < 8.0f ? Effects::Explosion_0 : size < 20.0f ? Effects::Explosion_1 : Effects::Explosion_2;
+    m_scenario->effectManager().addEffect(explosion, center());
+    sfx::SampleMap::get(size < 20.0f ? sfx::Sample::Explosion_Small : sfx::Sample::Explosion_Big).playInstance();
+
     disable();
     m_eventDestroy.complete();
     if (m_scenario->target().locked() == this)

@@ -29,8 +29,8 @@ namespace sfx {
 enum class Sample
 {
     Sample0,
-    Sample1,
-    Sample2,
+    Explosion_Big,
+    Hit_Metal,
     Shoot_Vendetta,
     Sample4,
     Sample5,
@@ -43,9 +43,9 @@ enum class Sample
     Shoot_MaximumImpact,
     Shoot_PlasmaGun,
     Sample14,
-    Sample15,
-    Sample16,
-    Sample17,
+    Explosion_Ground,
+    Explosion_Small,
+    Explosion_EMS,
     Sample18,
     Sample19,
     Sample20,

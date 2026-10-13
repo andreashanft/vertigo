@@ -28,8 +28,9 @@ namespace fight {
 Gun::GunState* Gun::GunStates = nullptr;
 
 
-Gun::Gun(Scenario *scenario, int model) :
+Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
     m_scenario(scenario),
+    m_owner(owner),
     m_defect(1.0f),
     m_state(StateReady)
 {
@@ -129,7 +130,7 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
             jammed = true;
         else
         {
-            m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir);
+            m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir, m_owner);
             if (m_energyDemand == 0.0f)
                 m_ammo--;
             sfx::SampleMap::get(m_sample).playInstance();
