@@ -39,6 +39,7 @@ private:
     void showNew();
     void showLoad();
     void showLoading();
+    void updateDifficulty();
 
     void draw();
     void activate();
@@ -58,6 +59,7 @@ private:
     ui::Label m_lblMainTitle;
     ui::Button m_btnMainNew;
     ui::Button m_btnMainLoad;
+    ui::Button m_btnMainDifficulty;
     ui::Button m_btnMainQuit;
     ui::Label m_lblNew;
     ui::Label m_lblNewTitle;

@@ -111,8 +111,18 @@ void ConditionManager::updateObjective(int id, int index, int wccond)
     const ConditionEntry &entry = condEntries.at(id);
     ConditionEvent *condSuccess = NULL;
     ConditionEvent *condFailure = NULL;
-    switch (wccond)
+    if (entry.absent)
     {
+        // "destroy all of these" stays achievable; the other kinds need any one member, so it just isn't one
+        if (wccond != 2 && wccond != 9)
+            return;
+        m_absentEvents.emplace_back();
+        condSuccess = &m_absentEvents.back();
+    }
+    switch (entry.absent ? 0 : wccond)
+    {
+    case 0:
+        break;
     case 1:
         condSuccess = entry.condTrigger;
         break;
@@ -262,6 +272,9 @@ void ConditionManager::buildDependencies()
     for (const auto &pair : condEntries)
         if (pair.second.condTrigger)
             pair.second.condTrigger->tryComplete();
+
+    for (ConditionEvent &event : m_absentEvents)
+        event.complete();
 }
 
 

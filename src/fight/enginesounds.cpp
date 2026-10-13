@@ -18,7 +18,6 @@
 #include "enginesounds.h"
 #include "scenario.h"
 #include "boats/simpleboat.h"
-#include "objects/placeholder.h"
 #include "sfx/samplemap.h"
 
 #include <glm/geometric.hpp>
@@ -67,8 +66,8 @@ void EngineSounds::update()
         if (!object->isEnabled())
             continue;
         sfx::Sample sample;
-        if (dynamic_cast<const Placeholder *>(object) && record.type == 2063)
-            sample = sfx::Sample::Engine_BigShip;
+        if (record.type == 2063)
+            sample = sfx::Sample::Engine_BigShip; // cargo ships
         else if (!dynamic_cast<const SimpleBoat *>(object))
             continue;
         else if (record.des.startsWith("bio"))

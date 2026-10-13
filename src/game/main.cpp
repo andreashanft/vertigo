@@ -21,6 +21,7 @@
 #include "util/file.h"
 
 #include "items.h"
+#include "fight/scenario.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -58,7 +59,9 @@ int main(int argc, char *argv[])
     const QCommandLineOption fireOption("fire", "Let these units fire their guns (test mode); towers aim at the player.", "ids");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption });
+    const QCommandLineOption difficultyOption("difficulty", "Difficulty in test mode: 0 easy, 1 normal (default), 2 hard.", "level");
+    const QCommandLineOption seedOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -72,6 +75,12 @@ int main(int argc, char *argv[])
     options.timeout = parser.value(timeoutOption).toInt();
     options.debugOverlay = parser.isSet(overlayOption);
     options.headless = parser.isSet(headlessOption);
+    // test runs don't depend on the difficulty chosen in the game
+    if (options.check || !options.scenario.isEmpty())
+    {
+        fight::Scenario::overrideDifficulty(parser.isSet(difficultyOption) ? parser.value(difficultyOption).toInt() : 1);
+        fight::Scenario::setRandomSeed(parser.isSet(seedOption) ? parser.value(seedOption).toInt() : 1);
+    }
     foreach (const QString &value, parser.values(destroyOption)) {
         foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
             bool ok = false;

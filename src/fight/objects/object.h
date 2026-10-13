@@ -47,6 +47,8 @@ public:
     void enable();
     void disable();
     bool isEnabled() const { return m_enabled; }
+    // left out of the mission (difficulty): stays disabled
+    bool isAbsent() const { return m_absent; }
 
     virtual void setPosition(const Vector3D &pos);
     const Vector3D& position() const { return m_position; }
@@ -68,6 +70,7 @@ protected:
     Scenario *m_scenario;
 
     bool m_enabled;
+    bool m_absent = false;
     Vector3D m_position;
 
     BoundingBox m_box;

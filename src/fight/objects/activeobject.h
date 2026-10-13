@@ -99,6 +99,8 @@ public:
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
     void identify();
+    // the unit isn't in the mission at this difficulty: it never appears (see ConditionEntry::absent)
+    void leaveMission();
 
 protected:
     ConditionEvent m_eventDestroy;

@@ -35,12 +35,14 @@
 #include "objects/turretbase.h"
 #include "objects/navpoint.h"
 #include "objects/placeholder.h"
+#include "boats/cargoship.h"
 #include "objects/simpleobject.h"
 
 #include "boats/simpleboat.h"
 #include "boats/tank.h"
 
 #include <QGLContext>
+#include <QSettings>
 #include <QTime>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
@@ -50,6 +52,36 @@
 
 
 namespace fight {
+
+
+static int s_difficultyOverride = -1;
+static int s_randomSeed = -1;
+
+
+int Scenario::difficulty()
+{
+    if (s_difficultyOverride >= 0)
+        return s_difficultyOverride;
+    return glm::clamp(QSettings().value("Game/difficulty", 1).toInt(), 0, 2);
+}
+
+
+void Scenario::setDifficulty(int difficulty)
+{
+    QSettings().setValue("Game/difficulty", glm::clamp(difficulty, 0, 2));
+}
+
+
+void Scenario::setRandomSeed(int seed)
+{
+    s_randomSeed = seed;
+}
+
+
+void Scenario::overrideDifficulty(int difficulty)
+{
+    s_difficultyOverride = glm::clamp(difficulty, 0, 2);
+}
 
 
 namespace {
@@ -118,6 +150,8 @@ Scenario::Scenario(const QString &name) :
     float initialDir = 0.0f;
     QSet<QString> placeholderSections;
     std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
+    std::vector<ActiveObject *> absentUnits; // only at a higher difficulty
+    const int difficulty = Scenario::difficulty();
     foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
         m_file.setSection(section);
 
@@ -302,12 +336,21 @@ Scenario::Scenario(const QString &name) :
             break;
 
         case TypeCargoShip:
+            {
+                CargoShip *ship = new CargoShip(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                object = ship;
+                // high enough for the hull to clear the ground
+                Vector3D pos = getPosition();
+                pos.z += std::max(20.0f, ship->draught() + 5.0f);
+                object->setPosition(pos);
+            }
+            break;
+
         default:
             {
-                // TODO: cargo ships are assembled from blocks (roadmap step 1.6)
                 loadIssue(QString("placeholder: typ %1 dtyp %2").arg(type).arg(dType));
                 placeholderSections << section;
-                object = new Placeholder(this, objectDes, info, type == TypeCargoShip ? 24.0f : 4.0f);
+                object = new Placeholder(this, objectDes, info, 4.0f);
                 object->setPosition(getPosition());
             }
         }
@@ -328,6 +371,12 @@ Scenario::Scenario(const QString &name) :
                 if ((type == TypeBoat || type == TypeBomber || type == TypeTorpedoTower) && torpedoes > 0)
                     activeObject->setTorpedoes(torpedoType, torpedoes);
                 entry.iff = m_file.contains("iff") ? m_file.value("iff").toInt() : -1;
+                if (m_file.value("diff", 0).toInt() > difficulty)
+                {
+                    absentUnits.push_back(activeObject);
+                    entry.absent = true;
+                    entry.iff = -1;
+                }
                 entry.condSignal = activeObject->eventDestroy();
                 entry.condAttacked = activeObject->eventAttack();
                 entry.condIdentified = activeObject->eventIdentify();
@@ -461,6 +510,8 @@ Scenario::Scenario(const QString &name) :
     }
 
     m_conditionManager.buildDependencies();
+    for (ActiveObject *unit : absentUnits)
+        unit->leaveMission();
 
     for (auto &pending : pendingOrders)
     {
@@ -495,7 +546,7 @@ Scenario::Scenario(const QString &name) :
 
 
 
-    qsrand(QTime::currentTime().second() * 1000 + QTime::currentTime().msec());
+    qsrand(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
 
     sfx::SampleMap::load();
 }

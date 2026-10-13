@@ -144,6 +144,13 @@ void ActiveObject::destroy()
 }
 
 
+void ActiveObject::leaveMission()
+{
+    m_absent = true;
+    disable();
+}
+
+
 void ActiveObject::identify()
 {
     m_eventIdentify.complete();
