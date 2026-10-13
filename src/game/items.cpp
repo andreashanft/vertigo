@@ -140,7 +140,8 @@ Items::Item* Items::get(int model)
 {
     if (items == NULL)
         items = new Items();
-    return &items->m_items.at(model);
+    const auto it = items->m_items.find(model);
+    return it != items->m_items.end() ? &it->second : nullptr;
 }
 
 

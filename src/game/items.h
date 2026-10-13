@@ -50,7 +50,7 @@ public:
 
 
 public:
-    static Item* get(int model);
+    static Item* get(int model);  // nullptr for no item (0) or an unknown one
     static const std::map<int, Item>& all();
     static std::vector<int> getDepotItems(const QString &mounting);
     static int getDepotPrice(int model);
