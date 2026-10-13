@@ -30,7 +30,6 @@
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
-#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -49,7 +48,9 @@ const int LightLevels = 64;
 const int Orange = 64;
 // the patch is drawn with the height map's cells at this size (patch widths)
 const int GridSteps = 32;
-const int HeadingSteps = 128;
+// rendered at this many times the resolution and averaged down, so that the ground moving by
+// fractions of a pixel shows as a gradual change rather than pixels stepping at uneven moments
+const int SuperSample = 3;
 // the patch at the boat's ground level fills at most this part of the view
 const float PatchWidth = 0.9f;
 const float PatchHeight = 0.9f;
@@ -107,15 +108,10 @@ void VoxelRadar::render(fight::Scenario *scenario)
     const Vector3D boat = scenario->position();
     const float extent = m_extent*surface.scale().x;
     const float step = 2*extent/GridSteps;
-    // The view moves in steps, so the ground is drawn the same way frame after frame and doesn't
-    // flicker against the boat's line, which moves smoothly within it: its centre snaps to the
-    // height map's grid and its heading to one of HeadingSteps directions.
-    const Vector2D dir(scenario->player()->dir());
-    const float heading = glm::length(dir) > 1e-3f ? std::atan2(dir.x, dir.y) : 0.0f;
-    const float snapped = std::round(heading/glm::two_pi<float>()*HeadingSteps)*glm::two_pi<float>()/HeadingSteps;
-    const Vector2D forward(std::sin(snapped), std::cos(snapped));
+    Vector2D forward(scenario->player()->dir());
+    forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : Vector2D(0, 1);
     const Vector2D right(forward.y, -forward.x);
-    const Vector2D middle(std::round(boat.x/step)*step, std::round(boat.y/step)*step);
+    const Vector2D middle(boat);
     auto toPatch = [&](const Vector3D &p) { const Vector2D way = Vector2D(p) - middle; return Vector2D(glm::dot(way, right), glm::dot(way, forward)); };
     auto fromPatch = [&](float x, float y, float z) { return Vector3D(middle + right*x + forward*y, z); };
     auto inPatch = [&](const Vector3D &p) {
@@ -146,7 +142,9 @@ void VoxelRadar::render(fight::Scenario *scenario)
     const Vector3D viewForward = glm::normalize(target - eye);
     const Vector3D viewRight(right, 0);
     const Vector3D viewUp = glm::cross(viewRight, viewForward);
-    const int width = m_image.width(), height = m_image.height();
+    if (m_fine.width() != m_image.width()*SuperSample || m_fine.height() != m_image.height()*SuperSample)
+        m_fine = QImage(m_image.width()*SuperSample, m_image.height()*SuperSample, QImage::Format_ARGB32);
+    const int width = m_fine.width(), height = m_fine.height();
 
     // fitted so that the patch, flat at the boat's ground level, fills the view and sits on its
     // bottom edge
@@ -171,7 +169,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
         return Vector3D(centre.x + focal*v.x, centre.y - focal*v.y, v.z);
     };
 
-    m_image.fill(Qt::transparent);
+    m_fine.fill(Qt::transparent);
     m_depth.assign(width*height, 1e30f);
     auto blend = [](QRgb under, QRgb over) {
         const int a = qAlpha(over);
@@ -191,7 +189,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
         const bool opaque = qAlpha(colour) == 255;
         for (int y = y0; y <= y1; y++)
         {
-            QRgb *line = reinterpret_cast<QRgb *>(m_image.scanLine(y));
+            QRgb *line = reinterpret_cast<QRgb *>(m_fine.scanLine(y));
             for (int x = x0; x <= x1; x++)
             {
                 const float px = x + 0.5f, py = y + 0.5f;
@@ -224,14 +222,19 @@ void VoxelRadar::render(fight::Scenario *scenario)
         if (!inPatch(position))
             return;
         const Vector3D a = project(Vector3D(position.x, position.y, ground(position.x, position.y))), b = project(position);
+        // one pixel of the radar wide
         const int steps = int(std::max(std::abs(b.x - a.x), std::abs(b.y - a.y))) + 1;
         for (int k = 0; k <= steps; k++)
         {
             const Vector3D p = a + (b - a)*(float(k)/steps);
-            const int x = int(std::floor(p.x)), y = int(std::floor(p.y));
-            if (x < 0 || x >= width || y < 0 || y >= height || p.z > m_depth[y*width + x] + 0.5f*step)
-                continue;
-            reinterpret_cast<QRgb *>(m_image.scanLine(y))[x] = colour;
+            for (int dy = 0; dy < SuperSample; dy++)
+                for (int dx = 0; dx < SuperSample; dx++)
+                {
+                    const int x = int(std::floor(p.x - 0.5f*SuperSample)) + dx + 1, y = int(std::floor(p.y)) + dy - SuperSample/2;
+                    if (x < 0 || x >= width || y < 0 || y >= height || p.z > m_depth[y*width + x] + 0.5f*step)
+                        continue;
+                    reinterpret_cast<QRgb *>(m_fine.scanLine(y))[x] = colour;
+                }
         }
     };
 
@@ -345,6 +348,29 @@ void VoxelRadar::render(fight::Scenario *scenario)
                  entry.isFriend ? qRgb(64, 200, 64) : hostile ? qRgb(232, 32, 24) : qRgb(64, 96, 255));
     }
     drawLine(boat, orange.rgb());
+
+    // averaged down to the radar's pixels (weighted by coverage, so edges fade out)
+    for (int y = 0; y < m_image.height(); y++)
+    {
+        QRgb *out = reinterpret_cast<QRgb *>(m_image.scanLine(y));
+        for (int x = 0; x < m_image.width(); x++)
+        {
+            int r = 0, g = 0, b = 0, a = 0;
+            for (int dy = 0; dy < SuperSample; dy++)
+            {
+                const QRgb *in = reinterpret_cast<const QRgb *>(m_fine.constScanLine(y*SuperSample + dy)) + x*SuperSample;
+                for (int dx = 0; dx < SuperSample; dx++)
+                {
+                    const int alpha = qAlpha(in[dx]);
+                    r += qRed(in[dx])*alpha;
+                    g += qGreen(in[dx])*alpha;
+                    b += qBlue(in[dx])*alpha;
+                    a += alpha;
+                }
+            }
+            out[x] = a > 0 ? qRgba(r/a, g/a, b/a, a/(SuperSample*SuperSample)) : 0;
+        }
+    }
 }
 
 

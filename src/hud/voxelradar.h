@@ -70,7 +70,8 @@ private:
     float m_extent = 20;        // cells from the boat to each side of the patch
     float m_lowest = 1, m_highest = 0;  // the heights the shades span, following the patch
     float m_time = 0;
-    std::vector<float> m_depth;         // per pixel
+    QImage m_fine;                      // rendered at a higher resolution
+    std::vector<float> m_depth;         // per pixel of m_fine
     std::vector<QRgb> m_table;  // FogRows x Entries, fog row 0 is the farthest
     QImage m_image;
     gfx::Texture m_texture;
