@@ -48,6 +48,12 @@ public:
     float duration() const { return m_stages.size()*m_displayTime; }
     float range() const { return m_range; }
     float velocity() const { return m_velocity; }
+    // debris: how long a piece lasts, how it slows down and sinks, and its start speed (m/s)
+    float lifeTime() const { return m_lifeTime; }
+    float friction() const { return m_friction; }
+    float lift() const { return m_lift; }
+    float minVelocity() const { return m_minVelocity; }
+    float maxVelocity() const { return m_maxVelocity; }
     float collisionRadius() const { return m_collisionRadius; }
     float noiseLevel() const { return m_noiseLevel; }
     int kineticShield() const { return m_kineticShield; }
@@ -68,8 +74,13 @@ private:
     float m_scale;
     bool m_blendColor;
 
-    float m_range;
-    float m_velocity;
+    float m_range = 0;
+    float m_velocity = 0;
+    float m_lifeTime = 0;
+    float m_friction = 0;
+    float m_lift = 0;
+    float m_minVelocity = 0;
+    float m_maxVelocity = 0;
     float m_collisionRadius;
     float m_noiseLevel;
     int m_kineticShield;

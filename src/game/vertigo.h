@@ -42,10 +42,12 @@ public:
         bool debugOverlay = false;
         bool headless = false;                          // test mode: no window and no sound, simulated time
         std::vector<int> destroy;                       // test mode: destroy these units after one second
-        std::vector<std::pair<float, QKeySequence>> keys; // test mode: press these keys at these times (seconds)
+        struct Key { float time; QKeySequence key; float hold; };
+        std::vector<Key> keys;                          // test mode: press these keys at these times (seconds), holding them
         struct Drive { int id; float speed; float turn; };
         std::vector<Drive> drive;                       // test mode: let these boats move straight or in a circle
         std::vector<int> trace;                         // test mode: print these units' state every second
+        std::vector<int> fire;                          // test mode: these units fire (towers aim at the player)
         bool check = false;                             // report what the mission loader ignores
         QStringList checkScenarios;                     // empty = all missions
     };

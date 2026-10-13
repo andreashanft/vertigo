@@ -56,6 +56,11 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
         m_range = file.value("range").toInt() / 32.0f;
         m_velocity = file.value("velocity").toInt() / 32.0f;
     }
+    m_lifeTime = file.value("lifetime", 0).toFloat();
+    m_friction = file.value("friction", 0).toFloat();
+    m_lift = file.value("lift", 0).toFloat();
+    m_minVelocity = file.value("minvelocity", 0).toFloat() / 32.0f;
+    m_maxVelocity = file.value("maxvelocity", 0).toFloat() / 32.0f;
 
 
     file.setSection(QString("anim%1").arg(index));

@@ -41,9 +41,13 @@ public:
 
 public:
     int shield(int index) const { return m_shield[index]; };
+    const Gun& playerGun() const { return m_gun; }
+    const Gun* turret(int index) const { return index == 0 ? m_tur1.get() : m_tur2.get(); }
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
     float roll() const { return m_roll; };
+    // mission time of the last hit, -1 if never hit
+    float lastHit() const { return m_lastHit; }
     float speed() const { return m_speed; };
     float noise() const;
     float range() const;
@@ -51,7 +55,7 @@ public:
     void setDebugBoost(float debugBoost) { m_debugBoost = debugBoost; }
 
 public:
-    virtual void damage(int kinetic, int shock, const Vector3D &position);
+    void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();
     bool update(float elapsedTime);
 
@@ -61,6 +65,7 @@ public:
 
 private:
     int m_shield[4];
+    float m_lastHit = -1;
     int m_shieldMax[4];
 
     EngineState m_engineState;

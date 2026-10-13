@@ -46,6 +46,8 @@
 #include "debugoverlay.h"
 #include "missionmenu.h"
 #include "pause.h"
+#include "alert.h"
+#include "slavemonitor.h"
 #include "sfx/soundsystem.h"
 #include "txt/stringtable.h"
 
@@ -116,6 +118,22 @@ void HUD::load(game::Boat *boat)
     file.setSection("radiomessage");
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
+
+    // status monitors: with two, one shows the armor and one the systems; I switches the pages
+    m_slaveMonitors.clear();
+    for (int i = 0; i < 2; i++)
+    {
+        file.setSection(QString("slavemonitor%1").arg(i));
+        if (!file.contains("X1"))
+            continue;
+        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Armor : SlaveMonitor::Page::Systems);
+        m_children.emplace_back(monitor);
+        m_slaveMonitors.push_back(monitor);
+    }
+
+    file.setSection("hudalertblock");
+    Alert *alert = new Alert(this, readRect(file));
+    m_children.emplace_back(alert);
 
     file.setSection("hudpauseblock");
     Pause *pause = new Pause(this, readRect(file));
@@ -471,6 +489,9 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_L)
         m_scenario->target().lockReticle();
+    if (e->key() == Qt::Key_I)
+        for (SlaveMonitor *monitor : m_slaveMonitors)
+            monitor->togglePage();
     if (e->key() == Qt::Key_A)
     {
         if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)

@@ -28,8 +28,9 @@ namespace fight {
 Gun::GunState* Gun::GunStates = nullptr;
 
 
-Gun::Gun(Scenario *scenario, int model) :
+Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
     m_scenario(scenario),
+    m_owner(owner),
     m_defect(1.0f),
     m_state(StateReady)
 {
@@ -61,6 +62,7 @@ Gun::Gun(Scenario *scenario, int model) :
     m_projectile = effects[model];
 
     m_range = m_scenario->effectManager().getBillboard(m_projectile)->range();
+    m_projectileSpeed = m_scenario->effectManager().getBillboard(m_projectile)->velocity();
 
     static sfx::Sample samples[14] = { sfx::Sample::Shoot_PlasmaGun, sfx::Sample::Shoot_PlasmaGun, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_DoomMortar, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_Vendetta };
     m_sample = samples[model];
@@ -129,10 +131,14 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
             jammed = true;
         else
         {
-            m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir);
+            m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir, m_owner);
             if (m_energyDemand == 0.0f)
                 m_ammo--;
-            sfx::SampleMap::get(m_sample).playInstance();
+            // the player's guns sound in the cockpit, others where they fire
+            if (m_owner && m_owner != m_scenario->player())
+                sfx::SampleMap::playAt(m_sample, pos.x, pos.y, pos.z);
+            else
+                sfx::SampleMap::get(m_sample).playInstance();
         }
     }
     if (jammed)

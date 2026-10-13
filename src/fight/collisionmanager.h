@@ -60,7 +60,7 @@ public:
 public:
     void addObject(Object *object);
     void removeObject(Object *object);
-    Object* testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, CollisionCache *collisionCache = nullptr);
+    Object* testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, CollisionCache *collisionCache = nullptr, const Object *ignore = nullptr);
 
 private:
 

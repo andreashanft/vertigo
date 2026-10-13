@@ -40,6 +40,9 @@ namespace game { class Boat; }
 
 namespace fight {
 
+
+class EngineSounds;
+
 class Object;
 class NavPoint;
 
@@ -47,6 +50,7 @@ class Scenario : public util::DeferredDeletable
 {
 public:
     Scenario(const QString &name);
+    ~Scenario();
 
 public:
     struct ObjectRecord
@@ -79,6 +83,8 @@ public:
     int endType() const { return m_endType; }
 
     int playerId() const { return m_playerId; }
+    // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
+    void playerHit(ActiveObject *unit, bool destroyed);
     void destroyPlayer() { m_eventPlayerDestroyed.complete(); }
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
@@ -103,6 +109,8 @@ public:
     std::vector<std::unique_ptr<Object>>::const_iterator end() const { return m_objects.cend(); }
     std::vector<NavPoint*>& navPoints() { return m_navPoints; }
     bool isFriend(int iffX, int iffY) const { return m_attitudeMatrix[iffY][iffX] == 0; }
+    // the player is faction 0
+    bool isHostile(int iffA, int iffB) const { return iffA >= 0 && iffA < 9 && iffB >= 0 && iffB < 9 && m_attitudeMatrix[iffB][iffA] == 2; }
 
 public:
     void setBoat(game::Boat *boat);
@@ -161,6 +169,7 @@ private:
     std::vector<std::unique_ptr<Object>> m_objects;
     std::vector<ObjectRecord> m_records;
     std::vector<CurrentCell> m_currentCells;
+    std::unique_ptr<EngineSounds> m_engineSounds;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<Object*> m_lightSources;
     std::vector<NavPoint*> m_navPoints;
@@ -168,6 +177,9 @@ private:
     char m_attitudeMatrix[9][9];
     int m_endType;
     int m_playerId;
+    int m_friendlyWarnings = 0;
+    int m_friendlyKills = 0;
+    float m_lastFriendlyWarning = -100;
     ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;

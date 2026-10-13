@@ -39,7 +39,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_currentNoise1(0),
     m_currentNoise2(0),
     m_firing(false),
-    m_gun(scenario, boat->gun() - 3073)
+    m_gun(scenario, boat->gun() - 3073, this)
 {
     int i;
     txt::DesFile &file = boat->boatFile();
@@ -78,20 +78,20 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_gun.setDefect(boat->defects()[game::Boat::DefectGun]);
     if (boat->tur1() != 0)
     {
-        m_tur1.reset(new Gun(m_scenario, boat->tur1() - 3073));
+        m_tur1.reset(new Gun(m_scenario, boat->tur1() - 3073, this));
         m_tur1->addMuzzles(Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->tur1());
         m_tur1->setDefect(boat->defects()[game::Boat::DefectTur1]);
     }
     if (boat->tur2() != 0)
     {
-        m_tur2.reset(new Gun(m_scenario, boat->tur2() - 3073));
+        m_tur2.reset(new Gun(m_scenario, boat->tur2() - 3073, this));
         m_tur2->addMuzzles(Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->tur2());
         m_tur2->setDefect(boat->defects()[game::Boat::DefectTur2]);
     }
 
     sfx::SampleMap::get(sfx::Sample::Engine).playLoop();
 
-    m_scenario->collisionManager().removeObject(this);
+    // the player stays in the collision checks, so others' shots can hit it; its own checks ignore it
 }
 
 
@@ -114,22 +114,31 @@ float Player::range() const
 }
 
 
-void Player::damage(int kinetic, int shock, const Vector3D &position)
+void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
-    Vector3D dirDamage = glm::normalize(position - m_position);
-    float cosY = glm::dot(dirDamage, dir());
-    if (cosY > 0.9)
-        m_shield[0] -= kinetic;
-    else if (cosY < -0.9)
-        m_shield[3] -= kinetic;
-    else
+    if (attacker && attacker != this)
+        m_eventAttack.complete();
+
+    // the side that was hit: 0 front, 1 left, 2 right, 3 back
+    int side = 0;
+    const Vector3D hit = position - m_position;
+    if (glm::length(hit) > 1e-3f)
     {
-        float cosZ = glm::dot(dirDamage, up());
-        if (cosZ > 0)
-            m_shield[1] -= kinetic;
+        const float front = glm::dot(hit, dir());
+        const float right = glm::dot(hit, this->right());
+        if (glm::abs(front) >= glm::abs(right))
+            side = front > 0 ? 0 : 3;
         else
-            m_shield[2] -= kinetic;
+            side = right > 0 ? 2 : 1;
     }
+    m_shield[side] -= kinetic;
+    if (kinetic > 0)
+    {
+        m_lastHit = m_scenario->time();
+        sfx::SampleMap::get(sfx::Sample::Alert).play();
+    }
+    if (m_shield[side] < 0)
+        destroy();
 }
 
 
@@ -210,13 +219,13 @@ bool Player::update(float elapsedTime)
         bool colSurface = m_scenario->surface().testCollision(m_position, m_position + delta, 1.5f, posSurface, normSurface);
 
         Vector3D posObject, normObject;
-        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject);
+        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this);
 
         if (colObject && (!colSurface || glm::length2(posObject - m_position) < glm::length2(posSurface - m_position)))
         {
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(colObject);
             if (activeObject)
-                activeObject->damage(m_kineticStrength, m_shockStrength, posObject - normObject*1.5f);
+                activeObject->damage(m_kineticStrength, m_shockStrength, posObject - normObject*1.5f, this);
             damage(colObject->kineticStrength(), colObject->shockStrength(), posObject - normObject*1.5f);
             sfx::SampleMap::get(sfx::Sample::Boat_Collision).playInstance();
             m_velocity -= 2*glm::dot(m_velocity, normObject)*normObject;
@@ -237,6 +246,7 @@ bool Player::update(float elapsedTime)
         break;
     }
 
+    updateBox();
     m_speed = path/elapsedTime*3.6f;
     if (glm::dot(dir(), vel) < 0)
         m_speed = -m_speed;

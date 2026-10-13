@@ -29,6 +29,7 @@ namespace fight {
 
 
 class Scenario;
+class ActiveObject;
 enum class Effects;
 
 
@@ -44,16 +45,21 @@ public:
     static GunState* GunStates;
 
 public:
-    Gun(Scenario *scenario, int model);
+    // owner: the unit that fires, never hit by its own shots
+    Gun(Scenario *scenario, int model, ActiveObject *owner = nullptr);
 
 public:
     int model() const { return m_model; }
     float energyDemand() const { return m_energyDemand; }
     float range() const { return m_range; }
+    float projectileSpeed() const { return m_projectileSpeed; }
     sfx::Sample sample() const { return m_sample; }
 
     float defect() const { return m_defect; }
     int ammo() const { return m_ammo; }
+    bool usesAmmo() const { return m_energyDemand == 0.0f; }
+    const QString& shortName() const { return m_shortName; }
+    QString stateName() const { return GunStates ? GunStates[m_state].shortName : QString(); }
     State state() const { return m_state; }
 
     void setDefect(float defect) { m_defect = defect; }
@@ -67,6 +73,7 @@ public:
 
 protected:
     Scenario *m_scenario;
+    ActiveObject *m_owner;
 
     int m_model;
     QString m_longName;
@@ -78,6 +85,7 @@ protected:
     float m_defectDamping;
     float m_defectDelay;
     float m_range;
+    float m_projectileSpeed;
 
     float m_defect;
     int m_ammo;

@@ -18,6 +18,7 @@
 #include "projectile.h"
 #include "billboard.h"
 #include "fight/scenario.h"
+#include "sfx/samplemap.h"
 
 
 namespace fight {
@@ -64,14 +65,16 @@ bool Projectile::update(float elapsedTime)
         disable();
         return true;
     }
-    Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache);
+    Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache, m_owner);
     if (collision)
     {
+        m_scenario->effectManager().addEffect(Effects::Explosion_11, pos, qrand()%360);
         ActiveObject *activeObject = dynamic_cast<ActiveObject *>(collision);
         if (activeObject)
-            activeObject->damage(m_kineticStrength, m_shockStrength, pos - normal*m_billboard->collisionRadius());
-        else
-            m_scenario->effectManager().addEffect(Effects::Explosion_11, pos, qrand()%360);
+        {
+            sfx::SampleMap::playAt(sfx::Sample::Hit_Metal, pos.x, pos.y, pos.z);
+            activeObject->damage(m_kineticStrength, m_shockStrength, pos - normal*m_billboard->collisionRadius(), m_owner);
+        }
         disable();
         return true;
     }

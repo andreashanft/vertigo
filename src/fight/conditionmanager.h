@@ -21,6 +21,7 @@
 
 #include <map>
 #include <list>
+#include <set>
 #include <QStringList>
 #include "condition.h"
 
@@ -71,6 +72,10 @@ public:
     void delayComplete(Condition *cond, int delay);
     // completes the "destroyed" event of an entry (for an area or nav point: reached), for testing
     bool signal(int id);
+    // the faction of a unit (-1 if it has none), and whether destroying it is an objective
+    int iff(int id) const;
+    bool isDestroyTarget(int id) const { return m_destroyTargets.count(id) > 0; }
+    void fail() { m_condFailure.complete(); }
     void update(float elapsedTime);
 
     bool autopilot() const { return m_condSuccess.isCompleted(); }
@@ -94,6 +99,7 @@ private:
     ConditionFailure m_condFailure;
     QStringList m_issues;
     std::map<int, Condition> m_condObjectives;
+    std::set<int> m_destroyTargets;
 
     struct DelayCompleteEntry
     {

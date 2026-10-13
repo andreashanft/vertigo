@@ -20,6 +20,8 @@ set(SOURCES
     fight/condition.h
     fight/conditionmanager.cpp
     fight/conditionmanager.h
+    fight/enginesounds.cpp
+    fight/enginesounds.h
     fight/module.cpp
     fight/orders.cpp
     fight/orders.h
@@ -37,6 +39,8 @@ set(SOURCES
     fight/effects/billboard.h
     fight/effects/effect.cpp
     fight/effects/effect.h
+    fight/effects/debris.cpp
+    fight/effects/debris.h
     fight/effects/effectmanager.cpp
     fight/effects/effectmanager.h
     fight/effects/projectile.cpp
@@ -83,6 +87,8 @@ set(SOURCES
 
     fight/weapons/gun.cpp
     fight/weapons/gun.h
+    fight/weapons/unitgun.cpp
+    fight/weapons/unitgun.h
 
     game/area.cpp
     game/area.h
@@ -168,11 +174,15 @@ set(SOURCES
     hud/shield.cpp
     hud/shield.h
     hud/activesonar.cpp
+    hud/alert.cpp
+    hud/alert.h
     hud/activesonar.h
     hud/master.cpp
     hud/master.h
     hud/mastermonitor.cpp
     hud/mastermonitor.h
+    hud/slavemonitor.cpp
+    hud/slavemonitor.h
     hud/sonarmonitor.cpp
     hud/sonarmonitor.h
     hud/autopilot.cpp
