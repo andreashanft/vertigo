@@ -113,6 +113,13 @@ void Orders::next()
 }
 
 
+ActiveObject* Orders::dockingTarget() const
+{
+    const OrderSlot *slot = currentSlot();
+    return slot && slot->type == OrderSlot::GotoWithInfiltrate ? findUnit(slot->ene) : nullptr;
+}
+
+
 QString Orders::state() const
 {
     if (m_current < 0)

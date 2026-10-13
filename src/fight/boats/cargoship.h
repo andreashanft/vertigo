@@ -55,6 +55,7 @@ public:
     void draw();
     void arm(int model, txt::DesFile &file) {}
     bool engagesHostiles() const { return false; }
+    bool collidesWithObjects() const { return false; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();

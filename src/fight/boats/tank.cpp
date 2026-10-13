@@ -157,7 +157,9 @@ bool Tank::update(float elapsedTime)
 
     const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0);
     const Vector3D previous = m_position;
-    setPosition(m_position + heading*m_speed*elapsedTime);
+    Vector3D delta = slideAlongObjects(m_position, heading*m_speed*elapsedTime);
+    delta.z = 0;
+    setPosition(m_position + delta);
     m_velocity = elapsedTime > 0 ? (m_position - previous)/elapsedTime : Vector3D(0);
 
     updateTurret(elapsedTime);

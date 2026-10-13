@@ -19,6 +19,7 @@
 #define FIGHT_COLLISIONMANAGER_H
 
 
+#include <functional>
 #include <vector>
 #include "util/geometry3d.h"
 
@@ -60,7 +61,9 @@ public:
 public:
     void addObject(Object *object);
     void removeObject(Object *object);
-    Object* testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, CollisionCache *collisionCache = nullptr, const Object *ignore = nullptr);
+    // the nearest object a sphere moving from start to end hits; accept() can leave objects out
+    Object* testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, CollisionCache *collisionCache = nullptr, const Object *ignore = nullptr,
+                          const std::function<bool(const Object *)> &accept = nullptr);
 
 private:
 

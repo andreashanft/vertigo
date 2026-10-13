@@ -84,7 +84,13 @@ public:
 
 protected:
     void updateBox();
+    // moves by delta, sliding along the terrain and the objects in the way
     void move(Vector3D delta);
+    // the part of delta that doesn't run into another unit, a tower or a building: up to the
+    // contact, then along it (mines, effects and the unit it docks on are left out)
+    Vector3D slideAlongObjects(const Vector3D &position, const Vector3D &delta);
+    // big ships push through; the others steer round them
+    virtual bool collidesWithObjects() const { return true; }
 
 protected:
     glm::mat3 m_orientation;
@@ -105,7 +111,7 @@ protected:
     Vector3D m_maxAngleVelocity;
     Vector3D m_angleFriction;
 
-    float m_collisionRadius; // for terrain collisions
+    float m_collisionRadius; // for collisions with the terrain and other objects
     float m_currentFactor;   // how much the water current moves the boat
     float m_minClimbingAngle; // steepest dive and climb in radians (for ground vehicles: the most they tilt)
     float m_maxClimbingAngle;

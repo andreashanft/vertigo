@@ -16,6 +16,9 @@
  ***************************************************************************/
 
 #include "simpleboat.h"
+#include "fight/collisionmanager.h"
+#include "fight/effects/effect.h"
+#include "fight/objects/mine.h"
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "fight/orders.h"
@@ -164,9 +167,32 @@ bool SimpleBoat::update(float elapsedTime)
 }
 
 
-// moves by delta, sliding along the terrain
+Vector3D SimpleBoat::slideAlongObjects(const Vector3D &position, const Vector3D &delta)
+{
+    if (!collidesWithObjects() || glm::length2(delta) < 1e-8f)
+        return delta;
+    const Object *docking = m_orders ? m_orders->dockingTarget() : nullptr;
+    auto obstacle = [docking](const Object *object) {
+        return object != docking && !dynamic_cast<const Mine *>(object) && !dynamic_cast<const Effect *>(object);
+    };
+    Vector3D contact, normal;
+    if (!m_scenario->collisionManager().testCollision(position, position + delta, m_collisionRadius, contact, normal, nullptr, this, obstacle))
+        return delta;
+    // already touching and moving away (or along it): free to go
+    if (glm::dot(delta, normal) >= 0)
+        return delta;
+    Vector3D rest = delta - (contact - position);
+    rest -= glm::dot(rest, normal)*normal;
+    const float into = glm::dot(m_velocity, normal);
+    if (into < 0)
+        m_velocity -= into*normal;
+    return contact - position + normal*1e-3f + rest;
+}
+
+
 void SimpleBoat::move(Vector3D delta)
 {
+    delta = slideAlongObjects(m_position, delta);
     Vector3D position = m_position;
     for (int i = 0; i < 5 && glm::length2(delta) > 1e-5f; i++)
     {
