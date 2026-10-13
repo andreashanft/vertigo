@@ -23,6 +23,7 @@
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
+#include "fight/boats/playerturret.h"
 #include "game/boat.h"
 #include "gfx/image.h"
 
@@ -242,7 +243,7 @@ void HUD::step(float elapsedTime)
     if (!m_scenario)
         return;
 
-    setFrozen(m_paused || m_menu->page() != MissionMenu::Page::None);
+    setFrozen(m_paused || m_menu->pauses());
     if (m_frozen)
         elapsedTime = 0;
     while (elapsedTime > 0.0f) {
@@ -421,7 +422,10 @@ void HUD::keyPressEvent(QKeyEvent *e)
     if (!m_scenario)
         return;
 
-    if (m_menu->page() != MissionMenu::Page::None)
+    // the turret menu only takes digits, Esc and O; everything else still steers the boat
+    const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
+    const bool menuKey = (e->key() >= Qt::Key_0 && e->key() <= Qt::Key_9) || e->key() == Qt::Key_Escape || e->key() == Qt::Key_O;
+    if (m_menu->page() != MissionMenu::Page::None && (!turretMenu || menuKey))
     {
         switch (m_menu->keyPressEvent(e->key()))
         {
@@ -437,6 +441,15 @@ void HUD::keyPressEvent(QKeyEvent *e)
         case MissionMenu::Action::Load:
             leave(m_eventLoad);
             break;
+        case MissionMenu::Action::TurretOrder:
+            {
+                const fight::PlayerTurret::Order orders[4] = { fight::PlayerTurret::Order::Attack, fight::PlayerTurret::Order::Sync,
+                                                               fight::PlayerTurret::Order::Search, fight::PlayerTurret::Order::Stop };
+                for (int i = 0; i < 2; i++)
+                    if ((m_menu->turret() == i || m_menu->turret() < 0) && m_scenario->player()->turret(i))
+                        m_scenario->player()->turret(i)->setOrder(orders[m_menu->turretOrder()]);
+            }
+            break;
         }
         return;
     }
@@ -444,6 +457,12 @@ void HUD::keyPressEvent(QKeyEvent *e)
     if (e->key() == Qt::Key_Escape)
     {
         m_menu->open(MissionMenu::Page::Main);
+        return;
+    }
+    if (e->key() == Qt::Key_O)
+    {
+        m_menu->setTurrets((m_scenario->player()->turret(0) ? 1 : 0) + (m_scenario->player()->turret(1) ? 1 : 0));
+        m_menu->open(MissionMenu::Page::Turrets);
         return;
     }
     // Ctrl+D, Cmd+D on macOS

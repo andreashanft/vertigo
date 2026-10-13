@@ -75,6 +75,7 @@ public:
     bool update(float elapsedTime);
     void draw();
     void destroy();
+    bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
 
 private:
     void detonate(const Vector3D &position, ActiveObject *hit);

@@ -109,8 +109,16 @@ void SlaveMonitor::drawSystems(const Rect &rect)
         row(torpedo->shortName, QString::number(player->torpedoes().size()), player->torpedoReady() ? "RDY" : "ARM");
     else
         row("TORP", "--", "EMP");
-    gunRow("TUR1", player->turret(0));
-    gunRow("TUR2", player->turret(1));
+    // turrets: their state (SYN, SCA, LOC, FIR, VOL, STP, ...)
+    for (int i = 0; i < 2; i++)
+    {
+        const fight::PlayerTurret *turret = player->turret(i);
+        const QString name = QString("TUR%1").arg(i + 1);
+        if (turret)
+            row(name, turret->gun().usesAmmo() ? QString::number(turret->gun().ammo()) : QString("--"), turret->stateName());
+        else
+            row(name, "--", "---");
+    }
 }
 
 

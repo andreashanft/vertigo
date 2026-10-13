@@ -96,17 +96,9 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_gun.addMuzzles(Vector3D(0, 3.0f, 0), boat->gun());
     m_gun.setDefect(boat->defects()[game::Boat::DefectGun]);
     if (boat->tur1() != 0)
-    {
-        m_tur1.reset(new Gun(m_scenario, boat->tur1() - 3073, this));
-        m_tur1->addMuzzles(Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->tur1());
-        m_tur1->setDefect(boat->defects()[game::Boat::DefectTur1]);
-    }
+        m_turrets[0].reset(new PlayerTurret(m_scenario, this, boat->tur1(), boat->tur1soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->defects()[game::Boat::DefectTur1]));
     if (boat->tur2() != 0)
-    {
-        m_tur2.reset(new Gun(m_scenario, boat->tur2() - 3073, this));
-        m_tur2->addMuzzles(Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->tur2());
-        m_tur2->setDefect(boat->defects()[game::Boat::DefectTur2]);
-    }
+        m_turrets[1].reset(new PlayerTurret(m_scenario, this, boat->tur2(), boat->tur2soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->defects()[game::Boat::DefectTur2]));
 
     sfx::SampleMap::get(sfx::Sample::Engine).playLoop();
 
@@ -369,18 +361,9 @@ bool Player::update(float elapsedTime)
     m_gun.update(elapsedTime);
     if (m_firing && m_gun.state() == Gun::StateReady)
         m_gun.fire(m_position, dir(), up(), right());
-    if (m_tur1)
-    {
-        m_tur1->update(elapsedTime);
-        if (m_firing && m_tur1->state() == Gun::StateReady)
-            m_tur1->fire(m_position, dir(), up(), right());
-    }
-    if (m_tur2)
-    {
-        m_tur2->update(elapsedTime);
-        if (m_firing && m_tur2->state() == Gun::StateReady)
-            m_tur2->fire(m_position, dir(), up(), right());
-    }
+    for (auto &turret : m_turrets)
+        if (turret)
+            turret->update(elapsedTime, m_firing);
 
     return false;
 }

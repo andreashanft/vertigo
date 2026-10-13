@@ -555,7 +555,12 @@ void Scenario::update(float elapsedTime)
 
     for (const auto &torpedo : m_torpedoes)
         torpedo->update(elapsedTime);
-    m_torpedoes.remove_if([](const std::unique_ptr<Torpedo> &torpedo) { return torpedo->isDone(); });
+    m_torpedoes.remove_if([this](const std::unique_ptr<Torpedo> &torpedo) {
+        if (!torpedo->isDone())
+            return false;
+        m_collisionManager.removeObject(torpedo.get());
+        return true;
+    });
     m_decoys.erase(std::remove_if(m_decoys.begin(), m_decoys.end(), [this](const Decoy &d) { return d.until < m_time; }), m_decoys.end());
 
     m_sonar.update(elapsedTime);
@@ -723,6 +728,14 @@ void Scenario::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_Space)
         m_player->fire();
+    // turret orders: F5-F8 for turret 1, F9-F12 for turret 2 (attack my target, sync, search and destroy, stop)
+    if (e->key() >= Qt::Key_F5 && e->key() <= Qt::Key_F12)
+    {
+        const int index = e->key() >= Qt::Key_F9 ? 1 : 0;
+        const PlayerTurret::Order orders[4] = { PlayerTurret::Order::Attack, PlayerTurret::Order::Sync, PlayerTurret::Order::Search, PlayerTurret::Order::Stop };
+        if (PlayerTurret *turret = m_player->turret(index))
+            turret->setOrder(orders[(e->key() - Qt::Key_F5) % 4]);
+    }
     if (e->key() == Qt::Key_Tab)
         m_player->fireTorpedo();
     if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter)
@@ -828,6 +841,8 @@ Torpedo* Scenario::launchTorpedo(int type, const Vector3D &position, const Vecto
         return nullptr;
     m_torpedoes.emplace_back(new Torpedo(this, type, position, direction, speed, owner, target));
     m_torpedoesLaunched++;
+    // turrets and guns can shoot it down
+    m_collisionManager.addObject(m_torpedoes.back().get());
     sfx::SampleMap::playAt(sfx::Sample::Torpedo_Launch, position.x, position.y, position.z);
     return m_torpedoes.back().get();
 }

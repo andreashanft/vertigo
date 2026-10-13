@@ -70,6 +70,8 @@ set(SOURCES
     fight/objects/turretbase.h
 
     fight/boats/player.cpp
+    fight/boats/playerturret.cpp
+    fight/boats/playerturret.h
     fight/boats/player.h
     fight/boats/simpleboat.cpp
     fight/boats/simpleboat.h

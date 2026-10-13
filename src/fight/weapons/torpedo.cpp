@@ -105,7 +105,7 @@ Torpedo::Torpedo(Scenario *scenario, int type, const Vector3D &position, const V
     m_kineticStrength = m_type.kineticStrength;
     m_shockStrength = m_type.shockStrength;
     m_info.iff = owner ? owner->iff() : 0;
-    m_box = m_model->box().scale(m_type.scale).translate(position);
+    m_box = BoundingBox(position - Vector3D(1.5f), position + Vector3D(1.5f));
     m_static = false;
 }
 
@@ -232,6 +232,23 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit)
         hit->damage(m_type.kineticStrength, m_type.shockStrength, position, m_owner);
     m_scenario->effectManager().addEffect(Effects::Explosion_1, position);
     sfx::SampleMap::playAt(sfx::Sample::Explosion_Small, position.x, position.y, position.z);
+}
+
+
+// a sphere of 1.5 m; only entering it counts, so the torpedo's own movement never hits itself
+bool Torpedo::intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal)
+{
+    const float size = 1.5f + radius;
+    const Vector3D toCentre = m_position - start;
+    if (glm::length(toCentre) <= size)
+        return false;
+    const float along = glm::dot(toCentre, dir);
+    const float miss = glm::length(toCentre - dir*along);
+    if (along < 0 || miss > size)
+        return false;
+    distance = along - std::sqrt(size*size - miss*miss);
+    normal = glm::normalize(start + dir*distance - m_position);
+    return true;
 }
 
 

@@ -21,6 +21,7 @@
 
 #include "simpleboat.h"
 #include "fight/weapons/gun.h"
+#include "playerturret.h"
 #include <memory>
 
 
@@ -54,7 +55,7 @@ public:
     ActiveObject* lockTarget() const { return m_lockTarget; }
     float lockProgress() const; // 0-1, 1 when a homing torpedo would follow the target
     float lockRemaining() const; // seconds until the lock is complete
-    const Gun* turret(int index) const { return index == 0 ? m_tur1.get() : m_tur2.get(); }
+    PlayerTurret* turret(int index) const { return index >= 0 && index < 2 ? m_turrets[index].get() : nullptr; }
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
     float roll() const { return m_roll; };
@@ -108,8 +109,7 @@ private:
 
     bool m_firing;
     Gun m_gun;
-    std::unique_ptr<Gun> m_tur1;
-    std::unique_ptr<Gun> m_tur2;
+    std::unique_ptr<PlayerTurret> m_turrets[2];
 };
 
 
