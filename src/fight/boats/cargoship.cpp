@@ -140,11 +140,22 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
                 turret.gun.reset(new UnitGun(scenario, this, mount.model, muzzles, &turretFile));
                 if (mount.ammunition >= 0)
                     turret.gun->setAmmunition(mount.ammunition);
-                turret.range = std::max(turret.range, turret.gun->range());
             }
             m_turrets.push_back(std::move(turret));
         }
     }
+
+    // the ship's position is the middle of the hull (seen from above), so it turns around it
+    updateLocalBox();
+    Vector3D middle = 0.5f*(m_localBox.minPoint() + m_localBox.maxPoint());
+    middle.z = 0;
+    for (Block &block : m_blocks)
+    {
+        block.position -= middle;
+        block.box = block.box.translate(-middle);
+    }
+    for (ShipTurret &turret : m_turrets)
+        turret.position -= middle;
 
     updateLocalBox();
     const Vector3D dim = m_localBox.dim();
@@ -260,7 +271,7 @@ void CargoShip::updateTurret(ShipTurret &turret, float elapsedTime)
     {
         const Vector3D way = point - pivot;
         const float distance = glm::length(way);
-        trigger = distance < turret.gun->range() && distance > 0 && glm::dot(dir, way/distance) > std::cos(AimTolerance);
+        trigger = distance < std::min(turret.range, turret.gun->range()) && distance > 0 && glm::dot(dir, way/distance) > std::cos(AimTolerance);
     }
     const Vector3D mountUp = m_orientationInverted*toMount(turret, Vector3D(0, 0, 1));
     Vector3D right = glm::cross(dir, mountUp);

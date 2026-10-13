@@ -59,6 +59,8 @@ public:
     static void setDifficulty(int difficulty);
     // test mode: use this difficulty without storing it
     static void overrideDifficulty(int difficulty);
+    // test mode: the same random numbers in every run (-1: seeded from the clock)
+    static void setRandomSeed(int seed);
 
 public:
     struct ObjectRecord

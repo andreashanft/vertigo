@@ -283,10 +283,20 @@ void Orders::startAttackState(Attack state, ActiveObject *target)
     case Attack::Attack:
         {
             m_torpedoRun = random() < settings.torpedoProbability;
-            // a miss by up to 8 m, the less likely to hit the larger
-            const float error = (1 - settings.hitProbability)*8.0f*random();
-            const float angle = random()*glm::two_pi<float>();
-            m_offset = Vector3D(error*std::cos(angle), error*std::sin(angle), 0.5f*error*(random() - 0.5f));
+            // AttackProbabilityHit is the chance that the run is on target; otherwise it aims past the hull,
+            // to the side of the line of fire
+            m_offset = Vector3D(0);
+            if (random() >= settings.hitProbability)
+            {
+                const Vector3D dim = target->box().dim();
+                const float miss = 0.5f*std::max(dim.x, std::max(dim.y, dim.z)) + random(3.0f, 8.0f);
+                Vector3D line = target->center() - m_unit->position();
+                line = glm::length(line) > 0.1f ? glm::normalize(line) : Vector3D(0, 1, 0);
+                const Vector3D side = glm::normalize(std::abs(line.z) < 0.9f ? glm::cross(line, Vector3D(0, 0, 1)) : glm::cross(line, Vector3D(1, 0, 0)));
+                const Vector3D up = glm::cross(side, line);
+                const float angle = random()*glm::two_pi<float>();
+                m_offset = (side*std::cos(angle) + up*0.5f*std::sin(angle))*miss;
+            }
             m_attackEnd = m_scenario->time() + random(settings.minAttackTime, settings.maxAttackTime);
         }
         break;

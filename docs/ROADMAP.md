@@ -195,7 +195,19 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    above the level stays out of the mission. Only boats, bombers and tanks
    carry it: 151 of them need Normal, 112 Hard, and before this every
    mission was played as Hard. An absent unit counts as achieved in "destroy
-   these" objectives, is in no faction and never fires its own events.)
+   these" objectives, is in no faction and never fires its own events.
+   **Balancing so far:** `AttackProbabilityHit` is now the chance that an
+   attack run is on target; the other runs aim past the hull. Before, the aim
+   error was smaller than the player's boat, so nearly every run hit. Ship
+   turrets engage within their sensor range `senr`. Test runs use a fixed
+   random seed (`--seed`). Over 3 seeds × 71 missions at Normal, with the
+   idle chapter-1 boat, 14 of 213 runs end with the player destroyed within
+   60 s, down from 20. The remaining ones are a tower at the start (S00704),
+   torpedo runs, and chapter-22 warships (S02204) that need a late-game boat.
+   Still open, and only measurable in the original: the energy pool and its
+   recharge for energy guns (`EnergyDemand` and the gun state "EnergyDelay"
+   exist, the pool doesn't), tower accuracy, and cargo-ship placement and
+   turret size.)
 
 ## Open questions and how to settle them
 
@@ -374,8 +386,10 @@ apart. A turret stands at `RelativePositionX/Y` in the block's model units, on
 the hull surface found straight below it (`Z` +1000), or hangs upside down
 under the hull (`Z` −1000). `Alpha` turns it counter-clockwise from the bow, in
 the ship's frame for both. Turrets use their own `[Size] Scale`/32, about
-1.2 m. Turrets fire at hostile units on their side of the hull within
-`max(senr, gun range)`.
+1.2 m. The mission position is the middle of the hull seen from above, so
+long ships turn around their middle and their sterns don't sweep over nearby
+units. Turrets fire at hostile units on their side of the hull within `senr` and the
+gun's range.
 
 Damage is not documented, so this is a guess. A hit damages the nearest turret
 (within 3 m) or block. A block or turret whose shield runs out explodes and is

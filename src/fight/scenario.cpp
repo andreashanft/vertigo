@@ -55,6 +55,7 @@ namespace fight {
 
 
 static int s_difficultyOverride = -1;
+static int s_randomSeed = -1;
 
 
 int Scenario::difficulty()
@@ -68,6 +69,12 @@ int Scenario::difficulty()
 void Scenario::setDifficulty(int difficulty)
 {
     QSettings().setValue("Game/difficulty", glm::clamp(difficulty, 0, 2));
+}
+
+
+void Scenario::setRandomSeed(int seed)
+{
+    s_randomSeed = seed;
 }
 
 
@@ -539,7 +546,7 @@ Scenario::Scenario(const QString &name) :
 
 
 
-    qsrand(QTime::currentTime().second() * 1000 + QTime::currentTime().msec());
+    qsrand(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
 
     sfx::SampleMap::load();
 }
