@@ -161,7 +161,7 @@ Scenario::Scenario(const QString &name) :
         switch (placeholder ? 0 : type) {
         case TypeBoat:
             {
-                object = new SimpleBoat(this, objectDes, info, 0);
+                object = new SimpleBoat(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
                 Vector3D pos = getPosition();
                 pos.z += 20.0f;
                 object->setPosition(pos);
@@ -170,7 +170,7 @@ Scenario::Scenario(const QString &name) :
 
         case TypeBomber:
             {
-                object = new SimpleBoat(this, objectDes, info, 0);
+                object = new SimpleBoat(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
                 Vector3D pos = getPosition();
                 pos.z += 20.0f;
                 object->setPosition(pos);

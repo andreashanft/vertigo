@@ -43,6 +43,7 @@ public:
 protected:
     Module *m_base;
     float m_scale;
+    BoundingBox m_localBox; // m_box before it is moved to the object's position
 };
 
 

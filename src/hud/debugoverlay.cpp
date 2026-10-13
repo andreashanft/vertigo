@@ -125,6 +125,9 @@ void DebugOverlay::drawLabels()
             text += QString(" IFF%1 S%2/%3").arg(active->iff())
                     .arg(int(scenario->sonar().passiveRange(active)))
                     .arg(int(scenario->sonar().activeRange(active)));
+            const float speed = glm::length(active->velocity());
+            if (speed > 0.1f)
+                text += QString(" V%1").arg(int(speed*3.6f));
             if (detected.count(object))
                 font = &m_hud->fontYellow();
         }

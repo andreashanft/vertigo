@@ -32,7 +32,8 @@ SimpleObject::SimpleObject(Scenario *scenario, txt::DesFile &file, const ObjectI
     file.setSection("size");
     m_scale = file.value("scale").toFloat() * scale;
 
-    m_box = m_base->box().scale(m_scale);
+    m_localBox = m_base->box().scale(m_scale);
+    m_box = m_localBox;
     scenario->collisionManager().addObject(this);
 }
 

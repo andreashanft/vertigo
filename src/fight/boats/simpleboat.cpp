@@ -16,8 +16,13 @@
  ***************************************************************************/
 
 #include "simpleboat.h"
+#include "fight/scenario.h"
+#include "fight/module.h"
 #include "txt/desfile.h"
 #include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/norm.hpp>
+#include <algorithm>
 
 
 namespace fight {
@@ -42,6 +47,27 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
 
     m_maxAngleVelocity = Vector3D(file.value("MaxAngleVelocityB").toFloat(), file.value("MaxAngleVelocityC").toFloat(), file.value("MaxAngleVelocityA").toFloat());
     m_angleFriction = Vector3D(-file.value("AngleFrictionB").toFloat(), -file.value("AngleFrictionC").toFloat(), -file.value("AngleFrictionA").toFloat());
+
+    // a sphere that fits into the hull, so the boat can get close to the ground
+    const Vector3D dim = m_localBox.dim();
+    m_collisionRadius = glm::clamp(0.5f*std::min(dim.x, std::min(dim.y, dim.z)), 1.5f, 8.0f);
+
+    // boats move, so collision results must not be cached
+    m_static = false;
+    updateBox();
+}
+
+
+void SimpleBoat::setPosition(const Vector3D &pos)
+{
+    m_position = pos;
+    updateBox();
+}
+
+
+void SimpleBoat::updateBox()
+{
+    m_box = m_localBox.transform(glm::translate(m_position) * Matrix(m_orientationInverted));
 }
 
 
@@ -49,8 +75,56 @@ bool SimpleBoat::update(float elapsedTime)
 {
     updateOrientation(elapsedTime);
     updateVelocity(elapsedTime);
-    m_position += m_velocity*elapsedTime;
+    move(m_velocity*elapsedTime);
 
+    return false;
+}
+
+
+// moves by delta, sliding along the terrain
+void SimpleBoat::move(Vector3D delta)
+{
+    Vector3D position = m_position;
+    for (int i = 0; i < 5 && glm::length2(delta) > 1e-5f; i++)
+    {
+        Vector3D posSurface, normSurface;
+        if (!m_scenario->surface().testCollision(position, position + delta, m_collisionRadius, posSurface, normSurface))
+        {
+            position += delta;
+            break;
+        }
+        delta -= posSurface - position;
+        position = posSurface;
+        delta -= (glm::dot(delta, normSurface) - 1e-3f)*normSurface;
+        // the ground stops the part of the movement that goes into it
+        const float into = glm::dot(m_velocity, normSurface);
+        if (into < 0)
+            m_velocity -= into*normSurface;
+    }
+    setPosition(position);
+}
+
+
+void SimpleBoat::draw()
+{
+    glPushMatrix();
+    glTranslatef(m_position.x, m_position.y, m_position.z);
+    glMultMatrixf(glm::value_ptr(Matrix(m_orientationInverted)));
+    glScalef(m_scale, m_scale, m_scale);
+    m_base->draw();
+    glPopMatrix();
+}
+
+
+bool SimpleBoat::intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal)
+{
+    // test in the model's own coordinates
+    if (m_base->intersect(m_orientation*(start - m_position)/m_scale, m_orientation*dir, radius/m_scale, distance, normal))
+    {
+        distance *= m_scale;
+        normal = m_orientationInverted*normal;
+        return true;
+    }
     return false;
 }
 
@@ -75,10 +149,12 @@ void SimpleBoat::updateVelocity(float elapsedTime)
 void SimpleBoat::updateOrientation(float elapsedTime)
 {
     m_angleVelocity += m_angleVelocity*m_angleFriction*elapsedTime;
-    if (glm::abs(m_angleVelocity.x) < m_turnVelocity.x*m_maxAngleVelocity.x)
-        m_angleVelocity.x = m_turnVelocity.x*m_maxAngleVelocity.x;
-    if (m_angleVelocity.z < m_turnVelocity.z*m_maxAngleVelocity.z)
-        m_angleVelocity.z = m_turnVelocity.z*m_maxAngleVelocity.z;
+    // turning in either direction
+    const Vector3D turn = m_turnVelocity*m_maxAngleVelocity;
+    if (glm::abs(m_angleVelocity.x) < glm::abs(turn.x))
+        m_angleVelocity.x = turn.x;
+    if (glm::abs(m_angleVelocity.z) < glm::abs(turn.z))
+        m_angleVelocity.z = turn.z;
 
     m_orientation *= glm::mat3(glm::rotate(m_angleVelocity.x*elapsedTime, right())) * glm::mat3(glm::rotate(m_angleVelocity.z*elapsedTime, Vector3D(0, 0, 1)));
     m_orientationInverted = glm::transpose(m_orientation);
