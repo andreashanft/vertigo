@@ -145,7 +145,10 @@ crawlers, towers, buildings, cargo ships: "orders not run").
   - Add limits and distance culling.
 - **Explosions with debris and bodies (M, needs 1.4):** explosion sized to the
   object, 4–10 debris parts, the three "Cadaver" sprites for crewed vessels,
-  sparks on hits. Test: `s00105`.
+  sparks on hits. Test: `s00105`. **Done** (without the particle pool): the
+  billboard loader reads `LifeTime`, `Friction`, `Lift` and `Min/MaxVelocity`;
+  `Debris` pieces fly off, slow down, sink (`Lift` × 4 m/s²) and settle on the
+  ground until their `LifeTime` ends.
 - **Dust clouds (S):** ground-dust sprites behind moving tanks and crawlers.
   Needs 1.6 and moving units.
 - **Torpedo trails (S, needs 1.8):** the data's "torpedo-bubble" sprite,

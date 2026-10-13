@@ -21,6 +21,8 @@
 #include "fight/effects/effectmanager.h"
 #include "fight/weapons/unitgun.h"
 #include "fight/orders.h"
+#include "fight/boats/simpleboat.h"
+#include <glm/geometric.hpp>
 #include <algorithm>
 
 
@@ -95,6 +97,28 @@ void ActiveObject::destroy()
     const Effects explosion = size < 8.0f ? Effects::Explosion_0 : size < 20.0f ? Effects::Explosion_1 : Effects::Explosion_2;
     m_scenario->effectManager().addEffect(explosion, center());
     sfx::SampleMap::get(size < 20.0f ? sfx::Sample::Explosion_Small : sfx::Sample::Explosion_Big).playInstance();
+
+    // debris (DEBRIS.DES): plates 0-2, engine 3, small parts 4-8, large parts 9-13, bodies 14-16
+    auto random = [](int min, int max) { return min + qrand()%(max - min + 1); };
+    auto direction = []() {
+        const Vector3D d(qrand()/float(RAND_MAX) - 0.5f, qrand()/float(RAND_MAX) - 0.5f, 0.5f*qrand()/float(RAND_MAX));
+        return glm::length(d) > 0.01f ? glm::normalize(d) : Vector3D(0, 0, 1);
+    };
+    auto debris = [this, &direction](int index) {
+        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), center(), direction());
+    };
+    const int pieces = size < 8.0f ? 4 : size < 20.0f ? 6 : 10;
+    for (int i = 0; i < pieces; i++)
+        debris(i % 3 == 0 ? random(0, 2) : size >= 8.0f && i % 3 == 1 ? random(9, 13) : random(4, 8));
+    const SimpleBoat *vessel = dynamic_cast<const SimpleBoat *>(this);
+    if (vessel)
+    {
+        debris(3);
+        // crewed vessels
+        if (!vessel->isGroundVehicle() || size >= 8.0f)
+            for (int i = random(1, 3); i > 0; i--)
+                debris(random(14, 16));
+    }
 
     disable();
     m_eventDestroy.complete();

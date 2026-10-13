@@ -37,6 +37,8 @@ set(SOURCES
     fight/effects/billboard.h
     fight/effects/effect.cpp
     fight/effects/effect.h
+    fight/effects/debris.cpp
+    fight/effects/debris.h
     fight/effects/effectmanager.cpp
     fight/effects/effectmanager.h
     fight/effects/projectile.cpp

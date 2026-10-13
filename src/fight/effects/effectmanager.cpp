@@ -18,6 +18,7 @@
 #include "effectmanager.h"
 #include "projectile.h"
 #include "bubble.h"
+#include "debris.h"
 #include "fight/scenario.h"
 
 
@@ -66,6 +67,17 @@ Billboard* EffectManager::getBillboard(Effects effect)
 Effect* EffectManager::addEffect(Effects effect, const Vector3D &position, float angle, float scale)
 {
     Effect *object = new Effect(m_scenario, getBillboard(effect), angle, scale);
+    m_effects.emplace_back(object);
+    object->setPosition(position);
+    return object;
+}
+
+
+Effect* EffectManager::addDebris(Effects debris, const Vector3D &position, const Vector3D &direction)
+{
+    Billboard *billboard = getBillboard(debris);
+    const float speed = billboard->minVelocity() + (billboard->maxVelocity() - billboard->minVelocity())*qrand()/float(RAND_MAX);
+    Debris *object = new Debris(m_scenario, billboard, direction*speed);
     m_effects.emplace_back(object);
     object->setPosition(position);
     return object;
