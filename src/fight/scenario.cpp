@@ -338,6 +338,7 @@ Scenario::Scenario(const QString &name) :
         case TypeCargoShip:
             {
                 CargoShip *ship = new CargoShip(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                ship->setPicture(CargoShip::pictureFor(desName));
                 object = ship;
                 // high enough for the hull to clear the ground
                 Vector3D pos = getPosition();

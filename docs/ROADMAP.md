@@ -442,13 +442,15 @@ long ships turn around their middle and their sterns don't sweep over nearby
 units. Turrets fire at hostile units on their side of the hull within `senr` and the
 gun's range.
 
-Damage is not documented, so this is a guess. A hit damages the nearest turret
-(within 3 m) or block. A block or turret whose shield runs out explodes and is
-removed, together with the turrets on it. The ship's own `[Defense]` shield
-takes every hit, and the ship is destroyed when that shield or all its blocks
-are gone. When a block goes, the blocks no longer joined to the largest
-remaining part (by touching boxes) break off, sink tumbling, and explode on
-the ground. The kinematics in the ship files copy the bomber's, so big ships turn
+As in the original (from its screenshots), a big ship takes hits as a whole on
+its own `[Defense]` shield (cargo ships 20,000–60,000, Big Fat Mama
+10,000,000); once that is used up it counts as destroyed at once, stops, and
+its blocks blow up one after another (every 0.3–0.7 s, in random order).
+Each block is a sonar contact and target of its own. The master monitor
+shows a picture instead of the model, chosen by the ship file's comment:
+`SHPSEACO` (bship0), `SHPTRITO` (1, 8), `SHPPOLAR` (2, 9), `SHPINDER`
+(Star of Bengalia, 3, 10), `SHPBIONT` (4, 7), `SHPBFM` (5, 6), `SHPCONTF`
+(cship0–9). The kinematics in the ship files copy the bomber's, so big ships turn
 at most 0.15 rad/s and climb at most 5°.
 
 ### B. Orders

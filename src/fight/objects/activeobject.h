@@ -102,6 +102,8 @@ public:
     virtual void identify();
     // whether the sonar shows it (a cargo ship shows its blocks instead)
     virtual bool isContact() const { return true; }
+    // a picture (GFX/IMG/COCKPIT) the master monitor shows instead of the model, e.g. shpcontf
+    virtual QString observationImage() const { return QString(); }
     // the unit isn't in the mission at this difficulty: it never appears (see ConditionEntry::absent)
     void leaveMission();
 

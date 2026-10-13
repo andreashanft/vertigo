@@ -119,7 +119,18 @@ void MasterMonitor::draw()
         m_voxelRadar.draw(m_hud->scenario(), RectF(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y));
     }
 
-    if (target.isLocked())
+    fight::ActiveObject *pictured = target.locked();
+    const QString picture = pictured ? pictured->observationImage() : QString();
+    if (!picture.isEmpty())
+    {
+        // big ships: a picture of the ship (SHP*.IMG, the size of the observation area)
+        auto it = m_pictures.find(picture);
+        if (it == m_pictures.end())
+            it = m_pictures.emplace(picture, gfx::Texture(m_hud->getImage(picture), true)).first;
+        const Point observeCenter = m_hud->project(m_rect.pos() + m_observationRect.center());
+        it->second.draw(observeCenter.x - it->second.width()/2, observeCenter.y - it->second.height()/2);
+    }
+    else if (target.isLocked())
     {
         Point observePos = m_hud->project(m_rect.pos() + m_observationRect.pos());
         Point observeCenter = m_hud->project(m_rect.pos() + m_observationRect.center());
