@@ -29,11 +29,12 @@
 namespace hud {
 
 
-MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect) :
+MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::DesFile &file) :
     ui::Widget(hud->widget()),
     m_hud(hud),
     m_rect(rect),
-    m_observationRect(observationRect)
+    m_observationRect(observationRect),
+    m_voxelRadar(file)
 {
 }
 
@@ -91,6 +92,14 @@ void MasterMonitor::draw()
         txtHeight = "10M";
         txtVelocity = "0KMH";
         txtNoise = "0";
+    }
+
+    if (!target.isLocked() && m_voxelRadar.isValid())
+    {
+        const Rect &radar = m_voxelRadar.rect();
+        const Point topLeft = m_hud->project(m_rect.pos() + radar.pos());
+        const Point bottomRight = m_hud->project(m_rect.pos() + radar.pos() + Point(radar.width, radar.height));
+        m_voxelRadar.draw(m_hud->scenario(), RectF(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y));
     }
 
     if (target.isLocked())

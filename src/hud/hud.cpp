@@ -309,7 +309,7 @@ void HUD::load(game::Boat *boat)
     m_children.emplace_back(energyBar);
 
     file.setSection("mastermonitor");
-    MasterMonitor *masterMonitor = new MasterMonitor(this, readRect(file), Rect(file.value("ObservationX1").toInt(), file.value("ObservationY1").toInt(), file.value("ObservationWidth").toInt(), file.value("ObservationHeight").toInt()));
+    MasterMonitor *masterMonitor = new MasterMonitor(this, readRect(file), Rect(file.value("ObservationX1").toInt(), file.value("ObservationY1").toInt(), file.value("ObservationWidth").toInt(), file.value("ObservationHeight").toInt()), file);
     m_children.emplace_back(masterMonitor);
 
     file.setSection("roundmonitor0");

@@ -191,6 +191,8 @@ set(SOURCES
     hud/master.h
     hud/mastermonitor.cpp
     hud/mastermonitor.h
+    hud/voxelradar.cpp
+    hud/voxelradar.h
     hud/slavemonitor.cpp
     hud/slavemonitor.h
     hud/sonarmonitor.cpp

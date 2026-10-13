@@ -21,6 +21,7 @@
 
 #include "util/geometry2d.h"
 #include "ui/widget.h"
+#include "voxelradar.h"
 
 
 namespace hud {
@@ -32,7 +33,7 @@ class HUD;
 class MasterMonitor : public ui::Widget
 {
 public:
-    MasterMonitor(HUD *hud, Rect rect, Rect observationRect);
+    MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::DesFile &file);
 
 public:
 
@@ -43,6 +44,7 @@ private:
     HUD *m_hud;
     Rect m_rect;
     Rect m_observationRect;
+    VoxelRadar m_voxelRadar;    // shown while no target is locked
 };
 
 
