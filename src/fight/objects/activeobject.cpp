@@ -71,17 +71,16 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
 {
     if (attacker && attacker != this)
         m_eventAttack.complete();
+    const bool wasDestroyed = m_eventDestroy.isCompleted();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;
     if (m_kineticShield < 0)
-    {
         destroy();
-        return;
-    }
-    if (m_shockShield < 0)
-    {
+    else if (m_shockShield < 0)
         m_eventParalyze.complete();
-    }
+
+    if (attacker && attacker != this && attacker == m_scenario->player())
+        m_scenario->playerHit(this, !wasDestroyed && m_eventDestroy.isCompleted());
 }
 
 

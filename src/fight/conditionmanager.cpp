@@ -97,8 +97,17 @@ ConditionManager::ConditionEntry& ConditionManager::addEntry(int id)
 }
 
 
+int ConditionManager::iff(int id) const
+{
+    const auto it = condEntries.find(id);
+    return it != condEntries.end() ? it->second.iff : -1;
+}
+
+
 void ConditionManager::updateObjective(int id, int index, int wccond)
 {
+    if (wccond == 2 || wccond == 9)
+        m_destroyTargets.insert(id);
     const ConditionEntry &entry = condEntries.at(id);
     ConditionEvent *condSuccess = NULL;
     ConditionEvent *condFailure = NULL;

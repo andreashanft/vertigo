@@ -25,6 +25,7 @@
 #include "game/boat.h"
 #include "sfx/samplemap.h"
 #include "util/debug.h"
+#include "txt/stringtable.h"
 
 #include "objects/building.h"
 #include "objects/mine.h"
@@ -750,6 +751,40 @@ QStringList Scenario::loadReport() const
 void Scenario::loadIssue(const QString &text)
 {
     m_loadIssues << text;
+}
+
+
+// Friendly fire: hits on units of the player's faction (0) that aren't destroy objectives or mines
+// get escalating warnings (texts 67-70, at most one every 3 s); each friendly kill is reported (71),
+// and the third fails the mission (89).
+void Scenario::playerHit(ActiveObject *unit, bool destroyed)
+{
+    int id = -1;
+    for (const auto &record : m_records)
+        if (record.object == unit)
+            id = record.id;
+    if (id < 0 || m_conditionManager.iff(id) != 0 || m_conditionManager.isDestroyTarget(id) || dynamic_cast<Mine *>(unit))
+        return;
+
+    auto say = [this, unit](int text) {
+        m_conditionManager.addCondRadio(unit->position(), txt::StringTable::get(txt::StringFight(text)))->complete();
+    };
+    if (destroyed)
+    {
+        m_friendlyKills++;
+        say(71);
+        if (m_friendlyKills >= 3)
+        {
+            say(89);
+            m_conditionManager.fail();
+        }
+    }
+    else if (m_time - m_lastFriendlyWarning >= 3.0f)
+    {
+        say(67 + std::min(m_friendlyWarnings, 3));
+        m_friendlyWarnings++;
+        m_lastFriendlyWarning = m_time;
+    }
 }
 
 

@@ -66,7 +66,8 @@ void RadioMessage::draw()
     m_lblText.setPosition(rect.x, rect.y + 2);
     m_lblText.setSize(rect.width, rect.height - 5);
     QString text = m_hud->scenario()->radio()[i]->text();
-    if (text[0] == '#')
+    // '#' and '~' mark messages in red
+    if (text[0] == '#' || text[0] == '~')
     {
         text = text.mid(1);
         m_lblText.setFont(m_hud->fontRed());

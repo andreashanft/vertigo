@@ -79,6 +79,8 @@ public:
     int endType() const { return m_endType; }
 
     int playerId() const { return m_playerId; }
+    // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
+    void playerHit(ActiveObject *unit, bool destroyed);
     void destroyPlayer() { m_eventPlayerDestroyed.complete(); }
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
@@ -170,6 +172,9 @@ private:
     char m_attitudeMatrix[9][9];
     int m_endType;
     int m_playerId;
+    int m_friendlyWarnings = 0;
+    int m_friendlyKills = 0;
+    float m_lastFriendlyWarning = -100;
     ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;
