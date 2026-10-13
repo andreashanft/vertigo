@@ -179,6 +179,8 @@ set(SOURCES
     hud/master.h
     hud/mastermonitor.cpp
     hud/mastermonitor.h
+    hud/slavemonitor.cpp
+    hud/slavemonitor.h
     hud/sonarmonitor.cpp
     hud/sonarmonitor.h
     hud/autopilot.cpp

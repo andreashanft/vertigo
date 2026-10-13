@@ -41,6 +41,8 @@ public:
 
 public:
     int shield(int index) const { return m_shield[index]; };
+    const Gun& playerGun() const { return m_gun; }
+    const Gun* turret(int index) const { return index == 0 ? m_tur1.get() : m_tur2.get(); }
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
     float roll() const { return m_roll; };

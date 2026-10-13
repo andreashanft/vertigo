@@ -37,6 +37,7 @@ namespace hud {
 
 class SonarMonitor;
 class MissionMenu;
+class SlaveMonitor;
 
 
 class HUD : public game::Renderer
@@ -130,6 +131,7 @@ private:
     ui::Widget* m_debugOverlay;
     bool m_debugOverlayVisible;
     MissionMenu* m_menu;
+    std::vector<SlaveMonitor*> m_slaveMonitors;
 
     bool m_paused;
     bool m_frozen;          // mission time and sounds stopped (pause or menu)
