@@ -20,6 +20,7 @@
 #include "sfx/samplemap.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/weapons/unitgun.h"
+#include "fight/orders.h"
 #include <algorithm>
 
 
@@ -49,6 +50,20 @@ ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 
 ActiveObject::~ActiveObject()
 {
+}
+
+
+void ActiveObject::setOrders(Orders *orders)
+{
+    m_orders.reset(orders);
+}
+
+
+bool ActiveObject::update(float elapsedTime)
+{
+    if (m_orders)
+        m_orders->update();
+    return false;
 }
 
 

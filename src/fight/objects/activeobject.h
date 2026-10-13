@@ -31,6 +31,7 @@ namespace fight {
 
 class Scenario;
 class UnitGun;
+class Orders;
 
 
 class ActiveObject : public Object
@@ -76,6 +77,10 @@ public:
     const Vector3D& velocity() const { return m_velocity; }
 
 public:
+    Orders* orders() const { return m_orders.get(); }
+    void setOrders(Orders *orders);
+    bool update(float elapsedTime);
+
     // the unit's gun (none by default): model from the mission's "gun" key, -1 for the file's default
     virtual void arm(int model, txt::DesFile &file) {}
     UnitGun* gun() const { return m_unitGun.get(); }
@@ -108,6 +113,7 @@ protected:
 
     Vector3D m_velocity;
 
+    std::unique_ptr<Orders> m_orders;
     std::unique_ptr<UnitGun> m_unitGun;
     bool m_trigger = false;
 };

@@ -31,6 +31,7 @@ class Condition;
 class Object;
 class Scenario;
 class SimpleBoat;
+class ActiveObject;
 
 
 // One of the up to 8 order slots of a movable (o<N>... keys), see docs/ROADMAP.md, appendix B.
@@ -62,34 +63,57 @@ struct OrderSlot
 };
 
 
-// Runs a unit's orders slot by slot.
+// Runs a unit's orders slot by slot. Movement orders need a unit that can move (a SimpleBoat or Tank).
 class Orders
 {
 public:
-    Orders(Scenario *scenario, SimpleBoat *boat, const std::vector<OrderSlot> &orderSlots);
+    Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSlot> &orderSlots);
 
 public:
     // the current slot, or -1 after the last one
     int current() const { return m_current; }
     const OrderSlot* currentSlot() const { return m_current >= 0 ? &m_slots[m_current] : nullptr; }
+    // a short description of what the unit does, for the debug overlay
+    QString state() const;
     void update();
 
 private:
+    enum class Attack { Approach, Attack, Break };
+
     void start(int slot);
     void next();
     // a point at the given height (in map height units) above the ground, looking ahead along the way
     float altitude(const Vector3D &point, int height) const;
     void pickPatrolPoint();
+    Vector3D cellCentre(int x, int y) const;
+
+    ActiveObject* findUnit(int id) const;
+    bool isAlive(const ActiveObject *unit) const;
+    ActiveObject* nearestHostile(float range, int sector) const;
+    // where to aim at a moving target so that the shot meets it
+    Vector3D lead(const ActiveObject *target) const;
+    // the unit's gun points at the target (within a few degrees) and the target is in range
+    bool aligned(const Vector3D &aim, const Vector3D &target, float range) const;
+
+    void updateTurret(ActiveObject *target, float range, int sector);
+    void updateAttack(ActiveObject *target, float speed);
+    void startAttackState(Attack state, ActiveObject *target);
 
 private:
     Scenario *m_scenario;
-    SimpleBoat *m_boat;
+    ActiveObject *m_unit;
+    SimpleBoat *m_boat;  // nullptr if the unit can't move
     std::vector<OrderSlot> m_slots;
     int m_current;
     float m_startTime;
-    Vector3D m_point;  // current patrol point
+    Vector3D m_point;    // current patrol or attack point
     int m_pointHeight;
-    float m_pointTime; // when the patrol point was picked
+    float m_pointTime;   // when the patrol point was picked
+
+    Attack m_attack;
+    float m_attackEnd;   // when the current attack state ends
+    Vector3D m_offset;   // approach side, or the aim error for this attack run
+    bool m_ambushed;     // an ambush has been triggered
 };
 
 

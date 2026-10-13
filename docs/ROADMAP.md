@@ -101,6 +101,18 @@ circling, with terrain look-ahead.
 
 Order of work: 1, 2, 9 → 3 → 5 → (needs 1.4 and 1.7) → 7, 8 → 4 → 6 → 10 → 11.
 
+**Combat orders (milestone 3):** 7 and 8 for towers (nearest hostile within
+`rad`, on the side `car` 0–7 or all around for 8–10; or the unit `ene`), turning
+the turret and firing once it points at the target, leading moving targets; 4
+for boats (approach a side of the target at the align radius, attack run with
+an aim error from `AttackProbabilityHit`, break off, using the `[Attack]`
+settings; no closer than 35 m, and the way goes round the target) and tanks
+(drive at the target, fire when aligned); patrol while the target isn't there;
+6 waits at its point until the target is within 300 m or the unit is hit,
+then attacks; 11 destroys the unit after `dur` (`con` 1: counted from being
+boarded). Hostility is the attitude matrix (2 = hostile), the player is
+faction 0. Still missing: 10 (GotoWithInfiltrate) and orders for cargo ships.
+
 **Done:** orders 1, 2, 9, 3 and 5 for boats and bombers (`fight/orders.cpp`),
 with "stop when" conditions per slot. A slot ends when its break condition is
 met, or when it is finished: Goto and GotoWithArrive on arrival (20 m), Wait,

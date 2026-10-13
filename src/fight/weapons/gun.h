@@ -52,6 +52,7 @@ public:
     int model() const { return m_model; }
     float energyDemand() const { return m_energyDemand; }
     float range() const { return m_range; }
+    float projectileSpeed() const { return m_projectileSpeed; }
     sfx::Sample sample() const { return m_sample; }
 
     float defect() const { return m_defect; }
@@ -81,6 +82,7 @@ protected:
     float m_defectDamping;
     float m_defectDelay;
     float m_range;
+    float m_projectileSpeed;
 
     float m_defect;
     int m_ammo;

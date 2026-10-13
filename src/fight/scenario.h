@@ -103,6 +103,8 @@ public:
     std::vector<std::unique_ptr<Object>>::const_iterator end() const { return m_objects.cend(); }
     std::vector<NavPoint*>& navPoints() { return m_navPoints; }
     bool isFriend(int iffX, int iffY) const { return m_attitudeMatrix[iffY][iffX] == 0; }
+    // the player is faction 0
+    bool isHostile(int iffA, int iffB) const { return iffA >= 0 && iffA < 9 && iffB >= 0 && iffB < 9 && m_attitudeMatrix[iffB][iffA] == 2; }
 
 public:
     void setBoat(game::Boat *boat);

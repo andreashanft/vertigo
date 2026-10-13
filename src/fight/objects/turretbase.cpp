@@ -96,6 +96,8 @@ Vector3D TurretBase::aim() const
 
 bool TurretBase::update(float elapsedTime)
 {
+    ActiveObject::update(elapsedTime);
+
     // turn towards the target at the turret's rates
     const float yawError = std::remainder(m_targetYaw - m_yaw, glm::two_pi<float>());
     m_yaw += glm::clamp(yawError, -m_yawVelocity*elapsedTime, m_yawVelocity*elapsedTime);

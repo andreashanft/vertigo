@@ -113,7 +113,7 @@ Scenario::Scenario(const QString &name) :
 
     float initialDir = 0.0f;
     QSet<QString> placeholderSections;
-    std::vector<std::pair<SimpleBoat *, std::vector<OrderSlot>>> pendingOrders;
+    std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
     foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
         m_file.setSection(section);
 
@@ -371,13 +371,20 @@ Scenario::Scenario(const QString &name) :
         }
         if (!orderSlots.empty())
         {
-            SimpleBoat *boat = dynamic_cast<SimpleBoat *>(object);
-            if (boat)
+            ActiveObject *unit = dynamic_cast<ActiveObject *>(object);
+            if (unit)
             {
-                pendingOrders.emplace_back(boat, orderSlots);
+                pendingOrders.emplace_back(unit, orderSlots);
+                const bool moves = dynamic_cast<SimpleBoat *>(unit) != nullptr;
                 for (const OrderSlot &slot : orderSlots)
+                {
+                    const bool forAll = slot.type == OrderSlot::Wait || slot.type == OrderSlot::CardinalPatrol ||
+                                        slot.type == OrderSlot::CardinalAttack || slot.type == OrderSlot::Explode;
                     if (!OrderSlot::isImplemented(slot.type))
                         loadIssue(QString("order not implemented: %1").arg(OrderSlot::name(slot.type)));
+                    else if (!moves && !forAll)
+                        loadIssue(QString("order not run: %1 for typ %2").arg(OrderSlot::name(slot.type)).arg(type));
+                }
             }
             else if (object)
                 loadIssue(QString("orders not run: typ %1").arg(type));

@@ -59,6 +59,28 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     const Vector3D dim = m_localBox.dim();
     m_collisionRadius = glm::clamp(0.5f*std::min(dim.x, std::min(dim.y, dim.z)), 1.5f, 8.0f);
 
+    file.setSection("attack");
+    AttackSettings &a = m_attackSettings;
+    auto setting = [&file](const char *key, float &value, float scale = 1) {
+        if (file.contains(key))
+            value = file.value(key).toFloat()*scale;
+    };
+    setting("AlignProbabilityFront", a.alignFront);
+    setting("AlignProbabilityBack", a.alignBack);
+    setting("AlignProbabilityLeft", a.alignLeft);
+    setting("AlignProbabilityRight", a.alignRight);
+    setting("MinAlignRadius", a.minAlignRadius, 1/32.0f);
+    setting("MaxAlignRadius", a.maxAlignRadius, 1/32.0f);
+    setting("MinAlignTime", a.minAlignTime);
+    setting("MaxAlignTime", a.maxAlignTime);
+    setting("MinAttackTime", a.minAttackTime);
+    setting("MaxAttackTime", a.maxAttackTime);
+    setting("AttackProbabilityHit", a.hitProbability);
+    setting("MinFlightRadius", a.minFlightRadius, 1/32.0f);
+    setting("MaxFlightRadius", a.maxFlightRadius, 1/32.0f);
+    setting("MinFlightTime", a.minFlightTime);
+    setting("MaxFlightTime", a.maxFlightTime);
+
     // boats move, so collision results must not be cached
     m_static = false;
     updateBox();
@@ -67,12 +89,6 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
 
 SimpleBoat::~SimpleBoat()
 {
-}
-
-
-void SimpleBoat::setOrders(Orders *orders)
-{
-    m_orders.reset(orders);
 }
 
 

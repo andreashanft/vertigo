@@ -36,6 +36,7 @@ public:
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void arm(int model, txt::DesFile &file);
     void aimAt(const Vector3D &point);
+    void aimAt(float yaw) { m_targetYaw = yaw; m_targetPitch = 0; }
 
     // the direction the turret points to
     Vector3D aim() const;

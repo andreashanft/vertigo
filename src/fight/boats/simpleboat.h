@@ -27,9 +27,6 @@
 namespace fight {
 
 
-class Orders;
-
-
 class SimpleBoat : public SimpleObject
 {
 public:
@@ -55,8 +52,19 @@ public:
     void steerTo(const Vector3D &point, float speed);
     void hold();
 
-    Orders* orders() const { return m_orders.get(); }
-    void setOrders(Orders *orders);
+    // the [Attack] settings of the object file, distances in metres
+    struct AttackSettings
+    {
+        float alignFront = 0.5f, alignBack = 0, alignLeft = 0.25f, alignRight = 0.25f;
+        float minAlignRadius = 50, maxAlignRadius = 100;
+        float minAlignTime = 4, maxAlignTime = 8;
+        float minAttackTime = 6, maxAttackTime = 12;
+        float hitProbability = 0.5f;
+        float minFlightRadius = 25, maxFlightRadius = 30;
+        float minFlightTime = 3, maxFlightTime = 6;
+    };
+    const AttackSettings& attackSettings() const { return m_attackSettings; }
+    virtual bool isGroundVehicle() const { return false; }
 
 public:
     void setPosition(const Vector3D &pos);
@@ -95,7 +103,7 @@ protected:
     float m_minClimbingAngle; // steepest dive and climb in radians (for ground vehicles: the most they tilt)
     float m_maxClimbingAngle;
 
-    std::unique_ptr<Orders> m_orders;
+    AttackSettings m_attackSettings;
 };
 
 

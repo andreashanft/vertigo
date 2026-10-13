@@ -240,10 +240,10 @@ int Vertigo::start(const Options &options)
                         if (unit->eventDestroy()->isCompleted())
                             line += " destroyed";
                     }
-                    if (const fight::SimpleBoat *boat = dynamic_cast<const fight::SimpleBoat *>(record.object)) {
-                        if (boat->orders() && boat->orders()->currentSlot())
-                            line += QString(" order %1 %2").arg(boat->orders()->current()).arg(fight::OrderSlot::name(boat->orders()->currentSlot()->type));
-                        else if (boat->orders())
+                    if (const fight::ActiveObject *unit = dynamic_cast<const fight::ActiveObject *>(record.object)) {
+                        if (unit->orders() && unit->orders()->currentSlot())
+                            line += QString(" order %1 %2").arg(unit->orders()->current()).arg(unit->orders()->state());
+                        else if (unit->orders())
                             line += " orders done";
                     }
                     std::cout << line.toUtf8().constData() << std::endl;

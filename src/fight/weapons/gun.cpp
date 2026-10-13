@@ -62,6 +62,7 @@ Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
     m_projectile = effects[model];
 
     m_range = m_scenario->effectManager().getBillboard(m_projectile)->range();
+    m_projectileSpeed = m_scenario->effectManager().getBillboard(m_projectile)->velocity();
 
     static sfx::Sample samples[14] = { sfx::Sample::Shoot_PlasmaGun, sfx::Sample::Shoot_PlasmaGun, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_DoomMortar, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_Vendetta };
     m_sample = samples[model];
