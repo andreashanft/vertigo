@@ -45,6 +45,9 @@ public:
 
 public:
     util::event<>& eventSuccess() { return m_eventSuccess; }
+    util::event<>& eventAbort() { return m_eventAbort; }
+
+    void setDebugOverlay(bool visible);
 
     game::Boat* boat() const { return m_boat; }
     fight::Scenario* scenario() const { return m_scenario; }
@@ -79,6 +82,7 @@ private:
 
 private:
     util::event<> m_eventSuccess;
+    util::event<> m_eventAbort;
 
     game::Boat *m_boat;
     fight::Scenario *m_scenario;
@@ -106,6 +110,8 @@ private:
     std::vector<std::unique_ptr<ui::Widget>> m_children;
     SonarMonitor* m_sonar1;
     SonarMonitor* m_sonar2;
+    ui::Widget* m_debugOverlay;
+    bool m_debugOverlayVisible;
 };
 
 

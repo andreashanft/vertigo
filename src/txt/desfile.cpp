@@ -87,6 +87,8 @@ bool DesFile::load(const QString &filename)
         }
     }
 
+    // sections selected while parsing don't count as read
+    m_read.clear();
     setSection("Global");
     return true;
 }
@@ -127,18 +129,22 @@ bool DesFile::save(const QString &filename) const
 
 void DesFile::setSection(const QString &section)
 {
-    m_section = &m_sections[section.toLower()];
+    m_sectionName = section.toLower();
+    m_section = &m_sections[m_sectionName];
+    m_read[m_sectionName];
 }
 
 
 bool DesFile::contains(const QString &key) const
 {
+    m_read[m_sectionName].insert(key.toLower());
     return m_section->contains(key.toLower());
 }
 
 
 QVariant DesFile::value(const QString &key, const QVariant &defaultValue) const
 {
+    m_read[m_sectionName].insert(key.toLower());
     return m_section->value(key.toLower(), defaultValue);
 }
 
@@ -151,6 +157,8 @@ void DesFile::setValue(const QString &key, const QVariant &value)
 
 QString DesFile::valueText(const QString &key) const
 {
+    // the other languages' variants of a text count as read, too
+    m_read[m_sectionName] << key.toLower() << key.toLower() + "e" << key.toLower() + "f";
     if (StringTable::language() == "English")
         return value(key + "e").toString();
     return value(key).toString();
@@ -166,6 +174,24 @@ QStringList DesFile::sections() const
 QStringList DesFile::keys() const
 {
     return m_section->keys();
+}
+
+
+bool DesFile::wasSectionRead(const QString &section) const
+{
+    return m_read.contains(section.toLower());
+}
+
+
+QStringList DesFile::unreadKeys(const QString &section) const
+{
+    const QSet<QString> read = m_read.value(section.toLower());
+    QStringList keys;
+    foreach (const QString &key, m_sections.value(section.toLower()).keys()) {
+        if (!read.contains(key))
+            keys << key;
+    }
+    return keys;
 }
 
 

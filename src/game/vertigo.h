@@ -31,12 +31,35 @@ namespace game {
 class Vertigo
 {
 public:
+    struct Options
+    {
+        QString scenario;                               // start this mission directly (test mode)
+        int boat = 0;                                   // test mode boat type, 0 = chapter 1 boat
+        std::vector<std::pair<QString, int>> equipment; // test mode items: mounting, model
+        int timeout = 0;                                // test mode time limit in seconds
+        bool debugOverlay = false;
+        bool check = false;                             // report what the mission loader ignores
+        QStringList checkScenarios;                     // empty = all missions
+    };
+
+    enum ExitCode
+    {
+        ExitSuccess = 0,
+        ExitFailed = 1,
+        ExitAborted = 2,
+        ExitTimeout = 3,
+        ExitUsage = 64,
+    };
+
+public:
     Vertigo();
 
 public:
-    void start(const QString &scenarioName);
+    int start(const Options &options);
 
 private:
+    int check(const QStringList &names);
+
     void startGame(const QString &name);
     void loadGame(const QString &name);
     void endGame();

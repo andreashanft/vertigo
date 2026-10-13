@@ -43,6 +43,7 @@
 #include "sonarmonitor.h"
 #include "autopilot.h"
 #include "horizon.h"
+#include "debugoverlay.h"
 
 
 namespace hud {
@@ -50,6 +51,8 @@ namespace hud {
 
 HUD::HUD() :
     m_scenario(nullptr),
+    m_debugOverlay(nullptr),
+    m_debugOverlayVisible(false),
     m_colorTable("gfx:pal/gui/border.pal"),
     m_fontGreen("gfx:fnt/cpit1ahc.fnt", m_colorTable, true, false),
     m_fontRed("gfx:fnt/cpit1bhc.fnt", m_colorTable, true, false),
@@ -154,6 +157,22 @@ void HUD::load(game::Boat *boat)
     file.setSection("hudsynthetichorizon");
     Horizon *horizon = new Horizon(this, m_center, file);
     m_children.emplace_back(horizon);
+
+    m_debugOverlay = new DebugOverlay(this);
+    m_children.emplace_back(m_debugOverlay);
+    setDebugOverlay(m_debugOverlayVisible);
+}
+
+
+void HUD::setDebugOverlay(bool visible)
+{
+    m_debugOverlayVisible = visible;
+    if (!m_debugOverlay)
+        return;
+    if (visible)
+        m_debugOverlay->show();
+    else
+        m_debugOverlay->hide();
 }
 
 
@@ -267,7 +286,13 @@ void HUD::keyPressEvent(QKeyEvent *e)
     if (e->key() == Qt::Key_Escape)
     {
         m_scenario = nullptr;
-        m_eventSuccess();
+        m_eventAbort();
+        return;
+    }
+    // Ctrl+D, Cmd+D on macOS
+    if (e->key() == Qt::Key_D && (e->modifiers() & Qt::ControlModifier))
+    {
+        setDebugOverlay(!m_debugOverlayVisible);
         return;
     }
     if (e->key() == Qt::Key_N)

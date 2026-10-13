@@ -120,6 +120,18 @@ void Sonar::toggle()
 }
 
 
+float Sonar::passiveRange(const ActiveObject *object) const
+{
+    return m_passiveRange + m_passiveRangeMult*object->noise();
+}
+
+
+float Sonar::activeRange(const ActiveObject *object) const
+{
+    return m_activeRange + m_activeRangeMult*object->noise();
+}
+
+
 void Sonar::update(float elapsedTime)
 {
     if (!m_active && m_activatingDelay > 0)
@@ -149,8 +161,8 @@ void Sonar::update(float elapsedTime)
         if (!m_active && object->noise() <= 0.1f)
             continue;
 
-        float passiveRange = m_passiveRange + m_passiveRangeMult*object->noise();
-        float activeRange = m_activeRange + m_activeRangeMult*object->noise();
+        float passiveRange = this->passiveRange(object);
+        float activeRange = this->activeRange(object);
         Vector3D dir = object->center() - m_scenario->position();
         float dist = glm::length(dir);
         bool passive = dist > activeRange || !m_active;
