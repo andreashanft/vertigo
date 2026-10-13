@@ -124,6 +124,17 @@ void SimpleBoat::setPosition(const Vector3D &pos)
 }
 
 
+void SimpleBoat::place(const Vector3D &pos, const Vector3D &direction)
+{
+    const Vector3D forward = glm::normalize(direction);
+    const Vector3D right = glm::normalize(glm::cross(forward, Vector3D(0, 0, 1)));
+    m_orientationInverted = glm::mat3(right, forward, glm::cross(right, forward));
+    m_orientation = glm::transpose(m_orientationInverted);
+    m_velocity = Vector3D(0);
+    setPosition(pos);
+}
+
+
 void SimpleBoat::updateBox()
 {
     m_box = m_localBox.transform(glm::translate(m_position) * Matrix(m_orientationInverted));

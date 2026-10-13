@@ -57,7 +57,8 @@ int main(int argc, char *argv[])
     const QCommandLineOption driveOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     const QCommandLineOption traceOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     const QCommandLineOption headlessOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
-    const QCommandLineOption fireOption("fire", "Let these units fire their guns (test mode); towers aim at the player.", "ids");
+    const QCommandLineOption fireOption("fire", "Let these units fire their guns (test mode); towers and tanks aim at the player.", "ids");
+    const QCommandLineOption nearOption("near", "Enable this unit and start 40 m from it, looking at it (test mode).", "id");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
     const QCommandLineOption difficultyOption("difficulty", "Difficulty in test mode: 0 easy, 1 normal (default), 2 hard.", "level");
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
     const QCommandLineOption shakeOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
     const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), e.g. 3=front.png.", "time=file");
     const QCommandLineOption lookOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, lookOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, nearOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, lookOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -142,6 +143,14 @@ int main(int argc, char *argv[])
                 return game::Vertigo::ExitUsage;
             }
             options.keys.push_back({ format.cap(1).toFloat(), key, format.cap(4).toFloat() });
+        }
+    }
+    if (parser.isSet(nearOption)) {
+        bool ok = false;
+        options.near = parser.value(nearOption).toInt(&ok);
+        if (!ok) {
+            QTextStream(stderr) << "Invalid --near value " << parser.value(nearOption) << ", expected a unit id\n";
+            return game::Vertigo::ExitUsage;
         }
     }
     foreach (const QString &value, parser.values(fireOption)) {

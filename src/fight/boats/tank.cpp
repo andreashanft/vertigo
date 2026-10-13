@@ -17,6 +17,7 @@
 
 #include "tank.h"
 #include "fight/scenario.h"
+#include "fight/effects/effectmanager.h"
 #include "fight/module.h"
 #include "fight/orders.h"
 #include "fight/objects/turret.h"
@@ -39,6 +40,8 @@ namespace {
 const float GunTurnRate = 1.5f;
 const float MinPitch = -0.17f;
 const float MaxPitch = 1.0f;
+// a puff of dust behind each track this often at full speed (10 m/s), less often when slower
+const float DustInterval = 0.15f;
 
 }
 
@@ -53,7 +56,8 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
     m_turretPitch(0),
     m_targetYaw(0),
     m_targetPitch(0),
-    m_aimHold(0)
+    m_aimHold(0),
+    m_dustTime(0)
 {
     // the turret, in model coordinates like the base
     file.setSection("cluster");
@@ -157,6 +161,7 @@ bool Tank::update(float elapsedTime)
     m_velocity = elapsedTime > 0 ? (m_position - previous)/elapsedTime : Vector3D(0);
 
     updateTurret(elapsedTime);
+    stirUpDust(elapsedTime);
     if (m_unitGun)
     {
         // the muzzles turn with the turret around its pivot
@@ -167,6 +172,30 @@ bool Tank::update(float elapsedTime)
     }
 
     return false;
+}
+
+
+void Tank::stirUpDust(float elapsedTime)
+{
+    const float speed = std::abs(m_speed);
+    if (speed < 1.0f)
+        return;
+    m_dustTime -= elapsedTime*std::min(speed/10.0f, 1.0f);
+    if (m_dustTime > 0)
+        return;
+    m_dustTime += DustInterval*(0.7f + 0.6f*qrand()/float(RAND_MAX));
+
+    // at the rear corners, on the ground; small, medium or large by the vehicle's size
+    const Vector3D dim = m_localBox.dim();
+    const int size = std::max(dim.x, dim.y) < 6.0f ? 0 : std::max(dim.x, dim.y) < 12.0f ? 1 : 2;
+    for (const float side : { -1.0f, 1.0f })
+    {
+        const Vector3D local(side*0.4f*dim.x + 0.5f*(m_localBox.minPoint().x + m_localBox.maxPoint().x), m_localBox.minPoint().y, m_localBox.minPoint().z);
+        Vector3D position = m_position + m_orientationInverted*local;
+        position.z = ground(position.x, position.y);
+        const Vector3D drift = -dir()*0.3f*speed + right()*side*0.5f;
+        m_scenario->effectManager().addDust(position, size, drift);
+    }
 }
 
 

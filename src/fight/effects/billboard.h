@@ -40,7 +40,11 @@ public:
     Billboard(gfx::TextureManager &texMan, txt::DesFile &name, int index, bool blendColor = true);
 
 public:
-    void draw(const Vector3D &position, float angle, float scale, float time, const Matrix &cameraMatrixInverted);
+    // the frame shown at that time (the animation loops), facing the camera (its right, up and back axes)
+    void quad(const Vector3D &position, float angle, float scale, float time, const glm::mat3 &camera,
+              Vector3D corners[4], const Vector2D *&texCoords, gfx::Texture *&texture);
+    void draw(const Vector3D &position, float angle, float scale, float time, const glm::mat3 &camera);
+    bool blendColor() const { return m_blendColor; }
 
     BoundingBox box();
     bool intersect(const Vector3D &start, const Vector3D &dir, float &distance);

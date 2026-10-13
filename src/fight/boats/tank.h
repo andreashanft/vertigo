@@ -32,6 +32,7 @@ class Turret;
 // A ground vehicle (tanks and crawlers): drives on the ground, tilts with it
 // (at most MaxClimbingAngle) and steers by turning only. Its turret (the Gun module or the
 // GunTurret) turns towards what the orders aim at and back to the front when they stop aiming.
+// Moving, it stirs up dust behind its tracks.
 class Tank : public SimpleBoat
 {
 public:
@@ -52,6 +53,7 @@ private:
     float ground(float x, float y) const;
     void alignToGround();
     void updateTurret(float elapsedTime);
+    void stirUpDust(float elapsedTime);
     // the turret's yaw and pitch applied to model coordinates
     glm::mat3 turretRotation() const;
 
@@ -70,6 +72,7 @@ private:
     float m_targetYaw;
     float m_targetPitch;
     float m_aimHold;          // seconds until the turret returns to the front
+    float m_dustTime;         // until the next puff of dust
 };
 
 

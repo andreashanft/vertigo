@@ -73,6 +73,8 @@ public:
 
 public:
     void setPosition(const Vector3D &pos);
+    // moves the boat there, pointing its nose in the direction (with no roll)
+    void place(const Vector3D &pos, const Vector3D &direction);
     bool update(float elapsedTime);
     void updateVelocity(float elapsedTime);
     void updateOrientation(float elapsedTime);

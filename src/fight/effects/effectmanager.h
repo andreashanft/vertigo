@@ -25,6 +25,7 @@
 #include <list>
 #include <memory>
 #include "util/geometry3d.h"
+#include "particles.h"
 
 namespace fight {
 
@@ -41,10 +42,15 @@ public:
 public:
     Billboard* getBillboard(Effects effect);
 
-    Effect* addEffect(Effects effect, const Vector3D &position, float angle = 0, float scale = 1);
+    // an animation played once at the position
+    void addEffect(Effects effect, const Vector3D &position, float angle = 0, float scale = 1);
     // a piece flying from the position in the direction, slowing down and sinking (DEBRIS.DES)
-    Effect* addDebris(Effects debris, const Vector3D &position, const Vector3D &direction);
+    void addDebris(Effects debris, const Vector3D &position, const Vector3D &direction);
+    // ground dust (EXPLOSIO "bodenstaub") stirred up at the position, size 0-2 (small to large)
+    void addDust(const Vector3D &position, int size, const Vector3D &velocity);
     Projectile* addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction, ActiveObject *owner = nullptr);
+
+    const Particles& particles() const { return m_particles; }
 
     void update(float elapsedTime);
     void draw();
@@ -52,8 +58,8 @@ public:
 private:
     Scenario *m_scenario;
     std::map<Effects, Billboard> m_billboards;
-    std::list<std::unique_ptr<Effect>> m_effects;
-    std::list<std::unique_ptr<Effect>> m_bubbles;
+    std::list<std::unique_ptr<Effect>> m_effects;  // projectiles
+    Particles m_particles;
 };
 
 enum class Effects

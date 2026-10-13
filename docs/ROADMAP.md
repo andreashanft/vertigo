@@ -148,6 +148,12 @@ crawlers, towers, buildings, cargo ships: "orders not run").
   - Replace one heavyweight object per particle with lightweight pooled
     particles drawn in batches.
   - Add limits and distance culling.
+
+  **Done** (milestone 6): `Particles` holds explosions, debris, bubbles,
+  torpedo trails and dust in one pool of 3,000 and draws them in one batch
+  per texture. Bubbles and dust only use three quarters of it; nothing is
+  spawned or drawn beyond 220 m (the fog ends at 200 m) or drawn behind the
+  camera. Projectiles stay objects, as they collide.
 - **Explosions with debris and bodies (M, needs 1.4):** explosion sized to the
   object, 4–10 debris parts, the three "Cadaver" sprites for crewed vessels,
   sparks on hits. Test: `s00105`. **Done** (without the particle pool): the
@@ -155,7 +161,10 @@ crawlers, towers, buildings, cargo ships: "orders not run").
   `Debris` pieces fly off, slow down, sink (`Lift` × 4 m/s²) and settle on the
   ground until their `LifeTime` ends.
 - **Dust clouds (S):** ground-dust sprites behind moving tanks and crawlers.
-  Needs 1.6 and moving units.
+  Needs 1.6 and moving units. **Done** (milestone 6): moving tanks and crawlers stir up
+  the "bodenstaub" sprites (EXPLOSIO 18–20, by the vehicle's size) behind
+  their tracks, more often the faster they go; the dust plays slowly and
+  drifts up. Which sprite the original uses is still to be checked.
 - **Torpedo trails (S, needs 1.8):** the data's "torpedo-bubble" sprite,
   spawned every ~60 ms. **Done.**
 - **Cluster torpedo (M, needs 1.8):** the Ripper (torpedo 18). The data has no

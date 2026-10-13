@@ -117,6 +117,24 @@ int Vertigo::start(const Options &options)
                 unit->setVelocityTarget(drive.speed/3.6f);
                 unit->setTurnVelocity(Vector3D(0, 0, drive.turn));
             }
+            if (options.near) {
+                fight::ActiveObject *unit = nullptr;
+                for (const auto &record : scenario->objectRecords())
+                    if (record.id == options.near)
+                        unit = dynamic_cast<fight::ActiveObject *>(record.object);
+                if (!unit) {
+                    std::cerr << "--near: no unit " << options.near << std::endl;
+                } else {
+                    // 40 m away on the side of the player's start, 10 m higher, looking at the unit
+                    unit->enable();
+                    const Vector3D center = unit->center();
+                    Vector2D away = Vector2D(scenario->player()->position() - center);
+                    away = glm::length(away) > 1 ? glm::normalize(away) : Vector2D(0, -1);
+                    Vector3D position = center + Vector3D(away*40.0f, 10.0f);
+                    position.z = std::max(position.z, scenario->surface().heightAt(position.x, position.y) + 10.0f);
+                    scenario->player()->place(position, center - position);
+                }
+            }
         };
         hud->eventRestart() += startScenario;
         hud->setDebugOverlay(options.debugOverlay);
