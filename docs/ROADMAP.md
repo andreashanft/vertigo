@@ -276,6 +276,52 @@ installation (`goggame-1436955893.hashdb`, 1,774 entries, all verified
 The hash database comes with the installation, so it only shows the files are
 what that GOG installer shipped; obtain the installer from GOG itself.
 
+## iPad port
+
+Nothing in the engine rules out an iPad version (assessed October 2026): the
+code is portable C++, the video and sound decoders are our own, matrices are
+computed with glm, and the 566 MB of game data fit easily. As on the desktop,
+players bring their own game data. Most steps pay off on the desktop too, so
+they can land on master one by one.
+
+| # | Step | Effort | Notes |
+|---|---|---|---|
+| P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion |
+| P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below |
+| P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) |
+| P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import |
+| P5 | iOS build | S | `qt_add_executable` with an Info.plist, icons and signing. Qt 6 for iOS comes from the Qt online installer, not Homebrew. Test in the iPad simulator first |
+| P6 | Data import | S (M with the CD image) | Replaces the folder dialog: show the app's Documents folder in the Files app (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`) and look for `DAT`, `GFX`, `SFX`, `TXT` and `VFX` there. Optionally import straight from `game.gog` and the GOG installation |
+| P7 | App lifecycle and audio session | S | Pause the mission and save the settings when the app goes to the background (`closeEvent` never comes on iOS), and make no GL calls while in the background. Set an `AVAudioSession` category and suspend the OpenAL context during interruptions (calls, Siri) |
+| P8 | Keyboard | S | A hardware keyboard works as is, but older Magic Keyboards for iPad have no Esc and no F keys (F5–F12 are the turret orders), so add second bindings. Bring up the on-screen keyboard for save-game names |
+| P9 | Game controller | M | GameController.framework through a small Objective-C++ bridge (Qt 6 has no gamepad module), or SDL3. The sticks feed the analog `m_left`/`m_right`/`m_up`/`m_down` in `Scenario`. There are more actions than buttons, so turret orders and torpedo selection need a menu or button combinations. Useful on the desktop too |
+| P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as Qt turns taps into mouse clicks; hover highlights only show with a trackpad or Pencil |
+
+Order of work: P1 → P2 → P3 → P4 on the desktop, then P5–P8 (playable with a
+hardware keyboard), then P9 and P10.
+
+Platform notes:
+
+- OpenGL ES (deprecated since iOS 12) and OpenAL (deprecated since iOS 13) are
+  still in the iOS 27 SDK (checked with Xcode 27.0, October 2026). Should
+  Apple remove them, ANGLE's Metal backend runs the same OpenGL ES 3 code, and
+  OpenAL Soft replaces OpenAL.
+- The game is 4:3, iPad screens are between 4:3 (13" Air) and about 3:2
+  (mini), so the bars at the sides stay small. During missions, defer the
+  system's edge gestures so a swipe from the bottom doesn't leave the game.
+
+Distribution: the GPL is generally read as incompatible with the App Store
+and TestFlight terms (VLC was removed in 2011 for this reason), and an
+exception would need every copyright holder. So players install it
+themselves:
+
+- built from source in Xcode: a free Apple ID signs it for 7 days, a paid
+  developer account for a year;
+- as an unsigned IPA built by CI, installed with AltStore or SideStore
+  (re-signed every 7 days with a free Apple ID);
+- in the EU through AltStore PAL, which needs a developer account and Apple's
+  notarization.
+
 ## Risks
 
 - Turning on enemy fire before the AI is tuned will make early missions
