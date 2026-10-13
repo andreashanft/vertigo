@@ -191,6 +191,15 @@ int Vertigo::start(const Options &options)
             nextTrace = std::floor(scenario->time()) + 1;
             const Vector3D &scale = scenario->surface().scale();
             for (const int id : options.trace) {
+                if (id == scenario->playerId()) {
+                    const Vector3D pos = scenario->player()->position();
+                    const Vector3D current = scenario->current(pos);
+                    std::cout << QString("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9")
+                        .arg(options.scenario).arg(int(scenario->time()))
+                        .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
+                        .arg(int(scenario->height())).arg(int(scenario->player()->speed()))
+                        .arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1).toUtf8().constData() << std::endl;
+                }
                 for (const auto &record : scenario->objectRecords()) {
                     if (record.id != id)
                         continue;

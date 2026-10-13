@@ -128,7 +128,6 @@ s00202: 104 objects
   23x unread key: movable#/sle
   19x unread key: movable#/tor
   1x unread section: cd
-  63x unread section: current#
 s00203: 83 objects
   16x order not implemented: attack
   12x unread key: movable#/ai
@@ -158,7 +157,6 @@ s00204: 21 objects
   11x unread key: movable#/sle
   11x unread key: movable#/tor
   1x unread section: cd
-  55x unread section: current#
 s00205: 14 objects
   7x order not implemented: attack
   2x orders not run: typ 2062
@@ -217,7 +215,6 @@ s00303: 15 objects
   9x unread key: movable#/sle
   9x unread key: movable#/tor
   1x unread section: cd
-  71x unread section: current#
 s00304: 6 objects
   7x order not implemented: attack
   1x orders not run: typ 2063
@@ -253,7 +250,6 @@ s00401: 196 objects
   180x unread key: movable#/sle
   33x unread key: movable#/tor
   1x unread section: cd
-  13x unread section: current#
 s00402: 44 objects
   1x condition: Empty faction 1
   8x order not implemented: attack
@@ -320,7 +316,6 @@ s00405: 180 objects
   231x unread key: movable#/sle
   43x unread key: movable#/tor
   1x unread section: cd
-  63x unread section: current#
 s00406: 178 objects
   3x order not implemented: attack
   1x order not implemented: gotowithinfiltrate
@@ -341,7 +336,6 @@ s00406: 178 objects
   100x unread key: movable#/sle
   36x unread key: movable#/tor
   1x unread section: cd
-  27x unread section: current#
 s00601: 18 objects
   4x order not implemented: attack
   1x order not implemented: gotowithinfiltrate
@@ -373,7 +367,6 @@ s00701: 25 objects
   22x unread key: movable#/sle
   18x unread key: movable#/tor
   1x unread section: cd
-  15x unread section: current#
 s00702: 22 objects
   5x order not implemented: ambush
   1x order not implemented: attack
@@ -392,7 +385,6 @@ s00702: 22 objects
   23x unread key: movable#/sle
   16x unread key: movable#/tor
   1x unread section: cd
-  15x unread section: current#
 s00703: 21 objects
   3x order not implemented: ambush
   3x order not implemented: attack
@@ -411,7 +403,6 @@ s00703: 21 objects
   19x unread key: movable#/sle
   15x unread key: movable#/tor
   1x unread section: cd
-  15x unread section: current#
 s00704: 113 objects
   9x order not implemented: attack
   2x order not implemented: gotowithinfiltrate
@@ -432,7 +423,6 @@ s00704: 113 objects
   74x unread key: movable#/sle
   40x unread key: movable#/tor
   1x unread section: cd
-  25x unread section: current#
 s00705: 21 objects
   5x order not implemented: attack
   3x order not implemented: gotowithinfiltrate
@@ -451,7 +441,6 @@ s00705: 21 objects
   20x unread key: movable#/sle
   16x unread key: movable#/tor
   1x unread section: cd
-  15x unread section: current#
 s00706: 38 objects
   49x order not implemented: attack
   1x orders not run: typ 2063
@@ -487,7 +476,6 @@ s00902: 75 objects
   58x unread key: movable#/sle
   14x unread key: movable#/tor
   1x unread section: cd
-  68x unread section: current#
 s00903: 75 objects
   9x order not implemented: attack
   1x order not implemented: gotowithinfiltrate
@@ -509,7 +497,6 @@ s00903: 75 objects
   56x unread key: movable#/sle
   12x unread key: movable#/tor
   1x unread section: cd
-  68x unread section: current#
 s01001: 27 objects
   9x order not implemented: attack
   1x order not implemented: gotowithinfiltrate
@@ -730,7 +717,6 @@ s01306: 124 objects
   115x unread key: movable#/sle
   38x unread key: movable#/tor
   1x unread section: cd
-  45x unread section: current#
 s01307: 27 objects
   4x order not implemented: attack
   4x orders not run: typ 2062
@@ -869,7 +855,6 @@ s01801: 147 objects
   101x unread key: movable#/sle
   41x unread key: movable#/tor
   1x unread section: cd
-  151x unread section: current#
 s01802: 158 objects
   2x condition: Objective not found 24
   4x order not implemented: attack
@@ -893,7 +878,6 @@ s01802: 158 objects
   115x unread key: movable#/sle
   55x unread key: movable#/tor
   1x unread section: cd
-  151x unread section: current#
 s01803: 118 objects
   11x orders not run: typ 2052
   8x orders not run: typ 2059
@@ -914,7 +898,6 @@ s01803: 118 objects
   78x unread key: movable#/sle
   33x unread key: movable#/tor
   1x unread section: cd
-  124x unread section: current#
 s01804: 122 objects
   11x orders not run: typ 2052
   8x orders not run: typ 2059
@@ -935,7 +918,6 @@ s01804: 122 objects
   81x unread key: movable#/sle
   36x unread key: movable#/tor
   1x unread section: cd
-  124x unread section: current#
 s01805: 51 objects
   11x orders not run: typ 2062
   1x orders not run: typ 2063
@@ -969,7 +951,6 @@ s01806: 39 objects
   21x unread key: movable#/sle
   18x unread key: movable#/tor
   1x unread section: cd
-  78x unread section: current#
 s02001: 46 objects
   6x orders not run: typ 2062
   3x unread key: movable#/ai
@@ -1218,7 +1199,6 @@ strai2: 140 objects
   132x unread key: movable#/sle
   48x unread key: movable#/tor
   1x unread section: cd
-  80x unread section: current#
 strai3: 227 objects
   14x order not implemented: attack
   9x orders not run: typ 2052
@@ -1250,7 +1230,6 @@ Total: 71 missions, 4981 objects
   1849x unread key: movable#/ntor
   1849x unread key: movable#/tor
   1634x unread key: movable#/pz
-  1266x unread section: current#
   882x unread key: movable#/dis
   882x unread key: movable#/num
   424x unread key: movable#/card

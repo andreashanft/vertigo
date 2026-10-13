@@ -50,7 +50,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   The player's id destroys the player; for areas and nav points it counts as
   reaching them.
 - `--trace 2062,2055` prints these units' map cell, height above ground,
-  speed and current order every second.
+  speed and current order every second; the player's id prints the player
+  with the water current at its position.
 - `--headless` runs the mission without a window and without sound, in
   simulated time as fast as possible (use it with `--timeout`; all test
   times are then mission seconds). Automated runs with a window and

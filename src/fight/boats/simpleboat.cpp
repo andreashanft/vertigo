@@ -48,6 +48,9 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
 
     m_maxAngleVelocity = Vector3D(file.value("MaxAngleVelocityB").toFloat(), file.value("MaxAngleVelocityC").toFloat(), file.value("MaxAngleVelocityA").toFloat());
     m_angleFriction = Vector3D(-file.value("AngleFrictionB").toFloat(), -file.value("AngleFrictionC").toFloat(), -file.value("AngleFrictionA").toFloat());
+    file.setSection("fluid");
+    m_currentFactor = file.value("Current", 1).toFloat();
+    file.setSection("kinematics");
     m_minClimbingAngle = glm::radians(file.value("MinClimbingAngle", 20).toFloat());
     m_maxClimbingAngle = glm::radians(file.value("MaxClimbingAngle", 20).toFloat());
 
@@ -115,7 +118,8 @@ bool SimpleBoat::update(float elapsedTime)
         m_orders->update();
     updateOrientation(elapsedTime);
     updateVelocity(elapsedTime);
-    move(m_velocity*elapsedTime);
+    // the current drifts the boat without changing its own velocity
+    move((m_velocity + m_scenario->current(m_position)*m_currentFactor)*elapsedTime);
 
     return false;
 }

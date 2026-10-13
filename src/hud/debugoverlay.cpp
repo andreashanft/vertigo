@@ -62,8 +62,44 @@ DebugOverlay::DebugOverlay(HUD *hud) :
 
 void DebugOverlay::draw()
 {
+    drawCurrents();
     drawLabels();
     drawInfo();
+}
+
+
+// an arrow per current cell near the player, a little below it (so it is seen from above), in the direction of the flow
+void DebugOverlay::drawCurrents()
+{
+    fight::Scenario *scenario = m_hud->scenario();
+    const Matrix m = m_hud->hudProjectionMatrixInverted() * scenario->projectionMatrix() * scenario->cameraMatrix();
+    const Vector3D &scale = scenario->surface().scale();
+    auto project = [&m](const Vector3D &point, Vector2D &result) {
+        const Vector4D point4 = m * Vector4D(point, 1);
+        result = Vector2D(point4)/point4.w;
+        return point4.z <= 0;
+    };
+
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+    glDisable(GL_TEXTURE_2D);
+    glColor3f(0.2f, 0.6f, 1.0f);
+    glBegin(GL_LINES);
+    for (const auto &cell : scenario->currentCells()) {
+        const Vector3D centre((cell.x + 1)*scale.x, (cell.y + 1)*scale.y, scenario->position().z - 8.0f);
+        if (glm::distance(centre, scenario->position()) > 200.0f)
+            continue;
+        const Vector3D end = centre + glm::normalize(cell.velocity)*8.0f;
+        const Vector3D side = glm::length(Vector2D(cell.velocity)) > 0 ? glm::normalize(Vector3D(-cell.velocity.y, cell.velocity.x, 0))*2.0f : Vector3D(2.0f, 0, 0);
+        const Vector3D back = end - glm::normalize(cell.velocity)*3.0f;
+        Vector2D a, b, c, d;
+        if (!project(centre, a) || !project(end, b) || !project(back + side, c) || !project(back - side, d))
+            continue;
+        glVertex2f(a.x, a.y); glVertex2f(b.x, b.y);
+        glVertex2f(b.x, b.y); glVertex2f(c.x, c.y);
+        glVertex2f(b.x, b.y); glVertex2f(d.x, d.y);
+    }
+    glEnd();
+    glPopAttrib();
 }
 
 
@@ -88,6 +124,9 @@ void DebugOverlay::drawInfo()
              .arg(int(glm::length(scenario->player()->velocity())))
              .arg(enabled).arg(scenario->objectRecords().size());
     lines << QString("SONAR %1").arg(scenario->sonar().isActive() ? "ACTIVE" : "PASSIVE");
+    const Vector3D current = scenario->current(pos);
+    if (glm::length(current) > 0.01f)
+        lines << QString("CURRENT %1 %2 %3 M/S").arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1);
 
     gfx::Font &font = m_hud->fontYellow();
     Point p = m_hud->project(Point(8, 8));

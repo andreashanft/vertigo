@@ -20,6 +20,8 @@
 
 #include <QKeyEvent>
 #include <functional>
+#include <map>
+#include <vector>
 #include "util/geometry2d.h"
 #include "util/geometry3d.h"
 #include "util/deferreddeletable.h"
@@ -83,6 +85,11 @@ public:
     Player* player() const { return m_player.get(); }
 
     Surface& surface() { return m_surface; }
+
+    // the water current at a position (m/s), blended between the current cells
+    Vector3D current(const Vector3D &position) const;
+    struct CurrentCell { int x; int y; Vector3D velocity; }; // x, y: first map cell of the 2x2 block
+    const std::vector<CurrentCell>& currentCells() const { return m_currentCells; }
     gfx::TextureManager& textureManager() { return m_textureManager; }
     ModuleManager& moduleManager() { return m_moduleManager; }
     EffectManager& effectManager() { return m_effectManager; }
@@ -153,6 +160,8 @@ private:
     QStringList m_loadIssues;
     std::vector<std::unique_ptr<Object>> m_objects;
     std::vector<ObjectRecord> m_records;
+    std::vector<CurrentCell> m_currentCells;
+    std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<Object*> m_lightSources;
     std::vector<NavPoint*> m_navPoints;
 
