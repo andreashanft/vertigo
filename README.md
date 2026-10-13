@@ -94,6 +94,10 @@ directory (or the folder set as `cockpit/directory`).
 - In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
   cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
   window. The instruments are projected onto the model's screens.
+- Mouse look: dragging with a mouse button (or on the trackpad) turns the
+  pilot's head, up to 105° to the side, 65° up and 55° down; when the button
+  is released the head turns back to the front. `--look=60,-10` fixes the
+  head at 60° left and 10° down for the whole run, e.g. for screenshots.
 - The pilot's head lags behind accelerations and is thrown about by
   collisions, ground contact, hits and nearby explosions, which shows the
   depth of the cockpit. `--shake 0.5` (setting `cockpit/shake`, default 1)

@@ -18,6 +18,7 @@
 #include "hud.h"
 #include <QGLWidget>
 #include <QKeyEvent>
+#include <QMouseEvent>
 #include <QOpenGLContext>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLFunctions>
@@ -69,6 +70,17 @@ namespace {
 bool g_settingsRead = false;
 HUD::CockpitMode g_cockpitMode = HUD::CockpitMode::Art;
 float g_headMotion = 1;
+bool g_lookFixed = false;
+Vector2D g_look;
+
+// mouse look: degrees per pixel dragged, how far the head turns (further, the eye would be in the
+// headrest), and the neck it turns about (below and behind the eye, so the eye moves as well)
+const float LookSpeed = glm::radians(0.18f);
+const Vector2D LookMin(glm::radians(-105.0f), glm::radians(-55.0f));
+const Vector2D LookMax(glm::radians(105.0f), glm::radians(65.0f));
+const Vector3D Neck(0, -0.10f, 0.08f);
+// after the drag the head turns back to the front, about two thirds of the way in this time
+const float LookReturn = 0.18f;
 
 void readSettings()
 {
@@ -133,6 +145,13 @@ float HUD::headMotion()
 }
 
 
+void HUD::setLook(float yaw, float pitch)
+{
+    g_lookFixed = true;
+    g_look = glm::clamp(Vector2D(glm::radians(yaw), glm::radians(pitch)), LookMin, LookMax);
+}
+
+
 void HUD::setHeadMotion(float strength, bool save)
 {
     readSettings();
@@ -153,6 +172,7 @@ HUD::HUD() :
     m_failureShown(false),
     m_deathTime(-1),
     m_focal(245.5f),
+    m_looking(false),
     m_colorTable("gfx:pal/gui/border.pal"),
     m_fontGreen("gfx:fnt/cpit1ahc.fnt", m_colorTable, true, false),
     m_fontRed("gfx:fnt/cpit1bhc.fnt", m_colorTable, true, false),
@@ -487,6 +507,7 @@ void HUD::draw()
     const int ticks = SDL_GetTicks();
     // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
     step(std::min((ticks - m_lastTicks)/1000.0f, 0.25f));
+    updateLook((ticks - m_lastTicks)/1000.0f);
     m_lastTicks = ticks;
     // a handler of the events in step() may have ended the mission
     if (!m_scenario)
@@ -569,7 +590,7 @@ bool HUD::drawModel(qreal pixelRatio)
     const Matrix toWindow = glm::translate(Vector3D((2*(m_rectHUD.x - m_rectGL.x) + m_rectHUD.width)/m_rectGL.width - 1,
                                                     1 - (2*(m_rectHUD.y - m_rectGL.y) + m_rectHUD.height)/m_rectGL.height, 0))
                           * glm::scale(Vector3D(m_rectHUD.width/m_rectGL.width, m_rectHUD.height/m_rectGL.height, 1));
-    const Matrix head = m_scenario->headMotion().transform();
+    const Matrix head = lookTransform()*m_scenario->headMotion().transform();
     const Matrix headInverse = glm::inverse(head);
     m_scenario->draw(toWindow*m_scenario->projectionMatrix(), headInverse*m_scenario->cameraMatrix());
 
@@ -734,6 +755,48 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
 
     m_scenario->keyPressEvent(e);
+}
+
+
+void HUD::updateLook(float elapsedTime)
+{
+    if (g_lookFixed)
+        m_look = g_look;
+    else if (!m_looking || !showsModel())
+        m_look *= std::exp(-std::max(0.0f, elapsedTime)/LookReturn);
+}
+
+
+Matrix HUD::lookTransform() const
+{
+    return glm::translate(Neck)*glm::rotate(m_look.x, Vector3D(0, 1, 0))*glm::rotate(m_look.y, Vector3D(1, 0, 0))*glm::translate(-Neck);
+}
+
+
+void HUD::mousePressEvent(QMouseEvent *e)
+{
+    if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
+        return;
+    m_looking = true;
+    m_lookStart = e->pos();
+    m_lookFrom = m_look;
+}
+
+
+void HUD::mouseMoveEvent(QMouseEvent *e)
+{
+    if (!m_looking)
+        return;
+    // drag right to look right, up to look up
+    const QPoint drag = e->pos() - m_lookStart;
+    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag.x(), drag.y()), LookMin, LookMax);
+}
+
+
+void HUD::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (e->buttons() == Qt::NoButton)
+        m_looking = false;
 }
 
 

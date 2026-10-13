@@ -63,6 +63,9 @@ public:
     // how strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (setting "cockpit/shake")
     static float headMotion();
     static void setHeadMotion(float strength, bool save);
+    // turns the pilot's head in the 3D cockpit for good (degrees, left and up positive), e.g. for
+    // screenshots; the mouse can't turn it then
+    static void setLook(float yaw, float pitch);
 
 public:
     // the player leaves the mission: accomplished (autopilot), abort the game, restart the mission, load the last save
@@ -108,6 +111,10 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *);
     void keyReleaseEvent(QKeyEvent *);
+    // mouse look in the 3D cockpit: dragging with a mouse button turns the pilot's head
+    void mousePressEvent(QMouseEvent *);
+    void mouseReleaseEvent(QMouseEvent *);
+    void mouseMoveEvent(QMouseEvent *);
 
 private:
     Rect readRect(const txt::DesFile &file);
@@ -115,6 +122,9 @@ private:
     void updateMissionState();
     void leave(util::event<> &event);
     bool drawModel(qreal pixelRatio);
+    void updateLook(float elapsedTime);
+    // the pilot's head turned by the mouse look, in the boat's camera frame
+    Matrix lookTransform() const;
 
 private:
     util::event<> m_eventSuccess;
@@ -138,6 +148,10 @@ private:
 
     std::shared_ptr<Cockpit3D> m_model;
     std::unique_ptr<QOpenGLFramebufferObject> m_instruments;   // the instruments, projected onto the model
+    Vector2D m_look;        // yaw (left) and pitch (up) of the pilot's head in radians
+    bool m_looking;         // a mouse button is held
+    QPoint m_lookStart;     // where the drag started
+    Vector2D m_lookFrom;    // and the look direction then
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;
     Matrix m_integerScaleProjectionMatrixInverted;

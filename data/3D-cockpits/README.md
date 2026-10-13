@@ -64,7 +64,10 @@ uses the following:
   of the cockpit art.
 - **Instruments.** The HUD's instruments are rendered into a texture covering the 640×480 view
   and projected onto the model from the eye. At rest that reproduces the 2D layout. When the
-  head moves, the instruments stay on their screens and panels.
+  head moves (shake, mouse look), the instruments stay on their screens and panels.
+- **Mouse look** shows the parts the original art never showed: the side walls, the ceiling, the
+  footwell. They only have the colour-matched fallback, with the stepped seams described under
+  *Limitations*, and are the obvious place for more modelling and texturing work.
 
 See the main README for the options (head motion, settings).
 

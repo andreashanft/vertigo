@@ -62,7 +62,8 @@ int main(int argc, char *argv[])
     const QCommandLineOption cockpitOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
     const QCommandLineOption shakeOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
     const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), e.g. 3=front.png.", "time=file");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption, cockpitOption, shakeOption, screenshotOption });
+    const QCommandLineOption lookOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption, cockpitOption, shakeOption, screenshotOption, lookOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -92,6 +93,17 @@ int main(int argc, char *argv[])
             return game::Vertigo::ExitUsage;
         }
         hud::HUD::setHeadMotion(shake, false);
+    }
+    if (parser.isSet(lookOption)) {
+        const QStringList look = parser.value(lookOption).split(',');
+        bool okYaw = false, okPitch = false;
+        const float yaw = look.value(0).toFloat(&okYaw);
+        const float pitch = look.value(1).toFloat(&okPitch);
+        if (look.size() != 2 || !okYaw || !okPitch) {
+            QTextStream(stderr) << "Invalid --look value " << parser.value(lookOption) << ", expected yaw,pitch in degrees\n";
+            return game::Vertigo::ExitUsage;
+        }
+        hud::HUD::setLook(yaw, pitch);
     }
     foreach (const QString &value, parser.values(screenshotOption)) {
         const QRegExp format("([\\d.]+)=(.+)");
