@@ -100,7 +100,7 @@ enum class Sample
     TargetDestroyed,
     Sample70,
     TargetLost,
-    Sample72,
+    Voice_SystemCollapse,
     Sample73,
     Sample74,
     Sample75,
