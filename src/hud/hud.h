@@ -80,6 +80,8 @@ public:
 
     void setRect(const QRect &rect);
     void draw();
+    // advances the mission without drawing (draw() calls it with the time since the last frame)
+    void step(float elapsedTime);
 
 protected:
     void keyPressEvent(QKeyEvent *);

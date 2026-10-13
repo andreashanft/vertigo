@@ -40,6 +40,7 @@ public:
         std::vector<std::pair<QString, int>> equipment; // test mode items: mounting, model
         int timeout = 0;                                // test mode time limit in seconds
         bool debugOverlay = false;
+        bool headless = false;                          // test mode: no window and no sound, simulated time
         std::vector<int> destroy;                       // test mode: destroy these units after one second
         std::vector<std::pair<float, QKeySequence>> keys; // test mode: press these keys at these times (seconds)
         struct Drive { int id; float speed; float turn; };

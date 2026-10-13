@@ -59,6 +59,13 @@ int Vertigo::start(const Options &options)
 
     // test mode: closing the window counts as aborting the mission
     int result = options.scenario.isEmpty() ? ExitSuccess : ExitAborted;
+    bool running = true;
+    auto finish = [&](int code) {
+        result = code;
+        running = false;
+        m_window.close();
+    };
+    const bool headless = options.headless && !options.scenario.isEmpty();
 
     if (options.scenario.isEmpty()) {
         m_window.setRenderer(&m_mainMenu);
@@ -85,12 +92,12 @@ int Vertigo::start(const Options &options)
         }
 
         hud.reset(new hud::HUD());
-        hud->eventSuccess() += [this, &result]() { result = ExitSuccess; m_window.close(); };
-        hud->eventAbort() += [this, &result]() { result = ExitAborted; m_window.close(); };
-        hud->eventFailure() += [this, &result]() { result = ExitFailed; m_window.close(); };
-        hud->eventDied() += [this, &result]() { result = ExitDied; m_window.close(); };
+        hud->eventSuccess() += [&]() { finish(ExitSuccess); };
+        hud->eventAbort() += [&]() { finish(ExitAborted); };
+        hud->eventFailure() += [&]() { finish(ExitFailed); };
+        hud->eventDied() += [&]() { finish(ExitDied); };
         // there is no saved game in test mode
-        hud->eventLoad() += [this, &result]() { result = ExitAborted; m_window.close(); };
+        hud->eventLoad() += [&]() { finish(ExitAborted); };
         auto startScenario = [&]() {
             scenario.reset(new fight::Scenario(options.scenario));
             hud->start(scenario.get());
@@ -121,14 +128,31 @@ int Vertigo::start(const Options &options)
     auto keys = options.keys;
     QElapsedTimer timer;
     timer.start();
+    // test times are mission seconds: simulated without a window, real time with one
+    float simulatedTime = 0;
+    auto elapsed = [&]() { return headless ? simulatedTime : timer.elapsed()/1000.0f; };
 
-    m_window.show();
-    while (m_window.isVisible()) {
-        // block until the next event (at least the 20ms frame timer) instead of spinning
-        qApp->processEvents(QEventLoop::WaitForMoreEvents);
+    if (headless) {
+        sfx::SoundSystem::get()->setVolume(0);
+    } else {
+        // automated runs (with a time limit) shouldn't take the focus
+        if (!options.scenario.isEmpty() && options.timeout > 0)
+            m_window.setAttribute(Qt::WA_ShowWithoutActivating);
+        m_window.show();
+    }
+    while (running && (headless || m_window.isVisible())) {
+        if (headless) {
+            qApp->processEvents(QEventLoop::AllEvents);
+            if (scenario)
+                hud->step(0.02f);
+            simulatedTime += 0.02f;
+        } else {
+            // block until the next event (at least the 20ms frame timer) instead of spinning
+            qApp->processEvents(QEventLoop::WaitForMoreEvents);
+        }
         util::DeferredDeletable::clear();
 
-        if (scenario && !destroy.empty() && timer.elapsed() >= 1000) {
+        if (scenario && !destroy.empty() && elapsed() >= 1) {
             for (const int id : destroy) {
                 bool found = false;
                 if (id == scenario->playerId()) {
@@ -152,7 +176,7 @@ int Vertigo::start(const Options &options)
             destroy.clear();
         }
         for (auto it = keys.begin(); scenario && it != keys.end(); ) {
-            if (timer.elapsed() < it->first*1000) {
+            if (elapsed() < it->first) {
                 ++it;
                 continue;
             }
@@ -192,15 +216,10 @@ int Vertigo::start(const Options &options)
         if (scenario && result == ExitAborted && scenario->conditionManager().failed())
             result = ExitFailed;
         // test mode doesn't wait for the autopilot key
-        if (scenario && result == ExitAborted && scenario->conditionManager().autopilot()) {
-            result = ExitSuccess;
-            m_window.close();
-        }
-        if (scenario && options.timeout > 0 && timer.elapsed() >= options.timeout*1000) {
-            if (result == ExitAborted)
-                result = ExitTimeout;
-            m_window.close();
-        }
+        if (scenario && result == ExitAborted && scenario->conditionManager().autopilot())
+            finish(ExitSuccess);
+        if (scenario && options.timeout > 0 && elapsed() >= options.timeout)
+            finish(result == ExitAborted ? ExitTimeout : result);
     }
 
     if (scenario) {
@@ -210,7 +229,7 @@ int Vertigo::start(const Options &options)
                 enabled++;
         static const char *results[] = { "success", "failed", "aborted", "timeout", "died" };
         std::cout << options.scenario.toUtf8().constData() << ": " << results[result]
-                  << " after " << timer.elapsed()/1000.0 << " s, " << enabled << "/" << scenario->objectRecords().size()
+                  << " after " << elapsed() << " s, " << enabled << "/" << scenario->objectRecords().size()
                   << " units enabled, " << scenario->radio().size() << " radio messages" << std::endl;
     }
 

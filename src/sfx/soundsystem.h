@@ -56,6 +56,7 @@ public:
     void release(quint32 source);
     void pauseAll();
     void resumeAll();
+    void setVolume(float volume);
 
 public:
     static SoundSystem *get() { Q_ASSERT(m_singleton); return m_singleton; }

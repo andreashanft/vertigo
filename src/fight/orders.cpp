@@ -64,7 +64,8 @@ Orders::Orders(Scenario *scenario, SimpleBoat *boat, const std::vector<OrderSlot
     m_slots(orderSlots),
     m_current(-1),
     m_startTime(0),
-    m_pointHeight(0)
+    m_pointHeight(0),
+    m_pointTime(0)
 {
     if (!m_slots.empty())
         start(0);
@@ -117,6 +118,7 @@ void Orders::pickPatrolPoint()
     const float radius = slot.rad*std::sqrt(random());
     m_point = Vector3D((slot.refx + 0.5f)*scale.x + radius*std::cos(angle), (slot.refy + 0.5f)*scale.y + radius*std::sin(angle), 0);
     m_pointHeight = slot.mih + int(random()*(slot.mah - slot.mih));
+    m_pointTime = m_scenario->time();
 }
 
 
@@ -173,7 +175,8 @@ void Orders::update()
         break;
 
     case OrderSlot::Patrol:
-        if (glm::length(Vector2D(m_point) - Vector2D(m_boat->position())) < ArriveDistance)
+        // a new point once this one is reached, or after a while when the way is blocked (steep ground for tanks)
+        if (glm::length(Vector2D(m_point) - Vector2D(m_boat->position())) < ArriveDistance || m_scenario->time() - m_pointTime > 45.0f)
             pickPatrolPoint();
         m_point.z = altitude(m_point, m_pointHeight);
         m_boat->steerTo(m_point, speed);
