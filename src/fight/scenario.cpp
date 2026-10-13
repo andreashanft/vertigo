@@ -48,6 +48,15 @@
 namespace fight {
 
 
+namespace {
+
+// current speeds in m/s for spd 0 and spd 2; estimates, to be measured in the original
+const float CurrentSpeedSlow = 5.0f;
+const float CurrentSpeedFast = 12.0f;
+
+}
+
+
 Scenario::Scenario(const QString &name) :
     m_name(name),
     m_playerId(-1),
@@ -383,6 +392,29 @@ Scenario::Scenario(const QString &name) :
         }
     }
 
+    // currents: each cell covers a 2x2 block of map cells; speeds aren't in the data (docs/ROADMAP.md, appendix D)
+    foreach (const QString &section, m_file.sections().filter(QRegExp("^current\\d*", Qt::CaseInsensitive))) {
+        m_file.setSection(section);
+        m_file.value("id");
+        if (m_file.value("typ").toInt() != 3072 || m_file.value("pz").toInt() != 0)
+            loadIssue(QString("unhandled: current typ %1 pz %2").arg(m_file.value("typ").toInt()).arg(m_file.value("pz").toInt()));
+
+        const int card = m_file.value("card").toInt();
+        const float speed = m_file.value("spd").toInt() == 0 ? CurrentSpeedSlow : CurrentSpeedFast;
+        Vector3D direction;
+        if (card == 8)
+            direction = Vector3D(0, 0, -1);
+        else if (card == 9)
+            direction = Vector3D(0, 0, 1);
+        else
+            direction = Vector3D(glm::sin(card*glm::quarter_pi<float>()), glm::cos(card*glm::quarter_pi<float>()), 0);
+
+        const int x = m_file.value("px").toInt();
+        const int y = m_file.value("py").toInt();
+        m_currentCells.push_back({ x, y, direction*speed });
+        m_currentGrid[std::make_pair(x/2, y/2)] = direction*speed;
+    }
+
     foreach (const QString &section, m_file.sections().filter(QRegExp("^radio\\d*"))) {
         m_file.setSection(section);
 
@@ -710,6 +742,27 @@ QStringList Scenario::loadReport() const
 void Scenario::loadIssue(const QString &text)
 {
     m_loadIssues << text;
+}
+
+
+Vector3D Scenario::current(const Vector3D &position) const
+{
+    if (m_currentGrid.empty())
+        return Vector3D(0);
+
+    // bilinear between the centres of the 2x2 blocks, so the current fades in and out at the edges
+    const Vector3D &scale = m_surface.scale();
+    const float u = position.x/scale.x/2 - 0.5f;
+    const float v = position.y/scale.y/2 - 0.5f;
+    const int i = int(glm::floor(u));
+    const int j = int(glm::floor(v));
+    const float fu = u - i;
+    const float fv = v - j;
+    auto at = [this](int x, int y) {
+        const auto it = m_currentGrid.find(std::make_pair(x, y));
+        return it != m_currentGrid.end() ? it->second : Vector3D(0);
+    };
+    return glm::mix(glm::mix(at(i, j), at(i + 1, j), fu), glm::mix(at(i, j + 1), at(i + 1, j + 1), fu), fv);
 }
 
 

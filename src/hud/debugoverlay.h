@@ -40,6 +40,7 @@ protected:
 private:
     void drawInfo();
     void drawLabels();
+    void drawCurrents();
 
 private:
     HUD *m_hud;

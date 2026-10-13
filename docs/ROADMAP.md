@@ -71,6 +71,14 @@ So the plan builds those basics first.
 - Tests: `s00303` (should push you back), `s00406`, `s01806`, `s01801`.
   Current speeds aren't in the data and have to be measured in the original.
 
+**Done:** `Scenario::current()` blends the 2×2-cell grid bilinearly between
+block centres (full strength in the middle of a current area, fading out over
+one block at its edges). The player (`[Kinematics] Current`) and AI boats
+(`[Fluid] Current`) drift with it; tanks don't. Speeds are the estimates from
+appendix D (`CurrentSpeedSlow`/`CurrentSpeedFast` in `scenario.cpp`), 8 is
+down and 9 up. The debug overlay draws an arrow per cell near the player and
+shows the current at the player's position.
+
 ## Phase 3 – AI orders
 
 Design: each unit runs its orders slot by slot. One class per order type; a

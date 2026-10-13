@@ -199,7 +199,7 @@ bool Player::update(float elapsedTime)
         sfx::SampleMap::get(sfx::Sample::Engine).setPitch(1.0f + pitch);
     }
 
-    Vector3D vel = m_velocity + dir()*m_debugBoost;
+    Vector3D vel = m_velocity + dir()*m_debugBoost + m_scenario->current(m_position)*m_current;
     Vector3D delta = vel*elapsedTime;
     float path = 0;
 

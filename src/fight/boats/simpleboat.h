@@ -90,6 +90,7 @@ protected:
     Vector3D m_angleFriction;
 
     float m_collisionRadius; // for terrain collisions
+    float m_currentFactor;   // how much the water current moves the boat
     float m_minClimbingAngle; // steepest dive and climb in radians (for ground vehicles: the most they tilt)
     float m_maxClimbingAngle;
 
