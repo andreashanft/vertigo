@@ -60,6 +60,7 @@ public:
         float minAlignTime = 4, maxAlignTime = 8;
         float minAttackTime = 6, maxAttackTime = 12;
         float hitProbability = 0.5f;
+        float torpedoProbability = 0;
         float minFlightRadius = 25, maxFlightRadius = 30;
         float minFlightTime = 3, maxFlightTime = 6;
     };

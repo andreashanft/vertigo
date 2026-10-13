@@ -98,6 +98,7 @@ public:
     // torpedoes in the water; homing ones turn to decoys (buzzers, the Torch) that are nearer than their target
     Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
     const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
+    int torpedoesLaunched() const { return m_torpedoesLaunched; }
     void addDecoy(const Vector3D &position, float seconds);
     bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
 
@@ -180,6 +181,7 @@ private:
     std::vector<CurrentCell> m_currentCells;
     std::unique_ptr<EngineSounds> m_engineSounds;
     std::list<std::unique_ptr<Torpedo>> m_torpedoes;
+    int m_torpedoesLaunched = 0;
     struct Decoy { Vector3D position; float until; };
     std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block

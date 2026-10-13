@@ -322,6 +322,11 @@ Scenario::Scenario(const QString &name) :
             if (activeObject)
             {
                 activeObject->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                // torpedoes for units with tubes: boats, bombers and torpedo towers
+                const int torpedoes = m_file.value("ntor", 0).toInt();
+                const int torpedoType = m_file.value("tor", -1).toInt();
+                if ((type == TypeBoat || type == TypeBomber || type == TypeTorpedoTower) && torpedoes > 0)
+                    activeObject->setTorpedoes(torpedoType, torpedoes);
                 entry.iff = m_file.contains("iff") ? m_file.value("iff").toInt() : -1;
                 entry.condSignal = activeObject->eventDestroy();
                 entry.condAttacked = activeObject->eventAttack();
@@ -822,6 +827,7 @@ Torpedo* Scenario::launchTorpedo(int type, const Vector3D &position, const Vecto
     if (!TorpedoType::get(type))
         return nullptr;
     m_torpedoes.emplace_back(new Torpedo(this, type, position, direction, speed, owner, target));
+    m_torpedoesLaunched++;
     sfx::SampleMap::playAt(sfx::Sample::Torpedo_Launch, position.x, position.y, position.z);
     return m_torpedoes.back().get();
 }

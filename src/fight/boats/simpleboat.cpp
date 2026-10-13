@@ -76,6 +76,7 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     setting("MinAttackTime", a.minAttackTime);
     setting("MaxAttackTime", a.maxAttackTime);
     setting("AttackProbabilityHit", a.hitProbability);
+    setting("AttackProbabilityTorpedoFire", a.torpedoProbability);
     setting("MinFlightRadius", a.minFlightRadius, 1/32.0f);
     setting("MaxFlightRadius", a.maxFlightRadius, 1/32.0f);
     setting("MinFlightTime", a.minFlightTime);

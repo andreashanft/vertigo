@@ -267,7 +267,8 @@ int Vertigo::start(const Options &options)
         static const char *results[] = { "success", "failed", "aborted", "timeout", "died" };
         std::cout << options.scenario.toUtf8().constData() << ": " << results[result]
                   << " after " << elapsed() << " s, " << enabled << "/" << scenario->objectRecords().size()
-                  << " units enabled, " << scenario->radio().size() << " radio messages" << std::endl;
+                  << " units enabled, " << scenario->radio().size() << " radio messages, "
+                  << scenario->torpedoesLaunched() << " torpedoes" << std::endl;
     }
 
     return result;
