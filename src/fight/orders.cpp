@@ -113,6 +113,37 @@ void Orders::next()
 }
 
 
+txt::StringFight Orders::activity() const
+{
+    if (m_current < 0)
+        return txt::Fight79;
+    if (m_engaged)
+        return txt::Fight77;
+    switch (m_slots[m_current].type)
+    {
+    case OrderSlot::Attack:
+    case OrderSlot::CardinalAttack:
+        return txt::Fight77;
+    case OrderSlot::Ambush:
+        return m_ambushed ? txt::Fight77 : txt::Fight79;
+    case OrderSlot::Patrol:
+    case OrderSlot::CardinalPatrol:
+        return txt::Fight80;
+    case OrderSlot::Goto:
+    case OrderSlot::GotoWithArrive:
+        return txt::Fight82;
+    case OrderSlot::Escort:
+        return txt::Fight83;
+    case OrderSlot::GotoWithInfiltrate:
+        return txt::Fight84;
+    case OrderSlot::Explode:
+        return txt::Fight72;
+    default:
+        return txt::Fight79;
+    }
+}
+
+
 ActiveObject* Orders::dockingTarget() const
 {
     const OrderSlot *slot = currentSlot();

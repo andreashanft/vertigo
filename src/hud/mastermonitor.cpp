@@ -20,6 +20,9 @@
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/objects/navpoint.h"
+#include "fight/weapons/torpedo.h"
+#include "fight/weapons/unitgun.h"
+#include "fight/orders.h"
 #include "txt/stringtable.h"
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -61,8 +64,14 @@ void MasterMonitor::draw()
     {
         isFriend = m_hud->scenario()->isFriend(fight::Scenario::PlayerFaction, object->iff());
         txtName = object->name();
+        // what it does: its orders, or paralyzed
         if (m_hud->scenario()->sonar().detectActivity())
-            txtAction = "activity not implemented";
+        {
+            if (object->eventParalyze()->isCompleted() && object->shockShield() < 0)
+                txtAction = txt::StringTable::get(txt::Fight81);
+            else if (object->orders())
+                txtAction = txt::StringTable::get(object->orders()->activity());
+        }
         if (object->isIdentified())
             txtCargo = object->cargo();
         else
@@ -73,15 +82,18 @@ void MasterMonitor::draw()
         int height = static_cast<int>(glm::round(object->center().z - m_hud->scenario()->surface().heightAt(object->center().x, object->center().y)));
         txtHeight = QString("%1M").arg(height);
 
-        txtVelocity = QString("%1KMH").arg(static_cast<int>(glm::round(glm::length(object->velocity()))));
+        txtVelocity = QString("%1KMH").arg(static_cast<int>(glm::round(3.6f*glm::length(object->velocity()))));
         txtNoise = QString("%1").arg(object->noise());
 
         if (m_hud->scenario()->sonar().detectRange() && !target.isPassive() && object->sensor() > 0)
             txtRange = QString("%1M").arg(object->sensorRange());
         if (m_hud->scenario()->sonar().detectWeapons() && !target.isPassive())
         {
-            txtGun = "NIMP";
-            txtTorpedo = "NIMP";
+            // the short names of its gun and torpedoes (GLOBWEAP)
+            if (object->gun())
+                txtGun = object->gun()->shortName();
+            if (const fight::TorpedoType *torpedo = object->hasTorpedoes() ? fight::TorpedoType::get(object->torpedoType()) : nullptr)
+                txtTorpedo = torpedo->shortName;
         }
     }
 

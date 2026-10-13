@@ -93,6 +93,7 @@ public:
     // following the target if the type homes, otherwise straight along the direction
     void setTorpedoes(int type, int count) { m_torpedoType = type; m_torpedoCount = count; }
     bool hasTorpedoes() const { return m_torpedoCount > 0 && m_torpedoType >= 0; }
+    int torpedoType() const { return m_torpedoType; }
     bool fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction);
 
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
