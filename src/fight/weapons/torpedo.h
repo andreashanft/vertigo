@@ -53,6 +53,7 @@ struct TorpedoType
     static const std::vector<TorpedoType>& all();
     static const TorpedoType* get(int type) { return type >= 0 && type < int(all().size()) ? &all()[type] : nullptr; }
     bool isDecoy() const { return model == "estroker.mod"; } // the Torch
+    bool isCluster() const { return model == "ripper.mod"; } // bursts with area damage
 };
 
 
@@ -86,6 +87,7 @@ private:
     Vector3D m_dir;
     float m_speed;
     float m_time;
+    float m_trailTime;
 };
 
 

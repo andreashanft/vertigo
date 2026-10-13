@@ -35,6 +35,12 @@ namespace {
 
 // a torpedo explodes this close to its target (metres)
 const float FuseDistance = 4.0f;
+// the cluster torpedo bursts near any unit, damaging everything around it (TORPEDO.DES: "KineticStrength Area = 7600")
+const float ClusterFuse = 25.0f;
+const float ClusterRadius = 31.0f;
+const int ClusterStrength = 7600;
+// a bubble behind the torpedo this often (seconds)
+const float TrailInterval = 0.06f;
 
 }
 
@@ -90,7 +96,8 @@ Torpedo::Torpedo(Scenario *scenario, int type, const Vector3D &position, const V
     m_target(target),
     m_dir(glm::normalize(direction)),
     m_speed(speed),
-    m_time(0)
+    m_time(0),
+    m_trailTime(0)
 {
     m_position = position;
     m_noise = m_type.noise;
@@ -151,6 +158,30 @@ bool Torpedo::update(float elapsedTime)
         }
     }
 
+    // the cluster torpedo bursts as soon as a unit (other than its launcher) is near
+    if (m_type.isCluster())
+    {
+        auto near = [this](const ActiveObject *unit) {
+            return unit && unit != m_owner && unit->isEnabled() && glm::length(unit->center() - m_position) < ClusterFuse;
+        };
+        bool burst = near(m_scenario->player()) && !m_scenario->playerDestroyed();
+        for (const auto &record : m_scenario->objectRecords())
+            burst = burst || near(dynamic_cast<const ActiveObject *>(record.object));
+        if (burst)
+        {
+            detonate(m_position, nullptr);
+            return false;
+        }
+    }
+
+    // a trail of bubbles (EXPLOSIO.DES 21-23)
+    m_trailTime += elapsedTime;
+    if (m_trailTime >= TrailInterval)
+    {
+        m_trailTime = 0;
+        m_scenario->effectManager().addEffect(Effects(int(Effects::Explosion_21) + qrand()%3), m_position - m_dir*1.5f);
+    }
+
     m_speed = std::min(m_type.maxVelocity, m_speed + m_type.acceleration*elapsedTime);
     m_velocity = m_dir*m_speed;
     const Vector3D next = m_position + m_velocity*elapsedTime;
@@ -177,6 +208,26 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit)
     if (!m_enabled)
         return;
     disable();
+    if (m_type.isCluster())
+    {
+        // everything near the burst, less further away
+        auto blast = [this, &position](ActiveObject *unit) {
+            if (!unit || unit == m_owner || !unit->isEnabled())
+                return;
+            const float distance = glm::length(unit->center() - position);
+            if (distance < ClusterRadius)
+                unit->damage(int(ClusterStrength*(1 - 0.5f*distance/ClusterRadius)), 0, position, m_owner);
+        };
+        if (!m_scenario->playerDestroyed())
+            blast(m_scenario->player());
+        for (const auto &record : m_scenario->objectRecords())
+            blast(dynamic_cast<ActiveObject *>(record.object));
+        m_scenario->effectManager().addEffect(Effects::Explosion_2, position);
+        for (int i = 0; i < 5; i++)
+            m_scenario->effectManager().addEffect(Effects::Explosion_9, position + Vector3D(qrand()%21 - 10, qrand()%21 - 10, qrand()%11 - 5));
+        sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, position.x, position.y, position.z);
+        return;
+    }
     if (hit)
         hit->damage(m_type.kineticStrength, m_type.shockStrength, position, m_owner);
     m_scenario->effectManager().addEffect(Effects::Explosion_1, position);

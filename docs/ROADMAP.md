@@ -152,10 +152,12 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 - **Dust clouds (S):** ground-dust sprites behind moving tanks and crawlers.
   Needs 1.6 and moving units.
 - **Torpedo trails (S, needs 1.8):** the data's "torpedo-bubble" sprite,
-  spawned every ~60 ms.
+  spawned every ~60 ms. **Done.**
 - **Cluster torpedo (M, needs 1.8):** the Ripper (torpedo 18). The data has no
   submunition values, so the burst has to be designed: several flare shots, or
-  area damage of 7600 within ~31 m.
+  area damage of 7600 within ~31 m. **Done** as area damage: the Ripper bursts
+  on impact, at the end of its run or within 25 m of a unit, damaging
+  everything within 31 m except its launcher (7600, half at the edge).
 
 ## Phase 6 – Nearby engine sounds (M)
 
