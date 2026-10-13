@@ -52,9 +52,10 @@ int main(int argc, char *argv[])
     const QCommandLineOption overlayOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     const QCommandLineOption destroyOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
     const QCommandLineOption keysOption("keys", "Press keys at the given seconds (test mode), e.g. 2=Esc,3=2,4=Alt+A.", "time=key");
+    const QCommandLineOption driveOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     const QCommandLineOption checkOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, checkOption, itemsOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, checkOption, itemsOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -88,6 +89,16 @@ int main(int argc, char *argv[])
                 return game::Vertigo::ExitUsage;
             }
             options.keys.emplace_back(time, key);
+        }
+    }
+    foreach (const QString &value, parser.values(driveOption)) {
+        foreach (const QString &item, value.split(',', QString::SkipEmptyParts)) {
+            const QRegExp format("(\\d+)=(-?[\\d.]+)(:(-?[\\d.]+))?");
+            if (!format.exactMatch(item)) {
+                QTextStream(stderr) << "Invalid --drive value " << item << ", expected id=speed[:turn]\n";
+                return game::Vertigo::ExitUsage;
+            }
+            options.drive.push_back({ format.cap(1).toInt(), format.cap(2).toFloat(), format.cap(4).toFloat() });
         }
     }
     foreach (const QString &value, parser.values(equipOption)) {

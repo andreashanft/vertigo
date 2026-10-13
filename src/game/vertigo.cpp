@@ -22,6 +22,7 @@
 #include "game/items.h"
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
+#include "fight/boats/simpleboat.h"
 #include "txt/desfile.h"
 
 #include <QCoreApplication>
@@ -87,14 +88,26 @@ int Vertigo::start(const Options &options)
         hud->eventDied() += [this, &result]() { result = ExitDied; m_window.close(); };
         // there is no saved game in test mode
         hud->eventLoad() += [this, &result]() { result = ExitAborted; m_window.close(); };
-        hud->eventRestart() += [&]() {
+        auto startScenario = [&]() {
             scenario.reset(new fight::Scenario(options.scenario));
             hud->start(scenario.get());
+            for (const Options::Drive &drive : options.drive) {
+                fight::SimpleBoat *unit = nullptr;
+                for (const auto &record : scenario->objectRecords())
+                    if (record.id == drive.id)
+                        unit = dynamic_cast<fight::SimpleBoat *>(record.object);
+                if (!unit) {
+                    std::cerr << "--drive: no boat " << drive.id << std::endl;
+                    continue;
+                }
+                unit->setVelocityTarget(drive.speed/3.6f);
+                unit->setTurnVelocity(Vector3D(0, 0, drive.turn));
+            }
         };
+        hud->eventRestart() += startScenario;
         hud->setDebugOverlay(options.debugOverlay);
         hud->load(boat.get());
-        scenario.reset(new fight::Scenario(options.scenario));
-        hud->start(scenario.get());
+        startScenario();
         m_window.setRenderer(hud.get());
     }
 

@@ -47,9 +47,16 @@ public:
     void setTurnVelocity(const Vector3D &turnVelocity) { m_turnVelocity = turnVelocity; }
 
 public:
+    void setPosition(const Vector3D &pos);
     bool update(float elapsedTime);
     void updateVelocity(float elapsedTime);
     void updateOrientation(float elapsedTime);
+    void draw();
+    bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
+
+protected:
+    void updateBox();
+    void move(Vector3D delta);
 
 protected:
     glm::mat3 m_orientation;
@@ -69,6 +76,8 @@ protected:
 
     Vector3D m_maxAngleVelocity;
     Vector3D m_angleFriction;
+
+    float m_collisionRadius; // for terrain collisions
 };
 
 
