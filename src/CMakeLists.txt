@@ -22,6 +22,8 @@ set(SOURCES
     fight/conditionmanager.h
     fight/enginesounds.cpp
     fight/enginesounds.h
+    fight/headmotion.cpp
+    fight/headmotion.h
     fight/module.cpp
     fight/orders.cpp
     fight/orders.h
@@ -150,6 +152,8 @@ set(SOURCES
     gfx/font.h
     gfx/fontmanager.cpp
     gfx/fontmanager.h
+    gfx/glbmodel.cpp
+    gfx/glbmodel.h
     gfx/image.cpp
     gfx/image.h
     gfx/texture.cpp
@@ -161,6 +165,8 @@ set(SOURCES
     gfx/cliprect.cpp
     gfx/cliprect.h
 
+    hud/cockpit3d.cpp
+    hud/cockpit3d.h
     hud/hud.cpp
     hud/hud.h
     hud/crosshair.cpp

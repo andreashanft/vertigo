@@ -23,9 +23,11 @@
 
 #include "util/debug.h"
 
+#include <QImage>
 #include <QKeyEvent>
 #include <QSettings>
 #include <QTimer>
+#include <iostream>
 
 namespace game {
 
@@ -78,6 +80,25 @@ void Window::paintGL()
         m_renderer->setRect(rect());
         m_renderer->draw();
     }
+
+    if (!m_screenshots.isEmpty()) {
+        // the frame is still in the back buffer
+        const int w = qRound(width()*devicePixelRatioF());
+        const int h = qRound(height()*devicePixelRatioF());
+        QImage image(w, h, QImage::Format_RGBA8888);
+        glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+        image = image.mirrored().convertToFormat(QImage::Format_RGB888);
+        foreach (const QString &file, m_screenshots) {
+            if (!image.save(file))
+                std::cerr << "Cannot save the screenshot " << file.toUtf8().constData() << std::endl;
+        }
+        m_screenshots.clear();
+    }
+}
+
+void Window::saveScreenshot(const QString &fileName)
+{
+    m_screenshots << fileName;
 }
 
 void Window::keyPressEvent(QKeyEvent *event)

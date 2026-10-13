@@ -48,6 +48,8 @@ public:
         std::vector<Drive> drive;                       // test mode: let these boats move straight or in a circle
         std::vector<int> trace;                         // test mode: print these units' state every second
         std::vector<int> fire;                          // test mode: these units fire (towers aim at the player)
+        struct Screenshot { float time; QString file; };
+        std::vector<Screenshot> screenshots;            // test mode: save the window at these times
         bool check = false;                             // report what the mission loader ignores
         QStringList checkScenarios;                     // empty = all missions
     };

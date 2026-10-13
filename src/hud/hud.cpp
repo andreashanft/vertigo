@@ -18,7 +18,14 @@
 #include "hud.h"
 #include <QGLWidget>
 #include <QKeyEvent>
+#include <QMouseEvent>
+#include <QOpenGLContext>
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLFunctions>
+#include <QSettings>
 #include <algorithm>
+#include <cmath>
+#include <iostream>
 #include "SDL.h"
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
@@ -50,11 +57,108 @@
 #include "alert.h"
 #include "slavemonitor.h"
 #include "symbols.h"
+#include "cockpit3d.h"
 #include "sfx/soundsystem.h"
 #include "txt/stringtable.h"
 
 
 namespace hud {
+
+
+namespace {
+
+bool g_settingsRead = false;
+HUD::CockpitMode g_cockpitMode = HUD::CockpitMode::Art;
+float g_headMotion = 1;
+bool g_lookFixed = false;
+Vector2D g_look;
+
+// mouse look: degrees per pixel dragged, how far the head turns (further, the eye would be in the
+// headrest), and the neck it turns about (below and behind the eye, so the eye moves as well)
+const float LookSpeed = glm::radians(0.18f);
+const Vector2D LookMin(glm::radians(-105.0f), glm::radians(-55.0f));
+const Vector2D LookMax(glm::radians(105.0f), glm::radians(65.0f));
+const Vector3D Neck(0, -0.10f, 0.08f);
+// after the drag the head turns back to the front, about two thirds of the way in this time
+const float LookReturn = 0.18f;
+
+void readSettings()
+{
+    if (g_settingsRead)
+        return;
+    g_settingsRead = true;
+    QSettings settings;
+    g_cockpitMode = settings.value("cockpit/mode").toString() == "3d" ? HUD::CockpitMode::Model : HUD::CockpitMode::Art;
+    g_headMotion = settings.value("cockpit/shake", 1.0f).toFloat();
+}
+
+// The pilot's head turned by `rotation` (boat camera frame): how points at infinity move in the
+// view, as a homography of its normalized device coordinates. Applied to clip coordinates, it
+// keeps HUD symbols in the window on what they mark in the world.
+Matrix viewTurn(const Matrix &projection, const glm::mat3 &rotation)
+{
+    // camera directions to homogeneous x, y, w of the view
+    glm::mat3 k;
+    for (int c = 0; c < 3; c++)
+    {
+        k[c][0] = projection[c][0];
+        k[c][1] = projection[c][1];
+        k[c][2] = projection[c][3];
+    }
+    const glm::mat3 h = k*glm::transpose(rotation)*glm::inverse(k);
+    Matrix m(1);
+    for (int c = 0; c < 2; c++)
+    {
+        m[c][0] = h[c][0];
+        m[c][1] = h[c][1];
+        m[c][3] = h[c][2];
+    }
+    m[3][0] = h[2][0];
+    m[3][1] = h[2][1];
+    m[3][3] = h[2][2];
+    return m;
+}
+
+}
+
+
+HUD::CockpitMode HUD::cockpitMode()
+{
+    readSettings();
+    return g_cockpitMode;
+}
+
+
+void HUD::setCockpitMode(CockpitMode mode, bool save)
+{
+    readSettings();
+    g_cockpitMode = mode;
+    if (save)
+        QSettings().setValue("cockpit/mode", mode == CockpitMode::Model ? "3d" : "2d");
+}
+
+
+float HUD::headMotion()
+{
+    readSettings();
+    return g_headMotion;
+}
+
+
+void HUD::setLook(float yaw, float pitch)
+{
+    g_lookFixed = true;
+    g_look = glm::clamp(Vector2D(glm::radians(yaw), glm::radians(pitch)), LookMin, LookMax);
+}
+
+
+void HUD::setHeadMotion(float strength, bool save)
+{
+    readSettings();
+    g_headMotion = strength;
+    if (save)
+        QSettings().setValue("cockpit/shake", strength);
+}
 
 
 HUD::HUD() :
@@ -67,12 +171,25 @@ HUD::HUD() :
     m_successShown(false),
     m_failureShown(false),
     m_deathTime(-1),
+    m_focal(245.5f),
+    m_looking(false),
     m_colorTable("gfx:pal/gui/border.pal"),
     m_fontGreen("gfx:fnt/cpit1ahc.fnt", m_colorTable, true, false),
     m_fontRed("gfx:fnt/cpit1bhc.fnt", m_colorTable, true, false),
     m_fontYellow("gfx:fnt/cpit1chc.fnt", m_colorTable, true, false)
 {
 
+}
+
+
+HUD::~HUD()
+{
+}
+
+
+bool HUD::showsModel() const
+{
+    return cockpitMode() == CockpitMode::Model && m_model && m_model->isValid();
 }
 
 
@@ -102,6 +219,19 @@ void HUD::load(game::Boat *boat)
 
     file.setSection("front");
     m_center = glm::ivec2(file.value("VFX_StartX").toInt() + file.value("VFX_FlightX").toInt(), file.value("VFX_StartY").toInt() + file.value("VFX_FlightY").toInt());
+
+    // the camera the cockpit art was rendered with (horizontal view angle over 640 pixels)
+    file.setSection("camera");
+    const float viewAngle = file.contains("ViewAngle") ? file.value("ViewAngle").toFloat() : 105.0f;
+    m_focal = 320/std::tan(glm::radians(viewAngle)/2);
+    const QString model = Cockpit3D::find(boat->cockpit());
+    m_model = model.isEmpty() ? nullptr : Cockpit3D::get(model);
+    if (m_model)
+        m_model->setCamera(m_focal, m_center);
+    else if (cockpitMode() == CockpitMode::Model)
+        std::cerr << "No 3D cockpit cockpit_" << boat->cockpit().toUtf8().constData() << ".glb in "
+                  << Cockpit3D::directory().toUtf8().constData() << ", showing the 2D cockpit" << std::endl;
+    m_rectGL = Rect();
 
     m_integerScale = true;
 
@@ -235,6 +365,7 @@ void HUD::start(fight::Scenario *scenario)
     m_failureShown = false;
     m_deathTime = -1;
     m_menu->open(MissionMenu::Page::None);
+    m_scenario->headMotion().setStrength(headMotion());
 }
 
 
@@ -333,7 +464,9 @@ void HUD::setRect(const QRect &rect)
     if (m_scenario)
     {
         Renderer::setRect(QRect(glm::round(m_rectHUD.x), glm::round(m_rectHUD.y), glm::round(m_rectHUD.width), glm::round(m_rectHUD.height)));
-        m_scenario->setRect(m_rectHUD, Vector2D(m_projectionMatrix * Vector4D(m_center, 0, 1)));
+        m_centerNDC = Vector2D(m_projectionMatrix * Vector4D(m_center, 0, 1));
+        // the 3D cockpit needs the world in the perspective of the cockpit art
+        m_scenario->setRect(m_rectHUD, m_centerNDC, showsModel() ? glm::degrees(2*std::atan(240/m_focal)) : 60.0f);
     }
 
     int w = 640;
@@ -374,6 +507,7 @@ void HUD::draw()
     const int ticks = SDL_GetTicks();
     // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
     step(std::min((ticks - m_lastTicks)/1000.0f, 0.25f));
+    updateLook((ticks - m_lastTicks)/1000.0f);
     m_lastTicks = ticks;
     // a handler of the events in step() may have ended the mission
     if (!m_scenario)
@@ -385,6 +519,8 @@ void HUD::draw()
 
     // the GL viewport is in device pixels, the rects in logical pixels
     const qreal pixelRatio = window() ? window()->devicePixelRatioF() : 1.0;
+    if (showsModel() && drawModel(pixelRatio))
+        return;
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
         glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
 
@@ -414,6 +550,79 @@ void HUD::draw()
 
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+}
+
+
+// The 3D cockpit: the instruments go into a texture that is projected onto the model, the world
+// and the model are drawn in the whole window as seen from the pilot's head, and the HUD in the
+// window and the menu are drawn on top. False if the model can't be shown.
+bool HUD::drawModel(qreal pixelRatio)
+{
+    QOpenGLFunctions *gl = QOpenGLContext::currentContext() ? QOpenGLContext::currentContext()->functions() : nullptr;
+    if (!gl || !QOpenGLFramebufferObject::hasOpenGLFramebufferObjects())
+    {
+        m_model.reset();
+        m_rectGL = Rect();
+        return false;
+    }
+
+    // the instruments (everything in the art's pixel scale) with premultiplied alpha
+    const QSize size(qRound(m_rectHUD.width*pixelRatio), qRound(m_rectHUD.height*pixelRatio));
+    if (!m_instruments || m_instruments->size() != size)
+        m_instruments.reset(new QOpenGLFramebufferObject(size, QOpenGLFramebufferObject::Depth));
+    m_instruments->bind();
+    glViewport(0, 0, size.width(), size.height());
+    setupGL(false);
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    gl->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    m_integerScale = true;
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
+    glMatrixMode(GL_MODELVIEW);
+    m_integerScaleWidget.doDraw();
+    m_integerScale = false;
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    m_instruments->release();
+
+    // the whole window shows the world and the model; the 640x480 view is a part of it
+    glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+    const Matrix toWindow = glm::translate(Vector3D((2*(m_rectHUD.x - m_rectGL.x) + m_rectHUD.width)/m_rectGL.width - 1,
+                                                    1 - (2*(m_rectHUD.y - m_rectGL.y) + m_rectHUD.height)/m_rectGL.height, 0))
+                          * glm::scale(Vector3D(m_rectHUD.width/m_rectGL.width, m_rectHUD.height/m_rectGL.height, 1));
+    const Matrix head = lookTransform()*m_scenario->headMotion().transform();
+    const Matrix headInverse = glm::inverse(head);
+    m_scenario->draw(toWindow*m_scenario->projectionMatrix(), headInverse*m_scenario->cameraMatrix());
+
+    // the model in its own depth range, from 2 cm in front of the eye
+    glClear(GL_DEPTH_BUFFER_BIT);
+    const Matrix modelProjection = toWindow*glm::translate(Vector3D(m_centerNDC, 0))
+                                 * glm::perspective(2*std::atan(240/m_focal), m_rectHUD.width/m_rectHUD.height, 0.02f, 20.0f);
+    if (!m_model->draw(modelProjection, headInverse))
+    {
+        // the 2D cockpit from now on, with its view angle
+        m_rectGL = Rect();
+        return false;
+    }
+    m_model->drawDecal(modelProjection, headInverse, m_instruments->texture());
+
+    // the HUD in the window is collimated: it turns with the head but doesn't shift; the menu stays put
+    glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
+    setupGL(false);
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(glm::value_ptr(viewTurn(m_scenario->projectionMatrix(), glm::mat3(head))*m_noScaleProjectionMatrix));
+    glMatrixMode(GL_MODELVIEW);
+    m_noScaleWidget.doDraw();
+
+    m_integerScale = true;
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
+    glMatrixMode(GL_MODELVIEW);
+    m_menu->doDraw();
+    m_integerScale = false;
+
+    glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+    return true;
 }
 
 
@@ -463,6 +672,18 @@ void HUD::keyPressEvent(QKeyEvent *e)
     {
         m_menu->setTurrets((m_scenario->player()->turret(0) ? 1 : 0) + (m_scenario->player()->turret(1) ? 1 : 0));
         m_menu->open(MissionMenu::Page::Turrets);
+        return;
+    }
+    // Alt+V switches between the 2D and the 3D cockpit
+    if (e->key() == Qt::Key_V && (e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+    {
+        setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
+        if (cockpitMode() == CockpitMode::Model && !showsModel())
+            std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit().toUtf8().constData() << " in "
+                      << Cockpit3D::directory().toUtf8().constData() << std::endl;
+        m_menu->notice({ showsModel() ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
+        // the view angle changes with it
+        m_rectGL = Rect();
         return;
     }
     // Ctrl+D, Cmd+D on macOS
@@ -534,6 +755,48 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
 
     m_scenario->keyPressEvent(e);
+}
+
+
+void HUD::updateLook(float elapsedTime)
+{
+    if (g_lookFixed)
+        m_look = g_look;
+    else if (!m_looking || !showsModel())
+        m_look *= std::exp(-std::max(0.0f, elapsedTime)/LookReturn);
+}
+
+
+Matrix HUD::lookTransform() const
+{
+    return glm::translate(Neck)*glm::rotate(m_look.x, Vector3D(0, 1, 0))*glm::rotate(m_look.y, Vector3D(1, 0, 0))*glm::translate(-Neck);
+}
+
+
+void HUD::mousePressEvent(QMouseEvent *e)
+{
+    if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
+        return;
+    m_looking = true;
+    m_lookStart = e->pos();
+    m_lookFrom = m_look;
+}
+
+
+void HUD::mouseMoveEvent(QMouseEvent *e)
+{
+    if (!m_looking)
+        return;
+    // drag right to look right, up to look up
+    const QPoint drag = e->pos() - m_lookStart;
+    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag.x(), drag.y()), LookMin, LookMax);
+}
+
+
+void HUD::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (e->buttons() == Qt::NoButton)
+        m_looking = false;
 }
 
 

@@ -63,6 +63,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
   at a fraction of their maximum turn rate (the sign picks the direction),
   instead of following their orders.
+- `--screenshot 3=front.png` saves the window at the given mission seconds
+  (not with `--headless`).
 - The mission ends as soon as it is accomplished (no need to press Alt+A), 10
   seconds after it failed, or 3 seconds after the player was destroyed. The
   exit code tells how it ended: 0 success, 1 failed, 2 aborted (Esc menu or
@@ -77,6 +79,30 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 In a mission, Esc opens the mission menu (continue, abort the game, restart
 the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
 skips the mission as if it had been accomplished, for debugging.
+
+## 3D cockpits
+
+Besides the original 2D cockpit art, Vertigo can show 3D models of the four
+cockpits. They are built and textured from your game data by the Blender
+scripts in [data/3D-cockpits](data/3D-cockpits/README.md), whose
+`tools/install.py` copies them to the folder `3d-cockpits` in the data
+directory (or the folder set as `cockpit/directory`).
+
+- `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
+  mission and saves the choice (setting `cockpit/mode`). Without a model for
+  the boat's cockpit the 2D art is shown.
+- In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
+  cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
+  window. The instruments are projected onto the model's screens.
+- Mouse look: dragging with a mouse button (or on the trackpad) turns the
+  pilot's head, up to 105° to the side, 65° up and 55° down; when the button
+  is released the head turns back to the front. `--look=60,-10` fixes the
+  head at 60° left and 10° down for the whole run, e.g. for screenshots.
+- The pilot's head lags behind accelerations and is thrown about by
+  collisions, ground contact, hits and nearby explosions, which shows the
+  depth of the cockpit. `--shake 0.5` (setting `cockpit/shake`, default 1)
+  scales it, 0 turns it off. `--trace` with the player's id prints the head
+  offset.
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
 everything the loader skips or ignores: unsupported object types, unread

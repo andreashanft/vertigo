@@ -22,6 +22,7 @@
 
 #include "items.h"
 #include "fight/scenario.h"
+#include "hud/hud.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -61,7 +62,11 @@ int main(int argc, char *argv[])
     const QCommandLineOption itemsOption("list-items", "List the item models for --equip.");
     const QCommandLineOption difficultyOption("difficulty", "Difficulty in test mode: 0 easy, 1 normal (default), 2 hard.", "level");
     const QCommandLineOption seedOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption });
+    const QCommandLineOption cockpitOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
+    const QCommandLineOption shakeOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
+    const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), e.g. 3=front.png.", "time=file");
+    const QCommandLineOption lookOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, lookOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -80,6 +85,42 @@ int main(int argc, char *argv[])
     {
         fight::Scenario::overrideDifficulty(parser.isSet(difficultyOption) ? parser.value(difficultyOption).toInt() : 1);
         fight::Scenario::setRandomSeed(parser.isSet(seedOption) ? parser.value(seedOption).toInt() : 1);
+    }
+    if (parser.isSet(cockpitOption)) {
+        const QString cockpit = parser.value(cockpitOption).toLower();
+        if (cockpit != "2d" && cockpit != "3d") {
+            QTextStream(stderr) << "Invalid --cockpit value " << cockpit << ", expected 2d or 3d\n";
+            return game::Vertigo::ExitUsage;
+        }
+        hud::HUD::setCockpitMode(cockpit == "3d" ? hud::HUD::CockpitMode::Model : hud::HUD::CockpitMode::Art, false);
+    }
+    if (parser.isSet(shakeOption)) {
+        bool ok = false;
+        const float shake = parser.value(shakeOption).toFloat(&ok);
+        if (!ok || shake < 0) {
+            QTextStream(stderr) << "Invalid --shake value " << parser.value(shakeOption) << ", expected a factor of 0 or more\n";
+            return game::Vertigo::ExitUsage;
+        }
+        hud::HUD::setHeadMotion(shake, false);
+    }
+    if (parser.isSet(lookOption)) {
+        const QStringList look = parser.value(lookOption).split(',');
+        bool okYaw = false, okPitch = false;
+        const float yaw = look.value(0).toFloat(&okYaw);
+        const float pitch = look.value(1).toFloat(&okPitch);
+        if (look.size() != 2 || !okYaw || !okPitch) {
+            QTextStream(stderr) << "Invalid --look value " << parser.value(lookOption) << ", expected yaw,pitch in degrees\n";
+            return game::Vertigo::ExitUsage;
+        }
+        hud::HUD::setLook(yaw, pitch);
+    }
+    foreach (const QString &value, parser.values(screenshotOption)) {
+        const QRegExp format("([\\d.]+)=(.+)");
+        if (!format.exactMatch(value)) {
+            QTextStream(stderr) << "Invalid --screenshot value " << value << ", expected time=file\n";
+            return game::Vertigo::ExitUsage;
+        }
+        options.screenshots.push_back({ format.cap(1).toFloat(), format.cap(2) });
     }
     foreach (const QString &value, parser.values(destroyOption)) {
         foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {

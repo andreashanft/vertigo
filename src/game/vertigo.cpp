@@ -25,6 +25,7 @@
 #include "fight/boats/simpleboat.h"
 #include "fight/orders.h"
 #include <glm/geometric.hpp>
+#include <glm/trigonometric.hpp>
 #include <cmath>
 #include <algorithm>
 #include "txt/desfile.h"
@@ -125,6 +126,11 @@ int Vertigo::start(const Options &options)
     }
 
     std::vector<int> destroy = options.destroy;
+    auto screenshots = options.screenshots;
+    if (headless && !screenshots.empty()) {
+        std::cerr << "--screenshot needs a window, ignored with --headless" << std::endl;
+        screenshots.clear();
+    }
     float nextTrace = 0;
     auto keys = options.keys;
     QElapsedTimer timer;
@@ -215,13 +221,15 @@ int Vertigo::start(const Options &options)
                     const Vector3D pos = scenario->player()->position();
                     const Vector3D current = scenario->current(pos);
                     const fight::Player *player = scenario->player();
-                    std::cout << QString("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13%14")
+                    const fight::HeadMotion &head = scenario->headMotion();
+                    std::cout << QString("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg%14")
                         .arg(options.scenario).arg(int(scenario->time()))
                         .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
                         .arg(int(scenario->height())).arg(int(scenario->player()->speed()))
                         .arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1)
                         .arg(player->shield(0)).arg(player->shield(1)).arg(player->shield(2)).arg(player->shield(3))
-                        .arg(scenario->playerDestroyed() ? " destroyed" : "").toUtf8().constData() << std::endl;
+                        .arg(scenario->playerDestroyed() ? " destroyed" : "")
+                        .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1).toUtf8().constData() << std::endl;
                 }
                 for (const auto &record : scenario->objectRecords()) {
                     if (record.id != id)
@@ -249,6 +257,14 @@ int Vertigo::start(const Options &options)
                     std::cout << line.toUtf8().constData() << std::endl;
                 }
             }
+        }
+        for (auto it = screenshots.begin(); scenario && it != screenshots.end(); ) {
+            if (elapsed() < it->time) {
+                ++it;
+                continue;
+            }
+            m_window.saveScreenshot(it->file);
+            it = screenshots.erase(it);
         }
         if (scenario && result == ExitAborted && scenario->conditionManager().failed())
             result = ExitFailed;

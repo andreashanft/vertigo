@@ -31,6 +31,8 @@ public:
 
 public:
     void setRenderer(Renderer *renderer);
+    // saves the next frame as an image file
+    void saveScreenshot(const QString &fileName);
 
 private:
     void resizeGL(int w, int h);
@@ -47,6 +49,7 @@ private:
 private:
     QCursor m_cursor;
     Renderer *m_renderer;
+    QStringList m_screenshots;
 };
 
 } // namespace game

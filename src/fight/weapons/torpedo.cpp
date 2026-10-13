@@ -226,12 +226,14 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit)
         for (int i = 0; i < 5; i++)
             m_scenario->effectManager().addEffect(Effects::Explosion_9, position + Vector3D(qrand()%21 - 10, qrand()%21 - 10, qrand()%11 - 5));
         sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, position.x, position.y, position.z);
+        m_scenario->explosionAt(position, 1.0f);
         return;
     }
     if (hit)
         hit->damage(m_type.kineticStrength, m_type.shockStrength, position, m_owner);
     m_scenario->effectManager().addEffect(Effects::Explosion_1, position);
     sfx::SampleMap::playAt(sfx::Sample::Explosion_Small, position.x, position.y, position.z);
+    m_scenario->explosionAt(position, 0.7f);
 }
 
 

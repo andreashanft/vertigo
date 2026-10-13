@@ -111,6 +111,7 @@ void ActiveObject::destroy()
     m_scenario->effectManager().addEffect(explosion, center());
     const Vector3D at = center();
     sfx::SampleMap::playAt(size < 20.0f ? sfx::Sample::Explosion_Small : sfx::Sample::Explosion_Big, at.x, at.y, at.z);
+    m_scenario->explosionAt(at, size < 8.0f ? 0.3f : size < 20.0f ? 0.6f : 1.0f);
 
     // debris (DEBRIS.DES): plates 0-2, engine 3, small parts 4-8, large parts 9-13, bodies 14-16
     auto random = [](int min, int max) { return min + qrand()%(max - min + 1); };
