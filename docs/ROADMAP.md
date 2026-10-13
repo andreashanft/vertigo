@@ -52,7 +52,7 @@ So the plan builds those basics first.
 
 | # | Step | Effort | Unlocks |
 |---|---|---|---|
-| 1.1 | Load every unit type: complete the type table ([appendix A](#a-dtyp--object-file)), use a placeholder instead of skipping a unit, always register objectives | S | 63 missions get their missing units |
+| 1.1 | Load every unit type: complete the type table ([appendix A](#a-dtyp--object-file)), use a placeholder instead of skipping a unit, always register objectives | S | 63 missions get their missing units (**done**: cargo ships are placeholder boxes until 1.6, tanks are static until 1.6) |
 | 1.2 | Missing condition types ("any unit of faction X attacked", order chaining, protect-only objectives, nav-point objectives), a real failure path, fix the endless "mission failed" voice. Ship together with 1.1 | S–M | Missions become winnable |
 | 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders |
 | 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions |
@@ -251,9 +251,9 @@ map cell is 16 m.
 
 ### A. dtyp → object file
 
-Decoded from the class switches in `FIGHT.EXE`. Entries marked ✓ are already
-in `Scenario`'s type map; the others are missing (number of stock movables in
-parentheses).
+Decoded from the class switches in `FIGHT.EXE`. Entries marked ✓ were in
+`Scenario`'s type map before step 1.1; since then all of them are (number of
+stock movables in parentheses).
 
 | typ | Class | dtyp → `VFX/SOBJECTS` file |
 |---|---|---|
