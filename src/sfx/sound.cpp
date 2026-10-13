@@ -145,6 +145,18 @@ void Sound::playInstance()
 }
 
 
+void Sound::setPosition(float x, float y, float z)
+{
+    if (m_source == 0)
+        return;
+    alSourcei(m_source, AL_SOURCE_RELATIVE, AL_FALSE);
+    alSource3f(m_source, AL_POSITION, x, y, z);
+    alSourcef(m_source, AL_REFERENCE_DISTANCE, 15.0f);
+    alSourcef(m_source, AL_MAX_DISTANCE, 400.0f);
+    alSourcef(m_source, AL_ROLLOFF_FACTOR, 1.0f);
+}
+
+
 void Sound::pause()
 {
     if (m_source > 0)

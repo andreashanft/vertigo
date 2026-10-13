@@ -20,6 +20,8 @@ set(SOURCES
     fight/condition.h
     fight/conditionmanager.cpp
     fight/conditionmanager.h
+    fight/enginesounds.cpp
+    fight/enginesounds.h
     fight/module.cpp
     fight/orders.cpp
     fight/orders.h

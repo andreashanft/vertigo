@@ -57,6 +57,8 @@ public:
     void pauseAll();
     void resumeAll();
     void setVolume(float volume);
+    // where positional sounds are heard from: position, forward and up
+    void setListener(float x, float y, float z, float fx, float fy, float fz, float ux, float uy, float uz);
 
 public:
     static SoundSystem *get() { Q_ASSERT(m_singleton); return m_singleton; }

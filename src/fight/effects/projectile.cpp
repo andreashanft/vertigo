@@ -72,7 +72,7 @@ bool Projectile::update(float elapsedTime)
         ActiveObject *activeObject = dynamic_cast<ActiveObject *>(collision);
         if (activeObject)
         {
-            sfx::SampleMap::get(sfx::Sample::Hit_Metal).playInstance();
+            sfx::SampleMap::playAt(sfx::Sample::Hit_Metal, pos.x, pos.y, pos.z);
             activeObject->damage(m_kineticStrength, m_shockStrength, pos - normal*m_billboard->collisionRadius(), m_owner);
         }
         disable();

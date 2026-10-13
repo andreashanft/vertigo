@@ -165,6 +165,12 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 - Pick the sample by unit class (enemy, bomber, biont and big-ship engines
   exist); raise pitch with speed, as for the player's engine.
 
+**Done:** sounds are attached to the listener by default; the listener follows
+the player; enemy gunfire, hits and explosions play where they happen;
+`EngineSounds` loops the engines of the 4 nearest moving units within 300 m
+(scouts enemy engine 1, bombers/tanks/crawlers enemy engine 2, bionts the
+biont engine, cargo ships the big-ship engine), pitch rising with speed.
+
 ## Milestones
 
 1. **Every mission loads and can end properly:** Phase 0, steps 1.1, 1.2 and
@@ -172,7 +178,9 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 2. **The world moves:** step 1.3, orders 1/2/9/3/5, currents, tanks, voxel
    radar, dust clouds.
 3. **The world fights back:** steps 1.4 and 1.7, orders 7/8/4/6, explosions,
-   alert, friendly fire, slave monitor, engine sounds.
+   alert, friendly fire, slave monitor, engine sounds. (**Done**, without the
+   particle pool, the slave monitor's F1–F4 pages and lamps, and THREAT,
+   which needs torpedoes.)
 4. **Torpedoes:** step 1.8, lock HUD, threat and locked icons, trails, cluster
    torpedo, turret targeting, orders 10/11.
 5. **Cargo ships and a balancing pass** against the original.

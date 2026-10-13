@@ -18,6 +18,8 @@
 #include "scenario.h"
 #include "module.h"
 #include "orders.h"
+#include "enginesounds.h"
+#include "sfx/soundsystem.h"
 #include "surface/element.h"
 #include "surface/betaspline.h"
 #include "effects/billboard.h"
@@ -493,6 +495,11 @@ Scenario::Scenario(const QString &name) :
 }
 
 
+Scenario::~Scenario()
+{
+}
+
+
 void Scenario::setBoat(game::Boat *boat)
 {
     //if (boat->gun() == 3081)
@@ -541,6 +548,14 @@ void Scenario::update(float elapsedTime)
     m_effectManager.update(elapsedTime);
 
     m_sonar.update(elapsedTime);
+
+    // positional sounds are heard from the player
+    sfx::SoundSystem::get()->setListener(m_position.x, m_position.y, m_position.z,
+                                         m_player->dir().x, m_player->dir().y, m_player->dir().z,
+                                         m_player->up().x, m_player->up().y, m_player->up().z);
+    if (!m_engineSounds)
+        m_engineSounds.reset(new EngineSounds(this));
+    m_engineSounds->update();
 }
 
 

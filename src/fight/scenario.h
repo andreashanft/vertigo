@@ -40,6 +40,9 @@ namespace game { class Boat; }
 
 namespace fight {
 
+
+class EngineSounds;
+
 class Object;
 class NavPoint;
 
@@ -47,6 +50,7 @@ class Scenario : public util::DeferredDeletable
 {
 public:
     Scenario(const QString &name);
+    ~Scenario();
 
 public:
     struct ObjectRecord
@@ -165,6 +169,7 @@ private:
     std::vector<std::unique_ptr<Object>> m_objects;
     std::vector<ObjectRecord> m_records;
     std::vector<CurrentCell> m_currentCells;
+    std::unique_ptr<EngineSounds> m_engineSounds;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<Object*> m_lightSources;
     std::vector<NavPoint*> m_navPoints;

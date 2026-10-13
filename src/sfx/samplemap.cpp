@@ -52,4 +52,31 @@ void SampleMap::reset()
 }
 
 
+void SampleMap::playAt(Sample sample, float x, float y, float z)
+{
+    Sound *sound = new Sound(get(sample));
+    sound->play();
+    if (!sound->hasSource())
+    {
+        delete sound;
+        return;
+    }
+    sound->setPosition(x, y, z);
+}
+
+
+Sound* SampleMap::loopAt(Sample sample, float x, float y, float z)
+{
+    Sound *sound = new Sound(get(sample));
+    sound->playLoop();
+    if (!sound->hasSource())
+    {
+        delete sound;
+        return nullptr;
+    }
+    sound->setPosition(x, y, z);
+    return sound;
+}
+
+
 } // namespace sfx
