@@ -39,16 +39,16 @@ import bmesh
 import bpy
 import numpy as np
 from bpy_extras.bmesh_utils import bmesh_linked_uv_islands
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import cockpitlib as L  # noqa: E402
+import cockpitlib as CL  # noqa: E402
 
-arg = L.arg
-ARGV = L.ARGV
+arg = CL.arg
+ARGV = CL.ARGV
 CID = arg("--cockpit") or re.search(r"cockpit_(\d+)", os.path.basename(bpy.data.filepath)).group(1)
-L.load(CID)
-F, CX, CY = L.F, L.CX, L.CY
+CL.load(CID)
+F, CX, CY = CL.F, CL.CX, CL.CY
 OUT = os.path.dirname(bpy.data.filepath)
 RES = int(arg("--res", 4096))
 SAMPLES = int(arg("--samples", 32))
@@ -166,7 +166,8 @@ for o in obs:  # set every island's texel density: full where the art lands, low
 log("before pack:", uv_stats())
 bpy.ops.object.mode_set(mode='EDIT')
 bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.uv.pack_islands(rotate=True, scale=True, margin=0.001, shape_method='CONCAVE')
+bpy.ops.uv.pack_islands(rotate=True, scale=True, margin_method='FRACTION', margin=2.5 / RES,
+                        shape_method='CONCAVE')
 bpy.ops.object.mode_set(mode='OBJECT')
 log("after pack: ", uv_stats())
 
@@ -193,8 +194,8 @@ log(f"atlas: {len(obs)} objects, 3D area {area3d:.1f} m2 ({area_seen:.1f} m2 in 
 #    isolated colour-key pixels are genuine black. Window colours are dilated so filtering at
 #    the window edge doesn't pull in black.
 # ---------------------------------------------------------------------------------------------
-see_through = L.SEE
-rgb = L.ART.astype(np.float64).copy()
+see_through = CL.SEE
+rgb = CL.ART.astype(np.float64).copy()
 log(f"source: {see_through.sum()} see-through px")
 filled = ~see_through
 for _ in range(64):  # dilate art colours into the see-through area
@@ -208,7 +209,7 @@ for _ in range(64):  # dilate art colours into the see-through area
 art_px = np.concatenate([rgb, (~see_through)[..., None]], -1).astype(np.float32)
 src_px = art_px
 if arg("--art"):  # e.g. an upscaled image; alpha (see-through mask) from COCKPIT.R16
-    up = L.load_rgba(arg("--art"))
+    up = CL.load_rgba(arg("--art"))
     hh, ww = up.shape[:2]
     yi = (np.arange(hh) * 480 // hh)[:, None]
     xi = (np.arange(ww) * 640 // ww)[None, :]
@@ -329,11 +330,12 @@ for o in sc.objects:
     o.select_set(o == proxy)
 
 
-def bake(mode, btype, samples=1, pass_filter=None, res=RES):
+def bake(mode, btype, samples=1, pass_filter=None, res=RES, channels=3):
     img = bpy.data.images.new(f"bake_{mode}", res, res, alpha=True, float_buffer=True)
     set_mode(mode, img)
     sc.cycles.samples = samples
-    kw = dict(type=btype, uv_layer="Atlas", use_clear=True, margin=8, target='IMAGE_TEXTURES')
+    kw = dict(type=btype, uv_layer="Atlas", use_clear=True, margin=max(4, res // 512),
+              target='IMAGE_TEXTURES')
     if pass_filter is not None:
         kw["pass_filter"] = pass_filter
     bpy.ops.object.bake(**kw)
@@ -341,7 +343,7 @@ def bake(mode, btype, samples=1, pass_filter=None, res=RES):
     img.pixels.foreach_get(a)
     bpy.data.images.remove(img)
     log(f"baked {mode}")
-    a = a.reshape(res, res, 4)
+    a = np.ascontiguousarray(a.reshape(res, res, 4)[..., :channels])  # keep memory down at 8K
     if res != RES:  # smooth fallback lighting: bake at lower resolution and upsample
         a = np.repeat(np.repeat(a, RES // res, 0), RES // res, 1)
     return a
@@ -349,8 +351,8 @@ def bake(mode, btype, samples=1, pass_filter=None, res=RES):
 
 B = {}
 B["art"] = bake('art', 'EMIT')
-B["info"] = bake('info', 'EMIT')
-B["id"] = bake('id', 'EMIT')
+B["info"] = bake('info', 'EMIT', channels=2)
+B["id"] = bake('id', 'EMIT', channels=1)
 B["cg"] = bake('cg', 'COMBINED', SAMPLES, res=RES // 2)
 lights = [o for o in sc.objects if o.type == 'LIGHT']
 for o in lights:
@@ -362,7 +364,7 @@ eye_ld = bpy.data.lights.new("EyeProbe", 'POINT')
 eye_ld.energy, eye_ld.shadow_soft_size = 1000.0, 0.0
 eye_light = bpy.data.objects.new("EyeProbe", eye_ld)
 sc.collection.objects.link(eye_light)
-B["vis"] = bake('vis', 'DIFFUSE', 1, {'DIRECT'})
+B["vis"] = bake('vis', 'DIFFUSE', 1, {'DIRECT'}, channels=1)
 bpy.data.objects.remove(eye_light)
 bpy.data.lights.remove(eye_ld)
 for o in lights:
@@ -534,6 +536,15 @@ for o in bpy.data.collections["Seat"].objects:
 render(os.path.join(REND, f"tex{SUFFIX}_eye_360_equirect.png"), pano, (2048, 1024))
 for o in bpy.data.collections["Seat"].objects:
     o.hide_render = False
+
+# close-ups at headset-like resolution: 1280 px over 40 deg = 32 px/deg (the original: ~6 px/deg)
+for section, tag in (("MasterMonitor", "master"), ("RoundMonitor0", "round0")):
+    if section.lower() in CL.DES:
+        r = CL.des_rect(section)
+        cx, cy = (r[0] + r[2] / 2, r[1] + r[3] / 2) if len(r) == 4 else r[:2]
+        c = cam(f"CamDetail_{tag}", (0, 0, 0), (0, 0, 0), 40)
+        c.rotation_euler = Vector(CL.unit(CL.ray_np(cx, cy)).tolist()).to_track_quat('-Z', 'Y').to_euler()
+        render(os.path.join(REND, f"tex{SUFFIX}_detail_{tag}.png"), c, (1280, 960))
 
 # side-by-side with the original from the eye
 img = bpy.data.images.load(os.path.join(REND, f"tex{SUFFIX}_eye_front_640.png"))

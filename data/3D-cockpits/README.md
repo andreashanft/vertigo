@@ -103,4 +103,27 @@ See *Findings* for the comparison of upscalers.
 
 ## Findings
 
-(Filled in as the evaluation progresses.)
+### Upscaling (evaluated on cockpit 000)
+
+The upscalers were run on the exported art. The textures were then baked at 4096 and
+8192 px and compared in close-ups rendered at 32 pixels per degree.
+`project_textures.py` writes those close-ups as `renders/tex*_detail_*.png`.
+
+| variant | result |
+| --- | --- |
+| larger atlas only (4096 → 8192, original art) | no visible gain: the 640×480 source is the limit |
+| Lanczos 4× (classical) | smoother, no new detail |
+| Real-ESRGAN `realesrgan-x4plus` | clearly sharper: crisp edges, the 16-bit dithering noise gone, sonar rings, hose ridges and screen grids clean. Side effects: surfaces look slightly painted, tiny on-screen text smears |
+| Real-ESRGAN `realesrgan-x4plus-anime` | unusable: erases the master monitor grid, posterises the shading |
+| Real-ESRGAN `realesr-animevideov3` | faithful to the original but little gain |
+
+- **4× is the right factor.** The original has about 6 pixels per degree and headsets show
+  roughly 15–25.
+- **The atlas has to grow with it.** At 4096 px (about 920 texels/m where the art lands) part
+  of the gain survives. At 8192 px (about 1900 texels/m) nearly all of it does.
+- **Cost of 8192 px.** 256 MB as uncompressed RGBA8, 64 MB as BC7. That is fine for PC VR. For
+  standalone headsets use 4096 px.
+- **Recommendation.** Real-ESRGAN x4plus with an 8192 px atlas. The smeared text doesn't matter
+  because the game draws screen contents at runtime. For final assets, an artist pass over the
+  upscaled art, or a model tuned on 90s pre-rendered CG, would remove the painted look.
+- **Speed.** The upscale takes seconds per cockpit on an M1 Pro (ncnn-vulkan via Metal).
