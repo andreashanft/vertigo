@@ -61,9 +61,16 @@ Tools:
   see-through. That suits the open canopies of 001–003, and every opaque pixel of the art lands
   on some surface.
 - **Parts.** `Panel` + `prism` extrude outlines traced in pixel space (ray-cast onto a plane, so
-  silhouettes match). `rect_monitor` and `round_monitor` build complete instruments, `beam`
-  builds struts and arches, `cable` builds (corrugated) hoses whose loose ends are anchored into
-  the hull or floor. `standard_interior` adds floor, seat and a pilot dummy (dummy not exported).
+  silhouettes match). `prism_eye` makes the silhouette exact: the outline is cast onto the front
+  face and inset by the bevel, and the sides run along the view rays. `rect_monitor` and
+  `round_monitor` build complete instruments, `beam` builds struts and arches, `cable` builds
+  (corrugated) hoses whose loose ends are anchored into the hull or floor. `standard_interior` adds
+  floor, seat and a pilot dummy (dummy not exported).
+- **Widths in pixels.** `beam(w_px=…)` and `cable(r_px=…)` take the width as traced across the
+  centre line in the image, also per control point. `fit_across` turns it into metres at the
+  member's near side, including the radial stretch of the flat 105° view, and moves the control
+  points so both edges straddle the trace. `mirror` copies traces to the other side of the art's
+  symmetry axis, which `load` measures per cockpit (319.5 for 001, 320 for 002).
 - **Alignment check.** Every build renders the model flat from the eye and compares it with the
   original's see-through mask: `renders/alignment_check.png` shows the original, the model, both
   blended and a diff (red: only the original is opaque, cyan: only the model). The log prints
@@ -123,11 +130,6 @@ Seen from the eye, the textured models are nearly indistinguishable from the ori
   the art outline by about 1 px.
 - **Hidden surfaces.** Surfaces the original never shows get a colour-matched fallback. A visible
   stepped seam remains where it meets the projected art.
-- **Library candidates.** The cockpit scripts contain helpers worth moving into `cockpitlib`:
-  - correct strut and cable widths near the image edges (`w_m`, `across_px`, `fit_across`);
-    `m_per_px` ignores the stretch of a flat 105° view;
-  - prisms whose bevel doesn't grow the outline (`inset`, `prism_eye`);
-  - mirrored traces, DES lamp positions, flat lamp lenses.
 - **Not done yet.** PBR materials and normal maps, LODs (standalone headsets need the hoses and
   hull decimated), live screen content, and loading the models in Vertigo (glTF plus OpenXR).
 

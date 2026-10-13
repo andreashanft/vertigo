@@ -36,6 +36,7 @@ DES = {}                    # parsed DES file: {section_lower: {key_lower: value
 F, CX, CY = 245.55, 320.0, 240.0
 ART = None                  # (480, 640, 3) float sRGB colours of COCKPIT.R16
 SEE = None                  # (480, 640) bool: see-through (window) pixels of COCKPIT.R16
+MIRROR_X = 319.5            # vertical symmetry axis of the art (see mirror())
 HC = np.array([0.0, 0.05, -0.22])     # hull ellipsoid centre
 HA = np.array([1.15, 1.12, 0.98])     # hull ellipsoid semi-axes
 FLOOR_Z = -1.0
@@ -120,9 +121,21 @@ def see_through_mask(raw, min_size=40):
     return key & np.isin(lab, ids[counts >= min_size])
 
 
+def symmetry_axis(mask, around, span=3.0):
+    """x of the vertical axis (in half-pixel steps around `around`) that mirrors the see-through
+    mask best onto itself: pixel column x maps to 2 * axis - x."""
+    xs = np.arange(mask.shape[1])
+    best = (2.0, around)
+    for a in np.arange(around - span, around + span + 0.25, 0.5):
+        m = np.rint(2 * a - xs).astype(int)
+        ok = (m >= 0) & (m < len(xs))
+        best = min(best, ((mask[:, xs[ok]] != mask[:, m[ok]]).mean(), a))
+    return float(best[1])
+
+
 def load(cid):
     """Read DES + COCKPIT.R16 of cockpit `cid` (camera, art, see-through mask)."""
-    global CID, DATA, OUT, F, CX, CY, ART, SEE
+    global CID, DATA, OUT, F, CX, CY, ART, SEE, MIRROR_X
     CID = cid
     DATA = arg("--data") or default_data_dir()
     OUT = arg("--out") or os.path.join(HERE, "out", cid)
@@ -135,8 +148,9 @@ def load(cid):
     CY = des_int("front", "VFX_StartY") + des_int("front", "VFX_FlightY", 240)
     raw, ART = load_r16(find_ci(DATA, "VFX", "COCKPIT", cid, "COCKPIT.R16"))
     SEE = see_through_mask(raw)
+    MIRROR_X = symmetry_axis(SEE, CX)
     log(f"camera: view angle {angle}, f={F:.1f}px, centre {CX}/{CY}; "
-        f"{SEE.mean():.0%} of the image is see-through")
+        f"{SEE.mean():.0%} of the image is see-through, symmetry axis x={MIRROR_X}")
 
 
 def setup(cid):
@@ -249,9 +263,93 @@ def to_px(p):
     return np.stack([CX + F * p[..., 0] / p[..., 1], CY - F * p[..., 2] / p[..., 1]], -1)
 
 
-def m_per_px(px, py, dist):
-    """Approximate metres per pixel (tangential) for an object facing the eye."""
-    return dist / (F * np.linalg.norm(ray_np(px, py)))
+def sky_px(az, el):
+    """Pixel coordinates (also outside the 640x480 frame) of the direction azimuth/elevation in
+    degrees (azimuth positive to the right)."""
+    t = math.tan(math.radians(az))
+    return CX + F * t, CY - F * math.tan(math.radians(el)) * math.sqrt(1 + t * t)
+
+
+def px_metres(px, py, dist, dx, dy):
+    """Metres spanned by the pixel offset (dx, dy) centred on (px, py) at `dist`. Includes the
+    radial stretch of the flat 105 deg image (up to 1.6x in the corners)."""
+    a, b = at(px - dx / 2, py - dy / 2, dist), at(px + dx / 2, py + dy / 2, dist)
+    return float(np.linalg.norm(b - a))
+
+
+def bevel_px(px, py, dist, bevel):
+    """A prism bevel grows the outline by about this many pixels."""
+    return bevel / px_metres(px, py, dist, 1, 0)
+
+
+# ------------------------------------------------------------------------------------------------
+# Tracing helpers (pixel space)
+# ------------------------------------------------------------------------------------------------
+def mirror(pts, axis=None):
+    """Mirror traced pixel points (x, y, ...) to the other side of the art's vertical symmetry axis
+    (default MIRROR_X, measured in load(): 319.5 for 001, 320 for 002)."""
+    a = MIRROR_X if axis is None else axis
+    return [(2 * a - p[0], *p[1:]) for p in pts]
+
+
+def inset(pts, d=1.0):
+    """Offset a closed 2D outline (pixels or metres) inwards by d (outwards for d < 0). Mitred
+    corners, limited at sharp spikes; d must stay below half the smallest feature, or edges flip."""
+    P = np.asarray(pts, float)
+    ccw = np.sum(P[:, 0] * np.roll(P[:, 1], -1) - np.roll(P[:, 0], -1) * P[:, 1]) > 0
+    e = np.roll(P, -1, 0) - P
+    n = unit(np.stack([-e[:, 1], e[:, 0]], -1)) * (1 if ccw else -1)   # inward edge normals
+    b = unit(n + np.roll(n, 1, 0))
+    return [tuple(q) for q in P + b * (d / np.maximum((b * n).sum(-1), 0.35))[:, None]]
+
+
+def des_lamp(section):
+    """Centre (pixels) of a DES section's lamp rectangle, where the game draws its status lamp."""
+    s = DES[section.lower()]
+    return (int(s["lampx1"]) + int(s["lampwidth"]) / 2,
+            int(s["lampy1"]) + int(s["lampheight"]) / 2)
+
+
+def fit_across(ctrl, w_px, near=0.0, recentre=True):
+    """Members traced as a centre line (px, py, dist) plus an apparent width in pixels measured
+    across the line in the image -> (control points, widths in metres) for beam()/cable().
+    A member's cross-section lies perpendicular to the member and to the view ray, which the flat
+    105 deg image shows skewed and stretched radially off-centre (up to 15 % wider near the edges).
+    So each width is solved in the image, at the near side of the member (`near` metres in front of
+    the centre line, scalar or per point), and each control point is moved across the line until
+    both edges straddle the traced centre. recentre=False keeps the points, for flat members nearly
+    parallel to the image plane, whose silhouette the flat image doesn't skew. w_px: scalar or per
+    point; None marks a hidden point (e.g. out of frame), which keeps its position and gets an
+    interpolated width."""
+    ctrl = [tuple(c[:3]) for c in ctrl]
+    n_pts = len(ctrl)
+    wp = list(w_px) if np.ndim(w_px) else [w_px] * n_pts
+    near = np.broadcast_to(np.asarray(near, float), (n_pts,))
+    P2 = np.array([c[:2] for c in ctrl], float)
+    N = unit(np.gradient(P2, axis=0)) @ np.array([[0.0, 1.0], [-1.0, 0.0]])   # image normals
+    T3 = unit(np.gradient(path3d(ctrl), axis=0))
+    out, w = [], []
+    for (px, py, d), n, t, s, nr in zip(ctrl, N, T3, wp, near):
+        if s is None:
+            out.append((px, py, d))
+            w.append(np.nan)
+            continue
+        c, W = np.array([px, py], float), 0.0
+        for _ in range(4):
+            P = at(*c, d - nr)
+            Wd = unit(np.cross(t, -unit(P)))
+            if W == 0.0:  # first guess from the local scale
+                W = s * 0.02 / abs(np.dot(to_px(P + Wd * 0.01) - to_px(P - Wd * 0.01), n))
+            e1, e2 = to_px(P - Wd * W / 2), to_px(P + Wd * W / 2)
+            W *= s / abs(np.dot(e2 - e1, n))
+            if recentre:
+                c -= n * np.dot((e1 + e2) / 2 - (px, py), n)
+        out.append((float(c[0]), float(c[1]), d))
+        w.append(float(W))
+    w = np.array(w)
+    ok = ~np.isnan(w)
+    k = np.arange(n_pts)
+    return out, np.interp(k, k[ok], w[ok])
 
 
 # ------------------------------------------------------------------------------------------------
@@ -269,6 +367,12 @@ def hull_dist(d, origin=(0.0, 0.0, 0.0)):
 
 def hull_normal_in(p):
     return -unit((np.asarray(p, float) - HC) / HA ** 2)
+
+
+def on_hull(px, py, gap):
+    """Control point (px, py, dist) `gap` metres in front of the hull, e.g. for a member that runs
+    on out of the frame."""
+    return (px, py, float(hull_dist(unit(ray_np(px, py)))) - gap)
 
 
 class Porthole:
@@ -554,16 +658,27 @@ def path3d(ctrl):
 
 
 def cable(name, ctrl, mat, coll=None, r=None, r_px=None, pitch=None, amp=0.18, sides=12,
-          start=False, end=False):
-    """Cable/hose through control points (px, py, dist). Radius in metres (r) or derived from
-    the apparent radius in pixels (r_px, averaged over the control points). pitch/amp: corrugation.
-    start/end: anchor that end in the hull or floor."""
-    pts = anchor(path3d(ctrl), start, end)
+          start=False, end=False, recentre=True):
+    """Cable/hose through control points (px, py, dist). Radius in metres (r), or the apparent
+    radius in pixels across the traced centre line (r_px: scalar, per control point or as a 4th
+    value of each control point; None for a hidden point, interpolated). r_px is the silhouette,
+    the crest of the corrugation; the radius follows the trace along the cable (bulges, tapering
+    hoses), see fit_across(). pitch/amp: corrugation. start/end: anchor that end in the hull or
+    floor."""
     if r is None:
-        r = float(np.mean([r_px * m_per_px(px, py, d) for px, py, d in ctrl]))
-    P, s = resample(catmull_rom(pts), (pitch / 6) if pitch else 0.01)
-    R = r * corrugation(s, pitch, amp) if pitch else np.full(len(P), r)
-    return tube(name, P, R, mat, coll or COLL["Cables"], sides=sides)
+        if r_px is None:
+            r_px = [c[3] for c in ctrl]
+        rp = list(r_px) if np.ndim(r_px) else [r_px] * len(ctrl)
+        ctrl, w = fit_across(ctrl, [None if v is None else 2 * v for v in rp], recentre=recentre)
+        R = w / (2 * (1 + amp) if pitch else 2)
+    else:
+        R = np.full(len(ctrl), float(r))
+    pts = anchor(path3d([c[:3] for c in ctrl]), start, end)
+    k0 = 2 if start else 0
+    R = np.concatenate([np.full(k0, R[0]), R, np.full(len(pts) - k0 - len(R), R[-1])])
+    D, s = resample(catmull_rom(np.column_stack([pts, R])), (pitch / 6) if pitch else 0.01)
+    R = D[:, 3] * corrugation(s, pitch, amp) if pitch else D[:, 3]
+    return tube(name, D[:, :3], R, mat, coll or COLL["Cables"], sides=sides)
 
 
 def cable_bundle(name, ctrl, n, r, mat, coll=None, spacing=None, start=True, end=True):
@@ -577,17 +692,55 @@ def cable_bundle(name, ctrl, n, r, mat, coll=None, spacing=None, start=True, end
             for k in range(n)]
 
 
-def beam(name, ctrl, mat, coll=None, w=None, w_px=None, h=0.06, round_frac=0.3, step=0.01,
-         start=False, end=False, closed=False, twist_to_eye=True):
+def bulb(name, axis_x, y0, y1, dist, edge_px, side, mat, pitch=0.03, amp=0.1, sides=24,
+         coll=None):
+    """Round (bellows) body on the vertical image line x = axis_x (y0..y1) at a constant distance.
+    Its radius is solved per cross-section so that the silhouette's edge on one side (side=+1:
+    right) follows the traced edge [(x, y), ...] (sorted by y): seen from below and beside the eye
+    the cross-sections look tilted, so the radius cannot be read off per image row."""
+    E = np.array(edge_px, float)
+    P = path3d([(axis_x, y, dist) for y in np.arange(y0, y1 + 0.1, 1.5)])
+    Wd = unit(np.cross(unit(np.gradient(P, axis=0)), unit(-P)))
+    R = []
+    for p, w in zip(P, Wd):
+        w = w if (to_px(p + w * 1e-3) - to_px(p))[0] * side > 0 else -w
+
+        def f(r):
+            e = to_px(p + w * r)
+            return (e[0] - np.interp(e[1], E[:, 1], E[:, 0], left=axis_x, right=axis_x)) * side
+
+        lo, hi = 0.0, 0.6
+        if f(lo) >= 0:
+            R.append(0.0)
+            continue
+        for _ in range(40):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if f(mid) < 0 else (lo, mid)
+        R.append(lo)
+    s = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(P, axis=0), axis=1))])
+    R = np.maximum(np.array(R), 0.004) / (1 + amp) * corrugation(s, pitch, amp)
+    return tube(name, P, R, mat, coll or COLL["Instruments"], sides=sides)
+
+
+def beam(name, ctrl, mat, coll=None, w=None, w_px=None, h=0.06, h_ratio=None, round_frac=0.3,
+         step=0.01, start=False, end=False, closed=False, twist_to_eye=True, recentre=True):
     """Structural member (strut, arch, frame) swept along control points (px, py, dist).
-    Cross-section: rounded rectangle, width w (metres, scalar or per control point) or w_px (apparent
-    width in pixels, per control point or scalar), depth h along the view ray, so the member's
-    silhouette from the eye is its width. start/end anchor the ends into hull/floor."""
-    P0 = path3d(ctrl)
-    n = len(ctrl)
+    Cross-section: rounded rectangle of width w (metres, scalar or per control point) and depth h
+    along the view ray (metres, or h_ratio times the width), so the member's silhouette from the eye
+    is its width. Instead of w: w_px, the apparent width in pixels across the traced centre line
+    (scalar, per control point or as a 4th value of each control point; see fit_across(), also for
+    recentre). start/end anchor the ends into hull/floor."""
     if w is None:
-        wp = np.broadcast_to(np.asarray(w_px, float), (n,))
-        w = np.array([wp[i] * m_per_px(px, py, d) for i, (px, py, d) in enumerate(ctrl)])
+        traced = [c[:3] for c in ctrl]
+        wp = [c[3] for c in ctrl] if w_px is None else w_px
+        near = 0.5 - round_frac / 2      # the widest part of the profile, towards the eye
+        if h_ratio is not None:  # the depth depends on the width: solve twice
+            h = h_ratio * fit_across(traced, wp, recentre=False)[1]
+        ctrl, w = fit_across(traced, wp, near * np.asarray(h, float), recentre)
+    if h_ratio is not None:
+        h = h_ratio * np.asarray(w, float)
+    P0 = path3d([c[:3] for c in ctrl])
+    n = len(ctrl)
     w = np.broadcast_to(np.asarray(w, float), (n,))
     h = np.broadcast_to(np.asarray(h, float), (n,))
     data = np.column_stack([P0, w, h])
@@ -799,6 +952,32 @@ def prism(name, panel, outlines, z0, z1, mat, coll=None, bevel=0.004, local=Fals
     return ob
 
 
+def prism_eye(name, panel, outlines, z0, z1, mat, coll=None, bevel=0.003, sharp=40):
+    """prism() whose silhouette from the eye is exactly the pixel outlines (first = outer, rest =
+    holes): they are cast onto the front face z1 (which may stand in front of the panel), inset by
+    the bevel, and the depth runs away from the eye along the view rays instead of the panel
+    normal, so neither the bevel nor the side faces show beyond the traced outline."""
+    o, n = panel.o, panel.n
+    c = o + n * z1
+
+    def cast(px, py):
+        d = Vector(ray_np(px, py).tolist())
+        p = d * (c.dot(n) / d.dot(n)) - c
+        return (p.dot(panel.x), p.dot(panel.y))
+
+    loops = [inset([cast(*q) for q in loop], bevel if k == 0 else -bevel)
+             for k, loop in enumerate(outlines)]
+    ob = prism(name, panel, loops, z0, z1, mat, coll, bevel=bevel, local=True, sharp=sharp)
+    mw, inv = ob.matrix_world, ob.matrix_world.inverted()
+    for v in ob.data.vertices:
+        w = mw @ v.co
+        lx, ly, lz = (w - o).dot(panel.x), (w - o).dot(panel.y), (w - o).dot(n)
+        u = (o + panel.x * lx + panel.y * ly + n * z1).normalized()
+        v.co = inv @ (u * ((lz + o.dot(n)) / u.dot(n)))
+    ob.data.update()
+    return ob
+
+
 def screen(name, panel, outline_local, z, mat, coll=None, des_section=None, des_rect=None):
     """Flat screen n-gon with 0..1 UVs, origin at its centre, +Z towards the pilot."""
     P = np.array(outline_local)
@@ -903,6 +1082,14 @@ def mount_up(name, p, r=0.03, mat=None):
 
 def lamp(name, panel, px, py, r=0.009, z=0.008):
     return ellipsoid(name, panel.world_px(px, py, z), (r,) * 3, M["lamp"])
+
+
+def lamp_disc(name, panel, px, py, r_px=6, z=0.002):
+    """Flat lamp lens on a panel, for DES lamps the art shows switched off: the grazing rim of a
+    lamp() sphere gets the lit fallback in the texture bake and shows up as a bright ring."""
+    ring = [panel.world_px(x, y, z) for x, y in circle(px, py, r_px, 24)]
+    return mesh_obj(name, ring, [tuple(range(24))], M["lamp"], COLL["Instruments"], smooth=False,
+                    inward=True)
 
 
 # ------------------------------------------------------------------------------------------------

@@ -109,10 +109,10 @@ for k, dx in enumerate((-0.07, 0.07)):
     mount_up(f"SlaveMonitor_Strut_{k}", top_c + np.array([dx, 0.03, 0]), 0.012, M["bronze_dk"])
 cable("SlaveMonitor_CableL", [(244, -40, 0.82), (233, 3, 0.76), (226, 30, 0.74), (229, 55, 0.73),
                               (241, 70, 0.72), (257, 74, 0.71)], M["cable"],
-      r_px=4.5, pitch=0.008, start=True)
+      r_px=5.3, pitch=0.008, start=True)
 cable("SlaveMonitor_CableR", [(394, -40, 0.82), (405, 3, 0.76), (410, 30, 0.74), (408, 58, 0.73),
                               (396, 72, 0.72), (380, 76, 0.71)], M["cable"],
-      r_px=4.5, pitch=0.008, start=True)
+      r_px=5.3, pitch=0.008, start=True)
 
 # --- console with the master monitor ------------------------------------------------------------
 pc = Panel(314, 387, 0.74)

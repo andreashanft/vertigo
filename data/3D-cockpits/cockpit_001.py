@@ -27,55 +27,6 @@ M.update(
 )
 
 
-def mirror(pts):
-    """The art is symmetric about x = 319.5: mirror pixel points (x, y, ...) to the other side."""
-    return [(639 - p[0], *p[1:]) for p in pts]
-
-
-def w_m(ctrl, w_px, h=0.0):
-    """Beam widths in metres for apparent widths in pixels measured across the path in the image
-    (beam's w_px uses the tangential scale, too wide where the view stretches radially). h: beam
-    depth; the widest part of its profile sits 0.35 h in front of the path and sets the outline."""
-    P = np.array([c[:2] for c in ctrl], float)
-    T = unit(np.gradient(P, axis=0))
-    N = np.stack([-T[:, 1], T[:, 0]], 1)
-    wp = np.broadcast_to(np.asarray(w_px, float), (len(P),))
-    return np.array([np.linalg.norm(at(*(p + n * w / 2), d) - at(*(p - n * w / 2), d))
-                     * (d - 0.35 * h) / d for p, n, w, (_, _, d) in zip(P, N, wp, ctrl)])
-
-
-def on_hull(px, py, gap):
-    """Control point (px, py, dist) gap metres in front of the hull (for points off the frame)."""
-    return (px, py, float(hull_dist(unit(ray_np(px, py)))) - gap)
-
-
-def lamp_disc(name, panel, px, py, r_px=6, z=0.002):
-    """Flat lamp lens on a panel for DES lamps the art shows switched off: the grazing rim of a
-    lamp() sphere gets the lit fallback in the texture bake and shows up as a bright ring."""
-    ring = [panel.world(*panel.proj(x, y), z) for x, y in circle(px, py, r_px, 24)]
-    return mesh_obj(name, ring, [tuple(range(24))], M["lamp"], COLL["Instruments"], smooth=False,
-                    inward=True)
-
-
-def des_lamp(section):
-    """Centre of the lamp rectangle of a DES monitor section (pixels)."""
-    x, y, w, h = (int(L.DES[section.lower()][k]) for k in ("lampx1", "lampy1", "lampwidth",
-                                                            "lampheight"))
-    return x + w / 2, y + h / 2
-
-
-def inset(pts, px=1.0):
-    """Offset a closed pixel outline inwards by px: prism bevels grow the outline outwards by the
-    bevel radius (2-3 px at arm's length), which shows where a part borders the window. A pixel of
-    overshoot is left on purpose: art on the part's rim beats a seam of art on the hull behind."""
-    P = np.array(pts, float)
-    area = np.sum(P[:, 0] * np.roll(P[:, 1], -1) - np.roll(P[:, 0], -1) * P[:, 1])
-    e = unit(np.roll(P, -1, 0) - P)
-    n = np.stack([-e[:, 1], e[:, 0]], 1) * np.sign(area)   # inward normal of edge i -> i+1
-    b = unit(n + np.roll(n, 1, 0))
-    return [tuple(q) for q in P + b * (px / np.maximum((b * n).sum(1), 0.4))[:, None]]
-
-
 # --- hull: glass wherever the art is see-through, side windows continued beyond the frame -------
 masked_hull(extend_az=72, extend_el=(-35, 30))
 standard_interior()
@@ -99,14 +50,15 @@ beam("Header_Beam", [NODE, (40, -20, 0.92), (140, -12, 0.89), (320, -10, 0.88), 
 # side window frame: the top member's lower edge is the window edge (5,160)-(73,215); beyond the
 # frame top member and sill hose run along the hull at the window edges (y = 157 and 383 in the
 # extended mask) back to a post at the rear end of the window (az 73 deg)
-RIM = [(96, 214, 0.91), (66, 191, 0.96), (42, 171, 0.99), (13, 151, 1.0), on_hull(-120, 146, 0.05),
-       on_hull(-300, 146, 0.05), on_hull(-490, 148, 0.05)]
-RIM_W = np.concatenate([w_m(RIM[:4], 24, 0.07), [0.06, 0.06, 0.06]])
+RIM, RIM_W = fit_across([(96, 214, 0.91), (66, 191, 0.96), (42, 171, 0.99), (13, 151, 1.0)], 24,
+                        near=0.35 * 0.07)
+RIM += [on_hull(-120, 146, 0.05), on_hull(-300, 146, 0.05), on_hull(-490, 148, 0.05)]
+RIM_W = np.concatenate([RIM_W, [0.06, 0.06, 0.06]])
 SILL = [(100, 390, 0.80), (60, 389, 0.85), (30, 391, 0.90), (0, 395, 0.95),
         on_hull(-150, 397, 0.05), on_hull(-420, 400, 0.06), on_hull(-480, 470, 0.07)]
 POST = [on_hull(-490, 150, 0.05), on_hull(-490, 270, 0.06), on_hull(-490, 395, 0.05)]
 for side, mx in (("L", list), ("R", mirror)):
-    beam(f"Strut_{side}", mx(STRUT), M["navy"], w=w_m(mx(STRUT), STRUT_W, 0.11), h=0.11)
+    beam(f"Strut_{side}", mx(STRUT), M["navy"], w_px=STRUT_W, h=0.11)
     ellipsoid(f"FrameNode_{side}", at(*mx([NODE])[0]), (0.09, 0.09, 0.09), M["teal"])
     beam(f"SideFrame_{side}", mx(RIM), M["navy"], w=RIM_W, h=0.07)
     beam(f"SideFramePost_{side}", mx(POST), M["navy"], w=0.07, h=0.06)
@@ -260,7 +212,7 @@ for side, mx in (("L", list), ("R", mirror)):
     cable(f"Bar_Low_{side}", mx([(80, 412, 0.80), (40, 418, 0.86), (0, 426, 0.92),
                                  (-80, 432, 0.98)]), M["steel"], r_px=6, sides=10, end=True)
     cable(f"Coil_Low_{side}", mx([(70, 446, 0.80), (40, 446, 0.85), (10, 448, 0.90),
-                                  (-40, 452, 0.97)]), M["steel"], r_px=8.5, pitch=0.012,
+                                  (-40, 452, 0.97)]), M["steel"], r_px=13.6, pitch=0.012,
           amp=0.6, sides=12, end=True)
 
 finish()

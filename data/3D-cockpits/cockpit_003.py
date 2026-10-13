@@ -13,7 +13,6 @@ import os
 import sys
 
 import numpy as np
-from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cockpitlib import *  # noqa: E402,F401,F403
@@ -23,7 +22,7 @@ L.setup("003")
 set_hull(center=(0.0, 0.1, -0.1), axes=(1.35, 1.3, 1.15), floor_z=-1.0)
 
 
-# --- local helpers ------------------------------------------------------------------------------
+# --- the arch plane -------------------------------------------------------------------------------
 # The arch keeps an almost constant width in the art, which fits a frame lying in one plane nearly
 # parallel to the image plane: y = ARCH_Y0 + ARCH_KZ * z (the top leans slightly forward).
 ARCH_Y0, ARCH_KZ = 0.70, 0.10
@@ -35,123 +34,9 @@ def arch_dist(px, py):
     return float(ARCH_Y0 / (d[1] - ARCH_KZ * d[2]))
 
 
-def across_px(pts, depth=0.0):
-    """Metres for the 4th value of each control point (px, py, dist, n_px): a size across the path
-    that appears n_px pixels wide in the image. The size is laid out like beam()/tube() do (normal
-    to the path and the view ray), so it includes the radial stretch towards the edge of the flat
-    105 deg view that m_per_px ignores. depth: the part's front reaches depth * size towards the
-    eye (perspective makes it look wider)."""
-    P = path3d([p[:3] for p in pts])
-    T = unit(np.gradient(P, axis=0))
-    Wd = unit(np.cross(T, unit(-P)))
-    q = np.array([p[:2] for p in pts], float)
-    t = unit(np.gradient(q, axis=0))
-    e = np.stack([-t[:, 1], t[:, 0]], -1)
-    g = (to_px(P + Wd * 1e-4) - to_px(P)) / 1e-4          # pixels per metre along Wd
-    w = np.array([p[3] for p in pts]) / np.abs((g * e).sum(-1))
-    d = np.linalg.norm(P, axis=-1)
-    return w * (1 - depth * w / d)
-
-
-def beam_px(name, pts, mat, h=0.9, round_frac=0.3, **kw):
-    """beam() through (px, py, dist, w_px): the width is the silhouette width in the image, h is
-    the depth relative to the width."""
-    w = across_px(pts, depth=h * (0.5 - round_frac / 2))
-    return beam(name, [p[:3] for p in pts], mat, w=w, h=w * h, round_frac=round_frac, **kw)
-
-
-def hose(name, pts, mat, pitch=None, amp=0.18, sides=14, start=False, end=False, coll=None):
-    """cable() through (px, py, dist, r_px) with a per-point radius r_px measured across the path
-    in the image (bulges, tapering hoses). r_px None: a hidden point (e.g. out of frame), its
-    radius in metres is interpolated from the traced ones."""
-    ok = np.array([p[3] is not None for p in pts])
-    r = across_px([(*p[:3], 2 * (p[3] or 1)) for p in pts]) / (2 * (1 + amp) if pitch else 2)
-    k = np.arange(len(pts))
-    r = np.interp(k, k[ok], r[ok])
-    pts3 = anchor(path3d([p[:3] for p in pts]), start, end)
-    k0 = 2 if start else 0
-    R = np.concatenate([np.full(k0, r[0]), r, np.full(len(pts3) - k0 - len(r), r[-1])])
-    D, s = resample(catmull_rom(np.column_stack([pts3, R])), (pitch / 6) if pitch else 0.01)
-    R = D[:, 3] * (corrugation(s, pitch, amp) if pitch else 1.0)
-    return tube(name, D[:, :3], R, mat, coll or COLL["Cables"], sides=sides)
-
-
-def bulb(name, axis_x, y0, y1, dist, edge_px, side, mat, pitch=0.03, amp=0.1, sides=24,
-         coll=None):
-    """Round body on the vertical image line x = axis_x (y0..y1) at a constant distance. Its
-    radius is solved per cross-section so that the silhouette's edge on one side (side=+1: right)
-    follows the traced edge [(x, y), ...] (sorted by y): seen from below and beside the eye the
-    cross-sections look tilted, so the radius cannot be read off per image row."""
-    E = np.array(edge_px, float)
-    P = path3d([(axis_x, y, dist) for y in np.arange(y0, y1 + 0.1, 1.5)])
-    Wd = unit(np.cross(unit(np.gradient(P, axis=0)), unit(-P)))
-    R = []
-    for p, w in zip(P, Wd):
-        w = w if (to_px(p + w * 1e-3) - to_px(p))[0] * side > 0 else -w
-
-        def f(r):
-            e = to_px(p + w * r)
-            return (e[0] - np.interp(e[1], E[:, 1], E[:, 0], left=axis_x, right=axis_x)) * side
-
-        lo, hi = 0.0, 0.6
-        if f(lo) >= 0:
-            R.append(0.0)
-            continue
-        for _ in range(40):
-            mid = (lo + hi) / 2
-            lo, hi = (mid, hi) if f(mid) < 0 else (lo, mid)
-        R.append(lo)
-    s = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(P, axis=0), axis=1))])
-    R = np.maximum(np.array(R), 0.004) / (1 + amp) * corrugation(s, pitch, amp)
-    return tube(name, P, R, mat, coll or COLL["Instruments"], sides=sides)
-
-
-def inset(poly, d):
-    """Offset a closed 2D polygon inwards by d (outwards for d < 0)."""
-    P = np.asarray(poly, float)
-    e = np.roll(P, -1, 0) - P
-    ccw = np.sum(P[:, 0] * np.roll(P[:, 1], -1) - np.roll(P[:, 0], -1) * P[:, 1]) > 0
-    n = unit(np.stack([-e[:, 1], e[:, 0]], -1)) * (1 if ccw else -1)    # inward edge normals
-    nv = unit(n + np.roll(n, 1, 0))
-    return P + nv * (d / np.maximum((nv * n).sum(-1), 0.3))[:, None]
-
-
-def prism_eye(name, panel, outlines, z0, z1, mat, coll=None, bevel=0.003, sharp=40):
-    """prism() whose silhouette from the eye is exactly the pixel outlines (first = outer, rest =
-    holes): they are cast onto the front face z1 (which may stand in front of the panel), inset by
-    the bevel, and the depth runs away from the eye along the view rays instead of the panel
-    normal, so neither the bevel nor the side faces show beyond the traced outline."""
-    o, n = panel.o, panel.n
-    c = o + n * z1
-
-    def cast(px, py):
-        d = Vector(ray_np(px, py).tolist())
-        p = d * (c.dot(n) / d.dot(n)) - c
-        return (p.dot(panel.x), p.dot(panel.y))
-
-    loops = [inset([cast(*q) for q in loop], bevel if k == 0 else -bevel)
-             for k, loop in enumerate(outlines)]
-    ob = prism(name, panel, loops, z0, z1, mat, coll, bevel=bevel, local=True, sharp=sharp)
-    mw, inv = ob.matrix_world, ob.matrix_world.inverted()
-    for v in ob.data.vertices:
-        w = mw @ v.co
-        lx, ly, lz = (w - o).dot(panel.x), (w - o).dot(panel.y), (w - o).dot(n)
-        u = (o + panel.x * lx + panel.y * ly + n * z1).normalized()
-        v.co = inv @ (u * ((lz + o.dot(n)) / u.dot(n)))
-    ob.data.update()
-    return ob
-
-
 def on_arch(pts):
     """(px, py, n_px) -> (px, py, dist, n_px) on the arch plane."""
     return [(x, y, arch_dist(x, y), n) for x, y, n in pts]
-
-
-def des_lamp(section):
-    """Centre of a DES section's lamp rectangle (where the game draws its status lamp)."""
-    s = L.DES[section.lower()]
-    return (int(s["lampx1"]) + int(s["lampwidth"]) / 2,
-            int(s["lampy1"]) + int(s["lampheight"]) / 2)
 
 
 # --- hull: a glass canopy ------------------------------------------------------------------------
@@ -180,6 +65,7 @@ standard_interior()
 # --- the arch -----------------------------------------------------------------------------------
 # Centre line and width traced from the see-through boundary inside the arch and the outer edge
 # (hidden behind the round monitors, where it runs from the side pieces into the top bar).
+# The arch is a flat frame, so the traced centre stays put (recentre=False).
 arch_px = [
     (-4, 353, 76), (7, 319, 73), (17, 297, 72), (25, 283, 71), (38, 264, 70), (55, 245, 67),
     (74, 216, 72), (94, 193, 70), (116, 172, 73), (137, 158, 70), (163, 137, 90), (192, 118, 72),
@@ -187,7 +73,7 @@ arch_px = [
     (362, 98, 54), (393, 102, 54), (420, 108, 64), (446, 119, 72), (475, 137, 90), (502, 159, 66),
     (525, 172, 70), (544, 192, 65), (566, 215, 72), (581, 238, 68), (598, 259, 68),
     (616, 288, 72), (628, 313, 73), (642, 353, 76)]
-beam_px("Arch", on_arch(arch_px), M["rib"], h=0.85, round_frac=0.6)
+beam("Arch", on_arch(arch_px), M["rib"], h_ratio=0.85, round_frac=0.6, recentre=False)
 
 # ribbed feet of the arch (red/black bellows: a collar and a bulb) on columns down to the floor;
 # traced edge towards the window, the outer side is out of frame
@@ -208,10 +94,10 @@ for side, (ax, es, edge) in feet.items():
 
 # struts from the shoulders of the arch up into the ceiling (the dark wedges beside the monitors;
 # only their inner edges show, the rest hides behind the slave monitors)
-beam_px("Strut_L", [(192, 80, arch_dist(192, 80), 44), (177, 50, 1.0, 44), (148, 0, 0.97, 44),
-                    (131, -30, 0.96, 44), (119, -122, 1.11, 44)], M["rib"], end=True)
-beam_px("Strut_R", [(448, 80, arch_dist(448, 80), 44), (469, 48, 1.0, 44), (497, 0, 0.97, 44),
-                    (514, -30, 0.96, 44), (526, -122, 1.11, 44)], M["rib"], end=True)
+beam("Strut_L", [(192, 80, arch_dist(192, 80), 44), (177, 50, 1.0, 44), (148, 0, 0.97, 44),
+                 (131, -30, 0.96, 44), (119, -122, 1.11, 44)], M["rib"], h_ratio=0.9, end=True)
+beam("Strut_R", [(448, 80, arch_dist(448, 80), 44), (469, 48, 1.0, 44), (497, 0, 0.97, 44),
+                 (514, -30, 0.96, 44), (526, -122, 1.11, 44)], M["rib"], h_ratio=0.9, end=True)
 
 # --- round monitors on the shoulders of the arch ------------------------------------------------
 rm_specs = {  # section: (screen centre, top band angles, block, knob, bracket, skirt below)
@@ -240,9 +126,9 @@ for sec, ((cx, cy), (a0, a1), block, knob, bracket, skirt) in rm_specs.items():
     cylinder_between(f"{sec}_Mount", p.world(0, 0, -0.15), at(cx, cy, arch_dist(cx, cy)), 0.035,
                      M["dark"])
     lamp(f"Lamp_{sec}", p, *des_lamp(sec), z=0.016)
-hose("Cable_RoundMonitor0", [(236, 122, 0.80, 5), (242, 132, 0.80, 5.5), (243, 148, 0.80, 5.5),
-                             (241.5, 158, 0.80, 5.5), (236, 168, 0.80, 5.5), (227, 172, 0.80, 5),
-                             (221, 167, 0.80, 5)], M["cable"], pitch=0.008, amp=0.25, sides=10)
+cable("Cable_RoundMonitor0", [(236, 122, 0.80, 5), (242, 132, 0.80, 5.5), (243, 148, 0.80, 5.5),
+                              (241.5, 158, 0.80, 5.5), (236, 168, 0.80, 5.5), (227, 172, 0.80, 5),
+                              (221, 167, 0.80, 5)], M["cable"], pitch=0.008, amp=0.25, sides=10)
 
 # --- slave monitors in the top corners ----------------------------------------------------------
 sm_specs = {  # section: (housing outline, screen outline, hanging from)
@@ -264,16 +150,16 @@ for sec, (housing, scr, (hx, hy)) in sm_specs.items():
     mount_up(f"{sec}_Mount", ps.world_px(hx, hy, -0.12), 0.03)
 
 # the cable loop under the left monitor, the cable and the support post under the right one
-hose("Cable_SlaveMonitor0", [(31, 104, 0.82, 7.5), (31.5, 115, 0.82, 7.5), (35.5, 125, 0.82, 7.5),
-                             (41, 135, 0.82, 8), (49, 143, 0.82, 8), (59, 147, 0.82, 8),
-                             (69, 143, 0.82, 8), (77, 135, 0.82, 8), (83.5, 125, 0.82, 7.5),
-                             (90.5, 115, 0.82, 7.5), (92, 106, 0.82, 7.5)], M["cable"],
-     pitch=0.012, amp=0.25, sides=12)
-hose("Cable_SlaveMonitor1", [(534, 106, 0.82, 7), (535, 118, 0.84, 7), (538, 128, 0.88, 7),
-                             (543, 138, 0.93, 7), (550, 147, 0.98, 7)], M["cable"], pitch=0.012,
-     amp=0.25, sides=12)
-beam_px("SlaveMonitor1_Post", [(563, 104, 0.83, 14), (563, 126, 0.9, 14), (561, 146, 0.97, 13)],
-        M["dark"])
+cable("Cable_SlaveMonitor0", [(31, 104, 0.82, 7.5), (31.5, 115, 0.82, 7.5), (35.5, 125, 0.82, 7.5),
+                              (41, 135, 0.82, 8), (49, 143, 0.82, 8), (59, 147, 0.82, 8),
+                              (69, 143, 0.82, 8), (77, 135, 0.82, 8), (83.5, 125, 0.82, 7.5),
+                              (90.5, 115, 0.82, 7.5), (92, 106, 0.82, 7.5)], M["cable"],
+      pitch=0.012, amp=0.25, sides=12)
+cable("Cable_SlaveMonitor1", [(534, 106, 0.82, 7), (535, 118, 0.84, 7), (538, 128, 0.88, 7),
+                              (543, 138, 0.93, 7), (550, 147, 0.98, 7)], M["cable"], pitch=0.012,
+      amp=0.25, sides=12)
+beam("SlaveMonitor1_Post", [(563, 104, 0.83, 14), (563, 126, 0.9, 14), (561, 146, 0.97, 13)],
+     M["dark"], h_ratio=0.9)
 
 # --- console with the master monitor ------------------------------------------------------------
 pc = Panel(315, 395, 0.66)
@@ -328,14 +214,14 @@ for side, (c, outline) in cowl_specs.items():
 # --- big corrugated hoses in the bottom corners -------------------------------------------------
 # (they come out of the columns under the arch feet, loop round out of frame and end in the
 # blocks under the cowl)
-hose("Hose_L", [(20, 475, 1.12, None), (-73, 502, 0.96, None), (-126, 495, 0.76, None),
-                (-40, 462, 0.68, 27), (0, 454, 0.66, 27), (40, 442, 0.65, 27), (70, 438, 0.65, 27),
-                (92, 444, 0.66, 27), (102, 465, 0.68, 27), (110, 500, 0.74, None),
-                (125, 560, 0.85, None)], M["hose"], pitch=0.024, amp=0.16, sides=20)
-hose("Hose_R", [(618, 474, 1.12, None), (713, 502, 0.96, None), (766, 495, 0.76, None),
-                (690, 470, 0.68, 27), (640, 456, 0.66, 27), (605, 441, 0.65, 27),
-                (575, 440, 0.65, 27), (550, 455, 0.66, 27), (532, 478, 0.68, 27),
-                (522, 510, 0.74, None), (515, 560, 0.85, None)], M["hose"], pitch=0.024, amp=0.16,
-     sides=20)
+cable("Hose_L", [(20, 475, 1.12, None), (-73, 502, 0.96, None), (-126, 495, 0.76, None),
+                 (-40, 462, 0.68, 27), (0, 454, 0.66, 27), (40, 442, 0.65, 27), (70, 438, 0.65, 27),
+                 (92, 444, 0.66, 27), (102, 465, 0.68, 27), (110, 500, 0.74, None),
+                 (125, 560, 0.85, None)], M["hose"], pitch=0.024, amp=0.16, sides=20)
+cable("Hose_R", [(618, 474, 1.12, None), (713, 502, 0.96, None), (766, 495, 0.76, None),
+                 (690, 470, 0.68, 27), (640, 456, 0.66, 27), (605, 441, 0.65, 27),
+                 (575, 440, 0.65, 27), (550, 455, 0.66, 27), (532, 478, 0.68, 27),
+                 (522, 510, 0.74, None), (515, 560, 0.85, None)], M["hose"], pitch=0.024, amp=0.16,
+      sides=20)
 
 finish()
