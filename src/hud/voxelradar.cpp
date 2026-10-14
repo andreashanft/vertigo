@@ -25,9 +25,9 @@
 #include "fight/target.h"
 #include "txt/desfile.h"
 #include "util/datapath.h"
+#include "gfx/pipeline.h"
 
 #include <QFile>
-#include <qopengl.h>
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
@@ -394,7 +394,7 @@ void VoxelRadar::draw(fight::Scenario *scenario, const RectF &window)
     if (!m_texture.isValid())
         m_texture.createEmpty(m_image.width(), m_image.height(), gfx::Texture::RGBA, false);
     m_texture.update(0, 0, m_image);
-    glColor4f(1, 1, 1, 1);
+    gfx::Pipeline::setColor(Vector4D(1));
     m_texture.draw(window, RectF(0, 0, m_image.width(), m_image.height()));
 }
 

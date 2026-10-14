@@ -19,6 +19,7 @@
 #define FIGHT_PARTICLES_H
 
 
+#include "gfx/pipeline.h"
 #include "util/geometry3d.h"
 #include <vector>
 
@@ -79,8 +80,7 @@ private:
     {
         gfx::Texture *texture;
         bool blendColor;
-        std::vector<Vector3D> vertices;
-        std::vector<Vector2D> texCoords;
+        std::vector<gfx::Pipeline::Vertex> vertices;
     };
 
     // advances the particle, false when it is done

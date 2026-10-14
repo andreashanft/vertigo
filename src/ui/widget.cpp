@@ -16,7 +16,7 @@
  ***************************************************************************/
 
 #include "widget.h"
-#include <qopengl.h>
+#include "gfx/pipeline.h"
 
 
 namespace ui {
@@ -131,14 +131,14 @@ QRect Widget::mapToGlobal(QRect rect) const
 void Widget::doDraw()
 {
     if (m_visible) {
-        glPushMatrix();
-        glTranslatef(m_rect.x(), m_rect.y(), 0.0f);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(m_rect.x(), m_rect.y(), 0.0f);
 
         draw();
         foreach (Widget *widget, m_children)
             widget->doDraw();
 
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
 }
 

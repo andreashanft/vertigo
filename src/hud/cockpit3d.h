@@ -19,9 +19,9 @@
 #define HUD_COCKPIT3D_H
 
 
+#include "gfx/mesh.h"
 #include "util/geometry3d.h"
 
-#include <QOpenGLBuffer>
 #include <QString>
 #include <memory>
 
@@ -63,8 +63,6 @@ public:
 
 private:
     bool create();
-    void bindArrays();
-    void releaseArrays();
 
 private:
     enum class State { Unloaded, Ready, Failed };
@@ -75,9 +73,8 @@ private:
     Vector2D m_center = Vector2D(320, 240);
     bool m_cameraChanged = false;
 
-    QOpenGLBuffer m_vertices;
-    QOpenGLBuffer m_baseIndices;    // the textured model
-    QOpenGLBuffer m_decalIndices;   // its triangles in view, and the window glass
+    // the textured model, then its triangles in view and the window glass for the decal
+    gfx::Mesh m_mesh;
     int m_baseCount = 0;
     int m_decalCount = 0;
     unsigned int m_texture = 0;

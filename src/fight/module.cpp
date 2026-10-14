@@ -22,7 +22,6 @@
 
 #include <QFile>
 #include <iostream>
-#include <qopengl.h>
 #include <QVector3D>
 #include <glm/geometric.hpp>
 
@@ -159,21 +158,18 @@ Module::Module(gfx::TextureManager &texMan, const QString &name)
 
 void Module::draw()
 {
-    glEnable(GL_TEXTURE_2D);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-
     for (Mesh &mesh : m_meshes)
     {
+        if (!mesh.buffers.isValid())
+        {
+            // faces with less than three corners add vertices but no normals
+            mesh.normals.resize(mesh.vertices.size(), Vector3D(0));
+            mesh.buffers.create(int(mesh.vertices.size()), mesh.vertices.data(), mesh.normals.data(), mesh.texCoords.data(),
+                                int(mesh.indices.size()), mesh.indices.data());
+        }
         mesh.texture.bind();
-        glVertexPointer(3, GL_FLOAT, 0, mesh.vertices.data());
-        glNormalPointer(GL_FLOAT, 0, mesh.normals.data());
-        glTexCoordPointer(2, GL_FLOAT, 0, mesh.texCoords.data());
-        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_SHORT, mesh.indices.data());
+        mesh.buffers.draw(0, -1, mesh.texture.isValid());
     }
-
-    glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 

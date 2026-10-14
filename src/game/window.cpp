@@ -34,14 +34,24 @@ namespace game {
 Window::Window() :
     m_renderer(NULL)
 {
-    // the defaults of the QGLWidget this replaces
+    // the depth and stencil buffers of the QGLWidget this replaced; gfx::Pipeline's shader needs
+    // OpenGL 3.2 (core profile) or OpenGL ES 3
     QSurfaceFormat format;
     format.setDepthBufferSize(24);
     format.setStencilBufferSize(8);
+    if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGLES) {
+        format.setRenderableType(QSurfaceFormat::OpenGLES);
+        format.setVersion(3, 0);
+    } else {
+        format.setRenderableType(QSurfaceFormat::OpenGL);
+        format.setVersion(3, 2);
+        format.setProfile(QSurfaceFormat::CoreProfile);
+    }
     setSurfaceType(QWindow::OpenGLSurface);
     setFormat(format);
     m_context.setFormat(format);
-    m_context.create();
+    if (!m_context.create() || m_context.format().majorVersion() < 3)
+        qFatal("Cannot create an OpenGL 3.2 or OpenGL ES 3 context");
     m_offscreen.setFormat(m_context.format());
     m_offscreen.create();
     m_context.makeCurrent(&m_offscreen);

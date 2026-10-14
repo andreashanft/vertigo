@@ -33,9 +33,9 @@
 #include "game/boat.h"
 #include "game/window.h"
 #include "gfx/image.h"
+#include "gfx/pipeline.h"
 
 #include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "crosshair.h"
 #include "heading.h"
@@ -541,21 +541,15 @@ void HUD::draw()
     m_cockpit.doDraw();
 
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_integerScaleWidget.doDraw();
 
     m_integerScale = false;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_noScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_noScaleProjectionMatrix);
     m_noScaleWidget.doDraw();
 
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
     m_integerScale = false;
 
@@ -588,9 +582,7 @@ bool HUD::drawModel(qreal pixelRatio)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     gl->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_integerScaleWidget.doDraw();
     m_integerScale = false;
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -620,15 +612,11 @@ bool HUD::drawModel(qreal pixelRatio)
     // the HUD in the window is collimated: it turns with the head but doesn't shift; the menu stays put
     glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
     setupGL(false);
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(viewTurn(m_scenario->projectionMatrix(), glm::mat3(head))*m_noScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(viewTurn(m_scenario->projectionMatrix(), glm::mat3(head))*m_noScaleProjectionMatrix);
     m_noScaleWidget.doDraw();
 
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
     m_integerScale = false;
 

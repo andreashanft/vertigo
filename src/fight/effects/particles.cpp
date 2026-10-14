@@ -136,10 +136,7 @@ void Particles::draw()
     const Vector3D forward = -camera[2];
 
     for (Batch &batch : m_batches)
-    {
         batch.vertices.clear();
-        batch.texCoords.clear();
-    }
     for (const Particle &particle : m_particles)
     {
         // culled beyond the fog and behind the camera
@@ -157,18 +154,14 @@ void Particles::draw()
         });
         if (batch == m_batches.end())
         {
-            m_batches.push_back(Batch{ texture, blendColor, {}, {} });
+            m_batches.push_back(Batch{ texture, blendColor, {} });
             batch = m_batches.end() - 1;
         }
-        batch->vertices.insert(batch->vertices.end(), corners, corners + 4);
-        batch->texCoords.insert(batch->texCoords.end(), texCoords, texCoords + 4);
+        for (int i = 0; i < 4; i++)
+            batch->vertices.push_back({ corners[i], texCoords[i] });
     }
 
-    glEnable(GL_TEXTURE_2D);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_NOTEQUAL, 0.0);
+    gfx::Pipeline::setAlphaTest(true);
     for (Batch &batch : m_batches)
     {
         if (batch.vertices.empty())
@@ -176,15 +169,11 @@ void Particles::draw()
         if (batch.blendColor)
             glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
         batch.texture->bind();
-        glVertexPointer(3, GL_FLOAT, 0, batch.vertices.data());
-        glTexCoordPointer(2, GL_FLOAT, 0, batch.texCoords.data());
-        glDrawArrays(GL_QUADS, 0, GLsizei(batch.vertices.size()));
+        gfx::Pipeline::drawQuads(batch.vertices.data(), int(batch.vertices.size()));
         if (batch.blendColor)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
-    glDisable(GL_ALPHA_TEST);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    gfx::Pipeline::setAlphaTest(false);
 }
 
 

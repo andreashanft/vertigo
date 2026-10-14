@@ -24,8 +24,9 @@
 #include "fight/weapons/unitgun.h"
 #include "fight/orders.h"
 #include "txt/stringtable.h"
+#include "gfx/pipeline.h"
+#include <qopengl.h>
 #include <glm/geometric.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 
@@ -148,11 +149,9 @@ void MasterMonitor::draw()
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glFrontFace(GL_CW);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadMatrixf(glm::value_ptr(m));
+        gfx::Pipeline::setModelView(m);
         obj->drawPreview();
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
+        gfx::Pipeline::setModelView(Matrix(1));
         glDisable(GL_CULL_FACE);
         glFrontFace(GL_CCW);
         glDisable(GL_DEPTH_TEST);

@@ -20,6 +20,7 @@
 #include "fight/scenario.h"
 #include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
+#include "gfx/pipeline.h"
 #include <glm/gtc/constants.hpp>
 #include <glm/trigonometric.hpp>
 #include <cmath>
@@ -115,19 +116,19 @@ bool TurretBase::update(float elapsedTime)
 
 void TurretBase::draw()
 {
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glScalef(m_scale, m_scale, m_scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::scale(m_scale);
     m_base->draw();
     if (m_body)
     {
         // turn the turret around its position (the turret draws itself at that position)
-        glTranslatef(m_turretPosition.x, m_turretPosition.y, m_turretPosition.z);
-        glRotatef(-glm::degrees(m_yaw), 0, 0, 1);
-        glTranslatef(-m_turretPosition.x, -m_turretPosition.y, -m_turretPosition.z);
+        gfx::Pipeline::translate(m_turretPosition);
+        gfx::Pipeline::rotate(-glm::degrees(m_yaw), Vector3D(0, 0, 1));
+        gfx::Pipeline::translate(-m_turretPosition);
         m_body->draw();
     }
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

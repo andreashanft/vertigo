@@ -24,8 +24,8 @@
 #include "fight/orders.h"
 #include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
+#include "gfx/pipeline.h"
 #include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/norm.hpp>
 #include <algorithm>
 
@@ -216,12 +216,12 @@ void SimpleBoat::move(Vector3D delta)
 
 void SimpleBoat::draw()
 {
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glMultMatrixf(glm::value_ptr(Matrix(m_orientationInverted)));
-    glScalef(m_scale, m_scale, m_scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::multiply(Matrix(m_orientationInverted));
+    gfx::Pipeline::scale(m_scale);
     m_base->draw();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

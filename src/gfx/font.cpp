@@ -17,7 +17,8 @@
 
 #include "fontmanager.h"
 #include "image.h"
-#include <qopengl.h>
+#include "pipeline.h"
+#include <vector>
 
 namespace gfx {
 
@@ -127,6 +128,20 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
 
     Point pos = drawRect.pos();
 
+    // the glyphs are drawn together, as long as their colour stays the same
+    std::vector<Pipeline::Vertex> quads;
+    auto flush = [&quads]() {
+        Pipeline::drawQuads(quads.data(), int(quads.size()));
+        quads.clear();
+    };
+    auto setColor = [&](QRgb rgb) {
+        const Vector4D color(qRed(rgb) / 255.0f, qGreen(rgb) / 255.0f, qBlue(rgb) / 255.0f, qAlpha(rgb) / 255.0f);
+        if (color != Pipeline::color()) {
+            flush();
+            Pipeline::setColor(color);
+        }
+    };
+
     bool highlight = false;
     int lineWidth = 0;
     int current = 0;
@@ -167,27 +182,17 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
                 c = '?' - 32;
             const Symbol &symbol = m_symbols[c];
 
-            if (m_alpha) {
-                if (highlight)
-                    glColor4f(qRed(m_colorHighlight) / 255.0f, qGreen(m_colorHighlight) / 255.0f, qBlue(m_colorHighlight) / 255.0f, qAlpha(m_colorHighlight) / 255.0f);
-                else
-                    glColor4f(qRed(m_colorNormal) / 255.0f, qGreen(m_colorNormal) / 255.0f, qBlue(m_colorNormal) / 255.0f, qAlpha(m_colorNormal) / 255.0f);
-            }
+            if (m_alpha)
+                setColor(highlight ? m_colorHighlight : m_colorNormal);
 
             RectF dst = RectF(pos, SizeF(symbol.width, symbol.height));
             RectF src = symbol.rect;
             if (clipRect == nullptr || clipRect->clip(dst, src))
             {
-                glBegin(GL_QUADS);
-                    glTexCoord2f(src.left(), src.top());
-                    glVertex2f(dst.left(), dst.top());
-                    glTexCoord2f(src.left(), src.bottom());
-                    glVertex2f(dst.left(), dst.bottom());
-                    glTexCoord2f(src.right(), src.bottom());
-                    glVertex2f(dst.right(), dst.bottom());
-                    glTexCoord2f(src.right(), src.top());
-                    glVertex2f(dst.right(), dst.top());
-                glEnd();
+                quads.push_back({ Vector3D(dst.left(), dst.top(), 0), Vector2D(src.left(), src.top()) });
+                quads.push_back({ Vector3D(dst.left(), dst.bottom(), 0), Vector2D(src.left(), src.bottom()) });
+                quads.push_back({ Vector3D(dst.right(), dst.bottom(), 0), Vector2D(src.right(), src.bottom()) });
+                quads.push_back({ Vector3D(dst.right(), dst.top(), 0), Vector2D(src.right(), src.top()) });
             }
 
             pos.x += symbol.width;
@@ -196,7 +201,8 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
     }
     drawRect.width = qMax(drawRect.width, lineWidth);
 
-    glColor3f(1, 1, 1);
+    flush();
+    Pipeline::setColor(Vector4D(1));
 
     return drawRect;
 }

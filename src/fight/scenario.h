@@ -205,7 +205,6 @@ private:
     struct Decoy { Vector3D position; float until; };
     std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
-    std::vector<Object*> m_lightSources;
     std::vector<NavPoint*> m_navPoints;
 
     char m_attitudeMatrix[9][9];

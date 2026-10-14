@@ -19,7 +19,6 @@
 #define FIGHT_OBJECT_H
 
 
-#include <qopengl.h>
 #include "fight/boundingbox.h"
 #include "fight/condition.h"
 #include <memory>

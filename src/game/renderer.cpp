@@ -16,24 +16,14 @@
  ***************************************************************************/
 
 #include "renderer.h"
+#include "gfx/pipeline.h"
 #include <qopengl.h>
 #include <glm/vec4.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 
 namespace game {
-
-void getMatrix(GLenum param, float *data)
-{
-    glGetFloatv(param, data);
-}
-
-void getMatrix(GLenum param, double *data)
-{
-    glGetDoublev(param, data);
-}
 
 Renderer::Renderer() :
     m_cursorVisible(true),
@@ -101,16 +91,12 @@ void Renderer::setupGL(bool clear)
     if (clear)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_FOG);
     glDisable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_projectionMatrix));
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setFog(false);
+    gfx::Pipeline::setProjection(m_projectionMatrix);
+    gfx::Pipeline::setModelView(Matrix(1));
 }
 
 

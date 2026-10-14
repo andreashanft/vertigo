@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "texture.h"
+#include "pipeline.h"
 #include <QImage>
 #include <qopengl.h>
 
@@ -33,21 +34,6 @@ inline static quint32 nextPowerOfTwo(quint32 v)
     v |= v >> 16;
     ++v;
     return v;
-}
-
-
-inline static GLenum formatToGL(Texture::Format format)
-{
-    switch (format) {
-    case Texture::RGBA:
-        return GL_RGBA;
-
-    case Texture::Alpha:
-        return GL_ALPHA;
-
-    default:
-        return GL_RGB;
-    }
 }
 
 
@@ -82,7 +68,9 @@ void TexturePrivate::clear()
 
 
 // OpenGL 1.2
+#ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE 0x812F
+#endif
 
 void TexturePrivate::setFilter(bool smooth)
 {
@@ -119,27 +107,30 @@ void TexturePrivate::createEmpty(int w, int h, Texture::Format format, bool smoo
     m_textureWidth = nextPowerOfTwo(m_width);
     m_textureHeight = nextPowerOfTwo(m_height);
 
+    // always RGBA, which OpenGL ES can update from RGBA images; without alpha of its own the
+    // texture is opaque, also in the padding up to the power of two
     QByteArray fill(4 * m_textureWidth * m_textureHeight, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, formatToGL(format), m_textureWidth, m_textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, fill.data());
+    if (format == Texture::RGB)
+        for (int i = 3; i < fill.size(); i += 4)
+            fill[i] = char(255);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_textureWidth, m_textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, fill.data());
 }
 
 
 void TexturePrivate::update(int x, int y, QImage image)
 {
-    GLenum format;
-
-    switch (image.format()) {
-    case QImage::Format_RGB888:
-        format = GL_RGB;
-        break;
-
-    default:
-        image = image.convertToFormat(QImage::Format_RGBA8888);
-        format = GL_RGBA;
+    image = image.convertToFormat(QImage::Format_RGBA8888);
+    // an alpha texture only takes the alpha (the colour is the pipeline's)
+    if (m_format == Texture::Alpha) {
+        for (int line = 0; line < image.height(); line++) {
+            uchar *pixel = image.scanLine(line);
+            for (int i = 0; i < image.width(); i++, pixel += 4)
+                pixel[0] = pixel[1] = pixel[2] = 255;
+        }
     }
 
     bind();
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, image.width(), image.height(), format, GL_UNSIGNED_BYTE, image.bits());
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, image.width(), image.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.constBits());
 }
 
 
@@ -156,21 +147,9 @@ RectF TexturePrivate::draw(const RectF &dstRect, const RectF &srcRect, const Cli
 
     if (clipRect == nullptr || clipRect->clip(dst, src))
     {
-        glEnable(GL_TEXTURE_2D);
+        // without an image in the colour alone, as OpenGL 1 drew it
         bind();
-        glBegin(GL_QUADS);
-            glTexCoord2f(src.left(), src.top());
-            glVertex2f(dst.left(), dst.top());
-
-            glTexCoord2f(src.left(), src.bottom());
-            glVertex2f(dst.left(), dst.bottom());
-
-            glTexCoord2f(src.right(), src.bottom());
-            glVertex2f(dst.right(), dst.bottom());
-
-            glTexCoord2f(src.right(), src.top());
-            glVertex2f(dst.right(), dst.top());
-        glEnd();
+        Pipeline::drawQuad(dst, src, isValid());
     }
 
     return dstRect;

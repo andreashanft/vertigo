@@ -11,8 +11,8 @@ nix run github:pnordhus/vertigo
 
 # Compiling
 
-Vertigo needs Qt 6, OpenAL and GLM. Qt 5.15 still works as a fallback, but
-isn't tested any more.
+Vertigo needs Qt 6, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
+or OpenGL ES 3. Qt 5.15 still works as a fallback, but isn't tested any more.
 
 ```
 mkdir build

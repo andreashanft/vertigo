@@ -1,0 +1,548 @@
+/***************************************************************************
+ *  Copyright (C) 2026  Andreas Hanft                                      *
+ *                                                                         *
+ *  This program is free software: you can redistribute it and/or modify   *
+ *  it under the terms of the GNU General Public License as published by   *
+ *  the Free Software Foundation, either version 3 of the License, or      *
+ *  (at your option) any later version.                                    *
+ *                                                                         *
+ *  This program is distributed in the hope that it will be useful,        *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *  GNU General Public License for more details.                           *
+ *                                                                         *
+ *  You should have received a copy of the GNU General Public License      *
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
+ ***************************************************************************/
+
+#include "pipeline.h"
+#include <QOpenGLContext>
+#include <QOpenGLExtraFunctions>
+#include <qopengl.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
+#include <cstddef>
+#include <iostream>
+#include <vector>
+
+
+namespace gfx {
+
+
+namespace {
+
+// Per-vertex lighting as in OpenGL 1.x: the scene colour (global ambient times the material's
+// ambient) plus one spot light, attenuated and clamped. The fog uses the distance along the view
+// direction, as most fixed-function implementations did.
+const char *VertexShader = R"(
+in vec3 position;
+in vec3 normal;
+in vec2 texCoord;
+
+uniform mat4 modelView;
+uniform mat4 projection;
+uniform mat3 normalMatrix;
+uniform vec4 color;
+uniform bool lighting;
+uniform vec3 sceneColor;
+uniform vec3 lightPosition;
+uniform vec3 lightDirection;
+uniform vec3 lightAmbient;
+uniform vec3 lightDiffuse;
+uniform float lightCosCutoff;
+uniform float lightExponent;
+uniform vec2 lightAttenuation;
+uniform bool textureProjection;
+uniform mat4 textureMatrix;
+
+out vec4 vColor;
+out vec3 vTexCoord;
+out float vDepth;
+
+void main()
+{
+    vec4 eye = modelView*vec4(position, 1.0);
+    gl_Position = projection*eye;
+    vDepth = -eye.z;
+    vTexCoord = textureProjection ? (textureMatrix*vec4(position, 1.0)).xyw : vec3(texCoord, 1.0);
+    if (lighting)
+    {
+        // zero normals (degenerate faces) stay zero
+        vec3 n = normalMatrix*normal;
+        float size = length(n);
+        n = size > 0.0 ? n/size : n;
+        vec3 toLight = lightPosition - eye.xyz;
+        float d = max(length(toLight), 1e-6);
+        vec3 l = toLight/d;
+        float spot = dot(-l, lightDirection);
+        float factor = spot >= lightCosCutoff ? pow(max(spot, 0.0), lightExponent)/(lightAttenuation.x + lightAttenuation.y*d*d) : 0.0;
+        vColor = vec4(min(sceneColor + factor*(lightAmbient + max(dot(n, l), 0.0)*lightDiffuse), vec3(1.0)), 1.0);
+    }
+    else
+        vColor = color;
+}
+)";
+
+const char *FragmentShader = R"(
+in vec4 vColor;
+in vec3 vTexCoord;
+in float vDepth;
+
+uniform sampler2D tex;
+uniform bool textureProjection;
+uniform float textureNear;
+uniform bool alphaTest;
+uniform bool fog;
+uniform vec3 fogColor;
+uniform vec2 fogRange;
+
+out vec4 fragColor;
+
+void main()
+{
+    vec4 c = vColor;
+    if (textureProjection)
+    {
+        vec2 st = vTexCoord.xy/vTexCoord.z;
+        c *= texture(tex, st);
+        // nothing behind the near plane, where the projection mirrors, and nothing outside the texture
+        if (vTexCoord.z < textureNear || any(lessThan(st, vec2(0.0))) || any(greaterThan(st, vec2(1.0))))
+            discard;
+    }
+    else
+        c *= texture(tex, vTexCoord.xy);
+    if (alphaTest && c.a <= 0.0)
+        discard;
+    if (fog)
+        c.rgb = mix(fogColor, c.rgb, clamp((fogRange.y - vDepth)/(fogRange.y - fogRange.x), 0.0, 1.0));
+    fragColor = c;
+}
+)";
+
+// quads are drawn from a stream of vertices with a fixed index buffer
+const int MaxQuads = 16384;
+
+
+struct State
+{
+    Matrix projection = Matrix(1);
+    std::vector<Matrix> modelView = { Matrix(1) };
+    Vector4D color = Vector4D(1);
+    Vector3D normal = Vector3D(0, 0, 1);
+    bool lighting = false;
+    // OpenGL's defaults
+    Vector3D ambient = Vector3D(0.2f);
+    Pipeline::Light light = { Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0), Vector3D(1), 180, 0, 1, 0 };
+    bool fog = false;
+    Pipeline::Fog fogParameters = { Vector3D(0), 0, 1 };
+    bool alphaTest = false;
+    bool textureProjection = false;
+    Matrix textureMatrix = Matrix(1);
+    float textureNear = 0;
+    // the light and the fog are uploaded on the next draw
+    bool parametersChanged = true;
+};
+
+State& state()
+{
+    static State s;
+    return s;
+}
+
+
+struct Uniforms
+{
+    int modelView, projection, normalMatrix, color, lighting, sceneColor;
+    int lightPosition, lightDirection, lightAmbient, lightDiffuse, lightCosCutoff, lightExponent, lightAttenuation;
+    int textureProjection, textureMatrix, textureNear, alphaTest, fog, fogColor, fogRange;
+};
+
+// the shader and the buffers for drawing from client memory, made for the current context
+struct Gpu
+{
+    QOpenGLContext *context = nullptr;
+    QOpenGLExtraFunctions *gl = nullptr;
+    GLuint program = 0;
+    Uniforms uniforms;
+    GLuint streamArray = 0;
+    GLuint streamBuffer = 0;
+    GLuint quadIndices = 0;
+    // for drawing without a texture (some drivers warn about texture 0 even if it isn't sampled)
+    GLuint white = 0;
+};
+
+Gpu g_gpu;
+
+
+GLuint compile(QOpenGLExtraFunctions *gl, GLenum type, const QByteArray &source)
+{
+    const GLuint shader = gl->glCreateShader(type);
+    const char *text = source.constData();
+    gl->glShaderSource(shader, 1, &text, nullptr);
+    gl->glCompileShader(shader);
+    GLint ok = 0;
+    gl->glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+    if (!ok)
+    {
+        char log[4096];
+        gl->glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
+        std::cerr << "Cannot compile the " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader: " << log << std::endl;
+    }
+    return shader;
+}
+
+
+Gpu& gpu()
+{
+    QOpenGLContext *context = QOpenGLContext::currentContext();
+    if (g_gpu.context == context)
+        return g_gpu;
+
+    g_gpu = Gpu();
+    g_gpu.context = context;
+    QOpenGLExtraFunctions *gl = g_gpu.gl = context->extraFunctions();
+
+    // GLSL 1.50 is OpenGL 3.2's
+    const QByteArray header = context->isOpenGLES() ? "#version 300 es\nprecision highp float;\n" : "#version 150\n";
+    const GLuint vertexShader = compile(gl, GL_VERTEX_SHADER, header + VertexShader);
+    const GLuint fragmentShader = compile(gl, GL_FRAGMENT_SHADER, header + FragmentShader);
+    const GLuint program = g_gpu.program = gl->glCreateProgram();
+    gl->glAttachShader(program, vertexShader);
+    gl->glAttachShader(program, fragmentShader);
+    gl->glBindAttribLocation(program, Pipeline::Position, "position");
+    gl->glBindAttribLocation(program, Pipeline::Normal, "normal");
+    gl->glBindAttribLocation(program, Pipeline::TexCoord, "texCoord");
+    if (!context->isOpenGLES())
+    {
+        // OpenGL ES has only one output; OpenGL 3.2 binds it without a location of its own, too, but
+        // only by convention
+        typedef void (QOPENGLF_APIENTRYP BindFragDataLocation)(GLuint, GLuint, const char *);
+        if (auto bind = reinterpret_cast<BindFragDataLocation>(context->getProcAddress("glBindFragDataLocation")))
+            bind(program, 0, "fragColor");
+    }
+    gl->glLinkProgram(program);
+    gl->glDeleteShader(vertexShader);
+    gl->glDeleteShader(fragmentShader);
+    GLint ok = 0;
+    gl->glGetProgramiv(program, GL_LINK_STATUS, &ok);
+    if (!ok)
+    {
+        char log[4096];
+        gl->glGetProgramInfoLog(program, sizeof(log), nullptr, log);
+        std::cerr << "Cannot link the shader: " << log << std::endl;
+    }
+
+    Uniforms &u = g_gpu.uniforms;
+    auto location = [gl, program](const char *name) { return gl->glGetUniformLocation(program, name); };
+    u.modelView = location("modelView");
+    u.projection = location("projection");
+    u.normalMatrix = location("normalMatrix");
+    u.color = location("color");
+    u.lighting = location("lighting");
+    u.sceneColor = location("sceneColor");
+    u.lightPosition = location("lightPosition");
+    u.lightDirection = location("lightDirection");
+    u.lightAmbient = location("lightAmbient");
+    u.lightDiffuse = location("lightDiffuse");
+    u.lightCosCutoff = location("lightCosCutoff");
+    u.lightExponent = location("lightExponent");
+    u.lightAttenuation = location("lightAttenuation");
+    u.textureProjection = location("textureProjection");
+    u.textureMatrix = location("textureMatrix");
+    u.textureNear = location("textureNear");
+    u.alphaTest = location("alphaTest");
+    u.fog = location("fog");
+    u.fogColor = location("fogColor");
+    u.fogRange = location("fogRange");
+    gl->glUseProgram(program);
+    gl->glUniform1i(location("tex"), 0);
+
+    // the stream: positions and texture coordinates interleaved, normals from setNormal()
+    gl->glGenVertexArrays(1, &g_gpu.streamArray);
+    gl->glGenBuffers(1, &g_gpu.streamBuffer);
+    gl->glGenBuffers(1, &g_gpu.quadIndices);
+    gl->glBindVertexArray(g_gpu.streamArray);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, g_gpu.streamBuffer);
+    gl->glEnableVertexAttribArray(Pipeline::Position);
+    gl->glVertexAttribPointer(Pipeline::Position, 3, GL_FLOAT, GL_FALSE, sizeof(Pipeline::Vertex), reinterpret_cast<void *>(offsetof(Pipeline::Vertex, position)));
+    gl->glEnableVertexAttribArray(Pipeline::TexCoord);
+    gl->glVertexAttribPointer(Pipeline::TexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Pipeline::Vertex), reinterpret_cast<void *>(offsetof(Pipeline::Vertex, texCoord)));
+    std::vector<GLushort> indices;
+    indices.reserve(MaxQuads*6);
+    for (int i = 0; i < MaxQuads; i++)
+        for (int corner : { 0, 1, 2, 0, 2, 3 })
+            indices.push_back(GLushort(i*4 + corner));
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_gpu.quadIndices);
+    gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.size()*sizeof(GLushort)), indices.data(), GL_STATIC_DRAW);
+    gl->glBindVertexArray(0);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    const quint32 white = 0xffffffff;
+    GLint bound = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+    glGenTextures(1, &g_gpu.white);
+    glBindTexture(GL_TEXTURE_2D, g_gpu.white);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &white);
+    glBindTexture(GL_TEXTURE_2D, GLuint(bound));
+
+    state().parametersChanged = true;
+    return g_gpu;
+}
+
+} // namespace
+
+
+void Pipeline::setProjection(const Matrix &matrix)
+{
+    state().projection = matrix;
+}
+
+
+const Matrix& Pipeline::projection()
+{
+    return state().projection;
+}
+
+
+void Pipeline::setModelView(const Matrix &matrix)
+{
+    state().modelView.back() = matrix;
+}
+
+
+const Matrix& Pipeline::modelView()
+{
+    return state().modelView.back();
+}
+
+
+void Pipeline::pushMatrix()
+{
+    State &s = state();
+    s.modelView.push_back(s.modelView.back());
+}
+
+
+void Pipeline::popMatrix()
+{
+    State &s = state();
+    if (s.modelView.size() > 1)
+        s.modelView.pop_back();
+    else
+        std::cerr << "Pipeline::popMatrix() without pushMatrix()" << std::endl;
+}
+
+
+void Pipeline::translate(const Vector3D &offset)
+{
+    Matrix &m = state().modelView.back();
+    m = glm::translate(m, offset);
+}
+
+
+void Pipeline::rotate(float degrees, const Vector3D &axis)
+{
+    Matrix &m = state().modelView.back();
+    m = glm::rotate(m, glm::radians(degrees), axis);
+}
+
+
+void Pipeline::scale(float factor)
+{
+    Matrix &m = state().modelView.back();
+    m = glm::scale(m, Vector3D(factor));
+}
+
+
+void Pipeline::multiply(const Matrix &matrix)
+{
+    Matrix &m = state().modelView.back();
+    m = m*matrix;
+}
+
+
+void Pipeline::setColor(const Vector4D &color)
+{
+    state().color = color;
+}
+
+
+const Vector4D& Pipeline::color()
+{
+    return state().color;
+}
+
+
+void Pipeline::setNormal(const Vector3D &normal)
+{
+    state().normal = normal;
+}
+
+
+void Pipeline::setLighting(bool enabled)
+{
+    state().lighting = enabled;
+}
+
+
+bool Pipeline::lighting()
+{
+    return state().lighting;
+}
+
+
+void Pipeline::setAmbient(const Vector3D &ambient)
+{
+    State &s = state();
+    s.ambient = ambient;
+    s.parametersChanged = true;
+}
+
+
+void Pipeline::setLight(const Light &light)
+{
+    State &s = state();
+    s.light = light;
+    s.parametersChanged = true;
+}
+
+
+void Pipeline::setFog(bool enabled)
+{
+    state().fog = enabled;
+}
+
+
+void Pipeline::setFog(const Fog &fog)
+{
+    State &s = state();
+    s.fogParameters = fog;
+    s.parametersChanged = true;
+}
+
+
+void Pipeline::setAlphaTest(bool enabled)
+{
+    state().alphaTest = enabled;
+}
+
+
+void Pipeline::setTextureProjection(bool enabled, const Matrix &matrix, float near)
+{
+    State &s = state();
+    s.textureProjection = enabled;
+    s.textureMatrix = matrix;
+    s.textureNear = near;
+}
+
+
+void Pipeline::apply(bool textured)
+{
+    Gpu &g = gpu();
+    State &s = state();
+    QOpenGLExtraFunctions *gl = g.gl;
+    const Uniforms &u = g.uniforms;
+    gl->glUseProgram(g.program);
+
+    if (s.parametersChanged)
+    {
+        // the default material: ambient 0.2, diffuse 0.8
+        const Light &light = s.light;
+        gl->glUniform3fv(u.sceneColor, 1, glm::value_ptr(s.ambient*0.2f));
+        gl->glUniform3fv(u.lightPosition, 1, glm::value_ptr(light.position));
+        gl->glUniform3fv(u.lightDirection, 1, glm::value_ptr(glm::normalize(light.direction)));
+        gl->glUniform3fv(u.lightAmbient, 1, glm::value_ptr(light.ambient*0.2f));
+        gl->glUniform3fv(u.lightDiffuse, 1, glm::value_ptr(light.diffuse*0.8f));
+        // a cutoff of 180 degrees is a point light
+        gl->glUniform1f(u.lightCosCutoff, light.cutoff >= 180 ? -2.0f : std::cos(glm::radians(light.cutoff)));
+        gl->glUniform1f(u.lightExponent, light.exponent);
+        gl->glUniform2f(u.lightAttenuation, light.constantAttenuation, light.quadraticAttenuation);
+        gl->glUniform3fv(u.fogColor, 1, glm::value_ptr(s.fogParameters.color));
+        gl->glUniform2f(u.fogRange, s.fogParameters.start, s.fogParameters.end);
+        s.parametersChanged = false;
+    }
+
+    const Matrix &modelView = s.modelView.back();
+    gl->glUniformMatrix4fv(u.modelView, 1, GL_FALSE, glm::value_ptr(modelView));
+    gl->glUniformMatrix4fv(u.projection, 1, GL_FALSE, glm::value_ptr(s.projection));
+    gl->glUniform4fv(u.color, 1, glm::value_ptr(s.color));
+    gl->glUniform1i(u.lighting, s.lighting);
+    if (s.lighting)
+    {
+        const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelView)));
+        gl->glUniformMatrix3fv(u.normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+    }
+    // the colour alone without a texture
+    if (!textured)
+        glBindTexture(GL_TEXTURE_2D, g.white);
+    gl->glUniform1i(u.textureProjection, s.textureProjection);
+    if (s.textureProjection)
+    {
+        gl->glUniformMatrix4fv(u.textureMatrix, 1, GL_FALSE, glm::value_ptr(s.textureMatrix));
+        gl->glUniform1f(u.textureNear, s.textureNear);
+    }
+    gl->glUniform1i(u.alphaTest, s.alphaTest);
+    gl->glUniform1i(u.fog, s.fog);
+    // the value of the normal attribute where there is no array of normals
+    gl->glVertexAttrib3f(Normal, s.normal.x, s.normal.y, s.normal.z);
+}
+
+
+void Pipeline::drawStream(unsigned int mode, const Vertex *vertices, int count, bool textured, bool quads)
+{
+    if (count <= 0)
+        return;
+    apply(textured);
+    Gpu &g = gpu();
+    QOpenGLExtraFunctions *gl = g.gl;
+    gl->glBindVertexArray(g.streamArray);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, g.streamBuffer);
+    for (int first = 0; first < count; )
+    {
+        // a new buffer each time, so the driver needn't wait for the draws before
+        const int n = quads ? std::min(count - first, MaxQuads*4)/4*4 : count;
+        if (n == 0)
+            break;
+        gl->glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n*sizeof(Vertex)), vertices + first, GL_STREAM_DRAW);
+        if (quads)
+            gl->glDrawElements(GL_TRIANGLES, n/4*6, GL_UNSIGNED_SHORT, nullptr);
+        else
+            gl->glDrawArrays(mode, 0, n);
+        first += n;
+    }
+    gl->glBindVertexArray(0);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void Pipeline::drawQuads(const Vertex *vertices, int count, bool textured)
+{
+    drawStream(GL_TRIANGLES, vertices, count, textured, true);
+}
+
+
+void Pipeline::drawQuad(const RectF &dstRect, const RectF &texRect, bool textured)
+{
+    const Vertex vertices[4] = {
+        { Vector3D(dstRect.left(), dstRect.top(), 0), Vector2D(texRect.left(), texRect.top()) },
+        { Vector3D(dstRect.left(), dstRect.bottom(), 0), Vector2D(texRect.left(), texRect.bottom()) },
+        { Vector3D(dstRect.right(), dstRect.bottom(), 0), Vector2D(texRect.right(), texRect.bottom()) },
+        { Vector3D(dstRect.right(), dstRect.top(), 0), Vector2D(texRect.right(), texRect.top()) },
+    };
+    drawQuads(vertices, 4, textured);
+}
+
+
+void Pipeline::drawLines(const Vector3D *positions, int count)
+{
+    std::vector<Vertex> vertices(count);
+    for (int i = 0; i < count; i++)
+        vertices[i] = { positions[i], Vector2D(0) };
+    drawStream(GL_LINES, vertices.data(), count, false, false);
+}
+
+
+} // namespace gfx

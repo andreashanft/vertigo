@@ -22,9 +22,9 @@
 #include "sfx/samplemap.h"
 #include "txt/desfile.h"
 #include "util/random.h"
+#include "gfx/pipeline.h"
 
 #include <glm/geometric.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -271,12 +271,12 @@ void Torpedo::draw()
     const Vector3D up = glm::cross(right, m_dir);
     const Matrix orientation(Vector4D(right, 0), Vector4D(m_dir, 0), Vector4D(up, 0), Vector4D(0, 0, 0, 1));
 
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glMultMatrixf(glm::value_ptr(orientation));
-    glScalef(m_type.scale, m_type.scale, m_type.scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::multiply(orientation);
+    gfx::Pipeline::scale(m_type.scale);
     m_model->draw();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

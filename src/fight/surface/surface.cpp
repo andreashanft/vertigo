@@ -138,9 +138,10 @@ bool Surface::testCollision(const Vector3D &start, const Vector3D &end, float ra
 }
 
 
-void Surface::bindTexture(int textureId)
+bool Surface::bindTexture(int textureId)
 {
     m_textures[textureId].bind();
+    return m_textures[textureId].isValid();
 }
 
 

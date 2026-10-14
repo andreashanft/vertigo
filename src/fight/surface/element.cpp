@@ -17,7 +17,6 @@
 
 #include "element.h"
 #include "surface.h"
-#include <qopengl.h>
 
 
 namespace fight {
@@ -96,23 +95,15 @@ bool Element::testCollision(const Vector3D &center, float radius)
 
 void Element::draw()
 {
-    glEnable(GL_TEXTURE_2D);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-
     for (auto &pair : m_subsets)
     {
-        const ElementSubset &subset = pair.second;
-        m_surface->bindTexture(pair.first);
-
-        glVertexPointer(3, GL_FLOAT, 0, subset.vertices.data());
-        glNormalPointer(GL_FLOAT, 0, subset.normals.data());
-        glTexCoordPointer(2, GL_FLOAT, 0, subset.texCoords.data());
-        glDrawElements(GL_TRIANGLES, subset.indices.size(), GL_UNSIGNED_SHORT, subset.indices.data());
+        ElementSubset &subset = pair.second;
+        if (!subset.buffers.isValid())
+            subset.buffers.create(int(subset.vertices.size()), subset.vertices.data(), subset.normals.data(), subset.texCoords.data(),
+                                  int(subset.indices.size()), subset.indices.data());
+        const bool textured = m_surface->bindTexture(pair.first);
+        subset.buffers.draw(0, -1, textured);
     }
-
-    glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 

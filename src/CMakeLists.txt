@@ -147,6 +147,10 @@ set(SOURCES
     gfx/glbmodel.h
     gfx/image.cpp
     gfx/image.h
+    gfx/mesh.cpp
+    gfx/mesh.h
+    gfx/pipeline.cpp
+    gfx/pipeline.h
     gfx/texture.cpp
     gfx/texture.h
     gfx/texturemanager.cpp

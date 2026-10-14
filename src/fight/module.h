@@ -19,6 +19,7 @@
 #define FIGHT_MODULE_H
 
 
+#include "gfx/mesh.h"
 #include "gfx/texture.h"
 #include "boundingbox.h"
 #include "collisionmesh.h"
@@ -50,6 +51,7 @@ private:
         std::vector<Vector3D> normals;
         std::vector<Vector2D> texCoords;
         std::vector<quint16> indices;
+        gfx::Mesh buffers;
     };
 
     BoundingBox m_box;

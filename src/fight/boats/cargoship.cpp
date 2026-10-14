@@ -24,8 +24,8 @@
 #include "sfx/samplemap.h"
 #include "txt/desfile.h"
 #include "util/random.h"
+#include "gfx/pipeline.h"
 #include <glm/gtc/constants.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/trigonometric.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -248,13 +248,13 @@ void CargoShip::updateSegments()
 void CargoShip::drawBlock(int index)
 {
     const Block &block = m_blocks[index];
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glMultMatrixf(glm::value_ptr(Matrix(m_orientationInverted)));
-    glTranslatef(block.position.x, block.position.y, block.position.z);
-    glScalef(block.scale, block.scale, block.scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::multiply(Matrix(m_orientationInverted));
+    gfx::Pipeline::translate(block.position);
+    gfx::Pipeline::scale(block.scale);
     block.module->draw();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 
@@ -397,33 +397,33 @@ void CargoShip::updateTurret(ShipTurret &turret, float elapsedTime)
 
 void CargoShip::draw()
 {
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glMultMatrixf(glm::value_ptr(Matrix(m_orientationInverted)));
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     for (const Block &block : m_blocks)
     {
         if (block.destroyed)
             continue;
-        glPushMatrix();
-        glTranslatef(block.position.x, block.position.y, block.position.z);
-        glScalef(block.scale, block.scale, block.scale);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(block.position);
+        gfx::Pipeline::scale(block.scale);
         block.module->draw();
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
     for (const ShipTurret &turret : m_turrets)
     {
         if (turret.destroyed)
             continue;
-        glPushMatrix();
-        glTranslatef(turret.position.x, turret.position.y, turret.position.z);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(turret.position);
         if (turret.below)
-            glRotatef(180, 0, 1, 0);
-        glRotatef(-glm::degrees(turret.yaw), 0, 0, 1);
-        glScalef(turret.scale, turret.scale, turret.scale);
+            gfx::Pipeline::rotate(180, Vector3D(0, 1, 0));
+        gfx::Pipeline::rotate(-glm::degrees(turret.yaw), Vector3D(0, 0, 1));
+        gfx::Pipeline::scale(turret.scale);
         turret.model->draw();
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

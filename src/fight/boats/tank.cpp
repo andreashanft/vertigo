@@ -24,9 +24,10 @@
 #include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
 #include "util/random.h"
+#include "gfx/pipeline.h"
 
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/trigonometric.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -244,30 +245,30 @@ void Tank::updateTurret(float elapsedTime)
 
 void Tank::draw()
 {
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glMultMatrixf(glm::value_ptr(Matrix(m_orientationInverted)));
-    glScalef(m_scale, m_scale, m_scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::multiply(Matrix(m_orientationInverted));
+    gfx::Pipeline::scale(m_scale);
     m_base->draw();
     // the turret turns around its pivot; only its yaw shows, the barrel's pitch isn't modelled
     if (m_gun)
     {
-        glPushMatrix();
-        glTranslatef(m_gunOffset.x, m_gunOffset.y, m_gunOffset.z);
-        glRotatef(-glm::degrees(m_turretYaw), 0, 0, 1);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(m_gunOffset);
+        gfx::Pipeline::rotate(-glm::degrees(m_turretYaw), Vector3D(0, 0, 1));
         m_gun->draw();
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
     if (m_turret)
     {
-        glPushMatrix();
-        glTranslatef(m_pivot.x, m_pivot.y, m_pivot.z);
-        glRotatef(-glm::degrees(m_turretYaw), 0, 0, 1);
-        glTranslatef(-m_pivot.x, -m_pivot.y, -m_pivot.z);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(m_pivot);
+        gfx::Pipeline::rotate(-glm::degrees(m_turretYaw), Vector3D(0, 0, 1));
+        gfx::Pipeline::translate(-m_pivot);
         m_turret->draw();
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

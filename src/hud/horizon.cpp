@@ -19,6 +19,7 @@
 #include "hud.h"
 #include "fight/scenario.h"
 #include "fight/boats/player.h"
+#include "gfx/pipeline.h"
 #include <glm/trigonometric.hpp>
 
 
@@ -129,27 +130,27 @@ void Horizon::draw()
     float roll = glm::degrees(m_hud->scenario()->player()->roll());
     float pitch = glm::degrees(m_hud->scenario()->pitch());
 
-    glPushMatrix();
-    glTranslatef(p.x, p.y, 0.0f);
-    glRotatef(roll, 0, 0, 1);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(p.x, p.y, 0.0f);
+    gfx::Pipeline::rotate(roll, Vector3D(0, 0, 1));
     if (pitch < 0)
     {
-        glTranslatef(-(m_up.width() + 1)/2, -(m_up.height() + 1)/2, 0.0f);
+        gfx::Pipeline::translate(-(m_up.width() + 1)/2, -(m_up.height() + 1)/2, 0.0f);
         m_up.draw();
     }
     else
     {
-        glTranslatef(-(m_down.width() + 1)/2, -(m_down.height() + 1)/2, 0.0f);
+        gfx::Pipeline::translate(-(m_down.width() + 1)/2, -(m_down.height() + 1)/2, 0.0f);
         m_down.draw();
     }
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 
-    glPushMatrix();
-    glTranslatef(p.x, p.y + pitch/4, 0.0f);
-    glRotatef(roll, 0, 0, 1);
-    glTranslatef(-(m_pitch.width() + 1)/2, -(m_pitch.height() + 1)/2, 0.0f);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(p.x, p.y + pitch/4, 0.0f);
+    gfx::Pipeline::rotate(roll, Vector3D(0, 0, 1));
+    gfx::Pipeline::translate(-(m_pitch.width() + 1)/2, -(m_pitch.height() + 1)/2, 0.0f);
     m_pitch.draw();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

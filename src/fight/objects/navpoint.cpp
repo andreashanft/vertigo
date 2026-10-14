@@ -19,6 +19,7 @@
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "sfx/samplemap.h"
+#include "gfx/pipeline.h"
 #include <glm/geometric.hpp>
 
 
@@ -66,14 +67,14 @@ bool NavPoint::update(float elapsedTime)
 
 void NavPoint::draw()
 {
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glScalef(m_scale, m_scale, m_scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::scale(m_scale);
     if (m_state == 0)
         m_state0->draw();
     if (m_state == 1)
         m_state1->draw();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 
