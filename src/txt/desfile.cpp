@@ -22,7 +22,7 @@
 #include <QDir>
 #include <QFile>
 #include <QStringList>
-#include <QTextStream>
+#include <QRegularExpression>
 
 
 QString trimEnd(const QString& str)
@@ -59,21 +59,23 @@ bool DesFile::load(const QString &filename)
     if (!file.open(QFile::ReadOnly))
         return false;
 
-    QRegExp regSection("^\\s*\\[(.*)\\]");
+    const QRegularExpression regSection("^\\s*\\[(.*)\\]");
     // values may be followed by a ';' comment, which can contain '=' itself
-    QRegExp regKey("([^=]*)=([^;]*)");
+    const QRegularExpression regKey("([^=]*)=([^;]*)");
 
     while (!file.atEnd()) {
         // the game data is 8-bit (DOS codepage 437) text; keep the raw bytes, the fonts are indexed by them
         const QString line = QString::fromLatin1(file.readLine());
 
-        if (regSection.indexIn(line) >= 0)
-            setSection(regSection.cap(1).trimmed().toLower());
+        const QRegularExpressionMatch section = regSection.match(line);
+        if (section.hasMatch())
+            setSection(section.captured(1).trimmed().toLower());
 
-        if (regKey.indexIn(line) >= 0) {
-            const QString key = regKey.cap(1).trimmed().toLower();
+        const QRegularExpressionMatch keyValue = regKey.match(line);
+        if (keyValue.hasMatch()) {
+            const QString key = keyValue.captured(1).trimmed().toLower();
             if (!key.startsWith(";") && !key.startsWith("/"))
-                setValue(key, regKey.cap(2).trimmed());
+                setValue(key, keyValue.captured(2).trimmed());
         }
 
         if (line.trimmed() == "{")
@@ -104,28 +106,28 @@ bool DesFile::save(const QString &filename) const
     if (!file.open(QFile::WriteOnly))
         return false;
 
-    QTextStream stream(&file);
-    stream.setCodec("ISO-8859-1");
-
+    // 8-bit text like the game data (see load())
+    QString text;
     QMapIterator<QString, QVariantMap> itSections(m_sections);
     while (itSections.hasNext()) {
         itSections.next();
         if (itSections.value().isEmpty())
             continue;
 
-        stream << "[" << itSections.key() << "]" << endl;
+        text += "[" + itSections.key() + "]\n";
 
         QMapIterator<QString, QVariant> itValues(itSections.value());
         while (itValues.hasNext()) {
             itValues.next();
 
-            stream << itValues.key() << " = " << itValues.value().toString() << endl;
+            text += itValues.key() + " = " + itValues.value().toString() + "\n";
         }
 
-        stream << endl;
+        text += "\n";
     }
 
-    return true;
+    const QByteArray bytes = text.toLatin1();
+    return file.write(bytes) == bytes.size();
 }
 
 

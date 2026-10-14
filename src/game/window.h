@@ -18,13 +18,21 @@
 #ifndef GAME_WINDOW_H
 #define GAME_WINDOW_H
 
-#include <QGLWidget>
+#include <QCursor>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QStringList>
+#include <QWindow>
 
 namespace game {
 
 class Renderer;
 
-class Window : public QGLWidget
+// The game's window, with the one OpenGL context everything draws with. The
+// context is current from the start: on an offscreen surface while the window
+// isn't shown (loading before the first frame, headless test runs), on the
+// window while it draws.
+class Window : public QWindow
 {
 public:
     Window();
@@ -33,20 +41,31 @@ public:
     void setRenderer(Renderer *renderer);
     // saves the next frame as an image file
     void saveScreenshot(const QString &fileName);
+    // shows what has been drawn so far, e.g. a loading screen before a long load
+    void swapBuffers();
+    QRect rect() const { return QRect(QPoint(0, 0), size()); }
+
+protected:
+    bool event(QEvent *event) override;
+    void exposeEvent(QExposeEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void moveEvent(QMoveEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
-    void resizeGL(int w, int h);
-    void paintGL();
-    void keyPressEvent(QKeyEvent *);
-    void keyReleaseEvent(QKeyEvent *);
-    void mousePressEvent(QMouseEvent *);
-    void mouseReleaseEvent(QMouseEvent *);
-    void mouseMoveEvent(QMouseEvent *);
-    void closeEvent(QCloseEvent *);
+    void render();
     void saveSettings();
     void loadSettings();
 
 private:
+    QOpenGLContext m_context;
+    QOffscreenSurface m_offscreen;
+    QSize m_viewport;
+    QRect m_geometry;   // the last one outside full screen
     QCursor m_cursor;
     Renderer *m_renderer;
     QStringList m_screenshots;

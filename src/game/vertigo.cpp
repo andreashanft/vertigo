@@ -38,6 +38,7 @@
 #include <QKeyEvent>
 #include <QMap>
 #include <QTextStream>
+#include <QRegularExpression>
 #include <iostream>
 
 namespace game {
@@ -163,7 +164,8 @@ int Vertigo::start(const Options &options)
     } else {
         // automated runs (with a time limit) shouldn't take the focus
         if (!options.scenario.isEmpty() && options.timeout > 0)
-            m_window.setAttribute(Qt::WA_ShowWithoutActivating);
+            // what Qt::WA_ShowWithoutActivating sets for a widget
+            m_window.setProperty("_q_showWithoutActivating", true);
         m_window.show();
     }
     while (running && (headless || m_window.isVisible())) {
@@ -333,7 +335,7 @@ int Vertigo::check(const QStringList &names)
             // object ids differ between missions, so don't tell them apart in the totals
             QString kind = it.key();
             if (kind.startsWith("condition: "))
-                kind.replace(QRegExp("\\d+"), "#");
+                kind.replace(QRegularExpression("\\d+"), "#");
             totals[kind] += it.value();
         }
         objects += scenario.objectRecords().size();

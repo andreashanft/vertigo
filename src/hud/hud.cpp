@@ -16,7 +16,6 @@
  ***************************************************************************/
 
 #include "hud.h"
-#include <QGLWidget>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QOpenGLContext>
@@ -32,6 +31,7 @@
 #include "fight/objects/activeobject.h"
 #include "fight/boats/playerturret.h"
 #include "game/boat.h"
+#include "game/window.h"
 #include "gfx/image.h"
 
 #include <glm/gtx/transform.hpp>
@@ -519,7 +519,7 @@ void HUD::draw()
     }
 
     // the GL viewport is in device pixels, the rects in logical pixels
-    const qreal pixelRatio = window() ? window()->devicePixelRatioF() : 1.0;
+    const qreal pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
     if (showsModel() && drawModel(pixelRatio))
         return;
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
@@ -676,7 +676,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
         return;
     }
     // Alt+V switches between the 2D and the 3D cockpit
-    if (e->key() == Qt::Key_V && (e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+    if (e->key() == Qt::Key_V && (e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
     {
         setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
         if (cockpitMode() == CockpitMode::Model && !showsModel())
@@ -708,7 +708,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
         return;
     if (e->key() == Qt::Key_N)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
         {
             if (m_navPoint >= 0)
                 m_scenario->target().lockNavPoint(m_scenario->navPoints()[m_navPoint]);
@@ -724,7 +724,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_R)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
         {
             int scale = m_sonar1->scale();
             if (scale == 90)
@@ -762,7 +762,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_A)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
         {
             if (m_scenario->conditionManager().autopilot())
             {

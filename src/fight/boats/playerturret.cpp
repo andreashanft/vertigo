@@ -21,6 +21,7 @@
 #include "fight/objects/turretbase.h"
 #include "fight/weapons/torpedo.h"
 #include "txt/desfile.h"
+#include "util/random.h"
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
@@ -35,7 +36,7 @@ namespace {
 
 float random()
 {
-    return qrand()/float(RAND_MAX);
+    return util::random()/float(RAND_MAX);
 }
 
 // The data has no turn rates for the player's turrets; the turret models (TURRETn.DES) mostly turn

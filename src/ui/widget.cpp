@@ -16,7 +16,7 @@
  ***************************************************************************/
 
 #include "widget.h"
-#include <QGLContext>
+#include <qopengl.h>
 
 
 namespace ui {

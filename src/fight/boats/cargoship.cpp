@@ -23,6 +23,7 @@
 #include "fight/weapons/unitgun.h"
 #include "sfx/samplemap.h"
 #include "txt/desfile.h"
+#include "util/random.h"
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/trigonometric.hpp>
@@ -482,7 +483,7 @@ void CargoShip::destroy()
     for (int i = 0; i < int(m_blocks.size()); i++)
         m_explosionOrder.push_back(i);
     for (int i = int(m_explosionOrder.size()) - 1; i > 0; i--)
-        std::swap(m_explosionOrder[i], m_explosionOrder[qrand() % (i + 1)]);
+        std::swap(m_explosionOrder[i], m_explosionOrder[util::random() % (i + 1)]);
     m_nextExplosion = m_scenario->time();
 }
 
@@ -497,7 +498,7 @@ void CargoShip::explodeNextBlock()
     Block &block = m_blocks[m_explosionOrder.back()];
     const int index = m_explosionOrder.back();
     m_explosionOrder.pop_back();
-    m_nextExplosion = m_scenario->time() + 0.3f + 0.4f*qrand()/float(RAND_MAX);
+    m_nextExplosion = m_scenario->time() + 0.3f + 0.4f*util::random()/float(RAND_MAX);
 
     block.destroyed = true;
     if (block.segment)
@@ -508,8 +509,8 @@ void CargoShip::explodeNextBlock()
     m_scenario->explosionAt(center, 0.6f);
     for (int i = 0; i < 4; i++)
     {
-        const Vector3D d(qrand()/float(RAND_MAX) - 0.5f, qrand()/float(RAND_MAX) - 0.5f, 0.5f*qrand()/float(RAND_MAX));
-        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_9) + qrand()%5), center, glm::length(d) > 0.01f ? glm::normalize(d) : Vector3D(0, 0, 1));
+        const Vector3D d(util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f, 0.5f*util::random()/float(RAND_MAX));
+        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_9) + util::random()%5), center, glm::length(d) > 0.01f ? glm::normalize(d) : Vector3D(0, 0, 1));
     }
     // the turrets on it go with it
     for (ShipTurret &turret : m_turrets)

@@ -22,8 +22,12 @@
 #include "gfx/image.h"
 #include "txt/stringtable.h"
 #include "ui/button.h"
-#include <QGLContext>
+#include "window.h"
+#include <qopengl.h>
 #include <QKeyEvent>
+#include <QLocale>
+#include <QRegularExpression>
+#include <algorithm>
 
 namespace game {
 
@@ -151,13 +155,11 @@ void MainMenu::draw()
     }
     if (m_state == Loading)
     {
-        QGLWidget *win = window();
-        if (win->doubleBuffer())
-            win->swapBuffers();
+        // show the loading screen during the load
+        window()->swapBuffers();
         m_funcLoadGame(m_loadingGame);
         changeState(Title);
-        if (win->doubleBuffer())
-            win->swapBuffers();
+        window()->swapBuffers();
     }
 }
 
@@ -228,7 +230,7 @@ void MainMenu::keyPressEvent(QKeyEvent *event)
             m_name.chop(1);
 
         QString text = event->text().toLower().toLatin1();
-        text.remove(QRegExp("[^a-z\\-0-9 ]*"));
+        text.remove(QRegularExpression("[^a-z\\-0-9 ]*"));
         if (!text.isEmpty())
             m_name += text;
 
@@ -263,7 +265,7 @@ void MainMenu::showLoad()
     m_btnLoadSave.clear();
 
     QList<Chapter::SavedGame> games = Chapter::savedGames();
-    qSort(games);
+    std::sort(games.begin(), games.end());
     foreach (const Chapter::SavedGame &game, games) {
         QString name = game.name;
 
@@ -283,7 +285,7 @@ void MainMenu::showLoad()
         label.setWidth(640);
         label.setAlignment(ui::Button::AlignHCenter);
         label.setFont(gfx::Font::Small);
-        label.setText(game.time.toString(Qt::DefaultLocaleShortDate));
+        label.setText(QLocale().toString(game.time, QLocale::ShortFormat));
 
         y += 20;
     }

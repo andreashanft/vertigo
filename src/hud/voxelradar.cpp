@@ -27,7 +27,7 @@
 #include "util/datapath.h"
 
 #include <QFile>
-#include <QGLContext>
+#include <qopengl.h>
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>

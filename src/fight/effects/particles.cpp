@@ -20,7 +20,7 @@
 #include "fight/scenario.h"
 #include "gfx/texture.h"
 
-#include <QGLContext>
+#include <qopengl.h>
 #include <glm/gtx/norm.hpp>
 #include <algorithm>
 

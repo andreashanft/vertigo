@@ -16,7 +16,7 @@
  ***************************************************************************/
 
 #include "task.h"
-#include <QRegExp>
+#include <QRegularExpression>
 
 
 namespace game {
@@ -24,15 +24,14 @@ namespace game {
 
 Task::Task(const QString &text)
 {
-    QRegExp reg("(\\w): (.*)");
-    reg.indexIn(text);
-    if (reg.cap(1) == "T")
+    const QRegularExpressionMatch match = QRegularExpression("(\\w): (.*)").match(text);
+    if (match.captured(1) == "T")
         m_type = Tip;
-    else if (reg.cap(1) == "A")
+    else if (match.captured(1) == "A")
         m_type = Job;
-    else if (reg.cap(1) == "M")
+    else if (match.captured(1) == "M")
         m_type = Mission;
-    m_text = reg.cap(2);
+    m_text = match.captured(2);
 }
 
 

@@ -23,18 +23,20 @@
 #include "items.h"
 #include "fight/scenario.h"
 #include "hud/hud.h"
+#include "util/random.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QTextStream>
 #include <QFileDialog>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QTime>
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    qsrand(QTime::currentTime().second() * 1000 + QTime::currentTime().msec());
+    util::seedRandom(QTime::currentTime().second() * 1000 + QTime::currentTime().msec());
 
     app.setOrganizationName("Vertigo");
     app.setApplicationName("Vertigo");
@@ -116,15 +118,15 @@ int main(int argc, char *argv[])
         hud::HUD::setLook(yaw, pitch);
     }
     foreach (const QString &value, parser.values(screenshotOption)) {
-        const QRegExp format("([\\d.]+)=(.+)");
-        if (!format.exactMatch(value)) {
+        const QRegularExpressionMatch format = QRegularExpression(QRegularExpression::anchoredPattern("([\\d.]+)=(.+)")).match(value);
+        if (!format.hasMatch()) {
             QTextStream(stderr) << "Invalid --screenshot value " << value << ", expected time=file\n";
             return game::Vertigo::ExitUsage;
         }
-        options.screenshots.push_back({ format.cap(1).toFloat(), format.cap(2) });
+        options.screenshots.push_back({ format.captured(1).toFloat(), format.captured(2) });
     }
     foreach (const QString &value, parser.values(destroyOption)) {
-        foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
+        foreach (const QString &id, value.split(',', Qt::SkipEmptyParts)) {
             bool ok = false;
             options.destroy.push_back(id.toInt(&ok));
             if (!ok) {
@@ -134,15 +136,15 @@ int main(int argc, char *argv[])
         }
     }
     foreach (const QString &value, parser.values(keysOption)) {
-        foreach (const QString &item, value.split(',', QString::SkipEmptyParts)) {
+        foreach (const QString &item, value.split(',', Qt::SkipEmptyParts)) {
             // time=key or time=key/hold
-            const QRegExp format("([\\d.]+)=([^/]+)(/([\\d.]+))?");
-            const QKeySequence key(format.exactMatch(item) ? format.cap(2) : QString());
+            const QRegularExpressionMatch format = QRegularExpression(QRegularExpression::anchoredPattern("([\\d.]+)=([^/]+)(/([\\d.]+))?")).match(item);
+            const QKeySequence key(format.hasMatch() ? format.captured(2) : QString());
             if (key.isEmpty()) {
                 QTextStream(stderr) << "Invalid --keys value " << item << ", expected time=key[/seconds]\n";
                 return game::Vertigo::ExitUsage;
             }
-            options.keys.push_back({ format.cap(1).toFloat(), key, format.cap(4).toFloat() });
+            options.keys.push_back({ format.captured(1).toFloat(), key, format.captured(4).toFloat() });
         }
     }
     if (parser.isSet(nearOption)) {
@@ -154,7 +156,7 @@ int main(int argc, char *argv[])
         }
     }
     foreach (const QString &value, parser.values(fireOption)) {
-        foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
+        foreach (const QString &id, value.split(',', Qt::SkipEmptyParts)) {
             bool ok = false;
             options.fire.push_back(id.toInt(&ok));
             if (!ok) {
@@ -164,7 +166,7 @@ int main(int argc, char *argv[])
         }
     }
     foreach (const QString &value, parser.values(traceOption)) {
-        foreach (const QString &id, value.split(',', QString::SkipEmptyParts)) {
+        foreach (const QString &id, value.split(',', Qt::SkipEmptyParts)) {
             bool ok = false;
             options.trace.push_back(id.toInt(&ok));
             if (!ok) {
@@ -174,17 +176,17 @@ int main(int argc, char *argv[])
         }
     }
     foreach (const QString &value, parser.values(driveOption)) {
-        foreach (const QString &item, value.split(',', QString::SkipEmptyParts)) {
-            const QRegExp format("(\\d+)=(-?[\\d.]+)(:(-?[\\d.]+))?");
-            if (!format.exactMatch(item)) {
+        foreach (const QString &item, value.split(',', Qt::SkipEmptyParts)) {
+            const QRegularExpressionMatch format = QRegularExpression(QRegularExpression::anchoredPattern("(\\d+)=(-?[\\d.]+)(:(-?[\\d.]+))?")).match(item);
+            if (!format.hasMatch()) {
                 QTextStream(stderr) << "Invalid --drive value " << item << ", expected id=speed[:turn]\n";
                 return game::Vertigo::ExitUsage;
             }
-            options.drive.push_back({ format.cap(1).toInt(), format.cap(2).toFloat(), format.cap(4).toFloat() });
+            options.drive.push_back({ format.captured(1).toInt(), format.captured(2).toFloat(), format.captured(4).toFloat() });
         }
     }
     foreach (const QString &value, parser.values(equipOption)) {
-        foreach (const QString &item, value.split(',', QString::SkipEmptyParts)) {
+        foreach (const QString &item, value.split(',', Qt::SkipEmptyParts)) {
             const QStringList parts = item.split('=');
             bool ok = false;
             const int model = parts.value(1).toInt(&ok);

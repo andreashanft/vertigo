@@ -17,7 +17,7 @@
 
 #include "element.h"
 #include "surface.h"
-#include <QGLContext>
+#include <qopengl.h>
 
 
 namespace fight {

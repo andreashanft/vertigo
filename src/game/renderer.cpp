@@ -16,7 +16,7 @@
  ***************************************************************************/
 
 #include "renderer.h"
-#include <QGLContext>
+#include <qopengl.h>
 #include <glm/vec4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/matrix.hpp>
@@ -43,7 +43,7 @@ Renderer::Renderer() :
 }
 
 
-void Renderer::setWindow(QGLWidget *window)
+void Renderer::setWindow(Window *window)
 {
     m_window = window;
 }

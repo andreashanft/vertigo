@@ -21,7 +21,7 @@
 #include "fight/boundingbox.h"
 #include "fight/collisionmesh.h"
 
-#include <QGLContext>
+#include <qopengl.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/norm.hpp>
 

@@ -23,6 +23,7 @@
 #include "fight/objects/turret.h"
 #include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
+#include "util/random.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
@@ -185,7 +186,7 @@ void Tank::stirUpDust(float elapsedTime)
     m_dustTime -= elapsedTime*std::min(speed/10.0f, 1.0f);
     if (m_dustTime > 0)
         return;
-    m_dustTime += DustInterval*(0.7f + 0.6f*qrand()/float(RAND_MAX));
+    m_dustTime += DustInterval*(0.7f + 0.6f*util::random()/float(RAND_MAX));
 
     // at the rear corners, on the ground; small, medium or large by the vehicle's size
     const Vector3D dim = m_localBox.dim();

@@ -17,7 +17,7 @@
 
 #include "fontmanager.h"
 #include "image.h"
-#include <QGLContext>
+#include <qopengl.h>
 
 namespace gfx {
 

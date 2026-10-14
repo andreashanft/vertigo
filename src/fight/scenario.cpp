@@ -40,10 +40,12 @@
 
 #include "boats/simpleboat.h"
 #include "boats/tank.h"
+#include "util/random.h"
 
-#include <QGLContext>
+#include <qopengl.h>
 #include <QSettings>
 #include <QTime>
+#include <QRegularExpression>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -112,7 +114,7 @@ Scenario::Scenario(const QString &name) :
     m_forwards(0.0f),
     m_backwards(0.0f)
 {
-    qsrand(name.right(4).toInt());
+    util::seedRandom(name.right(4).toInt());
 
     m_file.load(QString("vfx:scenario/%1.des").arg(name));
 
@@ -152,7 +154,7 @@ Scenario::Scenario(const QString &name) :
     std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
     std::vector<ActiveObject *> absentUnits; // only at a higher difficulty
     const int difficulty = Scenario::difficulty();
-    foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
+    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^movable\\d*"))) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -463,7 +465,7 @@ Scenario::Scenario(const QString &name) :
     }
 
     // currents: each cell covers a 2x2 block of map cells; speeds aren't in the data (docs/ROADMAP.md, appendix D)
-    foreach (const QString &section, m_file.sections().filter(QRegExp("^current\\d*", Qt::CaseInsensitive))) {
+    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^current\\d*", QRegularExpression::CaseInsensitiveOption))) {
         m_file.setSection(section);
         m_file.value("id");
         if (m_file.value("typ").toInt() != 3072 || m_file.value("pz").toInt() != 0)
@@ -485,7 +487,7 @@ Scenario::Scenario(const QString &name) :
         m_currentGrid[std::make_pair(x/2, y/2)] = direction*speed;
     }
 
-    foreach (const QString &section, m_file.sections().filter(QRegExp("^radio\\d*"))) {
+    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^radio\\d*"))) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -535,7 +537,7 @@ Scenario::Scenario(const QString &name) :
     m_endType = m_file.value("Type").toInt();
 
     // report what the loader ignored, with numbers in names collapsed to '#'
-    QRegExp digits("\\d+");
+    const QRegularExpression digits("\\d+");
     foreach (const QString &section, m_file.sections()) {
         if (placeholderSections.contains(section))
             continue;
@@ -550,7 +552,7 @@ Scenario::Scenario(const QString &name) :
 
 
 
-    qsrand(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
+    util::seedRandom(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
 
     sfx::SampleMap::load();
 }

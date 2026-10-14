@@ -20,6 +20,7 @@
 #include "txt/desfile.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/effects/billboard.h"
+#include "util/random.h"
 
 
 namespace fight {
@@ -127,7 +128,7 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
     float defect = (1.0f - (m_defect < 0.2f ? 0.2f : m_defect)/m_defectDamping)/m_muzzles.size(); // TODO: check formula
     for (int i = 0; i < m_muzzles.size() && !jammed; i++)
     {
-        if (defect > 0 && defect > static_cast<float>(qrand())/RAND_MAX)
+        if (defect > 0 && defect > static_cast<float>(util::random())/RAND_MAX)
             jammed = true;
         else
         {

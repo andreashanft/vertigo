@@ -283,7 +283,7 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 20 missions are missing. How the original lays them out is to be compared |
 | G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing |
 | G4 | Unresolved conditions | S each | `--check` reports an empty faction in s00402 and objectives that don't exist in s00404 (objective 14, 8 times), s01802 (24), s02003 (32, 36) and s02006 (21). Check whether these missions can still be won, and what the original makes of such references |
-| G5 | s00705 | S | Ends with success after 33 s while the player does nothing. Find out which units fulfil the objectives and whether that is right |
+| G5 | s00705 | S | Ended with success after 33 s while the player did nothing (seed 1, with `qrand()`); with other seeds the player died or the time ran out, and with `util::random()` (P2) seeds 1–4 run out of time. Find out which units can fulfil the objectives without the player and whether that is right |
 | G6 | Station after a mission | S | When several stations are enabled after a mission, the first one is taken (`TODO` in `Chapter`); the player should choose |
 
 ## Open questions and how to settle them
@@ -383,7 +383,7 @@ they can land on master one by one.
 | # | Step | Effort | Notes |
 |---|---|---|---|
 | P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion (**done**: `util::ticks()` on `std::chrono::steady_clock`, `QString::toStdWString()` for MSVC's wide file names) |
-| P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below |
+| P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below (**code done, Qt 6 build not tested yet**: the code only uses what Qt 5.15 and Qt 6 both have, and CMake takes either. `Window` is a `QWindow` with one `QOpenGLContext`, current from the start on a `QOffscreenSurface` while the window isn't shown, so loading and headless runs work as before; `QApplication` stays for the folder dialog until P6. The window comes back with its last size; the `QWidget` geometry saved before is read once. `util::random()` (a `std::mt19937`) replaces `qrand()`, so seeded runs give other results than before; over 3 seeds × 71 missions the counts stay the same (13 runs destroyed, 3 failed). `QRegularExpression`, `QElapsedTimer`, `QMultiMap`, `QStandardPaths::AppLocalDataLocation` (the same directory as before), C++17) |
 | P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) |
 | P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import (**done**: `util::DataPath` indexes the data directory once (about 4,300 entries) and resolves `gfx:…` and `gfx/…` names in any case; every file opener goes through it, and the Qt search paths are gone. `--data <directory>` picks the data for one run. Tested with the data on a case-sensitive APFS volume: `--check` gives the same report, missions, cockpits and the main menu load) |
 | P5 | iOS build | S | `qt_add_executable` with an Info.plist, icons and signing. Qt 6 for iOS comes from the Qt online installer, not Homebrew. Test in the iPad simulator first |
@@ -394,7 +394,8 @@ they can land on master one by one.
 | P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as Qt turns taps into mouse clicks; hover highlights only show with a trackpad or Pencil |
 
 Order of work: P1 → P2 → P3 → P4 on the desktop, then P5–P8 (playable with a
-hardware keyboard), then P9 and P10.
+hardware keyboard), then P9 and P10. P1, P4 and the code of P2 are done
+(October 2026); next are a Qt 6 test build and P3.
 
 Platform notes:
 

@@ -26,6 +26,7 @@
 #include "ui/list.h"
 #include "ui/itemlist.h"
 
+#include <QElapsedTimer>
 #include <map>
 #include <deque>
 
@@ -120,7 +121,7 @@ private:
     int m_selectedList;
     int m_selectedItem;
 
-    QTime m_time;
+    QElapsedTimer m_time;
     State m_state;
     LoadingState m_loadingState;
     int m_loadingItem;

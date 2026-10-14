@@ -21,7 +21,7 @@
 #include "gfx/image.h"
 #include "txt/desfile.h"
 #include "util/datapath.h"
-#include <QGLContext>
+#include <qopengl.h>
 #include <QFile>
 
 #include <glm/geometric.hpp>

@@ -21,6 +21,7 @@
 #include "objects/activeobject.h"
 #include "objects/turretbase.h"
 #include "weapons/unitgun.h"
+#include "util/random.h"
 
 #include <glm/geometric.hpp>
 #include <glm/gtc/constants.hpp>
@@ -45,7 +46,7 @@ const float AmbushDistance = 300.0f;
 
 float random()
 {
-    return qrand()/float(RAND_MAX);
+    return util::random()/float(RAND_MAX);
 }
 
 float random(float min, float max)

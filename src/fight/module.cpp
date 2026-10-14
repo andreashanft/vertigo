@@ -21,7 +21,7 @@
 #include "util/datapath.h"
 
 #include <QFile>
-#include <QGLContext>
+#include <qopengl.h>
 #include <QVector3D>
 #include <glm/geometric.hpp>
 

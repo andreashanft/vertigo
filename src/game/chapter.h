@@ -30,6 +30,8 @@
 #include "task.h"
 #include "boat.h"
 
+#include <QDateTime>
+
 
 namespace fight { class Scenario; }
 namespace hud { class HUD; }

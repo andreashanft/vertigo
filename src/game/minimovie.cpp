@@ -17,7 +17,9 @@
 
 #include "minimovie.h"
 #include "gfx/image.h"
+#include "util/random.h"
 #include <QStringList>
+#include <QRegularExpression>
 
 
 namespace game {
@@ -39,7 +41,7 @@ MiniMovie::~MiniMovie()
 
 void MiniMovie::load(txt::DesFile &file)
 {
-    foreach (const QString &section, file.sections().filter(QRegExp("^minimovie"))) {
+    foreach (const QString &section, file.sections().filter(QRegularExpression("^minimovie"))) {
         file.setSection(section);
 
         const QString name = file.value("Name").toString();
@@ -61,7 +63,7 @@ void MiniMovie::load(txt::DesFile &file)
         else if (type == "oneshot")
             video->oneShot = true;
 
-        video->time = float(qrand()) / RAND_MAX * video->rndMax;
+        video->time = float(util::random()) / RAND_MAX * video->rndMax;
 
         m_videos.append(video);
     }
@@ -85,7 +87,7 @@ void MiniMovie::update(gfx::Texture texture)
             video->time -= time;
             if (video->time < 0) {
                 video->video.play();
-                video->time = float(qrand()) / RAND_MAX * video->rndMax;
+                video->time = float(util::random()) / RAND_MAX * video->rndMax;
             }
         }
 

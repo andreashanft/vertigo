@@ -22,7 +22,7 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
-#include <QGLContext>
+#include <qopengl.h>
 #include <QOpenGLContext>
 #include <QSettings>
 #include <glm/gtc/type_ptr.hpp>

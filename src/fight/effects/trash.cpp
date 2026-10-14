@@ -18,6 +18,7 @@
 #include "trash.h"
 #include "billboard.h"
 #include "fight/scenario.h"
+#include "util/random.h"
 
 #include <glm/gtx/norm.hpp>
 
@@ -29,7 +30,7 @@ Effects Trash::trashCollection[9] = { Effects::Trash_0, Effects::Trash_0, Effect
 
 
 Trash::Trash(Scenario *scenario, Billboard *billboard, const Vector3D &position) :
-    Effect(scenario, billboard, static_cast<float>(qrand()%360), 1)
+    Effect(scenario, billboard, static_cast<float>(util::random()%360), 1)
 {
     m_noise = billboard->noiseLevel();
     
@@ -40,7 +41,7 @@ Trash::Trash(Scenario *scenario, Billboard *billboard, const Vector3D &position)
     m_scenario->collisionManager().addObject(this);
     m_box = m_billboard->box();
 
-    Vector3D pos = position + Vector3D(qrand()%50 - 25, qrand()%50 - 25, qrand()%25 - 25);
+    Vector3D pos = position + Vector3D(util::random()%50 - 25, util::random()%50 - 25, util::random()%25 - 25);
     float height = m_scenario->surface().heightAt(pos.x, pos.y) + 5;
     if (pos.z < height)
         pos.z = height;

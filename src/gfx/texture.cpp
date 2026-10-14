@@ -16,7 +16,8 @@
  ***************************************************************************/
 
 #include "texture.h"
-#include <QGLWidget>
+#include <QImage>
+#include <qopengl.h>
 
 
 namespace gfx {
@@ -133,7 +134,7 @@ void TexturePrivate::update(int x, int y, QImage image)
         break;
 
     default:
-        image = QGLWidget::convertToGLFormat(image.mirrored());
+        image = image.convertToFormat(QImage::Format_RGBA8888);
         format = GL_RGBA;
     }
 

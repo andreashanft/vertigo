@@ -11,6 +11,9 @@ nix run github:pnordhus/vertigo
 
 # Compiling
 
+Vertigo needs Qt 5.15 or Qt 6, OpenAL and GLM. The Qt 6 build hasn't been
+tested yet.
+
 ```
 mkdir build
 cd build
