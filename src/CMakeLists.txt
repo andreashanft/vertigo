@@ -138,6 +138,8 @@ set(SOURCES
     game/station.h
     game/task.cpp
     game/task.h
+    game/training.cpp
+    game/training.h
     game/vertigo.cpp
     game/vertigo.h
     game/window.cpp

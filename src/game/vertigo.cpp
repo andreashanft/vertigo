@@ -49,6 +49,7 @@ Vertigo::Vertigo(const Options &options) :
     m_mainMenu(
        [this](String name) { startGame(name); },
        [this](String name) { loadGame(name); },
+       [this](int index) { startTraining(index); },
        [this]() { m_window.close(); }
     )
 {
@@ -427,6 +428,20 @@ void Vertigo::endGame()
 {
     m_chapter.release()->deleteLater();
     m_window.setRenderer(&m_mainMenu);
+}
+
+void Vertigo::startTraining(int index)
+{
+    m_training.reset(new Training(index,
+        [this](Renderer *renderer) { m_window.setRenderer(renderer); },
+        [this]() { endTraining(); }
+    ));
+}
+
+void Vertigo::endTraining()
+{
+    m_window.setRenderer(&m_mainMenu);
+    m_training.release()->deleteLater();
 }
 
 void Vertigo::introFinished()

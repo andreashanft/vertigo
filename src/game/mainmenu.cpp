@@ -18,6 +18,7 @@
 #include "chapter.h"
 #include "fight/scenario.h"
 #include "mainmenu.h"
+#include "training.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "txt/stringtable.h"
@@ -30,7 +31,8 @@
 
 namespace game {
 
-MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void()> funcQuit) :
+MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void(int)> funcStartTraining,
+                   std::function<void()> funcQuit) :
     m_state(Invalid),
     m_lblVersion(&m_title),
     m_lblBar1(&m_title),
@@ -40,6 +42,7 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnMainNew([this]() { showNew(); }, &m_lblMain),
     m_btnMainLoad([this]() { showLoad(); }, &m_lblMain),
     m_btnMainDifficulty([this]() { fight::Scenario::setDifficulty((fight::Scenario::difficulty() + 1)%3); updateDifficulty(); }, &m_lblMain),
+    m_btnMainTraining([this]() { showTraining(); }, &m_lblMain),
     m_btnMainQuit(funcQuit, &m_lblMain),
     m_lblNew(&m_title, false),
     m_lblNewTitle(&m_lblNew),
@@ -47,12 +50,16 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_lblLoad(&m_title, false),
     m_lblLoadTitle(&m_lblLoad),
     m_btnLoadBack([this]() { showMain(); }, &m_lblLoad),
+    m_lblTraining(&m_title, false),
+    m_lblTrainingTitle(&m_lblTraining),
+    m_btnTrainingBack([this]() { showMain(); }, &m_lblTraining),
     m_lblLoading(&m_title, false),
     m_lblLoadingTitle(&m_lblLoading),
     m_lblLoadingWait(&m_lblLoading),
     m_cursor(false),
     m_funcStartGame(std::move(funcStartGame)),
-    m_funcLoadGame(std::move(funcLoadGame))
+    m_funcLoadGame(std::move(funcLoadGame)),
+    m_funcStartTraining(std::move(funcStartTraining))
 {
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
@@ -96,6 +103,33 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnMainDifficulty.setWidth(640);
     m_btnMainDifficulty.setAlignment(ui::Label::AlignHCenter);
     updateDifficulty();
+
+    // the training missions, if the data has them
+    const StringList trainings = Training::names();
+    m_btnMainTraining.setFont(fontLarge);
+    m_btnMainTraining.setPosition(0, 348);
+    m_btnMainTraining.setWidth(640);
+    m_btnMainTraining.setAlignment(ui::Label::AlignHCenter);
+    m_btnMainTraining.setText(txt::StringTable::get(txt::MainMenu_Training));
+    m_btnMainTraining.setVisible(!trainings.isEmpty());
+
+    m_lblTrainingTitle.setFont(fontMedium);
+    m_lblTrainingTitle.setPosition(145, 256 - fontMedium.height() - 2);
+    m_lblTrainingTitle.setText(txt::StringTable::get(txt::MainMenu_Training));
+    for (int i = 0; i < trainings.size(); i++) {
+        m_btnTrainingMissions.emplace_back([this, i]() { m_funcStartTraining(i); }, &m_lblTraining);
+        ui::Button &button = m_btnTrainingMissions.back();
+        button.setFont(fontLarge);
+        button.setPosition(0, 288 + 20*i);
+        button.setWidth(640);
+        button.setAlignment(ui::Label::AlignHCenter);
+        button.setText(trainings[i].toUpper());
+    }
+    m_btnTrainingBack.setPosition(0, 428);
+    m_btnTrainingBack.setWidth(640);
+    m_btnTrainingBack.setAlignment(ui::Button::AlignHCenter);
+    m_btnTrainingBack.setFont(fontLarge);
+    m_btnTrainingBack.setText(txt::StringTable::get(txt::MainMenu));
 
     m_btnMainQuit.setFont(fontLarge);
     m_btnMainQuit.setPosition(0, 408);
@@ -249,6 +283,7 @@ void MainMenu::showMain()
     m_lblMain.show();
     m_lblNew.hide();
     m_lblLoad.hide();
+    m_lblTraining.hide();
     m_lblLoading.hide();
 }
 
@@ -294,6 +329,13 @@ void MainMenu::showLoad()
 
         y += 20;
     }
+}
+
+
+void MainMenu::showTraining()
+{
+    m_lblMain.hide();
+    m_lblTraining.show();
 }
 
 

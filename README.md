@@ -95,6 +95,12 @@ Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
 `~/.local/share/Vertigo/Vertigo` on Linux, and in the app's own folder on the
 iPad.
 
+## Training
+
+The main menu's Training has the original's four training missions, each with
+its briefing and its own boat, outside the story. Afterwards the game goes back
+to the menu.
+
 ## Testing
 
 Vertigo can start a mission directly, which is meant for testing:

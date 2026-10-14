@@ -16,7 +16,7 @@
  ***************************************************************************/
 
 #include "briefing.h"
-#include "chapter.h"
+#include "mission.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "txt/stringtable.h"
@@ -28,7 +28,9 @@
 namespace game {
 
 
-Briefing::Briefing() :
+Briefing::Briefing(const Mission &mission, const String &map, hud::HUD *hud) :
+    m_mission(mission),
+    m_hud(hud),
     m_state(Init),
     m_toggleState(false)
 {
@@ -49,10 +51,10 @@ Briefing::Briefing() :
 
     m_lblMap = new ui::Label(&m_lblMain);
     m_lblMap->setPosition(304, 32);
-    m_lblMap->setTexture(gfx::Image::load(String("gfx:pic/area/%1.r16").arg(Chapter::get()->area()->map()), 304, 284, true));
+    m_lblMap->setTexture(gfx::Image::load(String("gfx:pic/area/%1.r16").arg(map), 304, 284, true));
 
     m_lblArrow = new ui::Label(m_lblMap);
-    m_lblArrow->setPosition(Chapter::get()->mission()->pos() - Point(7, 7));
+    m_lblArrow->setPosition(m_mission.pos() - Point(7, 7));
     m_lblArrow->setTexture(gfx::Image::load("gfx:img/connect/areapoin.img", colorTableArrow));
     m_lblArrow->setVisible(false);
 }
@@ -72,14 +74,14 @@ void Briefing::deactivate()
 
 void Briefing::setRect(const Rect &rect)
 {
-    Chapter::get()->hud()->setRect(rect);
+    m_hud->setRect(rect);
     Renderer::setRect(rect);
 }
 
 
 void Briefing::draw()
 {
-    Chapter::get()->hud()->draw();
+    m_hud->draw();
     setupGL(false);
     m_lblMain.doDraw();
 
@@ -111,11 +113,11 @@ void Briefing::draw()
 
     if (m_state == Text)
     {
-        if (m_nextLine < Chapter::get()->mission()->textB().count())
+        if (m_nextLine < m_mission.textB().count())
         {
             label = new ui::Label(&m_lblMain);
             label->setFont(m_font);
-            label->setText(Chapter::get()->mission()->textB().at(m_nextLine));
+            label->setText(m_mission.textB().at(m_nextLine));
             label->setPosition(0, 64 + m_nextLine*11);
             label->setWidth(304);
             label->setAlignment(ui::Label::AlignHCenter);
@@ -131,8 +133,8 @@ void Briefing::draw()
 
     if (m_state == Targets)
     {
-        if (Chapter::get()->mission()->textP().count() > 0 &&
-            m_nextLine < Chapter::get()->mission()->textP().count())
+        if (m_mission.textP().count() > 0 &&
+            m_nextLine < m_mission.textP().count())
         {
             if (m_nextLine >= -2)
             {
@@ -143,7 +145,7 @@ void Briefing::draw()
                 else if (m_nextLine == -1)
                     label->setText(txt::StringTable::get(txt::Briefing_TargetsLine));
                 else
-                    label->setText(Chapter::get()->mission()->textP().at(m_nextLine));
+                    label->setText(m_mission.textP().at(m_nextLine));
                 label->setPosition(18, 354 + m_nextLine*11);
                 label->setWidth(304);
                 m_woopSound.playInstance();
@@ -159,8 +161,8 @@ void Briefing::draw()
 
     if (m_state == Hints)
     {
-        if (Chapter::get()->mission()->textS().count() > 0 &&
-            m_nextLine < Chapter::get()->mission()->textS().count())
+        if (m_mission.textS().count() > 0 &&
+            m_nextLine < m_mission.textS().count())
         {
             if (m_nextLine >= -2)
             {
@@ -171,7 +173,7 @@ void Briefing::draw()
                 else if (m_nextLine == -1)
                     label->setText(txt::StringTable::get(txt::Briefing_HintsLine));
                 else
-                    label->setText(Chapter::get()->mission()->textS().at(m_nextLine));
+                    label->setText(m_mission.textS().at(m_nextLine));
                 label->setPosition(322, 354 + m_nextLine*11);
                 label->setWidth(304);
                 m_woopSound.playInstance();

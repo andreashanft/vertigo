@@ -21,6 +21,7 @@
 #include "chapter.h"
 #include "mainmenu.h"
 #include "movie.h"
+#include "training.h"
 #include "window.h"
 
 #include "gfx/fontmanager.h"
@@ -98,6 +99,8 @@ private:
     void startGame(const String &name);
     void loadGame(const String &name);
     void endGame();
+    void startTraining(int index);
+    void endTraining();
     void introFinished();
     void createMainMenu(bool skipToTitle);
     void createChapter();
@@ -110,6 +113,7 @@ private:
     MainMenu m_mainMenu;
     std::unique_ptr<Movie> m_intro;
     std::unique_ptr<Chapter> m_chapter;
+    std::unique_ptr<Training> m_training;
     String m_name;
 
     // test mode, and the main menu's --keys, --click and --screenshot
