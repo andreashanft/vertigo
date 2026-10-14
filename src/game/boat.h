@@ -20,7 +20,6 @@
 
 
 #include "util/string.hpp"
-#include <QPoint>
 #include <vector>
 #include <set>
 #include "txt/desfile.h"

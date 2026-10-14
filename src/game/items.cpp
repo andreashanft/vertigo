@@ -19,6 +19,7 @@
 #include "chapter.h"
 #include "txt/desfile.h"
 #include "gfx/colortable.h"
+#include "util/containers.hpp"
 #include "util/datapath.h"
 #include <QFile>
 
@@ -156,7 +157,7 @@ const std::map<int, Items::Item>& Items::all()
 
 void Items::insertType(Type type, std::vector<int> &list)
 {
-    Station station = Chapter::get()->stations().value(Chapter::get()->currentStation());
+    Station station = util::value(Chapter::get()->stations(), Chapter::get()->currentStation());
     for (const auto &pair : items->m_items)
         if (pair.second.type == type && station.depotPrices().find(pair.second.model) != station.depotPrices().end())
             list.push_back(pair.second.model);
@@ -208,7 +209,7 @@ int Items::getDepotPrice(int model)
     if (item == items->m_items.end())
         return 0;
     // stations that don't sell an item use its base price
-    Station station = Chapter::get()->stations().value(Chapter::get()->currentStation());
+    Station station = util::value(Chapter::get()->stations(), Chapter::get()->currentStation());
     auto factor = station.depotPrices().find(model);
     return (int)(0.9*item->second.cost*(factor != station.depotPrices().end() ? factor->second : 1.0f));
 }

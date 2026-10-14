@@ -46,7 +46,7 @@ public:
         bool blend = false;         // alphaMode BLEND
         std::vector<Vector3D> positions;    // node transforms applied
         std::vector<Vector2D> texCoords;    // of the base colour texture; empty without one
-        std::vector<quint32> indices;       // triangles
+        std::vector<std::uint32_t> indices;       // triangles
     };
 
 public:

@@ -45,7 +45,7 @@ public:
 private:
     void activate();
     void deactivate();
-    void setRect(const QRect &rect);
+    void setRect(const Rect &rect);
     void draw();
     void keyPressEvent(QKeyEvent *);
 

@@ -266,9 +266,9 @@ void MainMenu::showLoad()
     m_lblLoadSave.clear();
     m_btnLoadSave.clear();
 
-    QList<Chapter::SavedGame> games = Chapter::savedGames();
+    std::vector<Chapter::SavedGame> games = Chapter::savedGames();
     std::sort(games.begin(), games.end());
-    foreach (const Chapter::SavedGame &game, games) {
+    for (const Chapter::SavedGame &game : games) {
         String name = game.name;
 
         m_btnLoadSave.emplace_back([this, name]() { changeState(Loading); m_loadingGame = name; }, &m_lblLoad);

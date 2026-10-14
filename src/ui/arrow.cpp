@@ -21,7 +21,7 @@
 
 namespace ui {
 
-Arrow::Arrow(const String &dir, const QPoint &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent) :
+Arrow::Arrow(const String &dir, const Point &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent) :
     m_position(pos),
     m_value(0),
     m_large(large),
@@ -72,20 +72,20 @@ void Arrow::setValue(int value)
 
 void Arrow::setText(const String &text)
 {
-    QPoint offset(9, 2);
+    Point offset(9, 2);
     if (m_large)
-        offset = QPoint(11, 3);
-    QPoint offsetArrow;
+        offset = Point(11, 3);
+    Point offsetArrow(0, 0);
     const int width = gfx::Font(m_large ? gfx::Font::Medium : gfx::Font::Small).width(text);
 
     if (m_top) {
-        offsetArrow.setY(1 - offset.x());
-        offset.setY(-offset.y());
+        offsetArrow.y = 1 - offset.x;
+        offset.y = -offset.y;
     }
 
     if (m_left) {
-        offsetArrow.setX(1 - offset.x());
-        offset.setX(-1 - width);
+        offsetArrow.x = 1 - offset.x;
+        offset.x = -1 - width;
     }
 
     m_button.setText(text);

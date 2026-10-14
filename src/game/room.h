@@ -53,7 +53,7 @@ public:
 
 protected:
     void draw();
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, Qt::MouseButton button);
 
 private:
     void showDock();
@@ -77,7 +77,7 @@ private:
     gfx::Texture m_background;
     sfx::Sound m_backgroundSound;
     sfx::Sound m_dockSound;
-    QMap<int, Person*> m_persons;
+    std::map<int, Person*> m_persons;
     Person* m_dockMan;
     String m_dockManName;
     std::function<void(Dialog*)> m_funcStartDialog;

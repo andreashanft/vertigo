@@ -150,7 +150,7 @@ Scenario::Scenario(const String &name) :
     }
 
     float initialDir = 0.0f;
-    QSet<String> placeholderSections;
+    std::set<String> placeholderSections;
     std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
     std::vector<ActiveObject *> absentUnits; // only at a higher difficulty
     const int difficulty = Scenario::difficulty();
@@ -352,7 +352,7 @@ Scenario::Scenario(const String &name) :
         default:
             {
                 loadIssue(String("placeholder: typ %1 dtyp %2").arg(type).arg(dType));
-                placeholderSections << section;
+                placeholderSections.insert(section);
                 object = new Placeholder(this, objectDes, info, 4.0f);
                 object->setPosition(getPosition());
             }
@@ -539,7 +539,7 @@ Scenario::Scenario(const String &name) :
     // report what the loader ignored, with numbers in names collapsed to '#'
     const QRegularExpression digits("\\d+");
     for (const String &section : m_file.sections()) {
-        if (placeholderSections.contains(section))
+        if (placeholderSections.count(section))
             continue;
         const String sectionName = String(section).replace(digits, "#");
         if (!m_file.wasSectionRead(section)) {

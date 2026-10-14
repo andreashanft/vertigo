@@ -46,7 +46,7 @@ public:
 
 public:
     void play(std::function<void()> &&funcFinished);
-    void setRect(const QRect &rect);
+    void setRect(const Rect &rect);
 
 private:
     void activate();

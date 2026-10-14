@@ -154,12 +154,12 @@ void ItemList::scrollRight()
     updateButtons();
 }
 
-bool ItemList::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool ItemList::mousePressEvent(const Point &pos, Qt::MouseButton button)
 {
-    QRect rect = mapToGlobal(QRect(54, 0, 435, 48));
+    const Rect rect = mapToGlobal(Rect(54, 0, 435, 48));
     if (button == Qt::LeftButton && rect.contains(pos))
     {
-        int index = m_firstItem + (pos.x() - rect.x())/54;
+        int index = m_firstItem + (pos.x - rect.x)/54;
         if (index >= 0 && index < m_items)
         {
             m_funcClicked(index);

@@ -40,8 +40,8 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
     stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
     unsigned int i, j, k;
-    quint32 numFaces;
-    quint32 numVertices;
+    std::uint32_t numFaces;
+    std::uint32_t numVertices;
     std::map<String, Mesh*> meshes;
 
     stream.skipRawData(2);
@@ -54,7 +54,7 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
     vertices.reserve(numVertices);
 
     for (i = 0; i < numVertices; i++) {
-        quint32 index;
+        std::uint32_t index;
         QVector3D qv;
         stream >> index >> qv;
         Vector3D v = Vector3D(qv.x(), qv.y(), qv.z());
@@ -63,10 +63,10 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
     }
 
     for (i = 0; i < numFaces; i++) {
-        quint32 faceNumber;
-        quint32 type;
-        quint32 numVertices;
-        quint32 numVertices2;
+        std::uint32_t faceNumber;
+        std::uint32_t type;
+        std::uint32_t numVertices;
+        std::uint32_t numVertices2;
 
         stream >> faceNumber;
         stream >> type;
@@ -86,8 +86,8 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
             texCoords.reserve(numVertices2 * 2);
 
             for (j = 0; j < numVertices2; j++) {
-                quint16 s;
-                quint16 t;
+                std::uint16_t s;
+                std::uint16_t t;
 
                 stream.skipRawData(2);
                 stream >> s;
@@ -96,16 +96,16 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
 
                 texCoords.emplace_back(s / 255.0f, t / 255.0f);
             }
-            quint32 nameLength;
+            std::uint32_t nameLength;
             stream >> nameLength;
             stream.skipRawData(4);
 
             const String textureName = String::fromLatin1(file.read(nameLength));
 
-            std::vector<quint32> indices;
+            std::vector<std::uint32_t> indices;
             indices.reserve(3 * numVertices2);
             for (j = 0; j < 3 * numVertices2; j++) {
-                quint32 index;
+                std::uint32_t index;
                 stream >> index;
                 indices.push_back(index);
             }

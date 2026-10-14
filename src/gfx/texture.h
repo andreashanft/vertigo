@@ -21,8 +21,9 @@
 
 #include "cliprect.h"
 #include "image.h"
-#include <QExplicitlySharedDataPointer>
-#include <QSize>
+#include "util/geometry2d.h"
+#include <cstdint>
+#include <memory>
 
 
 namespace gfx {
@@ -45,12 +46,12 @@ public:
     bool isValid() const;
     int width() const;
     int height() const;
-    QSize size() const;
+    Size size() const;
     unsigned int id() const;
     void bind();
     void fromImage(const Image &image, bool smooth = true);
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
-    void createEmpty(const QSize &size, Texture::Format format, bool smooth = true);
+    void createEmpty(const Size &size, Texture::Format format, bool smooth = true);
     void update(int x, int y, const Image &image);
     RectF draw(const ClipRect *clipRect = nullptr);
     RectF draw(float x, float y, const ClipRect *clipRect = nullptr);
@@ -61,11 +62,12 @@ public:
     RectF draw(const RectF &dstRect, const RectF &srcRect, const ClipRect *clipRect = nullptr);
 
 private:
-    QExplicitlySharedDataPointer<TexturePrivate> d;
+    // shared by the copies
+    std::shared_ptr<TexturePrivate> d;
 };
 
 
-class TexturePrivate : public QSharedData
+class TexturePrivate
 {
 public:
     TexturePrivate();
@@ -90,10 +92,10 @@ private:
 private:
     unsigned int m_texture;
     Texture::Format m_format;
-    quint32 m_width;
-    quint32 m_height;
-    quint32 m_textureWidth;
-    quint32 m_textureHeight;
+    std::uint32_t m_width;
+    std::uint32_t m_height;
+    std::uint32_t m_textureWidth;
+    std::uint32_t m_textureHeight;
 };
 
 
@@ -129,9 +131,9 @@ inline int Texture::height() const
 }
 
 
-inline QSize Texture::size() const
+inline Size Texture::size() const
 {
-    return QSize(width(), height());
+    return Size(width(), height());
 }
 
 
@@ -159,9 +161,9 @@ inline void Texture::createEmpty(int w, int h, Texture::Format format, bool smoo
 }
 
 
-inline void Texture::createEmpty(const QSize &size, Texture::Format format, bool smooth)
+inline void Texture::createEmpty(const Size &size, Texture::Format format, bool smooth)
 {
-    d->createEmpty(size.width(), size.height(), format, smooth);
+    d->createEmpty(size.width, size.height, format, smooth);
 }
 
 

@@ -278,7 +278,7 @@ Gpu& gpu()
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    const quint32 white = 0xffffffff;
+    const std::uint32_t white = 0xffffffff;
     GLint bound = 0;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
     glGenTextures(1, &g_gpu.white);

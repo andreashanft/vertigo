@@ -30,18 +30,18 @@ Mesh::~Mesh()
 
 
 void Mesh::create(int vertexCount, const Vector3D *positions, const Vector3D *normals, const Vector2D *texCoords,
-                  int indexCount, const quint16 *indices)
+                  int indexCount, const std::uint16_t *indices)
 {
     m_indexType = GL_UNSIGNED_SHORT;
-    create(vertexCount, positions, normals, texCoords, indexCount, indices, sizeof(quint16));
+    create(vertexCount, positions, normals, texCoords, indexCount, indices, sizeof(std::uint16_t));
 }
 
 
 void Mesh::create(int vertexCount, const Vector3D *positions, const Vector3D *normals, const Vector2D *texCoords,
-                  int indexCount, const quint32 *indices)
+                  int indexCount, const std::uint32_t *indices)
 {
     m_indexType = GL_UNSIGNED_INT;
-    create(vertexCount, positions, normals, texCoords, indexCount, indices, sizeof(quint32));
+    create(vertexCount, positions, normals, texCoords, indexCount, indices, sizeof(std::uint32_t));
 }
 
 

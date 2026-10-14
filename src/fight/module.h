@@ -51,7 +51,7 @@ private:
         std::vector<Vector3D> vertices;
         std::vector<Vector3D> normals;
         std::vector<Vector2D> texCoords;
-        std::vector<quint16> indices;
+        std::vector<std::uint16_t> indices;
         gfx::Mesh buffers;
     };
 

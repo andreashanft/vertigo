@@ -20,8 +20,9 @@
 
 
 #include "ui/widget.h"
-#include <QMap>
-#include <QSet>
+#include <map>
+#include <set>
+#include <vector>
 
 #include <functional>
 #include "util/string.hpp"
@@ -37,14 +38,14 @@ private:
         int text;
         int next;
         int message;
-        QSet<int> onlyIf;
-        QSet<int> notIf;
+        std::set<int> onlyIf;
+        std::set<int> notIf;
     };
 
     struct Entry
     {
         int text;
-        QList<Option> options;
+        std::vector<Option> options;
     };
 
     struct Message
@@ -130,8 +131,8 @@ public:
 private:
     void draw();
     int drawOption(int y, const Option *option);
-    void mouseMoveEvent(const QPoint &pos);
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    void mouseMoveEvent(const Point &pos);
+    bool mousePressEvent(const Point &pos, Qt::MouseButton button);
     void select();
     void loadTree(const String &filename);
     void loadStrings(const String &filename);
@@ -139,12 +140,12 @@ private:
 
 private:
     int m_id;
-    QMap<int, Entry> m_entries;
-    QMap<int, String> m_strings;
+    std::map<int, Entry> m_entries;
+    std::map<int, String> m_strings;
     int m_current;
     int m_optionIndex;
-    QPoint m_mousePos;
-    QRect m_rect;
+    Point m_mousePos;
+    Rect m_rect;
     const Option *m_option;
     String m_name;
     bool m_female;
@@ -154,11 +155,12 @@ private:
     int m_person;
     bool m_finished;
     bool m_remove;
-    QMultiMap<int, Message> m_messages;
+    // the messages of an id, the last one read first
+    std::multimap<int, Message> m_messages;
     int m_changeChapter;
     bool m_gameOver;
     bool m_isSmallTalk;
-    QList<Precondition> m_preconditions;
+    std::vector<Precondition> m_preconditions;
     std::function<void(int)> m_funcRemove;
     std::function<void(int)> m_funcAddMessage;
     std::function<void(int)> m_funcAddTask;

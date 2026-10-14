@@ -19,9 +19,8 @@
 #define GAME_RENDERER_H
 
 #include "util/deferreddeletable.h"
+#include "util/geometry2d.h"
 #include "util/geometry3d.h"
-
-#include <QRect>
 
 class QKeyEvent;
 class QMouseEvent;
@@ -43,15 +42,15 @@ public:
 public:
     void setWindow(Window *window);
     virtual bool isCursorVisible() const { return m_cursorVisible; }
-    virtual void setRect(const QRect &rect);
-    QRect rect() const { return m_rect; }
-    int width() const { return m_rect.width(); }
-    int height() const { return m_rect.height(); }
+    virtual void setRect(const Rect &rect);
+    Rect rect() const { return m_rect; }
+    int width() const { return m_rect.width; }
+    int height() const { return m_rect.height; }
     const Matrix& projectionMatrix() const { return m_projectionMatrix; }
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
-    QRectF rectOrtho() const { return m_rectOrtho; }
-    QPointF screenToImage(const QPointF &pos);
-    QPointF imageToScreen(const QPointF &pos);
+    RectD rectOrtho() const { return m_rectOrtho; }
+    PointD screenToImage(const PointD &pos);
+    PointD imageToScreen(const PointD &pos);
 
 public:
     virtual void keyPressEvent(QKeyEvent *) {}
@@ -73,8 +72,8 @@ protected:
 
 private:
     bool m_cursorVisible;
-    QRect m_rect;
-    QRectF m_rectOrtho;
+    Rect m_rect;
+    RectD m_rectOrtho;
     Window *m_window;
 };
 

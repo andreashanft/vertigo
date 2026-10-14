@@ -134,7 +134,7 @@ bool Cockpit3D::create()
     // the HUD (the 2D art shows no glass either)
     std::vector<Vector3D> positions;
     std::vector<Vector2D> texCoords;
-    std::vector<quint32> base, decal;
+    std::vector<std::uint32_t> base, decal;
     int image = -1;
     auto inView = [](const Vector3D &p) {
         return -p.z > DecalNear;
@@ -154,7 +154,7 @@ bool Cockpit3D::create()
                 std::cerr << "3D cockpit: " << mesh.name.toUtf8().constData() << " uses a second texture, which isn't supported" << std::endl;
             image = image < 0 ? mesh.image : image;
         }
-        const quint32 first = quint32(positions.size());
+        const std::uint32_t first = std::uint32_t(positions.size());
         for (size_t i = 0; i < mesh.positions.size(); i++)
         {
             positions.push_back(mesh.positions[i]);
@@ -162,7 +162,7 @@ bool Cockpit3D::create()
         }
         for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3)
         {
-            const quint32 a = mesh.indices[i], b = mesh.indices[i + 1], c = mesh.indices[i + 2];
+            const std::uint32_t a = mesh.indices[i], b = mesh.indices[i + 1], c = mesh.indices[i + 2];
             if (textured)
                 base.insert(base.end(), { first + a, first + b, first + c });
             // the HUD covers the 640x480 view: only triangles in front of the eye that reach into it

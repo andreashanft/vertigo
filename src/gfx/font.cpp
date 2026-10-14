@@ -40,8 +40,8 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
     int scaleFactor = scale ? 2 : 1;
     const float res = 256 * scaleFactor;
 
-    quint8 type;
-    quint32 numEntries;
+    std::uint8_t type;
+    std::uint32_t numEntries;
 
     file >> type;
     file.skipBytes(5);
@@ -97,9 +97,9 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
         symbol.rect.height = image.height() / res;
         symbol.width = image.width() / scaleFactor;
         symbol.height = image.height() / scaleFactor;
-        m_symbols.append(symbol);
+        m_symbols.push_back(symbol);
 
-        maxHeight = qMax(maxHeight, image.height());
+        maxHeight = std::max(maxHeight, image.height());
 
         x += image.width() + 1;
     }
@@ -152,14 +152,14 @@ Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCente
         if (dstRect.width > 0 && lineWidth + wordWidth > dstRect.width) {
             pos.x -= lineWidth;
             pos.y += m_height + 1;
-            drawRect.width = qMax(drawRect.width, lineWidth);
+            drawRect.width = std::max(drawRect.width, lineWidth);
             drawRect.height += m_height + 1;
             lineWidth = 0;
         }
 
         const std::string latin1 = word.toLatin1();
         for (int i = 0; i < int(latin1.length()); i++) {
-            quint8 c = latin1[i];
+            std::uint8_t c = latin1[i];
             if (c == '~') {
                 i++;
                 c = word[i];
@@ -199,7 +199,7 @@ Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCente
             lineWidth += symbol.width;
         }
     }
-    drawRect.width = qMax(drawRect.width, lineWidth);
+    drawRect.width = std::max(drawRect.width, lineWidth);
 
     flush();
     Pipeline::setColor(Vector4D(1));
@@ -230,7 +230,7 @@ int FontPrivate::width(const String &text) const
     int totalW = 0;
     const std::string latin1 = text.toLatin1();
     for (int i = 0; i < int(latin1.size()); i++) {
-        quint8 c = latin1[i];
+        std::uint8_t c = latin1[i];
         if (c == '~') {
             i++;
             continue;

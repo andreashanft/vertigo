@@ -103,7 +103,7 @@ void Window::render()
         else if (!cursorVisible && cursor().shape() != Qt::BlankCursor)
             setCursor(Qt::BlankCursor);
 
-        m_renderer->setRect(rect());
+        m_renderer->setRect(Rect(0, 0, width(), height()));
         m_renderer->draw();
     }
 

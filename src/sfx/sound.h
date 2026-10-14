@@ -57,8 +57,8 @@ private:
     bool acquire();
 
 private:
-    quint32 m_source;
-    quint32 m_buffer;
+    std::uint32_t m_source;
+    std::uint32_t m_buffer;
     float m_volume;
     float m_randomPitch;
     bool m_instance;

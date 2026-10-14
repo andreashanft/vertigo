@@ -36,9 +36,9 @@ namespace gfx {
 
 namespace {
 
-const quint32 MagicGlb = 0x46546C67;     // "glTF"
-const quint32 ChunkJson = 0x4E4F534A;    // "JSON"
-const quint32 ChunkBin = 0x004E4942;     // "BIN\0"
+const std::uint32_t MagicGlb = 0x46546C67;     // "glTF"
+const std::uint32_t ChunkJson = 0x4E4F534A;    // "JSON"
+const std::uint32_t ChunkBin = 0x004E4942;     // "BIN\0"
 
 int componentCount(const QString &type)
 {
@@ -69,12 +69,12 @@ int componentSize(int componentType)
 float component(const char *p, int componentType, bool normalized)
 {
     switch (componentType) {
-    case 5120: { qint8 v; std::memcpy(&v, p, 1); return normalized ? std::max(v/127.0f, -1.0f) : v; }
-    case 5121: { quint8 v; std::memcpy(&v, p, 1); return normalized ? v/255.0f : v; }
-    case 5122: { const qint16 v = qFromLittleEndian<qint16>(reinterpret_cast<const uchar *>(p)); return normalized ? std::max(v/32767.0f, -1.0f) : v; }
-    case 5123: { const quint16 v = qFromLittleEndian<quint16>(reinterpret_cast<const uchar *>(p)); return normalized ? v/65535.0f : v; }
-    case 5125: return float(qFromLittleEndian<quint32>(reinterpret_cast<const uchar *>(p)));
-    default: { const quint32 v = qFromLittleEndian<quint32>(reinterpret_cast<const uchar *>(p)); float f; std::memcpy(&f, &v, 4); return f; }
+    case 5120: { std::int8_t v; std::memcpy(&v, p, 1); return normalized ? std::max(v/127.0f, -1.0f) : v; }
+    case 5121: { std::uint8_t v; std::memcpy(&v, p, 1); return normalized ? v/255.0f : v; }
+    case 5122: { const std::int16_t v = qFromLittleEndian<std::int16_t>(reinterpret_cast<const uchar *>(p)); return normalized ? std::max(v/32767.0f, -1.0f) : v; }
+    case 5123: { const std::uint16_t v = qFromLittleEndian<std::uint16_t>(reinterpret_cast<const uchar *>(p)); return normalized ? v/65535.0f : v; }
+    case 5125: return float(qFromLittleEndian<std::uint32_t>(reinterpret_cast<const uchar *>(p)));
+    default: { const std::uint32_t v = qFromLittleEndian<std::uint32_t>(reinterpret_cast<const uchar *>(p)); float f; std::memcpy(&f, &v, 4); return f; }
     }
 }
 
@@ -86,8 +86,8 @@ public:
     QByteArray bufferView(int index) const
     {
         const QJsonObject view = m_json["bufferViews"].toArray()[index].toObject();
-        const qint64 offset = view["byteOffset"].toVariant().toLongLong();
-        const qint64 length = view["byteLength"].toVariant().toLongLong();
+        const std::int64_t offset = view["byteOffset"].toVariant().toLongLong();
+        const std::int64_t length = view["byteLength"].toVariant().toLongLong();
         if (view["buffer"].toInt() != 0 || offset < 0 || length < 0 || offset + length > m_bin.size())
             return QByteArray();
         return m_bin.mid(int(offset), int(length));
@@ -104,21 +104,21 @@ public:
         if (size == 0 || n < components || !accessor.contains("bufferView"))
             return false;
         const QJsonObject view = m_json["bufferViews"].toArray()[accessor["bufferView"].toInt()].toObject();
-        const qint64 offset = view["byteOffset"].toVariant().toLongLong() + accessor["byteOffset"].toVariant().toLongLong();
+        const std::int64_t offset = view["byteOffset"].toVariant().toLongLong() + accessor["byteOffset"].toVariant().toLongLong();
         const int stride = view.contains("byteStride") ? view["byteStride"].toInt() : n*size;
-        if (view["buffer"].toInt() != 0 || offset < 0 || (count > 0 && offset + qint64(count - 1)*stride + n*size > m_bin.size()))
+        if (view["buffer"].toInt() != 0 || offset < 0 || (count > 0 && offset + std::int64_t(count - 1)*stride + n*size > m_bin.size()))
             return false;
         const bool normalized = accessor["normalized"].toBool();
         out.resize(size_t(count)*components);
         for (int i = 0; i < count; i++) {
-            const char *element = m_bin.constData() + offset + qint64(i)*stride;
+            const char *element = m_bin.constData() + offset + std::int64_t(i)*stride;
             for (int c = 0; c < components; c++)
                 out[size_t(i)*components + c] = component(element + c*size, type, normalized);
         }
         return true;
     }
 
-    bool indices(int index, std::vector<quint32> &out) const
+    bool indices(int index, std::vector<std::uint32_t> &out) const
     {
         std::vector<float> values;
         if (!floats(index, 1, values))
@@ -128,13 +128,13 @@ public:
         out.resize(values.size());
         if (accessor["componentType"].toInt() == 5125) {
             const QJsonObject view = m_json["bufferViews"].toArray()[accessor["bufferView"].toInt()].toObject();
-            const qint64 offset = view["byteOffset"].toVariant().toLongLong() + accessor["byteOffset"].toVariant().toLongLong();
+            const std::int64_t offset = view["byteOffset"].toVariant().toLongLong() + accessor["byteOffset"].toVariant().toLongLong();
             const int stride = view.contains("byteStride") ? view["byteStride"].toInt() : 4;
             for (size_t i = 0; i < values.size(); i++)
-                out[i] = qFromLittleEndian<quint32>(reinterpret_cast<const uchar *>(m_bin.constData() + offset + qint64(i)*stride));
+                out[i] = qFromLittleEndian<std::uint32_t>(reinterpret_cast<const uchar *>(m_bin.constData() + offset + std::int64_t(i)*stride));
         } else {
             for (size_t i = 0; i < values.size(); i++)
-                out[i] = quint32(values[i]);
+                out[i] = std::uint32_t(values[i]);
         }
         return true;
     }
@@ -166,16 +166,16 @@ bool GlbModel::load(const QString &fileName)
     if (!file.open(QFile::ReadOnly))
         return fail(QString("cannot open %1").arg(fileName));
     const QByteArray data = file.readAll();
-    auto u32 = [&data](int offset) { return qFromLittleEndian<quint32>(reinterpret_cast<const uchar *>(data.constData() + offset)); };
+    auto u32 = [&data](int offset) { return qFromLittleEndian<std::uint32_t>(reinterpret_cast<const uchar *>(data.constData() + offset)); };
     if (data.size() < 20 || u32(0) != MagicGlb || u32(4) != 2)
         return fail(QString("%1 is not a binary glTF 2.0 file").arg(fileName));
 
     // chunks: JSON first, then the binary buffer
     QByteArray jsonData, bin;
     for (int offset = 12; offset + 8 <= data.size(); ) {
-        const quint32 length = u32(offset);
-        const quint32 type = u32(offset + 4);
-        if (offset + 8 + qint64(length) > data.size())
+        const std::uint32_t length = u32(offset);
+        const std::uint32_t type = u32(offset + 4);
+        if (offset + 8 + std::int64_t(length) > data.size())
             return fail(QString("%1 is truncated").arg(fileName));
         if (type == ChunkJson && jsonData.isEmpty())
             jsonData = data.mid(offset + 8, int(length));
@@ -279,10 +279,10 @@ bool GlbModel::load(const QString &fileName)
                         return fail(QString("%1: mesh %2 has broken indices").arg(fileName, mesh.name));
                 } else {
                     for (size_t i = 0; i < count; i++)
-                        mesh.indices.push_back(quint32(i));
+                        mesh.indices.push_back(std::uint32_t(i));
                 }
                 mesh.indices.resize(mesh.indices.size()/3*3);
-                for (quint32 i : mesh.indices)
+                for (std::uint32_t i : mesh.indices)
                     if (i >= count)
                         return fail(QString("%1: mesh %2 has an index out of range").arg(fileName, mesh.name));
                 m_meshes.push_back(std::move(mesh));

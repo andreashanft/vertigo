@@ -54,7 +54,7 @@ Briefing::Briefing() :
     m_lblMap->setTexture(gfx::Image::load(String("gfx:pic/area/%1.r16").arg(Chapter::get()->area()->map()), 304, 284, true));
 
     m_lblArrow = new ui::Label(m_lblMap);
-    m_lblArrow->setPosition(Chapter::get()->mission()->pos() - QPoint(7, 7));
+    m_lblArrow->setPosition(Chapter::get()->mission()->pos() - Point(7, 7));
     m_lblArrow->setTexture(gfx::Image::load("gfx:img/connect/areapoin.img", colorTableArrow));
     m_lblArrow->setVisible(false);
 }
@@ -72,7 +72,7 @@ void Briefing::deactivate()
 }
 
 
-void Briefing::setRect(const QRect &rect)
+void Briefing::setRect(const Rect &rect)
 {
     Chapter::get()->hud()->setRect(rect);
     Renderer::setRect(rect);

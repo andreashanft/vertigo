@@ -20,7 +20,8 @@
 
 
 #include "sound.h"
-#include <QMap>
+#include <map>
+#include <cassert>
 
 
 namespace sfx {
@@ -52,8 +53,8 @@ public:
 
 public:
     Sound* sound(StandardSound);
-    quint32 acquire(Sound* sound);
-    void release(quint32 source);
+    std::uint32_t acquire(Sound* sound);
+    void release(std::uint32_t source);
     void pauseAll();
     void resumeAll();
     void setVolume(float volume);
@@ -61,17 +62,18 @@ public:
     void setListener(float x, float y, float z, float fx, float fy, float fz, float ux, float uy, float uz);
 
 public:
-    static SoundSystem *get() { Q_ASSERT(m_singleton); return m_singleton; }
+    static SoundSystem *get() { assert(m_singleton); return m_singleton; }
 
 private:
-    Q_DISABLE_COPY(SoundSystem);
+    SoundSystem(const SoundSystem&) = delete;
+    SoundSystem& operator=(const SoundSystem&) = delete;
     void releaseUnused();
 
 private:
     static SoundSystem *m_singleton;
     SoundSystemPrivate *d;
-    QMap<StandardSound, Sound*> m_standardSounds;
-    QMap<quint32, Sound*> m_sources;
+    std::map<StandardSound, Sound*> m_standardSounds;
+    std::map<std::uint32_t, Sound*> m_sources;
 };
 
 

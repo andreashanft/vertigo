@@ -65,7 +65,7 @@ void Movie::play(std::function<void()> &&funcFinished)
 }
 
 
-void Movie::setRect(const QRect &rect)
+void Movie::setRect(const Rect &rect)
 {
     Renderer::setRect(rect);
 
@@ -96,7 +96,7 @@ void Movie::draw()
         setupGL();
         m_texture.draw();
 
-        int y = static_cast<int>((2 - rectOrtho().y())/rectOrtho().height()*height());
+        int y = static_cast<int>((2 - rectOrtho().y)/rectOrtho().height*height());
         if (m_type == MovieFilm && y >= 74)
         {
             setupOrthographicMatrix(190, height());

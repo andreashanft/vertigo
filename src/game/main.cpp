@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
             QTextStream(stderr) << "Invalid --click value " << value << ", expected time=x,y\n";
             return game::Vertigo::ExitUsage;
         }
-        options.clicks.push_back({ format.captured(1).toFloat(), QPointF(format.captured(2).toFloat(), format.captured(3).toFloat()) });
+        options.clicks.push_back({ format.captured(1).toFloat(), PointD(format.captured(2).toFloat(), format.captured(3).toFloat()) });
     }
     foreach (const QString &value, parser.values(destroyOption)) {
         foreach (const QString &id, value.split(',', Qt::SkipEmptyParts)) {

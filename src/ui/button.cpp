@@ -81,9 +81,9 @@ void Button::draw()
 }
 
 
-bool Button::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Button::mousePressEvent(const Point &pos, Qt::MouseButton button)
 {
-    if (button == Qt::LeftButton && mapToGlobal(QRect(m_drawRect.x, m_drawRect.y, m_drawRect.width, m_drawRect.height)).contains(pos)) {
+    if (button == Qt::LeftButton && mapToGlobal(m_drawRect).contains(pos)) {
         m_pressed = true;
         return true;
     }
@@ -92,10 +92,10 @@ bool Button::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
 }
 
 
-void Button::mouseReleaseEvent(const QPoint &pos, Qt::MouseButton button)
+void Button::mouseReleaseEvent(const Point &pos, Qt::MouseButton button)
 {
     if (button == Qt::LeftButton) {
-        if (m_pressed && mapToGlobal(QRect(m_drawRect.x, m_drawRect.y, m_drawRect.width, m_drawRect.height)).contains(pos))
+        if (m_pressed && mapToGlobal(m_drawRect).contains(pos))
             m_eventClicked();
         m_pressed = false;
     }

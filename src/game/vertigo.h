@@ -53,7 +53,7 @@ public:
         int near = 0;                                   // test mode: enable this unit and start next to it
         struct Screenshot { float time; QString file; };            // the file is a path
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
-        struct Click { float time; QPointF pos; };
+        struct Click { float time; PointD pos; };
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
         bool check = false;                             // report what the mission loader ignores
         StringList checkScenarios;                     // empty = all missions

@@ -31,7 +31,7 @@ Frame::Frame(std::function<void()> &&funcClose, ui::Widget *parent) :
 {
 }
 
-void Frame::setupFrame(const QSize &size, const String &title, bool closable)
+void Frame::setupFrame(const Size &size, const String &title, bool closable)
 {
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
@@ -39,7 +39,7 @@ void Frame::setupFrame(const QSize &size, const String &title, bool closable)
     m_lblTitle.setText(title);
     m_lblTitle.setAlignment(ui::Label::AlignHCenter);
     m_lblTitle.setPosition(0, 1);
-    m_lblTitle.setWidth(size.width());
+    m_lblTitle.setWidth(size.width);
 
     gfx::Image left = gfx::Image::load("gfx:img/desktop/gui/borl.img", colorTable);
     gfx::Image right = gfx::Image::load("gfx:img/desktop/gui/borr.img", colorTable);
@@ -50,7 +50,7 @@ void Frame::setupFrame(const QSize &size, const String &title, bool closable)
 
     {
         std::vector<gfx::Image> images;
-        const int total = size.width() - 30;
+        const int total = size.width - 30;
         static const int id[] = { 1,2,3,3,4,5,2,4,3,1 };
         int sum = 0;
         for (int i = 0; i < 10; i++) {
@@ -76,15 +76,15 @@ void Frame::setupFrame(const QSize &size, const String &title, bool closable)
         updateBorder(texture, colorTable, beg - 1, 9);
     }
 
-    texture.update(                0,                  0, left.copy(0, 0, left.width(), size.height()));
-    texture.update(size.width() -  7,                  0, right.copy(0, 0, right.width(), size.height()));
-    texture.update(                0, size.height() -  7, bottom.copy(0, 0, size.width(), bottom.height()));
+    texture.update(                0,                  0, left.copy(0, 0, left.width(), size.height));
+    texture.update(size.width -  7,                  0, right.copy(0, 0, right.width(), size.height));
+    texture.update(                0, size.height -  7, bottom.copy(0, 0, size.width, bottom.height()));
     texture.update(                0,                  0, gfx::Image::load("gfx:img/desktop/gui/edgetl.img", colorTable));
-    texture.update(size.width() - 12,                  0, gfx::Image::load("gfx:img/desktop/gui/edgetr.img", colorTable));
-    texture.update(size.width() - 12, size.height() - 17, gfx::Image::load("gfx:img/desktop/gui/edgebr.img", colorTable));
-    texture.update(                0, size.height() - 17, gfx::Image::load("gfx:img/desktop/gui/edgebl.img", colorTable));
+    texture.update(size.width - 12,                  0, gfx::Image::load("gfx:img/desktop/gui/edgetr.img", colorTable));
+    texture.update(size.width - 12, size.height - 17, gfx::Image::load("gfx:img/desktop/gui/edgebr.img", colorTable));
+    texture.update(                0, size.height - 17, gfx::Image::load("gfx:img/desktop/gui/edgebl.img", colorTable));
 
-    texture.update((size.width() - 170) / 2, 0, gfx::Image::load("gfx:img/desktop/gui/bortw.img", colorTable));
+    texture.update((size.width - 170) / 2, 0, gfx::Image::load("gfx:img/desktop/gui/bortw.img", colorTable));
 
     m_btnClose.setVisible(closable);
     m_btnClose.setTexture(gfx::Image::load("gfx:img/desktop/gui/gdexitu.img", colorTable));

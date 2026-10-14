@@ -26,7 +26,7 @@ namespace ui {
 class Arrow
 {
 public:
-    Arrow(const String &dir, const QPoint &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent);
+    Arrow(const String &dir, const Point &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent);
 
 public:
     void hide();
@@ -38,7 +38,7 @@ public:
 private:
     bool m_left;
     bool m_top;
-    QPoint m_position;
+    Point m_position;
     int m_value;
     bool m_large;
     std::function<void(int)> m_funcClicked;

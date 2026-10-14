@@ -199,7 +199,7 @@ void Sound::load(const String &leftFile, const String &rightFile)
     const QByteArray right = loadFile(rightFile);
 
     // both channels must have the same length
-    const int length = qMin(left.size(), right.size());
+    const int length = std::min(left.size(), right.size());
     QByteArray data;
     data.resize(2 * length);
     for (int i = 0; i < length; i++) {

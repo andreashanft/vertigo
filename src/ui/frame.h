@@ -34,7 +34,7 @@ public:
     Frame(std::function<void()> &&funcClose, ui::Widget *parent = NULL);
 
 public:
-    void setupFrame(const QSize &size, const String &title, bool closable);
+    void setupFrame(const Size &size, const String &title, bool closable);
 
 protected:
     void closeFrame();

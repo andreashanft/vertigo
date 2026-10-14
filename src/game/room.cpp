@@ -19,6 +19,7 @@
 #include "room.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
+#include "util/containers.hpp"
 #include "ui/button.h"
 
 
@@ -52,7 +53,7 @@ Room::Room(int index, const String &title, const String &name,
     m_miniMovie.setColorTable(m_backgroundImage.colorTable());
     m_backgroundSound.load("sfx:snd/room/" + backgroundSound + ".pcm");
 
-    setupFrame(QSize(m_backgroundImage.width() + 18, m_backgroundImage.height() + 24), title, true);
+    setupFrame(Size(m_backgroundImage.width() + 18, m_backgroundImage.height() + 24), title, true);
 
     m_backgroundLabel = new ui::Label(this);
     m_backgroundLabel->setPosition(9, 15);
@@ -70,7 +71,7 @@ Room::Room(int index, const String &title, const String &name,
         const int rate = file.value("Rate", 0).toInt();
         m_dockSound.load("sfx:snd/room/" + sound + ".pcm", rate);
 
-        m_arrows.emplace_back(file.value("Arrow").toString(), QPoint(file.value("X").toInt(), file.value("Y").toInt()), false, [this](int) { showDock(); }, m_backgroundLabel);
+        m_arrows.emplace_back(file.value("Arrow").toString(), Point(file.value("X").toInt(), file.value("Y").toInt()), false, [this](int) { showDock(); }, m_backgroundLabel);
         m_arrows.back().setText(name);
     }
 
@@ -81,10 +82,10 @@ Room::Room(int index, const String &title, const String &name,
         if (!file.contains("Arrow"))
             break;
 
-        Person *person = new Person(file.value("Arrow").toString(), QPoint(file.value("X").toInt(), file.value("Y").toInt()), false, [this](int n) { startDialog(n); }, m_backgroundLabel);
+        Person *person = new Person(file.value("Arrow").toString(), Point(file.value("X").toInt(), file.value("Y").toInt()), false, [this](int n) { startDialog(n); }, m_backgroundLabel);
         person->arrow.hide();
         person->female = file.value("Sex").toString().toLower() == "f";
-        m_persons.insert(personId, person);
+        m_persons[personId] = person;
 
         personId++;
     }
@@ -94,10 +95,10 @@ Room::Room(int index, const String &title, const String &name,
         file.setSection("WeaponMan");
     if (file.contains("Name"))
     {
-        Person *person = new Person(file.value("Arrow").toString(), QPoint(file.value("X").toInt(), file.value("Y").toInt()), false, [this](int n) { startDialog(n); }, m_backgroundLabel);
+        Person *person = new Person(file.value("Arrow").toString(), Point(file.value("X").toInt(), file.value("Y").toInt()), false, [this](int n) { startDialog(n); }, m_backgroundLabel);
         person->arrow.hide();
 
-        m_persons.insert(personId, person);
+        m_persons[personId] = person;
         m_dockMan = person;
         m_dockManName = file.value("Name").toString();
     }
@@ -108,7 +109,7 @@ Room::Room(int index, const String &title, const String &name,
 
 Room::~Room()
 {
-    qDeleteAll(m_persons);
+    util::deleteAll(m_persons);
 }
 
 
@@ -116,16 +117,17 @@ void Room::restart()
 {
     m_dockSound.stop();
     m_background.fromImage(m_backgroundImage);
-    QList<Dialog*> dialogs = Chapter::get()->dialogs(m_index);
+    std::vector<Dialog*> dialogs = Chapter::get()->dialogs(m_index);
 
-    foreach (Person* person, m_persons)
-        person->arrow.hide();
+    for (const auto &person : m_persons)
+        person.second->arrow.hide();
 
-    foreach (Dialog* dialog, dialogs) {
-        Person *person = m_persons.value(dialog->person());
+    for (Dialog* dialog : dialogs) {
+        Person *person = util::value(m_persons, dialog->person());
         if (!person) {
             // any free person of the dialog's sex, but never the dock man
-            foreach (Person *candidate, m_persons) {
+            for (const auto &entry : m_persons) {
+                Person *candidate = entry.second;
                 if (candidate != m_dockMan && candidate->arrow.isVisible() == false && candidate->female == dialog->isFemale()) {
                     person = candidate;
                     break;
@@ -148,8 +150,8 @@ void Room::restart()
     }
 
     dialogs = Chapter::get()->dialogsEnCom(true);
-    if (!dialogs.isEmpty()) {
-        m_funcStartEnCom(dialogs.first());
+    if (!dialogs.empty()) {
+        m_funcStartEnCom(dialogs.front());
     }
 }
 
@@ -161,7 +163,7 @@ void Room::draw()
 }
 
 
-bool Room::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Room::mousePressEvent(const Point &pos, Qt::MouseButton button)
 {
     if (!m_backgroundLabel->isEnabled()) {
         m_miniMovie.stopOneshot();

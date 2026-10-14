@@ -297,7 +297,8 @@ int Vertigo::start(const Options &options)
                 continue;
             }
             // the mouse moves there first, so the button under it is highlighted as for a player
-            const QPointF pos = m_window.renderer()->imageToScreen(it->pos);
+            const PointD image = m_window.renderer()->imageToScreen(it->pos);
+            const QPointF pos(image.x, image.y);
             const QPointF global = m_window.mapToGlobal(pos.toPoint());
             QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseMove, pos, global, Qt::NoButton, Qt::NoButton, Qt::NoModifier));
             QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseButtonPress, pos, global, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier));
@@ -346,36 +347,35 @@ int Vertigo::check(const StringList &names)
     }
 
     QTextStream out(stdout);
-    QMap<String, int> totals;
+    std::map<String, int> totals;
     int objects = 0;
     for (const String &name : scenarios) {
         fight::Scenario scenario(name);
-        QMap<String, int> counts;
+        std::map<String, int> counts;
         for (const String &issue : scenario.loadReport())
             counts[issue]++;
 
         out << name << ": " << scenario.objectRecords().size() << " objects\n";
-        for (auto it = counts.cbegin(); it != counts.cend(); ++it) {
-            out << "  " << it.value() << "x " << it.key() << "\n";
+        for (const auto &count : counts) {
+            out << "  " << count.second << "x " << count.first << "\n";
             // object ids differ between missions, so don't tell them apart in the totals
-            String kind = it.key();
+            String kind = count.first;
             if (kind.startsWith("condition: "))
                 kind.replace(QRegularExpression("\\d+"), "#");
-            totals[kind] += it.value();
+            totals[kind] += count.second;
         }
         objects += scenario.objectRecords().size();
         out.flush();
     }
 
     // totals per kind of issue, most frequent first
-    QMultiMap<int, String> byCount;
-    for (auto it = totals.cbegin(); it != totals.cend(); ++it)
-        byCount.insert(it.value(), it.key());
+    // (equal counts in the order of the issues, as before)
+    std::multimap<int, String> byCount;
+    for (const auto &total : totals)
+        byCount.emplace_hint(byCount.lower_bound(total.second), total.second, total.first);
     out << "\nTotal: " << scenarios.size() << " missions, " << objects << " objects\n";
-    for (auto it = byCount.cend(); it != byCount.cbegin();) {
-        --it;
-        out << "  " << it.key() << "x " << it.value() << "\n";
-    }
+    for (auto it = byCount.crbegin(); it != byCount.crend(); ++it)
+        out << "  " << it->first << "x " << it->second << "\n";
 
     return ExitSuccess;
 }
@@ -393,7 +393,7 @@ void Vertigo::startGame(const String &name)
     if (name.isEmpty())
         return;
 
-    foreach (const Chapter::SavedGame &game, Chapter::savedGames()) {
+    for (const Chapter::SavedGame &game : Chapter::savedGames()) {
         if (game.name.toLower() == name)
             return;
     }

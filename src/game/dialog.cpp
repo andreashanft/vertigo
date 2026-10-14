@@ -24,6 +24,7 @@
 #include "util/datapath.h"
 #include <QFile>
 #include <QRegularExpression>
+#include <algorithm>
 
 
 namespace game {
@@ -134,7 +135,8 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
             message.type = Message::GameOver;
         }
 
-        m_messages.insert(id, message);
+        // ahead of those of the same id, as QMultiMap kept them before
+        m_messages.emplace_hint(m_messages.lower_bound(id), id, message);
     }
 
     for (const String &section : file.sections().filter(QRegularExpression("^precondition"))) {
@@ -151,7 +153,7 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
             precondition.name = file.value("Name").toString();
         }
 
-        m_preconditions.append(precondition);
+        m_preconditions.push_back(precondition);
     }
 
     loadTree(baseName + ".dia");
@@ -170,7 +172,11 @@ void Dialog::select()
                 m_funcAddMessage(m_option->message);
             }
 
-            foreach (const Message &message, m_messages.values(m_option->message)) {
+            const auto range = m_messages.equal_range(m_option->message);
+            // (a copy, as a message can remove this dialog)
+            const std::vector<std::pair<const int, Message>> messages(range.first, range.second);
+            for (const auto &entry : messages) {
+                const Message &message = entry.second;
                 switch (message.type) {
                 case Message::None:
                     break;
@@ -262,7 +268,7 @@ void Dialog::select()
     }
 
     m_option = NULL;
-    m_rect = QRect();
+    m_rect = Rect();
 }
 
 
@@ -270,7 +276,7 @@ void Dialog::draw()
 {
     const Entry &entry = m_entries[m_current];
 
-    m_rect = QRect();
+    m_rect = Rect();
     const Option *lastOption = m_option;
     m_option = NULL;
 
@@ -280,9 +286,11 @@ void Dialog::draw()
     if (m_optionIndex == 0) {
         y += drawOption(y, NULL);
     } else {
-        const QSet<int>& messages = Chapter::get()->messages();
-        foreach (const Option &option, entry.options) {
-            if (messages.contains(option.onlyIf) && (messages & option.notIf).isEmpty())
+        // with all the messages of onlyIf and none of notIf
+        const std::set<int>& messages = Chapter::get()->messages();
+        for (const Option &option : entry.options) {
+            const bool notIf = std::any_of(option.notIf.begin(), option.notIf.end(), [&messages](int message) { return messages.count(message) != 0; });
+            if (std::includes(messages.begin(), messages.end(), option.onlyIf.begin(), option.onlyIf.end()) && !notIf)
                 y += drawOption(y, &option);
         }
     }
@@ -302,25 +310,25 @@ int Dialog::drawOption(int y, const Option* option)
     }
 
     Rect rectTmp = gfx::Font(gfx::Font::DialogBottom).draw(text, Rect(0, y, width(), -1), false, false);
-    QRect rect(rectTmp.x, rectTmp.y, rectTmp.width, rectTmp.height);
-    rect.setWidth(width());
+    Rect rect = rectTmp;
+    rect.width = width();
     if (mapToGlobal(rect).contains(m_mousePos)) {
         gfx::Font(gfx::Font::DialogHighlight).draw(text, Rect(0, y, width(), -1), false, false);
         m_rect = rect;
         m_option = option;
     }
 
-    return rect.height() + 4;
+    return rect.height + 4;
 }
 
 
-void Dialog::mouseMoveEvent(const QPoint &pos)
+void Dialog::mouseMoveEvent(const Point &pos)
 {
     m_mousePos = pos;
 }
 
 
-bool Dialog::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Dialog::mousePressEvent(const Point &pos, Qt::MouseButton button)
 {
     if (button == Qt::LeftButton && mapToGlobal(m_rect).contains(pos)) {
         select();
@@ -340,47 +348,47 @@ void Dialog::loadTree(const String &filename)
     QDataStream stream(&file);
     stream.setByteOrder(QDataStream::LittleEndian);
 
-    quint32 numEntries;
+    std::uint32_t numEntries;
     stream >> numEntries;
     for (unsigned int i = 0; i < numEntries; i++) {
-        quint32 number;
-        qint32 text;
-        quint8 x, y;
+        std::uint32_t number;
+        std::int32_t text;
+        std::uint8_t x, y;
         stream >> number >> x >> y >> text;
 
         Entry entry;
         entry.text = text;
 
         for (int x = 0; x < 4; x++) {
-            qint32 text;
-            qint32 message;
-            qint32 next;
-            qint32 onlyIf1;
-            qint32 onlyIf2;
-            qint32 notIf1;
-            qint32 notIf2;
+            std::int32_t text;
+            std::int32_t message;
+            std::int32_t next;
+            std::int32_t onlyIf1;
+            std::int32_t onlyIf2;
+            std::int32_t notIf1;
+            std::int32_t notIf2;
 
             stream >> text >> message >> next;
             stream >> onlyIf1 >> onlyIf2 >> notIf1 >> notIf2;
 
-            if (entry.options.isEmpty() || text != -1) {
+            if (entry.options.empty() || text != -1) {
                 Option option;
                 option.text = text;
                 option.next = next;
                 option.message = message;
                 if (onlyIf1 != -1)
-                    option.onlyIf << onlyIf1;
+                    option.onlyIf.insert(onlyIf1);
                 if (onlyIf2 != -1)
-                    option.onlyIf << onlyIf2;
+                    option.onlyIf.insert(onlyIf2);
                 if (notIf1 != -1)
-                    option.notIf << notIf1;
+                    option.notIf.insert(notIf1);
                 if (notIf2 != -1)
-                    option.notIf << notIf2;
-                entry.options << option;
+                    option.notIf.insert(notIf2);
+                entry.options.push_back(option);
             }
         }
 
-        m_entries.insert(number, entry);
+        m_entries[number] = entry;
     }
 }
 
@@ -401,7 +409,7 @@ void Dialog::loadStrings(const String &filename)
         if (match.hasMatch()) {
             const int index = match.captured(1).toInt();
             const String text(match.captured(2));
-            m_strings.insert(index, text);
+            m_strings[index] = text;
         }
     }
 }
@@ -445,7 +453,7 @@ bool Dialog::matchesDirect(int area, int station) const
 
 bool Dialog::testPreconditions() const
 {
-    foreach (const Precondition &precondition, m_preconditions) {
+    for (const Precondition &precondition : m_preconditions) {
         switch (precondition.type) {
         case Precondition::None:
             break;

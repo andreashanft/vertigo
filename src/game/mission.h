@@ -19,8 +19,8 @@
 #define GAME_MISSION_H
 
 
+#include "util/geometry2d.h"
 #include "util/string.hpp"
-#include <QPoint>
 
 
 namespace game {
@@ -36,7 +36,7 @@ public:
     const String& name() const { return m_name; }
     const String& scenario() const { return m_scenario; }
     int station() const { return m_station; }
-    const QPoint& pos() const { return m_pos; }
+    const Point& pos() const { return m_pos; }
     const StringList& textB() const { return m_textB; }
     const StringList& textP() const { return m_textP; }
     const StringList& textS() const { return m_textS; }
@@ -46,7 +46,7 @@ private:
     String m_name;
     String m_scenario;
     int m_station;
-    QPoint m_pos;
+    Point m_pos;
     StringList m_textB;
     StringList m_textP;
     StringList m_textS;

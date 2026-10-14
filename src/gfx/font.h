@@ -23,14 +23,15 @@
 #include "cliprect.h"
 #include "colortable.h"
 #include "texture.h"
-#include <QExplicitlySharedDataPointer>
+#include <memory>
+#include <vector>
 #include "util/string.hpp"
 
 
 namespace gfx {
 
 
-class FontPrivate : public QSharedData
+class FontPrivate
 {
 public:
     FontPrivate();
@@ -51,7 +52,7 @@ private:
     };
 
     Texture m_texture;
-    QVector<Symbol> m_symbols;
+    std::vector<Symbol> m_symbols;
     int m_height;
     bool m_alpha;
     Rgb m_colorNormal;
@@ -89,7 +90,8 @@ public:
     int width(const String &text) const;
 
 private:
-    QExplicitlySharedDataPointer<FontPrivate> d;
+    // shared by the copies
+    std::shared_ptr<FontPrivate> d;
 };
 
 

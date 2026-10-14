@@ -21,7 +21,6 @@
 
 #include "widget.h"
 #include "gfx/font.h"
-#include <QRectF>
 #include "util/string.hpp"
 
 
@@ -37,7 +36,8 @@ public:
         AlignHCenter = 1,
         AlignBottom = 2,
     };
-    Q_DECLARE_FLAGS(Alignment, AlignmentFlags);
+    // AlignmentFlags combined
+    using Alignment = int;
 
 public:
     Label(Widget *parent = NULL, bool visible = true);
@@ -64,7 +64,6 @@ protected:
 };
 
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(Label::Alignment);
 
 
 } // namespace ui

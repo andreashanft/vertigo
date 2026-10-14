@@ -32,14 +32,15 @@ TextureManager::TextureManager()
 Texture TextureManager::getModule(const String &filename, bool colorKey)
 {
     String basename = String("vfx:texture/%1").arg(filename);
-    if (m_textures.contains(basename))
-        return m_textures.value(basename);
+    const auto it = m_textures.find(basename);
+    if (it != m_textures.end())
+        return it->second;
 
     ColorTable colorTable(basename + ".s16");
     if (colorKey)
         colorTable[0] = rgba(0, 0, 0, 0);
     Texture texture = Image::load(basename + ".imb", colorTable);
-    m_textures.insert(basename, texture);
+    m_textures[basename] = texture;
     return texture;
 }
 

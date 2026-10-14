@@ -24,7 +24,7 @@
 namespace gfx {
 
 
-inline static quint32 nextPowerOfTwo(quint32 v)
+inline static std::uint32_t nextPowerOfTwo(std::uint32_t v)
 {
     v--;
     v |= v >> 1;

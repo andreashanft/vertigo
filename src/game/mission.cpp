@@ -29,7 +29,7 @@ Mission::Mission(const String &name, int station) :
     txt::DesFile file(String("dat:mission/%1.des").arg(name));
     file.setSection("areamap");
     m_name = file.value("name").toString();
-    m_pos = QPoint(file.value("X").toInt(), file.value("Y").toInt());
+    m_pos = Point(file.value("X").toInt(), file.value("Y").toInt());
 
     file.setSection("mission");
     m_scenario = file.value("dramaturgy").toString();

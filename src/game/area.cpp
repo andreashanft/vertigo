@@ -54,7 +54,7 @@ void Area::load(const String &name)
             file.setSection(section);
             const int index = match.captured(1).toUInt();
             const String station = file.value("Name").toString();
-            m_stations.insert(index, Station(index, station));
+            m_stations[index] = Station(index, station);
         }
     }
 }

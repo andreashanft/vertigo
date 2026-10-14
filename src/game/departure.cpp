@@ -51,7 +51,8 @@ Departure::Departure(std::function<void()> &&funcClose) :
     label->setAlignment(ui::Label::AlignHCenter);
 
     int y = 30;
-    foreach (const Station &station, Chapter::get()->stations()) {
+    for (const auto &entry : Chapter::get()->stations()) {
+        const Station &station = entry.second;
         if (station.index() == Chapter::get()->currentStation())
             continue;
         if (!station.isEnabled())
@@ -70,7 +71,7 @@ Departure::Departure(std::function<void()> &&funcClose) :
 
     y += 4;
 
-    foreach (Mission* mission, Chapter::get()->missions()) {
+    for (Mission *mission : Chapter::get()->missions()) {
         if (mission->station() == -1) {
             const String shortName = mission->shortName();
             ui::Button *button = new ui::Button([this, shortName]() { Chapter::get()->startMission(shortName); }, lblMap);
@@ -95,7 +96,7 @@ Departure::Departure(std::function<void()> &&funcClose) :
 }
 
 
-bool Departure::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Departure::mousePressEvent(const Point &pos, Qt::MouseButton button)
 {
 
     if (button == Qt::RightButton) {

@@ -20,7 +20,7 @@
 
 
 #include "station.h"
-#include <QMap>
+#include <map>
 #include "util/string.hpp"
 
 
@@ -37,10 +37,11 @@ public:
     int code() const { return m_code; }
     const String& shortName() const { return m_shortName; }
     String map() const { return m_map; }
-    QMap<int, Station> stations() const { return m_stations; }
+    const std::map<int, Station>& stations() const { return m_stations; }
 
 private:
-    Q_DISABLE_COPY(Area);
+    Area(const Area&) = delete;
+    Area& operator=(const Area&) = delete;
     void load(const String &name);
 
 private:
@@ -48,7 +49,7 @@ private:
     String m_shortName;
     String m_name;
     String m_map;
-    QMap<int, Station> m_stations;
+    std::map<int, Station> m_stations;
 };
 
 

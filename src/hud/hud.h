@@ -109,7 +109,7 @@ public:
     void load(game::Boat *boat);
     void start(fight::Scenario *scenario);
 
-    void setRect(const QRect &rect);
+    void setRect(const Rect &rect);
     void draw();
     // advances the mission without drawing (draw() calls it with the time since the last frame)
     void step(float elapsedTime);
@@ -127,7 +127,7 @@ private:
     void setFrozen(bool frozen);
     void updateMissionState();
     void leave(util::event<> &event);
-    bool drawModel(qreal pixelRatio);
+    bool drawModel(double pixelRatio);
     void updateLook(float elapsedTime);
     // the pilot's head turned by the mouse look, in the boat's camera frame
     Matrix lookTransform() const;
@@ -157,7 +157,7 @@ private:
     std::unique_ptr<QOpenGLFramebufferObject> m_instruments;   // the instruments, projected onto the model
     Vector2D m_look;        // yaw (left) and pitch (up) of the pilot's head in radians
     bool m_looking;         // a mouse button is held
-    QPoint m_lookStart;     // where the drag started
+    Point m_lookStart;      // where the drag started
     Vector2D m_lookFrom;    // and the look direction then
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;

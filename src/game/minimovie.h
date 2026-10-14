@@ -57,7 +57,7 @@ private:
     };
 
     String m_path;
-    QList<Video*> m_videos;
+    std::vector<Video*> m_videos;
     QElapsedTimer m_time;
     gfx::ColorTable m_colorTable;
     std::function<void()> m_funcFinished;

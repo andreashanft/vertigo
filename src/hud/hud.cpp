@@ -457,22 +457,23 @@ void HUD::leave(util::event<> &event)
 }
 
 
-void HUD::setRect(const QRect &rect)
+void HUD::setRect(const Rect &rect)
 {
-    if (m_rectGL.width == rect.width() && m_rectGL.height == rect.height())
+    if (m_rectGL.width == rect.width && m_rectGL.height == rect.height)
         return;
 
-    m_rectGL = Rect(rect.x(), rect.y(), rect.width(), rect.height());
+    m_rectGL = rect;
     Renderer::setRect(rect);
 
+    const RectD ortho = rectOrtho();
     if (m_wide)
-        m_rectHUD = RectF(rect.x(), rect.y() - rectOrtho().y()/rectOrtho().height()*rect.height(), rect.width(), rect.height()*480/rectOrtho().height());
+        m_rectHUD = RectF(rect.x, rect.y - ortho.y/ortho.height*rect.height, rect.width, rect.height*480/ortho.height);
     else
-        m_rectHUD = RectF(rect.x() - rectOrtho().x()/rectOrtho().width()*rect.width(), rect.y() - rectOrtho().y()/rectOrtho().height()*rect.height(), rect.width()*640/rectOrtho().width(), rect.height()*480/rectOrtho().height());
+        m_rectHUD = RectF(rect.x - ortho.x/ortho.width*rect.width, rect.y - ortho.y/ortho.height*rect.height, rect.width*640/ortho.width, rect.height*480/ortho.height);
 
     if (m_scenario)
     {
-        Renderer::setRect(QRect(glm::round(m_rectHUD.x), glm::round(m_rectHUD.y), glm::round(m_rectHUD.width), glm::round(m_rectHUD.height)));
+        Renderer::setRect(Rect(glm::round(m_rectHUD.x), glm::round(m_rectHUD.y), glm::round(m_rectHUD.width), glm::round(m_rectHUD.height)));
         m_centerNDC = Vector2D(m_projectionMatrix * Vector4D(m_center, 0, 1));
         // the 3D cockpit needs the world in the perspective of the cockpit art
         m_scenario->setRect(m_rectHUD, m_centerNDC, showsModel() ? glm::degrees(2*std::atan(240/m_focal)) : 60.0f);
@@ -480,7 +481,7 @@ void HUD::setRect(const QRect &rect)
 
     int w = 640;
     int h = 480;
-    while (w + 640 <= rect.width() && h + 480 <= rect.height())
+    while (w + 640 <= rect.width && h + 480 <= rect.height)
     {
         w += 640;
         h += 480;
@@ -529,11 +530,11 @@ void HUD::draw()
     }
 
     // the GL viewport is in device pixels, the rects in logical pixels
-    const qreal pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
+    const double pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
     if (showsModel() && drawModel(pixelRatio))
         return;
-    if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
-        glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
+    if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
+        glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
 
     m_scenario->draw();
 
@@ -553,7 +554,7 @@ void HUD::draw()
     m_menu->doDraw();
     m_integerScale = false;
 
-    if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
+    if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
 }
 
@@ -561,7 +562,7 @@ void HUD::draw()
 // The 3D cockpit: the instruments go into a texture that is projected onto the model, the world
 // and the model are drawn in the whole window as seen from the pilot's head, and the HUD in the
 // window and the menu are drawn on top. False if the model can't be shown.
-bool HUD::drawModel(qreal pixelRatio)
+bool HUD::drawModel(double pixelRatio)
 {
     QOpenGLFunctions *gl = QOpenGLContext::currentContext() ? QOpenGLContext::currentContext()->functions() : nullptr;
     if (!gl || !QOpenGLFramebufferObject::hasOpenGLFramebufferObjects())
@@ -610,7 +611,7 @@ bool HUD::drawModel(qreal pixelRatio)
     m_model->drawDecal(modelProjection, headInverse, m_instruments->texture());
 
     // the HUD in the window is collimated: it turns with the head but doesn't shift; the menu stays put
-    glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
+    glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
     setupGL(false);
     gfx::Pipeline::setProjection(viewTurn(m_scenario->projectionMatrix(), glm::mat3(head))*m_noScaleProjectionMatrix);
     m_noScaleWidget.doDraw();
@@ -795,7 +796,7 @@ void HUD::mousePressEvent(QMouseEvent *e)
     if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
         return;
     m_looking = true;
-    m_lookStart = e->pos();
+    m_lookStart = Point(e->pos().x(), e->pos().y());
     m_lookFrom = m_look;
 }
 
@@ -805,8 +806,8 @@ void HUD::mouseMoveEvent(QMouseEvent *e)
     if (!m_looking)
         return;
     // drag right to look right, up to look up
-    const QPoint drag = e->pos() - m_lookStart;
-    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag.x(), drag.y()), LookMin, LookMax);
+    const Point drag = Point(e->pos().x(), e->pos().y()) - m_lookStart;
+    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag), LookMin, LookMax);
 }
 
 

@@ -4,6 +4,7 @@
 #include "util/datapath.h"
 
 #include <QFile>
+#include <cassert>
 
 
 namespace game {
@@ -13,9 +14,9 @@ DialogFrame::DialogFrame(Dialog* dialog, const String &roomName, std::function<v
     Frame(std::move(funcClose)),
     m_dialog(dialog)
 {
-    Q_ASSERT(dialog);
+    assert(dialog);
 
-    setupFrame(QSize(378, 159), txt::StringTable::get(txt::DialogTitle), false);
+    setupFrame(Size(378, 159), txt::StringTable::get(txt::DialogTitle), false);
 
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 

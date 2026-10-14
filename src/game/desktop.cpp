@@ -23,6 +23,7 @@
 #include "txt/desfile.h"
 #include <QKeyEvent>
 #include <QRegularExpression>
+#include <cassert>
 
 
 namespace game {
@@ -92,18 +93,18 @@ Desktop::Desktop(const String &name) :
 
         char arrowX = 'l';
         char arrowY = 't';
-        QPoint offset(11, 3);
-        QPoint offsetArrow;
+        Point offset(11, 3);
+        Point offsetArrow(0, 0);
 
         if (left) {
-            offsetArrow.setX(-10);
-            offset.setX(-1 - width);
+            offsetArrow.x = -10;
+            offset.x = -1 - width;
             arrowX = 'r';
         }
 
         if (top) {
-            offsetArrow.setY(-10);
-            offset.setY(-3);
+            offsetArrow.y = -10;
+            offset.y = -3;
             arrowY = 'b';
         }
 
@@ -111,18 +112,18 @@ Desktop::Desktop(const String &name) :
 
         ui::Label *lblArrow = new ui::Label(m_widgetRooms);
         lblArrow->setTexture(gfx::Image::load(String("gfx:img/desktop/gui/arr%1%2lar.img").arg(arrowY).arg(arrowX), colorTable));
-        lblArrow->setPosition(offsetArrow.x() + file.value("X").toInt(), offsetArrow.y() + file.value("Y").toInt());
+        lblArrow->setPosition(offsetArrow.x + file.value("X").toInt(), offsetArrow.y + file.value("Y").toInt());
 
         ui::Button *button = new ui::Button([this, index]() { showRoom(index); }, m_widgetRooms);
         button->setOffset(0);
         button->setFont(gfx::Font::Medium);
         button->setText(name);
-        button->setPosition(offset.x() + file.value("X").toInt(), offset.y() + file.value("Y").toInt());
+        button->setPosition(offset.x + file.value("X").toInt(), offset.y + file.value("Y").toInt());
 
         RoomEntry room;
         room.name = file.value("room").toString();
         room.title = name;
-        m_rooms.insert(index, room);
+        m_rooms[index] = room;
     }
 
     m_miniMovie.load(file);
@@ -204,7 +205,7 @@ void Desktop::hideNotebook()
 
 void Desktop::showRoom(int index)
 {
-    Q_ASSERT(!m_room);
+    assert(!m_room);
     m_room = new Room(index, m_rooms[index].title, m_rooms[index].name,
         [this]() { hideRoom(); },
         [this](Dialog *dialog) { showDialog(dialog); },
@@ -222,7 +223,7 @@ void Desktop::showRoom(int index)
 
 void Desktop::hideRoom()
 {
-    Q_ASSERT(m_room);
+    assert(m_room);
     setRootWidget(&m_lblBackground);
     m_room->deleteLater();
     m_room = NULL;
@@ -234,8 +235,8 @@ void Desktop::hideRoom()
 
 void Desktop::showDialog(Dialog *dialog)
 {
-    Q_ASSERT(m_room);
-    Q_ASSERT(!m_dialog);
+    assert(m_room);
+    assert(!m_dialog);
 
     m_dialog = new DialogFrame(dialog, m_room->name(), [this]() { hideDialog(); });
     setRootWidget(m_dialog);
@@ -245,8 +246,8 @@ void Desktop::showDialog(Dialog *dialog)
 
 void Desktop::hideDialog()
 {
-    Q_ASSERT(m_room);
-    Q_ASSERT(m_dialog);
+    assert(m_room);
+    assert(m_dialog);
     setRootWidget(m_room);
     m_room->restart();
     m_dialog->deleteLater();
@@ -256,7 +257,7 @@ void Desktop::hideDialog()
 
 void Desktop::showEnCom(Dialog *dialog)
 {
-    Q_ASSERT(!m_enCom);
+    assert(!m_enCom);
 
     m_enCom = new EnCom(dialog, [this]() { hideEnCom(); });
     setRootWidget(m_enCom);
@@ -270,7 +271,7 @@ void Desktop::showEnCom(Dialog *dialog)
 
 void Desktop::hideEnCom()
 {
-    Q_ASSERT(m_enCom);
+    assert(m_enCom);
     if (m_room) {
         setRootWidget(m_room);
         m_room->restart();
@@ -292,8 +293,8 @@ void Desktop::hideEnCom()
 
 void Desktop::showDeparture()
 {
-    Q_ASSERT(m_room);
-    Q_ASSERT(!m_departure);
+    assert(m_room);
+    assert(!m_departure);
     m_departure = new Departure([this]() { hideDeparture(); });
     setRootWidget(m_departure);
     showCursor();
@@ -303,8 +304,8 @@ void Desktop::showDeparture()
 
 void Desktop::hideDeparture()
 {
-    Q_ASSERT(m_room);
-    Q_ASSERT(m_departure);
+    assert(m_room);
+    assert(m_departure);
     setRootWidget(m_room);
     m_room->restart();
     m_room->show();
@@ -315,8 +316,8 @@ void Desktop::hideDeparture()
 
 void Desktop::showDepot()
 {
-    Q_ASSERT(m_room);
-    Q_ASSERT(!m_depot);
+    assert(m_room);
+    assert(!m_depot);
     m_depot = new Depot([this]() { hideDepot(); });
     setRootWidget(m_depot);
     m_depot->setPosition((640 - m_depot->width()) / 2, (480 - m_depot->height()) / 2);
@@ -326,8 +327,8 @@ void Desktop::showDepot()
 
 void Desktop::hideDepot()
 {
-    Q_ASSERT(m_room);
-    Q_ASSERT(m_depot);
+    assert(m_room);
+    assert(m_depot);
     setRootWidget(m_room);
     m_room->restart();
     m_depot->deleteLater();
@@ -338,17 +339,17 @@ void Desktop::hideDepot()
 
 void Desktop::checkDialogs()
 {
-    QList<Dialog*> dialogs = Chapter::get()->dialogsDirect();
-    if (!dialogs.isEmpty()) {
-        Dialog* dialog = dialogs.first();
+    std::vector<Dialog*> dialogs = Chapter::get()->dialogsDirect();
+    if (!dialogs.empty()) {
+        Dialog* dialog = dialogs.front();
         showRoom(dialog->room());
         showDialog(dialog);
         return;
     }
 
     dialogs = Chapter::get()->dialogsEnCom(false);
-    if (!dialogs.isEmpty())
-        showEnCom(dialogs.first());
+    if (!dialogs.empty())
+        showEnCom(dialogs.front());
 }
 
 

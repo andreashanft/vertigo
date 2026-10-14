@@ -23,6 +23,7 @@
 #include "gfx/image.h"
 #include "ui/button.h"
 #include "txt/stringtable.h"
+#include <cassert>
 
 
 namespace game {
@@ -45,7 +46,7 @@ Depot::Depot(std::function<void()> &&funcClose) :
         colorTableDisabled << gfx::rgba(gfx::red(colorTable[i]), gfx::green(colorTable[i]), gfx::blue(colorTable[i]), 128);
 
     gfx::Image backgroundImage = gfx::Image::load("gfx:img/desktop/depot/depoback.img", colorTable);
-    setupFrame(QSize(backgroundImage.width() + 18, backgroundImage.height() + 24), "DEPOT", true);
+    setupFrame(Size(backgroundImage.width() + 18, backgroundImage.height() + 24), "DEPOT", true);
 
     m_backgroundLabel.setPosition(9, 15);
     m_backgroundLabel.setTexture(backgroundImage);
@@ -108,8 +109,8 @@ Depot::Depot(std::function<void()> &&funcClose) :
     m_videoFlip2.setFrameRate(25);
     m_videoFlip2.play();
 
-    Q_ASSERT(m_videoFlip1.width() == m_videoFlip2.width());
-    Q_ASSERT(m_videoFlip1.height() == m_videoFlip2.height());
+    assert(m_videoFlip1.width() == m_videoFlip2.width());
+    assert(m_videoFlip1.height() == m_videoFlip2.height());
     m_boatTexture.createEmpty(m_videoFlip1.width(), m_videoFlip1.height(), gfx::Texture::RGBA);
 
     m_boatLabel = new ui::Label(&m_panelMountings);
@@ -164,7 +165,7 @@ Depot::Depot(std::function<void()> &&funcClose) :
         ui::Arrow &arrow = m_mountingArrows.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(i),
-            std::forward_as_tuple(mounting.dir, QPoint(mounting.pos.x, mounting.pos.y), true, [this](int n) { loadMounting(n); }, &m_panelMountings)
+            std::forward_as_tuple(mounting.dir, mounting.pos, true, [this](int n) { loadMounting(n); }, &m_panelMountings)
         ).first->second;
         arrow.setText(mounting.name);
         arrow.setValue(i);
@@ -674,7 +675,7 @@ void Depot::draw()
 }
 
 
-bool Depot::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Depot::mousePressEvent(const Point &pos, Qt::MouseButton button)
 {
     if (button == Qt::RightButton) {
         closeFrame();

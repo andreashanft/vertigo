@@ -20,7 +20,7 @@
 
 
 #include "texture.h"
-#include <QMap>
+#include <map>
 #include "util/string.hpp"
 
 
@@ -36,7 +36,7 @@ public:
     Texture getModule(const String &filename, bool colorKey = false);
 
 private:
-    QMap<String, Texture> m_textures;
+    std::map<String, Texture> m_textures;
 };
 
 

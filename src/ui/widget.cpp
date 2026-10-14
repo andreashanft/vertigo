@@ -17,6 +17,7 @@
 
 #include "widget.h"
 #include "gfx/pipeline.h"
+#include <algorithm>
 
 
 namespace ui {
@@ -34,21 +35,25 @@ Widget::Widget(Widget *parent, bool visible) :
 
 Widget::~Widget()
 {
-    QList<Widget*> children = m_children;
-    qDeleteAll(children);
+    // each one leaves the list as it goes
+    const std::vector<Widget*> children = m_children;
+    for (Widget *child : children)
+        delete child;
     setParentWidget(NULL);
 }
 
 
 void Widget::setParentWidget(Widget *parent)
 {
-    if (m_parent)
-        m_parent->m_children.removeAll(this);
+    if (m_parent) {
+        std::vector<Widget*> &siblings = m_parent->m_children;
+        siblings.erase(std::remove(siblings.begin(), siblings.end(), this), siblings.end());
+    }
 
     m_parent = parent;
 
     if (m_parent)
-        m_parent->m_children.append(this);
+        m_parent->m_children.push_back(this);
 }
 
 
@@ -88,19 +93,19 @@ void Widget::show()
 }
 
 
-void Widget::setPosition(const QPoint &pos)
+void Widget::setPosition(const Point &pos)
 {
-    m_rect.moveTopLeft(pos);
+    m_rect.setPos(pos);
 }
 
 
 void Widget::setPosition(int x, int y)
 {
-    m_rect.moveTopLeft(QPoint(x, y));
+    m_rect.setPos(Point(x, y));
 }
 
 
-void Widget::setSize(const QSize &size)
+void Widget::setSize(const Size &size)
 {
     m_rect.setSize(size);
 }
@@ -108,19 +113,19 @@ void Widget::setSize(const QSize &size)
 
 void Widget::setWidth(int w)
 {
-    m_rect.setWidth(w);
+    m_rect.width = w;
 }
 
 
 void Widget::setHeight(int h)
 {
-    m_rect.setHeight(h);
+    m_rect.height = h;
 }
 
 
-QRect Widget::mapToGlobal(QRect rect) const
+Rect Widget::mapToGlobal(Rect rect) const
 {
-    rect.moveTopLeft(rect.topLeft() + m_rect.topLeft());
+    rect.setPos(rect.pos() + m_rect.pos());
     if (!m_parent)
         return rect;
 
@@ -132,10 +137,12 @@ void Widget::doDraw()
 {
     if (m_visible) {
         gfx::Pipeline::pushMatrix();
-        gfx::Pipeline::translate(m_rect.x(), m_rect.y(), 0.0f);
+        gfx::Pipeline::translate(m_rect.x, m_rect.y, 0.0f);
 
         draw();
-        foreach (Widget *widget, m_children)
+        // (over a copy, as the children can change meanwhile)
+        const std::vector<Widget*> children = m_children;
+        for (Widget *widget : children)
             widget->doDraw();
 
         gfx::Pipeline::popMatrix();
@@ -143,13 +150,14 @@ void Widget::doDraw()
 }
 
 
-bool Widget::doMousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Widget::doMousePressEvent(const Point &pos, Qt::MouseButton button)
 {
     if (m_enabled && m_visible) {
         if (mousePressEvent(pos, button))
             return true;
 
-        foreach (Widget *widget, m_children) {
+        const std::vector<Widget*> children = m_children;
+        for (Widget *widget : children) {
             if (widget->doMousePressEvent(pos, button))
                 return true;
         }
@@ -159,21 +167,23 @@ bool Widget::doMousePressEvent(const QPoint &pos, Qt::MouseButton button)
 }
 
 
-void Widget::doMouseReleaseEvent(const QPoint &pos, Qt::MouseButton button)
+void Widget::doMouseReleaseEvent(const Point &pos, Qt::MouseButton button)
 {
     if (m_enabled && m_visible) {
         mouseReleaseEvent(pos, button);
-        foreach (Widget *widget, m_children)
+        const std::vector<Widget*> children = m_children;
+        for (Widget *widget : children)
             widget->doMouseReleaseEvent(pos, button);
     }
 }
 
 
-void Widget::doMouseMoveEvent(const QPoint &pos)
+void Widget::doMouseMoveEvent(const Point &pos)
 {
     if (m_enabled && m_visible) {
         mouseMoveEvent(pos);
-        foreach (Widget *widget, m_children)
+        const std::vector<Widget*> children = m_children;
+        for (Widget *widget : children)
             widget->doMouseMoveEvent(pos);
     }
 }

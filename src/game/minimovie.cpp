@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "minimovie.h"
+#include "util/containers.hpp"
 #include "gfx/image.h"
 #include "util/random.h"
 #include "util/string.hpp"
@@ -35,7 +36,7 @@ MiniMovie::MiniMovie(const String &path, std::function<void()> &&funcFinished) :
 
 MiniMovie::~MiniMovie()
 {
-    qDeleteAll(m_videos);
+    util::deleteAll(m_videos);
 }
 
 
@@ -65,7 +66,7 @@ void MiniMovie::load(txt::DesFile &file)
 
         video->time = float(util::random()) / RAND_MAX * video->rndMax;
 
-        m_videos.append(video);
+        m_videos.push_back(video);
     }
 }
 
@@ -78,9 +79,9 @@ void MiniMovie::start()
 
 void MiniMovie::update(gfx::Texture texture)
 {
-    const quint32 time = m_time.restart();
+    const std::uint32_t time = m_time.restart();
     bool oneshotPlaying = false;
-    foreach (Video *video, m_videos) {
+    for (Video *video : m_videos) {
         if (video->oneShot)
             oneshotPlaying = video->video.isPlaying();
         if (video->rndMax > 0 && !video->video.isPlaying()) {
@@ -99,7 +100,7 @@ void MiniMovie::update(gfx::Texture texture)
     }
 
     if (oneshotPlaying) {
-        foreach (Video *video, m_videos) {
+        for (Video *video : m_videos) {
             if (video->oneShot) {
                 if (!video->video.isPlaying()) {
                     m_funcFinished();
@@ -119,7 +120,7 @@ void MiniMovie::setColorTable(const gfx::ColorTable &colorTable)
 
 void MiniMovie::playOneshot()
 {
-    foreach (Video *video, m_videos) {
+    for (Video *video : m_videos) {
         if (video->oneShot)
             video->video.play();
     }
@@ -128,7 +129,7 @@ void MiniMovie::playOneshot()
 
 void MiniMovie::stopOneshot()
 {
-    foreach (Video *video, m_videos) {
+    for (Video *video : m_videos) {
         if (video->oneShot)
             video->video.stop();
     }

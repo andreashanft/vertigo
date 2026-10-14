@@ -91,7 +91,7 @@ private:
     String m_approachMovie;
     MiniMovie m_miniMovie;
     bool m_first;
-    QMap<int, RoomEntry> m_rooms;
+    std::map<int, RoomEntry> m_rooms;
     Depot *m_depot;
 };
 

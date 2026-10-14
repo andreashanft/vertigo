@@ -163,7 +163,7 @@ void Notebook::showMissions()
     m_lblMissions.show();
 
     StringList tasks;
-    foreach (const Task &task, Chapter::get()->tasks()) {
+    for (const Task &task : Chapter::get()->tasks()) {
         switch (task.type()) {
         case Task::Tip:
             tasks.append(txt::StringTable::get(txt::Notebook_Tip));
@@ -221,9 +221,11 @@ void Notebook::showMoviePlayer()
     m_lblMoviePlayer.show();
 
     m_movieButtons.clear();
-    const QSet<int>& movies = Chapter::get()->playedMovies();
+    // in the order of their numbers (they were in the order of a hash before, which changed from
+    // run to run)
+    const std::set<int>& movies = Chapter::get()->playedMovies();
     int y = 40;
-    foreach (int movie, movies) {
+    for (int movie : movies) {
         m_movieButtons.emplace_back([this, movie]() { Chapter::get()->playMovie(movie); }, &m_lblMoviePlayer);
         setupButton(m_movieButtons.back(), txt::StringId(txt::FirstMovie + movie), y);
         y += 10;
@@ -267,7 +269,7 @@ void Notebook::updateMovies()
     m_btnMoviesHarbour.setText(txt::StringTable::get(harbour));
 }
 
-bool Notebook::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Notebook::mousePressEvent(const Point &pos, Qt::MouseButton button)
 {
     if (m_lblMap.isVisible()) {
         hideMap();
