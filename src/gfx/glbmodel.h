@@ -19,9 +19,9 @@
 #define GFX_GLBMODEL_H
 
 
+#include "image.h"
 #include "util/geometry3d.h"
 
-#include <QImage>
 #include <QString>
 #include <QVariantMap>
 #include <vector>
@@ -54,7 +54,7 @@ public:
     const QString& error() const { return m_error; }
 
     const std::vector<Mesh>& meshes() const { return m_meshes; }
-    const std::vector<QImage>& images() const { return m_images; }
+    const std::vector<Image>& images() const { return m_images; }
 
 private:
     bool fail(const QString &error);
@@ -62,7 +62,7 @@ private:
 private:
     QString m_error;
     std::vector<Mesh> m_meshes;
-    std::vector<QImage> m_images;
+    std::vector<Image> m_images;
 };
 
 

@@ -187,11 +187,11 @@ bool Cockpit3D::create()
     m_mesh.create(int(positions.size()), positions.data(), nullptr, texCoords.data(), int(base.size()), base.data());
 
     // the baked texture: trilinear and anisotropic, as most surfaces are seen at an angle
-    QImage texture = model.images()[image].convertToFormat(QImage::Format_RGB888);
+    gfx::Image texture = model.images()[image].convertToFormat(gfx::Image::RGB888);
     GLint maxSize = 0;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
     if (maxSize > 0 && (texture.width() > maxSize || texture.height() > maxSize))
-        texture = texture.scaled(std::min(texture.width(), int(maxSize)), std::min(texture.height(), int(maxSize)), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        texture = texture.scaled(std::min(texture.width(), int(maxSize)), std::min(texture.height(), int(maxSize)), true);
     glGenTextures(1, &m_texture);
     glBindTexture(GL_TEXTURE_2D, m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -204,8 +204,10 @@ bool Cockpit3D::create()
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(8.0f, anisotropy));
     }
-    // QImage pads lines to 4 bytes, GL's default unpack alignment
+    // the rows follow each other without padding to 4 bytes, GL's default
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, texture.width(), texture.height(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture.constBits());
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     QOpenGLContext::currentContext()->extraFunctions()->glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 

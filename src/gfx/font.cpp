@@ -33,7 +33,7 @@ FontPrivate::FontPrivate() :
 
 }
 
-void FontPrivate::load(const String &filename, const QVector<QRgb> &colorTable, bool scale, bool smooth)
+void FontPrivate::load(const String &filename, const ColorTable &colorTable, bool scale, bool smooth)
 {
     util::File file(String(filename).replace(":", "/").toUtf8().data());
 
@@ -62,7 +62,7 @@ void FontPrivate::load(const String &filename, const QVector<QRgb> &colorTable, 
     int x = 1;
     int y = 1;
     for (unsigned int i = 0; i < numEntries; i++) {
-        QImage image;
+        Image image;
         switch (type) {
         case 2:
             image = Image::load(file, Image::PaletteRLE, colorTable);
@@ -134,8 +134,8 @@ Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCente
         Pipeline::drawQuads(quads.data(), int(quads.size()));
         quads.clear();
     };
-    auto setColor = [&](QRgb rgb) {
-        const Vector4D color(qRed(rgb) / 255.0f, qGreen(rgb) / 255.0f, qBlue(rgb) / 255.0f, qAlpha(rgb) / 255.0f);
+    auto setColor = [&](Rgb rgb) {
+        const Vector4D color(red(rgb) / 255.0f, green(rgb) / 255.0f, blue(rgb) / 255.0f, alpha(rgb) / 255.0f);
         if (color != Pipeline::color()) {
             flush();
             Pipeline::setColor(color);

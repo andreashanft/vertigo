@@ -45,9 +45,8 @@ Notebook::Notebook(std::function<void()> funcClose) :
     m_fontYellow.load("gfx:fnt/nfont1b.fnt", colorTable, true);
     m_background.fromImage(gfx::Image::load("gfx:img/desktop/notebook/noteback.img", colorTable));
 
-    QImage image(640, 480, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgba(0, 0, 0, 128));
+    gfx::Image image(640, 480, gfx::Image::Indexed8);
+    image.setColorTable(gfx::ColorTable{ gfx::rgba(0, 0, 0, 128) });
     setTexture(image);
 
     m_lblBackground.setPosition(48, 48);

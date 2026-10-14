@@ -77,8 +77,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
   at a fraction of their maximum turn rate (the sign picks the direction),
   instead of following their orders.
-- `--screenshot 3=front.png` saves the window at the given mission seconds
-  (not with `--headless`).
+- `--screenshot 3=front.png` saves the window as PNG at the given mission
+  seconds (not with `--headless`).
 - `--fixed-step` advances the mission by 20 ms per frame instead of by the
   real time, so runs with a window repeat exactly, frame by frame (test times
   are then mission seconds). Screenshots of two builds can be compared pixel

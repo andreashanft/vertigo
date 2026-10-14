@@ -24,6 +24,7 @@
 #include <QDataStream>
 #include <QImage>
 #include <QKeyEvent>
+#include <QPixmap>
 #include <QScreen>
 #include <QSettings>
 #include <QTimer>
@@ -57,7 +58,9 @@ Window::Window() :
     m_context.makeCurrent(&m_offscreen);
 
     const gfx::ColorTable colorTable("gfx:pal/gui/cursor.pal");
-    m_cursor = gfx::Image::loadCursor("gfx:img/desktop/gui/cur_norm.img", colorTable);
+    // as Qt takes it, until the window is SDL's
+    const gfx::Image cursor = gfx::Image::loadCursor("gfx:img/desktop/gui/cur_norm.img", colorTable).convertToFormat(gfx::Image::RGBA8888);
+    m_cursor = QCursor(QPixmap::fromImage(QImage(cursor.constBits(), cursor.width(), cursor.height(), cursor.bytesPerLine(), QImage::Format_RGBA8888)), 3, 4);
     setTitle("Vertigo");
     loadSettings();
 
@@ -106,15 +109,11 @@ void Window::render()
 
     if (!m_screenshots.isEmpty()) {
         // the frame is still in the back buffer
-        QImage image(viewport, QImage::Format_RGBA8888);
+        gfx::Image image(viewport.width(), viewport.height(), gfx::Image::RGBA8888);
         glReadPixels(0, 0, viewport.width(), viewport.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
-#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
-        image = image.flipped(Qt::Vertical).convertToFormat(QImage::Format_RGB888);
-#else
-        image = image.mirrored().convertToFormat(QImage::Format_RGB888);
-#endif
+        image = image.flipped().convertToFormat(gfx::Image::RGB888);
         foreach (const QString &file, m_screenshots) {
-            if (!image.save(file))
+            if (!image.save(file.toStdString()))
                 std::cerr << "Cannot save the screenshot " << file.toUtf8().constData() << std::endl;
         }
         m_screenshots.clear();

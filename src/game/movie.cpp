@@ -57,9 +57,8 @@ void Movie::play(std::function<void()> &&funcFinished)
 
     m_texture.createEmpty(m_video.width(), m_video.height() + 4, gfx::Texture::RGBA);
 
-    QImage line(m_texture.width(), 1, QImage::Format_Indexed8);
-    line.setColorTable(QVector<QRgb>() << qRgb(44, 44, 51));
-    line.fill(0);
+    gfx::Image line(m_texture.width(), 1, gfx::Image::Indexed8);
+    line.setColorTable(gfx::ColorTable{ gfx::rgb(44, 44, 51) });
 
     m_texture.update(0, 0, line);
     m_texture.update(0, m_texture.height() - 1, line);
@@ -89,7 +88,7 @@ void Movie::draw()
                 }
             }
 
-            QImage image = m_video.getFrame();
+            const gfx::Image image = m_video.getFrame();
             if (!image.isNull())
                 m_texture.update(0, 2, image);
         }

@@ -23,17 +23,18 @@
 #include "fight/objects/navpoint.h"
 #include <glm/geometric.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <QImage>
 
 
 namespace hud {
 
 
 // a 3x3 dot in a 4x4 image
-void fill(int *data, int color)
+gfx::Image dot(gfx::Rgb color)
 {
+    gfx::Image image(4, 4, gfx::Image::ARGB32);
     for (int i = 0; i < 16; i++)
-        data[i] = i % 4 < 3 && i < 12 ? color : 0;
+        image.setPixel(i % 4, i / 4, i % 4 < 3 && i < 12 ? color : 0);
+    return image;
 }
 
 SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale) :
@@ -44,18 +45,11 @@ SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale) :
     m_scale(scale),
     m_lamp(hud, file)
 {
-    int data[16] = {0};
-    int colors[] = { 0x0084a8, 0x985c20, 0x388040, 0x0000a0, 0x888c88 };
-    fill(data, 0xffa88400);
-    m_center.fromImage(QImage((uchar*)data, 4, 4, QImage::Format::Format_ARGB32), true);
-    fill(data, 0xff205c98);
-    m_nav.fromImage(QImage((uchar*)data, 4, 4, QImage::Format::Format_ARGB32), true);
-    fill(data, 0xff408038);
-    m_friend.fromImage(QImage((uchar*)data, 4, 4, QImage::Format::Format_ARGB32), true);
-    fill(data, 0xffa00000);
-    m_enemy.fromImage(QImage((uchar*)data, 4, 4, QImage::Format::Format_ARGB32), true);
-    fill(data, 0xff888c88);
-    m_target.fromImage(QImage((uchar*)data, 4, 4, QImage::Format::Format_ARGB32), true);
+    m_center.fromImage(dot(0xffa88400), true);
+    m_nav.fromImage(dot(0xff205c98), true);
+    m_friend.fromImage(dot(0xff408038), true);
+    m_enemy.fromImage(dot(0xffa00000), true);
+    m_target.fromImage(dot(0xff888c88), true);
 }
 
 

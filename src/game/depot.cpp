@@ -42,10 +42,10 @@ Depot::Depot(std::function<void()> &&funcClose) :
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
     gfx::ColorTable colorTableDisabled;
     for (int i = 0; i < 256; i++)
-        colorTableDisabled << qRgba(qRed(colorTable[i]), qGreen(colorTable[i]), qBlue(colorTable[i]), 128);
+        colorTableDisabled << gfx::rgba(gfx::red(colorTable[i]), gfx::green(colorTable[i]), gfx::blue(colorTable[i]), 128);
 
     gfx::Image backgroundImage = gfx::Image::load("gfx:img/desktop/depot/depoback.img", colorTable);
-    setupFrame(backgroundImage.size() + QSize(18, 24), "DEPOT", true);
+    setupFrame(QSize(backgroundImage.width() + 18, backgroundImage.height() + 24), "DEPOT", true);
 
     m_backgroundLabel.setPosition(9, 15);
     m_backgroundLabel.setTexture(backgroundImage);
@@ -546,7 +546,7 @@ void Depot::draw()
             if (!frame.isNull())
             {
                 gfx::ColorTable colorTable = frame.colorTable();
-                colorTable[0] = qRgba(0, 0, 0, 0);
+                colorTable[0] = gfx::rgba(0, 0, 0, 0);
                 frame.setColorTable(colorTable);
                 m_itemTexture.update(0, 0, frame);
             }
@@ -564,7 +564,7 @@ void Depot::draw()
         if (!frame.isNull())
         {
             gfx::ColorTable colorTable = frame.colorTable();
-            colorTable[0] = qRgba(0, 0, 0, 0);
+            colorTable[0] = gfx::rgba(0, 0, 0, 0);
             frame.setColorTable(colorTable);
             m_boatTexture.update(0, 0, frame);
         }

@@ -41,7 +41,7 @@ ItemList::ItemList(std::function<void(int)> &&funcClicked, Widget *parent, bool 
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
     gfx::ColorTable colorTableDisabled;
     for (int i = 0; i < 256; i++)
-        colorTableDisabled << qRgba(qRed(colorTable[i]), qGreen(colorTable[i]), qBlue(colorTable[i]), 128);
+        colorTableDisabled << gfx::rgba(gfx::red(colorTable[i]), gfx::green(colorTable[i]), gfx::blue(colorTable[i]), 128);
 
     m_btnLeft.setTexture(gfx::Image::load("gfx:img/desktop/depot/gdlefu.img", colorTable));
     m_btnLeft.setPressedTexture(gfx::Image::load("gfx:img/desktop/depot/gdlefd.img", colorTable));

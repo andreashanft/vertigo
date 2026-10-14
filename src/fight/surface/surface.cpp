@@ -104,13 +104,16 @@ float Surface::heightAt(float x, float y, Vector3D &normal)
 
 float Surface::height(int x, int y) const
 {
-    return qGray(m_heightMap.pixel(x & 0xff, y & 0xff));
+    return gfx::gray(m_heightMap.pixel(x & 0xff, y & 0xff));
 }
 
 
 void Surface::setHeight(int x, int y, int refx, int refy, int offset)
 {
-    int i = m_heightMap.pixelIndex(refx, refy);
+    // a reference off the map, or a height past the colour table's, changes nothing
+    if (!m_heightMap.valid(refx, refy))
+        return;
+    const int i = m_heightMap.pixelIndex(refx, refy);
 
     for (int dy = -1; dy < 3; dy++) {
         for (int dx = -1; dx < 3; dx++) {

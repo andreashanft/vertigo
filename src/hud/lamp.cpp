@@ -21,7 +21,6 @@
 #include "util/datapath.h"
 
 #include <QFile>
-#include <QImage>
 
 
 namespace hud {
@@ -42,11 +41,11 @@ Lamp::Lamp(HUD *hud, const txt::DesFile &file) :
     const uchar *p = reinterpret_cast<const uchar *>(bytes.constData());
     for (int frame = 0; frame < 2; frame++)
     {
-        QImage image(m_rect.width, m_rect.height, QImage::Format_RGB32);
+        gfx::Image image(m_rect.width, m_rect.height, gfx::Image::ARGB32);
         for (int i = 0; i < pixels; i++, p += 2)
         {
             const int c = p[0] | (p[1] << 8);
-            image.setPixel(i % m_rect.width, i/m_rect.width, qRgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31));
+            image.setPixel(i % m_rect.width, i/m_rect.width, gfx::rgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31));
         }
         m_frames[frame] = gfx::Texture(image, false);
     }

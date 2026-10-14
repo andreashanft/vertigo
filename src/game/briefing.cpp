@@ -45,9 +45,8 @@ Briefing::Briefing() :
     m_woopSound.load("sfx:snd/desktop/woop.pcm", 33075);
     m_woopSound.setVolume(0.1f);
 
-    QImage image(640, 480, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgba(0, 0, 0, 128));
+    gfx::Image image(640, 480, gfx::Image::Indexed8);
+    image.setColorTable(gfx::ColorTable{ gfx::rgba(0, 0, 0, 128) });
     m_lblMain.setTexture(image);
 
     m_lblMap = new ui::Label(&m_lblMain);

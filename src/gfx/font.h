@@ -21,6 +21,7 @@
 
 #include "util/geometry2d.h"
 #include "cliprect.h"
+#include "colortable.h"
 #include "texture.h"
 #include <QExplicitlySharedDataPointer>
 #include "util/string.hpp"
@@ -35,7 +36,7 @@ public:
     FontPrivate();
 
 public:
-    void load(const String &filename, const QVector<QRgb> &colorTable, bool scale, bool smooth);
+    void load(const String &filename, const ColorTable &colorTable, bool scale, bool smooth);
     Rect draw(const String &text, const Rect &dstRect, bool alignHCenter = false, bool alignBottom = false, const ClipRect *clipRect = nullptr);
     int height() const { return m_height; }
     int height(int w, const StringList &strings) const;
@@ -53,8 +54,8 @@ private:
     QVector<Symbol> m_symbols;
     int m_height;
     bool m_alpha;
-    QRgb m_colorNormal;
-    QRgb m_colorHighlight;
+    Rgb m_colorNormal;
+    Rgb m_colorHighlight;
 };
 
 
@@ -74,12 +75,12 @@ public:
 public:
     Font();
     Font(Name name);
-    Font(const String &filename, const QVector<QRgb> &colorTable, bool scale = false, bool smooth = true);
-    Font(const String &filename, const QRgb &colorNormal, const QRgb &colorHighlight, bool scale = false, bool smooth = true);
+    Font(const String &filename, const ColorTable &colorTable, bool scale = false, bool smooth = true);
+    Font(const String &filename, Rgb colorNormal, Rgb colorHighlight, bool scale = false, bool smooth = true);
 
 public:
-    void load(const String &filename, const QVector<QRgb> &colorTable, bool scale = false, bool smooth = true);
-    void load(const String &filename, const QRgb &colorNormal, const QRgb &colorHighlight, bool scale = false, bool smooth = true);
+    void load(const String &filename, const ColorTable &colorTable, bool scale = false, bool smooth = true);
+    void load(const String &filename, Rgb colorNormal, Rgb colorHighlight, bool scale = false, bool smooth = true);
     Rect draw(const String &text, int x, int y, const ClipRect *clipRect = nullptr);
     Rect draw(const String &text, const Point &dstPos, const ClipRect *clipRect = nullptr);
     Rect draw(const String &text, const Rect &dstRect, const ClipRect *clipRect = nullptr);
@@ -99,29 +100,29 @@ inline Font::Font() :
 }
 
 
-inline Font::Font(const String &filename, const QVector<QRgb> &colorTable, bool scale, bool smooth) :
+inline Font::Font(const String &filename, const ColorTable &colorTable, bool scale, bool smooth) :
     d(new FontPrivate)
 {
     load(filename, colorTable, scale, smooth);
 }
 
 
-inline Font::Font(const String &filename, const QRgb &colorNormal, const QRgb &colorHighlight, bool scale, bool smooth) :
+inline Font::Font(const String &filename, Rgb colorNormal, Rgb colorHighlight, bool scale, bool smooth) :
     d(new FontPrivate)
 {
     load(filename, colorNormal, colorHighlight, scale, smooth);
 }
 
 
-inline void Font::load(const String &filename, const QVector<QRgb> &colorTable, bool scale, bool smooth)
+inline void Font::load(const String &filename, const ColorTable &colorTable, bool scale, bool smooth)
 {
     d->load(filename, colorTable, scale, smooth);
 }
 
 
-inline void Font::load(const String &filename, const QRgb &colorNormal, const QRgb &colorHighlight, bool scale, bool smooth)
+inline void Font::load(const String &filename, Rgb colorNormal, Rgb colorHighlight, bool scale, bool smooth)
 {
-    d->load(filename, QVector<QRgb>() << colorNormal << colorHighlight, scale, smooth);
+    d->load(filename, ColorTable{ colorNormal, colorHighlight }, scale, smooth);
 }
 
 

@@ -20,8 +20,9 @@
 
 
 #include "cliprect.h"
-#include <QImage>
+#include "image.h"
 #include <QExplicitlySharedDataPointer>
+#include <QSize>
 
 
 namespace gfx {
@@ -38,7 +39,7 @@ public:
 
 public:
     Texture();
-    Texture(const QImage &image, bool smooth = true);
+    Texture(const Image &image, bool smooth = true);
 
 public:
     bool isValid() const;
@@ -47,10 +48,10 @@ public:
     QSize size() const;
     unsigned int id() const;
     void bind();
-    void fromImage(const QImage &image, bool smooth = true);
+    void fromImage(const Image &image, bool smooth = true);
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
     void createEmpty(const QSize &size, Texture::Format format, bool smooth = true);
-    void update(int x, int y, QImage image);
+    void update(int x, int y, const Image &image);
     RectF draw(const ClipRect *clipRect = nullptr);
     RectF draw(float x, float y, const ClipRect *clipRect = nullptr);
     RectF draw(const PointF &dstPos, const ClipRect *clipRect = nullptr);
@@ -78,9 +79,9 @@ public:
     unsigned int id() const { return m_texture; }
     void bind();
     void setFilter(bool smooth);
-    void fromImage(const QImage &image, bool smooth);
+    void fromImage(const Image &image, bool smooth);
     void createEmpty(int w, int h, Texture::Format format, bool smooth);
-    void update(int x, int y, QImage image);
+    void update(int x, int y, const Image &image);
     RectF draw(const RectF &dstRect, const RectF &srcRect, const ClipRect *clipRect);
 
 private:
@@ -103,7 +104,7 @@ inline Texture::Texture() :
 }
 
 
-inline Texture::Texture(const QImage &image, bool smooth) :
+inline Texture::Texture(const Image &image, bool smooth) :
     d(new TexturePrivate)
 {
     d->fromImage(image, smooth);
@@ -146,7 +147,7 @@ inline void Texture::bind()
 }
 
 
-inline void Texture::fromImage(const QImage &image, bool smooth)
+inline void Texture::fromImage(const Image &image, bool smooth)
 {
     d->fromImage(image, smooth);
 }
@@ -164,7 +165,7 @@ inline void Texture::createEmpty(const QSize &size, Texture::Format format, bool
 }
 
 
-inline void Texture::update(int x, int y, QImage image)
+inline void Texture::update(int x, int y, const Image &image)
 {
     d->update(x, y, image);
 }

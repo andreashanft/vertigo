@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     const QCommandLineOption seedOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
     const QCommandLineOption cockpitOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
     const QCommandLineOption shakeOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
-    const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), or seconds since the start, e.g. 3=front.png.", "time=file");
+    const QCommandLineOption screenshotOption("screenshot", "Save the window as PNG at the given mission seconds (test mode), or seconds since the start, e.g. 3=front.png.", "time=file");
     const QCommandLineOption dataOption("data", "Use the game data in this directory for this run, instead of the remembered one.", "directory");
     const QCommandLineOption fixedStepOption("fixed-step", "Advance the mission by 20 ms per frame instead of by the real time (test mode, with a window), so runs repeat exactly, e.g. for --screenshot.");
     const QCommandLineOption clickOption("click", "Click at the given seconds (test mode, or since the start) at a point of the 640x480 screen, e.g. 2=320,300.", "time=x,y");

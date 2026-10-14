@@ -32,9 +32,8 @@ EnCom::EnCom(Dialog *dialog, std::function<void()> &&funcClose) :
     gfx::Texture noteback(gfx::Image::load("gfx:img/desktop/notebook/noteback.img", colorTable));
     gfx::Font font("gfx:fnt/dpsmamon.fnt", 0xffb0b800, 0xffb0b800, true);
 
-    QImage image(640, 480, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgba(0, 0, 0, 128));
+    gfx::Image image(640, 480, gfx::Image::Indexed8);
+    image.setColorTable(gfx::ColorTable{ gfx::rgba(0, 0, 0, 128) });
     setTexture(image);
 
     ui::Label *labelBackground = new ui::Label(this);
@@ -45,7 +44,7 @@ EnCom::EnCom(Dialog *dialog, std::function<void()> &&funcClose) :
     labelMain->setPosition(162, 73);
     labelMain->setTexture(noteback);
 
-    QImage line = gfx::Image::load("gfx:img/desktop/gui/horline2.img", colorTableBorder).copy(0, 0, 304, 3);
+    gfx::Image line = gfx::Image::load("gfx:img/desktop/gui/horline2.img", colorTableBorder).copy(0, 0, 304, 3);
 
     ui::Label *label;
 

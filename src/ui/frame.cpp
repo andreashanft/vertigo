@@ -41,15 +41,15 @@ void Frame::setupFrame(const QSize &size, const String &title, bool closable)
     m_lblTitle.setPosition(0, 1);
     m_lblTitle.setWidth(size.width());
 
-    QImage left = gfx::Image::load("gfx:img/desktop/gui/borl.img", colorTable);
-    QImage right = gfx::Image::load("gfx:img/desktop/gui/borr.img", colorTable);
-    QImage bottom = gfx::Image::load("gfx:img/desktop/gui/borb1.img", colorTable);
+    gfx::Image left = gfx::Image::load("gfx:img/desktop/gui/borl.img", colorTable);
+    gfx::Image right = gfx::Image::load("gfx:img/desktop/gui/borr.img", colorTable);
+    gfx::Image bottom = gfx::Image::load("gfx:img/desktop/gui/borb1.img", colorTable);
 
     gfx::Texture texture;
     texture.createEmpty(size, gfx::Texture::RGB);
 
     {
-        QList<QImage> images;
+        std::vector<gfx::Image> images;
         const int total = size.width() - 30;
         static const int id[] = { 1,2,3,3,4,5,2,4,3,1 };
         int sum = 0;
@@ -57,18 +57,18 @@ void Frame::setupFrame(const QSize &size, const String &title, bool closable)
             if (i == 3 && total < 270)
                 continue;
 
-            QImage image = getBorder(colorTable, id[i]);
+            gfx::Image image = getBorder(colorTable, id[i]);
             if (sum + image.width() > total)
                 break;
             sum += image.width();
-            images << image;
+            images.push_back(image);
         }
 
         int beg = 13;
         updateBorder(texture, colorTable, beg, 9);
         beg += 2 + (total - sum) / 2;
 
-        foreach (QImage image, images) {
+        for (const gfx::Image &image : images) {
             texture.update(beg, 0, image);
             beg += image.width();
         }
@@ -98,7 +98,7 @@ void Frame::setupFrame(const QSize &size, const String &title, bool closable)
 
 int Frame::updateBorder(gfx::Texture texture, const gfx::ColorTable &colorTable, int x, int id)
 {
-    QImage image = gfx::Image::load(String("gfx:img/desktop/gui/bort%1.img").arg(id), colorTable);
+    const gfx::Image image = gfx::Image::load(String("gfx:img/desktop/gui/bort%1.img").arg(id), colorTable);
     if (texture.width() - (x + image.width()) < 0) {
         const int width = texture.width() - x;
         texture.update(x, 0, image.copy(0, 0, width, image.height()));
@@ -115,7 +115,7 @@ void Frame::closeFrame()
     m_funcClose();
 }
 
-QImage Frame::getBorder(const gfx::ColorTable &colorTable, int id)
+gfx::Image Frame::getBorder(const gfx::ColorTable &colorTable, int id)
 {
     return gfx::Image::load(String("gfx:img/desktop/gui/bort%1.img").arg(id), colorTable);
 }

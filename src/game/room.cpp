@@ -52,7 +52,7 @@ Room::Room(int index, const String &title, const String &name,
     m_miniMovie.setColorTable(m_backgroundImage.colorTable());
     m_backgroundSound.load("sfx:snd/room/" + backgroundSound + ".pcm");
 
-    setupFrame(m_backgroundImage.size() + QSize(18, 24), title, true);
+    setupFrame(QSize(m_backgroundImage.width() + 18, m_backgroundImage.height() + 24), title, true);
 
     m_backgroundLabel = new ui::Label(this);
     m_backgroundLabel->setPosition(9, 15);

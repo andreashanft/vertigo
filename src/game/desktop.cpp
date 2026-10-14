@@ -47,7 +47,7 @@ Desktop::Desktop(const String &name) :
     const String background = file.value("BackGround").toString();
     const String backgroundSound = file.value("Sound").toString();
     const String nameSound = "st" + file.value("SFV").toString().right(4);
-    QImage image = gfx::Image::loadPCX("gfx:pic/bground/" + background + ".pcx").toRgb565();
+    gfx::Image image = gfx::Image::loadPCX("gfx:pic/bground/" + background + ".pcx").toRgb565();
     m_miniMovie.setColorTable(image.colorTable());
     m_background.fromImage(image);
     m_backgroundSound.load("sfx:snd/bground/" + backgroundSound + ".pcl", "sfx:snd/bground/" + backgroundSound + ".pcr");

@@ -27,7 +27,7 @@ namespace hud {
 
 
 // Bresenham's line algorithm
-void drawLine(QImage &image, float x1, float y1, float x2, float y2, int color)
+void drawLine(gfx::Image &image, float x1, float y1, float x2, float y2, gfx::Rgb color)
 {
     const bool steep = (glm::abs(y2 - y1) > glm::abs(x2 - x1));
     if (steep)
@@ -68,7 +68,7 @@ void drawLine(QImage &image, float x1, float y1, float x2, float y2, int color)
 }
 
 
-void drawSegment(QImage &image, const PointF &c, std::vector<PointF> &points, std::vector<int> &colors, int i)
+void drawSegment(gfx::Image &image, const PointF &c, std::vector<PointF> &points, std::vector<int> &colors, int i)
 {
     drawLine(image, c.x + points[i].x, c.y + points[i].y, c.x + points[i + 1].x, c.y + points[i + 1].y, 0xff000000 + colors[i]*32);
     drawLine(image, c.x - points[i].x, c.y + points[i].y, c.x - points[i + 1].x, c.y + points[i + 1].y, 0xff000000 + colors[i]*32);
@@ -103,21 +103,18 @@ Horizon::Horizon(HUD *hud, glm::ivec2 center, const txt::DesFile &file) :
     }
 
     PointF c(upPoints[1].x, 10);
-    QImage pitch(c.x*2 + 1, c.y*2 + 1, QImage::Format_ARGB32);
-    pitch.fill(0);
+    gfx::Image pitch(c.x*2 + 1, c.y*2 + 1, gfx::Image::ARGB32);
     drawSegment(pitch, c, upPoints, upColors, 0);
     m_pitch = gfx::Texture(pitch, true);
 
     c = PointF(upPoints[upPoints.size() - 1].x, 10);
-    QImage up(c.x*2 + 1, c.y*2 + 1, QImage::Format_ARGB32);
-    up.fill(0);
+    gfx::Image up(c.x*2 + 1, c.y*2 + 1, gfx::Image::ARGB32);
     for (i = 1; i < upPoints.size() - 1; i++)
         drawSegment(up, c, upPoints, upColors, i);
     m_up = gfx::Texture(up, true);
 
     c = PointF(downPoints[downPoints.size() - 1].x, 10);
-    QImage down(c.x*2 + 1, c.y*2 + 1, QImage::Format_ARGB32);
-    down.fill(0);
+    gfx::Image down(c.x*2 + 1, c.y*2 + 1, gfx::Image::ARGB32);
     for (i = 1; i < downPoints.size() - 1; i++)
         drawSegment(down, c, downPoints, downColors, i);
     m_down = gfx::Texture(down, true);

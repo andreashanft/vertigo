@@ -23,7 +23,7 @@ DialogFrame::DialogFrame(Dialog* dialog, const String &roomName, std::function<v
     String background = String("gfx:img/desktop/bground/d_%1.img").arg(roomName);
     if (!QFile::exists(util::DataPath::resolve(background)))
         background = "gfx:img/desktop/bground/d_ew1.img";
-    QImage image = gfx::Image::load(background, colorTable);
+    const gfx::Image image = gfx::Image::load(background, colorTable);
 
     ui::Label *label;
 

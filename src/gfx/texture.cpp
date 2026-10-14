@@ -17,8 +17,8 @@
 
 #include "texture.h"
 #include "pipeline.h"
-#include <QImage>
 #include <qopengl.h>
+#include <vector>
 
 
 namespace gfx {
@@ -82,10 +82,10 @@ void TexturePrivate::setFilter(bool smooth)
 }
 
 
-void TexturePrivate::fromImage(const QImage &image, bool smooth)
+void TexturePrivate::fromImage(const Image &image, bool smooth)
 {
     Texture::Format format = Texture::RGB;
-    if (image.format() != QImage::Format_RGB888)
+    if (image.format() != Image::RGB888)
         format = Texture::RGBA;
 
     createEmpty(image.width(), image.height(), format, smooth);
@@ -109,21 +109,21 @@ void TexturePrivate::createEmpty(int w, int h, Texture::Format format, bool smoo
 
     // always RGBA, which OpenGL ES can update from RGBA images; without alpha of its own the
     // texture is opaque, also in the padding up to the power of two
-    QByteArray fill(4 * m_textureWidth * m_textureHeight, 0);
+    std::vector<std::uint8_t> fill(4 * std::size_t(m_textureWidth) * m_textureHeight, 0);
     if (format == Texture::RGB)
-        for (int i = 3; i < fill.size(); i += 4)
-            fill[i] = char(255);
+        for (std::size_t i = 3; i < fill.size(); i += 4)
+            fill[i] = 255;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_textureWidth, m_textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, fill.data());
 }
 
 
-void TexturePrivate::update(int x, int y, QImage image)
+void TexturePrivate::update(int x, int y, const Image &source)
 {
-    image = image.convertToFormat(QImage::Format_RGBA8888);
+    Image image = source.convertToFormat(Image::RGBA8888);
     // an alpha texture only takes the alpha (the colour is the pipeline's)
     if (m_format == Texture::Alpha) {
         for (int line = 0; line < image.height(); line++) {
-            uchar *pixel = image.scanLine(line);
+            std::uint8_t *pixel = image.scanLine(line);
             for (int i = 0; i < image.width(); i++, pixel += 4)
                 pixel[0] = pixel[1] = pixel[2] = 255;
         }

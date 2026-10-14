@@ -1,6 +1,8 @@
 include_directories(${GLM_INCLUDE_DIR})
 include_directories(${OPENAL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+# stb_image and stb_image_write
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/3rdparty/stb)
 
 set(SOURCES
     fight/boundingbox.cpp
@@ -151,6 +153,8 @@ set(SOURCES
     gfx/mesh.h
     gfx/pipeline.cpp
     gfx/pipeline.h
+    gfx/rgb.cpp
+    gfx/rgb.h
     gfx/texture.cpp
     gfx/texture.h
     gfx/texturemanager.cpp

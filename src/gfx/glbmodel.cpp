@@ -192,12 +192,14 @@ bool GlbModel::load(const QString &fileName)
     const QJsonArray images = json["images"].toArray();
     for (const QJsonValue &value : images) {
         const QJsonObject image = value.toObject();
-        QImage decoded;
-        if (image.contains("bufferView"))
-            decoded = QImage::fromData(reader.bufferView(image["bufferView"].toInt()));
+        Image decoded;
+        if (image.contains("bufferView")) {
+            const QByteArray data = reader.bufferView(image["bufferView"].toInt());
+            decoded = Image::fromData(reinterpret_cast<const std::uint8_t *>(data.constData()), std::size_t(data.size()));
+        }
         if (decoded.isNull())
             return fail(QString("%1: cannot decode image %2 (%3)").arg(fileName, image["name"].toString(), image["mimeType"].toString()));
-        m_images.push_back(decoded);
+        m_images.push_back(std::move(decoded));
     }
 
     const QJsonArray textures = json["textures"].toArray();

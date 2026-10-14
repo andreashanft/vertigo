@@ -37,7 +37,7 @@ Texture TextureManager::getModule(const String &filename, bool colorKey)
 
     ColorTable colorTable(basename + ".s16");
     if (colorKey)
-        colorTable[0] = qRgba(0, 0, 0, 0);
+        colorTable[0] = rgba(0, 0, 0, 0);
     Texture texture = Image::load(basename + ".imb", colorTable);
     m_textures.insert(basename, texture);
     return texture;

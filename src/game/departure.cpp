@@ -30,9 +30,8 @@ Departure::Departure(std::function<void()> &&funcClose) :
     const gfx::ColorTable colorTable("gfx:pal/notebook/notebook.pal");
     gfx::Font font("gfx:fnt/nfont1b.fnt", colorTable, true);
 
-    QImage image(640, 480, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgba(0, 0, 0, 128));
+    gfx::Image image(640, 480, gfx::Image::Indexed8);
+    image.setColorTable(gfx::ColorTable{ gfx::rgba(0, 0, 0, 128) });
     setTexture(image);
 
     ui::Label *label;

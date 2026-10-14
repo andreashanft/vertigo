@@ -20,10 +20,10 @@
 
 #include "element.h"
 #include "tesselator.h"
+#include "gfx/image.h"
 
 #include <map>
 #include <vector>
-#include <QImage>
 #include "util/string.hpp"
 
 namespace gfx { class Texture; }
@@ -53,7 +53,7 @@ private:
 private:
     std::vector<gfx::Texture> m_textures;
     std::map<int, Element> m_elements;
-    QImage m_heightMap;
+    gfx::Image m_heightMap;
     QByteArray m_textureMap;
     QByteArray m_textureDir;
     Vector3D m_scale;

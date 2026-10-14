@@ -55,8 +55,8 @@ private:
     void loadVideoDiff(std::size_t size);
     void decode(std::size_t size, std::vector<char> &output);
     bool decompressLZW(std::size_t size, std::vector<char> &out);
-    QImage createImage();
-    QImage createEmpty();
+    Image createImage();
+    Image createEmpty();
 
 private:
     struct Entry

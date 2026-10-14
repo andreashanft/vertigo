@@ -72,7 +72,7 @@ private:
     int m_index;
     MiniMovie m_miniMovie;
     String m_name;
-    QImage m_backgroundImage;
+    gfx::Image m_backgroundImage;
     ui::Label *m_backgroundLabel;
     gfx::Texture m_background;
     sfx::Sound m_backgroundSound;
