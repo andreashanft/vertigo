@@ -29,6 +29,7 @@
 #include <cmath>
 #include <algorithm>
 #include "txt/desfile.h"
+#include "util/datapath.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -312,7 +313,7 @@ int Vertigo::check(const QStringList &names)
 {
     QStringList scenarios = names;
     if (scenarios.isEmpty()) {
-        const QDir dir(QDir::searchPaths("data").value(0) + "/vfx/scenario");
+        const QDir dir(util::DataPath::resolve("vfx:scenario"));
         foreach (const QString &file, dir.entryList(QStringList() << "*.des", QDir::Files, QDir::Name))
             scenarios << QFileInfo(file).completeBaseName().toLower();
     }

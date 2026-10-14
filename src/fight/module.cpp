@@ -18,6 +18,8 @@
 #include "module.h"
 #include "gfx/texturemanager.h"
 #include <QDataStream>
+#include "util/datapath.h"
+
 #include <QFile>
 #include <QGLContext>
 #include <QVector3D>
@@ -29,7 +31,7 @@ namespace fight {
 
 Module::Module(gfx::TextureManager &texMan, const QString &name)
 {
-    QFile file(name);
+    QFile file(util::DataPath::resolve(name));
     file.open(QFile::ReadOnly);
 
     QDataStream stream(&file);

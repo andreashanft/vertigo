@@ -18,6 +18,7 @@
 #include "lamp.h"
 #include "hud.h"
 #include "txt/desfile.h"
+#include "util/datapath.h"
 
 #include <QFile>
 #include <QImage>
@@ -33,7 +34,7 @@ Lamp::Lamp(HUD *hud, const txt::DesFile &file) :
     if (!file.contains("LampDataName") || m_rect.width <= 0 || m_rect.height <= 0)
         return;
     // e.g. 001\smon0: VFX/COCKPIT/001/SMON0.D16
-    QFile data(QString("vfx:cockpit/%1.d16").arg(file.value("LampDataName").toString().replace('\\', '/')));
+    QFile data(util::DataPath::resolve(QString("vfx:cockpit/%1.d16").arg(file.value("LampDataName").toString().replace('\\', '/'))));
     const QByteArray bytes = data.open(QIODevice::ReadOnly) ? data.readAll() : QByteArray();
     const int pixels = m_rect.width*m_rect.height;
     if (bytes.size() < 4*pixels)

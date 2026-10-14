@@ -20,6 +20,7 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "txt/desfile.h"
+#include "util/datapath.h"
 #include <QGLContext>
 #include <QFile>
 
@@ -45,7 +46,7 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     qreal sx, sy, sz;
     {
         file.setSection("map");
-        QFile scaleFile(QString("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/")));
+        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/"))));
         scaleFile.open(QFile::ReadOnly);
 
         QDataStream stream(&scaleFile);
@@ -59,7 +60,7 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
 
     {
         file.setSection("texture");
-        QFile scaleFile(QString("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/")));
+        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/"))));
         scaleFile.open(QFile::ReadOnly);
         scaleFile.seek(12);
 
@@ -69,7 +70,7 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     QByteArray dir;
     {
         file.setSection("texture");
-        QFile scaleFile(QString("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/")));
+        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/"))));
         scaleFile.open(QFile::ReadOnly);
         scaleFile.seek(12);
 

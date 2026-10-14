@@ -17,6 +17,7 @@
 
 #include "cockpit3d.h"
 #include "gfx/glbmodel.h"
+#include "util/datapath.h"
 
 #include <QDir>
 #include <QElapsedTimer>
@@ -70,7 +71,7 @@ QString Cockpit3D::directory()
     const QString directory = settings.value("cockpit/directory").toString();
     if (!directory.isEmpty())
         return directory;
-    return QDir(settings.value("datadir").toString()).filePath("3d-cockpits");
+    return QDir(util::DataPath::directory()).filePath("3d-cockpits");
 }
 
 

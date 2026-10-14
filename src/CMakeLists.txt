@@ -241,6 +241,8 @@ set(SOURCES
     ui/widget.h
 
     util/core.h
+    util/datapath.cpp
+    util/datapath.h
     util/deferreddeletable.cpp
     util/deferreddeletable.h
     util/error.cpp

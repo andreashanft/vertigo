@@ -18,7 +18,7 @@
 #include "vertigo.h"
 
 #include "txt/stringtable.h"
-#include "util/file.h"
+#include "util/datapath.h"
 
 #include "items.h"
 #include "fight/scenario.h"
@@ -27,7 +27,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QTextStream>
-#include <QDir>
 #include <QFileDialog>
 #include <QSettings>
 #include <QTime>
@@ -66,8 +65,9 @@ int main(int argc, char *argv[])
     const QCommandLineOption cockpitOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
     const QCommandLineOption shakeOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
     const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), e.g. 3=front.png.", "time=file");
+    const QCommandLineOption dataOption("data", "Use the game data in this directory for this run, instead of the remembered one.", "directory");
     const QCommandLineOption lookOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, nearOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, lookOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, nearOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, lookOption, dataOption });
     parser.process(app);
 
     game::Vertigo::Options options;
@@ -196,22 +196,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    QDir::addSearchPath("dat", "data:dat");
-    QDir::addSearchPath("gfx", "data:gfx");
-    QDir::addSearchPath("sfx", "data:sfx");
-    QDir::addSearchPath("txt", "data:txt");
-    QDir::addSearchPath("vfx", "data:vfx");
-
     QSettings s;
-    QDir::setSearchPaths("data", QStringList() << s.value("datadir").toString());
-    util::File::setDataPath(s.value("datadir").toString().toUtf8().constData());
+    util::DataPath::set(parser.isSet(dataOption) ? parser.value(dataOption) : s.value("datadir").toString());
     while (!txt::StringTable::load()) {
-        const QString dir = QFileDialog::getExistingDirectory(NULL, "Select Schleichfahrt / Archimedean Dynasty directory", s.value("datadir").toString());
+        const QString dir = QFileDialog::getExistingDirectory(NULL, "Select Schleichfahrt / Archimedean Dynasty directory", util::DataPath::directory());
         if (dir.isNull())
             return false;
         s.setValue("datadir", dir);
-        QDir::setSearchPaths("data", QStringList() << s.value("datadir").toString());
-        util::File::setDataPath(s.value("datadir").toString().toUtf8().constData());
+        util::DataPath::set(dir);
     }
 
     if (parser.isSet(itemsOption)) {

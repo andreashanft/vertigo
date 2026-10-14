@@ -30,6 +30,7 @@ class File
 {
 public:
     File();
+    // name: a data file, like "gfx/img/x.img" (see DataPath)
     File(const std::string &name);
 
     void open(const std::string &name);
@@ -83,12 +84,6 @@ public:
 private:
     std::string m_name;
     std::ifstream m_stream;
-
-public:
-    static void setDataPath(const std::string &path);
-
-private:
-    static std::string m_dataPath;
 };
 
 } // namespace util

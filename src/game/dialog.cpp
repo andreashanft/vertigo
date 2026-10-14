@@ -21,6 +21,7 @@
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
 #include "txt/stringtable.h"
+#include "util/datapath.h"
 #include <QFile>
 
 
@@ -331,7 +332,7 @@ bool Dialog::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
 
 void Dialog::loadTree(const QString &filename)
 {
-    QFile file(filename);
+    QFile file(util::DataPath::resolve(filename));
     file.open(QFile::ReadOnly);
 
     QDataStream stream(&file);
@@ -384,7 +385,7 @@ void Dialog::loadTree(const QString &filename)
 
 void Dialog::loadStrings(const QString &filename)
 {
-    QFile file(filename);
+    QFile file(util::DataPath::resolve(filename));
     file.open(QFile::ReadOnly);
 
     QRegExp regexp("#(\\d*).*\\{(.*)\\}");

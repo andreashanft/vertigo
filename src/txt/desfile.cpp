@@ -17,6 +17,8 @@
 
 #include "desfile.h"
 #include "stringtable.h"
+#include "util/datapath.h"
+
 #include <QDir>
 #include <QFile>
 #include <QStringList>
@@ -53,7 +55,7 @@ bool DesFile::load(const QString &filename)
     m_sections.clear();
     setSection("Global");
 
-    QFile file(filename);
+    QFile file(util::DataPath::resolve(filename));
     if (!file.open(QFile::ReadOnly))
         return false;
 
