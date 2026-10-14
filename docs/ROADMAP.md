@@ -386,16 +386,42 @@ they can land on master one by one.
 | P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below (**done**: the code only uses what Qt 5.15 and Qt 6 both have, and CMake takes either. Tested with Qt 6.12 and Qt 5.15 (Homebrew): the same `--check` report, the same results in all 71 missions and identical unit traces, as long as both builds use the same build type. `Window` is a `QWindow` with one `QOpenGLContext`, current from the start on a `QOffscreenSurface` while the window isn't shown, so loading and headless runs work as before; `QApplication` stays for the folder dialog until P6. The window comes back with its last size; the `QWidget` geometry saved before is read once. `util::random()` (a `std::mt19937`) replaces `qrand()`, so seeded runs give other results than before; over 3 seeds × 71 missions the counts stay the same (13 runs destroyed, 3 failed). `QRegularExpression`, `QElapsedTimer`, `QMultiMap`, `QStandardPaths::AppLocalDataLocation` (the same directory as before), C++17) |
 | P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) (**done**: `gfx::Pipeline` keeps the model-view stack, the colour, the boat's spot light, linear fog, the alpha test and projective texture coordinates (the 3D cockpit's HUD decal) and draws with one shader, GLSL 1.50 on OpenGL 3.2 core (4.1 on macOS) and GLSL ES 3.00; lighting stays per vertex as in OpenGL 1. `gfx::Mesh` keeps models, terrain and the 3D cockpit in vertex buffers, quads and text are streamed. With `--fixed-step`, screenshots of 23 scenes (menus, a station, a movie, missions in the 2D and 3D cockpits with explosions, gun and torpedo fire and the debug overlay) match the fixed-function renderer to within 0.04 % of the pixels (rounding at texel and triangle edges), at the same CPU time. The OpenGL ES variant is untested until P5) |
 | P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import (**done**: `util::DataPath` indexes the data directory once (about 4,300 entries) and resolves `gfx:…` and `gfx/…` names in any case; every file opener goes through it, and the Qt search paths are gone. `--data <directory>` picks the data for one run. Tested with the data on a case-sensitive APFS volume: `--check` gives the same report, missions, cockpits and the main menu load) |
-| P5 | iOS build | S | `qt_add_executable` with an Info.plist, icons and signing. Qt 6 for iOS comes from the Qt online installer, not Homebrew. Test in the iPad simulator first |
+| P5 | iOS build | S | An app bundle with an Info.plist, icons and signing. After Q1–Q5 there is no Qt to install: SDL3 and the other libraries are built for iOS from source with CMake. Test in the iPad simulator first |
 | P6 | Data import | S (M with the CD image) | Replaces the folder dialog: show the app's Documents folder in the Files app (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`) and look for `DAT`, `GFX`, `SFX`, `TXT` and `VFX` there. Optionally import straight from `game.gog` and the GOG installation |
 | P7 | App lifecycle and audio session | S | Pause the mission and save the settings when the app goes to the background (`closeEvent` never comes on iOS), and make no GL calls while in the background. Set an `AVAudioSession` category and suspend the OpenAL context during interruptions (calls, Siri) |
 | P8 | Keyboard | S | A hardware keyboard works as is, but older Magic Keyboards for iPad have no Esc and no F keys (F5–F12 are the turret orders), so add second bindings. Bring up the on-screen keyboard for save-game names |
-| P9 | Game controller | M | GameController.framework through a small Objective-C++ bridge (Qt 6 has no gamepad module), or SDL3. The sticks feed the analog `m_left`/`m_right`/`m_up`/`m_down` in `Scenario`. There are more actions than buttons, so turret orders and torpedo selection need a menu or button combinations. Useful on the desktop too |
-| P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as Qt turns taps into mouse clicks; hover highlights only show with a trackpad or Pencil |
+| P9 | Game controller | M | SDL3's gamepad API (after Q5; Qt 6 has no gamepad module). The sticks feed the analog `m_left`/`m_right`/`m_up`/`m_down` in `Scenario`. There are more actions than buttons, so turret orders and torpedo selection need a menu or button combinations. Useful on the desktop too |
+| P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as taps arrive as mouse clicks; hover highlights only show with a trackpad or Pencil |
 
-Order of work: P1 → P2 → P3 → P4 on the desktop, then P5–P8 (playable with a
-hardware keyboard), then P9 and P10. P1 to P4 are done (October 2026); next
-is P5.
+### Replacing Qt with SDL3
+
+Prebuilt Qt for iOS comes from Qt's online installer, which needs a Qt account
+(the source is public, but every player building the game would first have to
+cross-compile Qt). That is too much to ask of players, so Qt goes before the
+iOS build. SDL3 (zlib licence) takes over the platform layer: it is in
+Homebrew, builds for iOS from source with CMake in minutes, and also brings
+what P7–P9 need (app lifecycle events, the on-screen keyboard, touch and game
+controllers). The rest of Qt is used as a general-purpose library and is
+replaced by our own types with the part of Qt's API the code uses, so call
+sites keep their shape (counted October 2026, 32,000 lines; 144 of 238 files
+use Qt types).
+
+| # | Step | Effort | Notes |
+|---|---|---|---|
+| Q1 | Strings and data values | L | `util::String` (UTF-8 in a `std::string`) with the about 40 `QString` methods in use (`arg` 289 times, `toInt`/`toFloat` about 370, `QString("…")` 232) and a string list; `DesFile` returns its own value type instead of `QVariant` (466 `value()` calls). The data's Latin-1 text (German umlauts) is converted on load and save, the fonts take Latin-1 when drawing. Conversions must behave exactly like Qt's (e.g. `toInt("10.5")` is 0 and not ok), so this step brings a small unit test target |
+| Q2 | Images | M | `gfx::Image` with the formats in use (indexed with a colour table, ARGB, RGB, RGBA) and `setPixel`, `scanLine`, `copy`, `fill`, `scaled`, format conversion; PNG/JPEG decoding (glTF cockpits) with stb_image and PNG screenshots with stb_image_write (public domain). Also `QRgb` and implicit sharing (`std::shared_ptr`) |
+| Q3 | Containers, files, the rest | M | `QMap`, `QList`, `QVector`, `QSet`, `QHash` (about 150 uses) to the standard library; `QFile`, `QDir`, `QDataStream`, `QTextStream` (about 90) to `std::filesystem`, `util::File` and a small binary reader; `QRegularExpression` (48) to `std::regex` or plain parsing; `QJson` (glTF only) to a single-header JSON library (MIT); `QPoint`/`QRect`/`QSize` (about 120) to our glm-based types; `QLocale`/`QDateTime` for the save-game list |
+| Q4 | Settings, paths, command line | S | `QSettings` (17 uses) to a small settings file, the save folder unchanged; `QCommandLineParser` (22 options) to our own parser; `QElapsedTimer` to `util::ticks()` |
+| Q5 | Platform layer | M | SDL3 window and OpenGL 3.2 core / ES 3 context, fullscreen, HiDPI, saved geometry; the main loop as SDL's per-frame callbacks (which iOS wants) instead of the `QTimer`; our own key enum and event structs for the 66 input handlers in 33 files (43 `Qt::Key_` values); SDL text input for save-game names; OpenGL linked directly on macOS and iOS and through a generated loader (glad) on Windows and Linux, replacing `QOpenGLExtraFunctions`; a plain framebuffer object for the 3D cockpit's instruments; the SDL cursor and `SDL_ShowOpenFolderDialog`; `--keys` and `--click` through our own event queue. Then Qt is gone, and with it the Qt 5 fallback |
+
+Q1–Q4 happen while Qt is still linked, so the game works after every step;
+Q5 removes Qt. Each step must leave the `--check` report, seeded headless runs
+of all 71 missions and `--fixed-step` screenshots of menus and missions
+unchanged.
+
+Order of work: P1 → P2 → P3 → P4 on the desktop, then Q1–Q5, then P5–P8
+(playable with a hardware keyboard), then P9 and P10. P1 to P4 are done
+(October 2026); next is Q1.
 
 Platform notes:
 
@@ -427,7 +453,8 @@ themselves:
 - Keep renderer changes self-contained so the later modern renderer and VR
   work stays easy.
 - Qt 5 support ends in Homebrew in May 2027 (settled: Qt 6 is the default
-  since step P2 of the iPad port; Qt 5.15 still builds, untested).
+  since step P2 of the iPad port; Qt 5.15 still builds, untested). Qt goes
+  altogether with steps Q1–Q5.
 
 Effort: S is up to a day, M a few days, L one to three weeks, all rough and
 for one developer.
