@@ -19,13 +19,14 @@
 #include "billboard.h"
 #include "fight/scenario.h"
 #include "sfx/samplemap.h"
+#include "util/random.h"
 
 
 namespace fight {
 
 
 Projectile::Projectile(Scenario *scenario, Billboard *billboard) : 
-    Effect(scenario, billboard, qrand()%360, 2)
+    Effect(scenario, billboard, util::random()%360, 2)
 {
     m_kineticShield = m_kineticShieldMax = billboard->kineticShield();
     m_kineticStrength = billboard->kineticStrength();
@@ -68,7 +69,7 @@ bool Projectile::update(float elapsedTime)
     Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache, m_owner);
     if (collision)
     {
-        m_scenario->effectManager().addEffect(Effects::Explosion_11, pos, qrand()%360);
+        m_scenario->effectManager().addEffect(Effects::Explosion_11, pos, util::random()%360);
         ActiveObject *activeObject = dynamic_cast<ActiveObject *>(collision);
         if (activeObject)
         {

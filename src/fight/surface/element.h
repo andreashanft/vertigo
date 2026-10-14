@@ -23,6 +23,7 @@
 #include <vector>
 #include "util/geometry2d.h"
 #include "util/geometry3d.h"
+#include "gfx/mesh.h"
 
 
 namespace fight {
@@ -55,6 +56,7 @@ private:
         std::vector<Vector3D> normals;
         std::vector<Vector2D> texCoords;
         std::vector<unsigned short> indices;
+        gfx::Mesh buffers;
     };
 
 private:

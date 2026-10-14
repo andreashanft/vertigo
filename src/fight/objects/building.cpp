@@ -19,6 +19,7 @@
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "util/debug.h"
+#include "gfx/pipeline.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -110,20 +111,20 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle
 
 void Building::draw()
 {
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glRotatef(m_angle, 0, 0, 1);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::rotate(m_angle, Vector3D(0, 0, 1));
 
     for (Cluster &cluster : m_clusters)
     {
-        glPushMatrix();
-        glTranslatef(cluster.offset.x, cluster.offset.y, cluster.offset.z);
-        glScalef(cluster.scale, cluster.scale, cluster.scale);
-        glRotatef(cluster.angle, 0, 0, 1);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(cluster.offset);
+        gfx::Pipeline::scale(cluster.scale);
+        gfx::Pipeline::rotate(cluster.angle, Vector3D(0, 0, 1));
         cluster.module->draw();
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

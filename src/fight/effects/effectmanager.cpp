@@ -18,6 +18,7 @@
 #include "effectmanager.h"
 #include "projectile.h"
 #include "fight/scenario.h"
+#include "util/random.h"
 #include <glm/gtx/norm.hpp>
 
 
@@ -30,7 +31,7 @@ const int Bubbles = 100;
 
 float random()
 {
-    return qrand()/float(RAND_MAX);
+    return util::random()/float(RAND_MAX);
 }
 
 }
@@ -86,14 +87,14 @@ void EffectManager::addDebris(Effects debris, const Vector3D &position, const Ve
 {
     Billboard *billboard = getBillboard(debris);
     const float speed = billboard->minVelocity() + (billboard->maxVelocity() - billboard->minVelocity())*random();
-    m_particles.add(billboard, Particles::Motion::Debris, position, direction*speed, qrand()%360);
+    m_particles.add(billboard, Particles::Motion::Debris, position, direction*speed, util::random()%360);
 }
 
 
 void EffectManager::addDust(const Vector3D &position, int size, const Vector3D &velocity)
 {
     const Effects dust = Effects(int(Effects::Explosion_18) + glm::clamp(size, 0, 2));
-    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity, qrand()%360);
+    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity, util::random()%360);
 }
 
 
@@ -117,7 +118,7 @@ void EffectManager::update(float elapsedTime)
     Billboard *bubble = getBillboard(Effects::Bubble_0);
     for (int i = m_particles.count(Particles::Motion::Bubble); i < Bubbles; i++)
     {
-        Vector3D position = m_scenario->position() + Vector3D(qrand()%100 - 50, qrand()%100 - 50, -50);
+        Vector3D position = m_scenario->position() + Vector3D(util::random()%100 - 50, util::random()%100 - 50, -50);
         const float time = glm::distance2(m_scenario->position(), position)/200.0f*random();
         position.z += time*bubble->velocity();
         if (glm::distance2(m_scenario->position(), position) <= 50.0f*50.0f &&

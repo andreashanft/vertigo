@@ -216,7 +216,7 @@ std::vector<int> Boat::getItems(const QString& mounting)
         list.push_back(m_sensor);
         if (m_fixer)
             list.push_back(m_fixer);
-        foreach (int buzz, m_buzzers)
+        for (int buzz : m_buzzers)
             list.push_back(buzz);
     }
     if (mounting == "GENE")
@@ -234,7 +234,7 @@ std::vector<int> Boat::getItems(const QString& mounting)
     if (mounting == "TORP")
     {
         list.push_back(m_magazine);
-        foreach (int torp, m_torpedoes)
+        for (int torp : m_torpedoes)
             list.push_back(torp);
     }
     if (mounting == "TUR1")

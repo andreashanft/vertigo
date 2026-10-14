@@ -23,7 +23,7 @@
 
 #include "util/file.h"
 
-#include <QTime>
+#include <QElapsedTimer>
 
 namespace gfx {
 
@@ -81,7 +81,7 @@ private:
     bool m_hasAudio;
     std::uint32_t m_frameRate;
 
-    QTime m_time;
+    QElapsedTimer m_time;
     bool m_playing;
     bool m_looping;
 };

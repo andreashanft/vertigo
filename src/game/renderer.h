@@ -25,9 +25,10 @@
 
 class QKeyEvent;
 class QMouseEvent;
-class QGLWidget;
 
 namespace game {
+
+class Window;
 
 class Renderer : public util::DeferredDeletable
 {
@@ -40,7 +41,7 @@ public:
     virtual void deactivate() {}
 
 public:
-    void setWindow(QGLWidget *window);
+    void setWindow(Window *window);
     virtual bool isCursorVisible() const { return m_cursorVisible; }
     virtual void setRect(const QRect &rect);
     QRect rect() const { return m_rect; }
@@ -50,6 +51,7 @@ public:
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
     QRectF rectOrtho() const { return m_rectOrtho; }
     QPointF screenToImage(const QPointF &pos);
+    QPointF imageToScreen(const QPointF &pos);
 
 public:
     virtual void keyPressEvent(QKeyEvent *) {}
@@ -63,7 +65,7 @@ protected:
     void hideCursor();
     void setupOrthographicMatrix(float w, float h);
     void setupGL(bool clear = true);
-    QGLWidget* window() const { return m_window; }
+    Window* window() const { return m_window; }
 
 protected:
     Matrix m_projectionMatrix;
@@ -73,7 +75,7 @@ private:
     bool m_cursorVisible;
     QRect m_rect;
     QRectF m_rectOrtho;
-    QGLWidget *m_window;
+    Window *m_window;
 };
 
 } // namespace game

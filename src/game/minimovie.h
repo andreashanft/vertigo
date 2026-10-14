@@ -24,6 +24,7 @@
 #include "gfx/video.h"
 #include "txt/desfile.h"
 
+#include <QElapsedTimer>
 #include <functional>
 
 namespace game {
@@ -56,7 +57,7 @@ private:
 
     QString m_path;
     QList<Video*> m_videos;
-    QTime m_time;
+    QElapsedTimer m_time;
     gfx::ColorTable m_colorTable;
     std::function<void()> m_funcFinished;
 };

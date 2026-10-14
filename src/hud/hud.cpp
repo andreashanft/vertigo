@@ -16,7 +16,6 @@
  ***************************************************************************/
 
 #include "hud.h"
-#include <QGLWidget>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QOpenGLContext>
@@ -26,16 +25,17 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include "SDL.h"
+#include "util/ticks.h"
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/playerturret.h"
 #include "game/boat.h"
+#include "game/window.h"
 #include "gfx/image.h"
+#include "gfx/pipeline.h"
 
 #include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "crosshair.h"
 #include "heading.h"
@@ -72,6 +72,7 @@ HUD::CockpitMode g_cockpitMode = HUD::CockpitMode::Art;
 float g_headMotion = 1;
 bool g_lookFixed = false;
 Vector2D g_look;
+float g_fixedStep = 0;
 
 // mouse look: degrees per pixel dragged, how far the head turns (further, the eye would be in the
 // headrest), and the neck it turns about (below and behind the eye, so the eye moves as well)
@@ -142,6 +143,12 @@ float HUD::headMotion()
 {
     readSettings();
     return g_headMotion;
+}
+
+
+void HUD::setFixedStep(float seconds)
+{
+    g_fixedStep = seconds;
 }
 
 
@@ -358,7 +365,8 @@ void HUD::start(fight::Scenario *scenario)
     m_rectGL = Rect();
     m_scenario = scenario;
     m_scenario->setBoat(m_boat);
-    m_lastTicks = SDL_GetTicks();
+    m_lastTicks = util::ticks();
+    m_frames = 0;
     m_navPoint = -1;
     m_paused = false;
     m_frozen = false;
@@ -505,10 +513,12 @@ void HUD::draw()
         return;
     }
 
-    const int ticks = SDL_GetTicks();
+    const int ticks = util::ticks();
     // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
-    step(std::min((ticks - m_lastTicks)/1000.0f, 0.25f));
-    updateLook((ticks - m_lastTicks)/1000.0f);
+    const float elapsed = g_fixedStep > 0 ? g_fixedStep : std::min((ticks - m_lastTicks)/1000.0f, 0.25f);
+    m_frames++;
+    step(elapsed);
+    updateLook(g_fixedStep > 0 ? g_fixedStep : (ticks - m_lastTicks)/1000.0f);
     m_lastTicks = ticks;
     // a handler of the events in step() may have ended the mission
     if (!m_scenario)
@@ -519,7 +529,7 @@ void HUD::draw()
     }
 
     // the GL viewport is in device pixels, the rects in logical pixels
-    const qreal pixelRatio = window() ? window()->devicePixelRatioF() : 1.0;
+    const qreal pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
     if (showsModel() && drawModel(pixelRatio))
         return;
     if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
@@ -531,21 +541,15 @@ void HUD::draw()
     m_cockpit.doDraw();
 
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_integerScaleWidget.doDraw();
 
     m_integerScale = false;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_noScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_noScaleProjectionMatrix);
     m_noScaleWidget.doDraw();
 
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
     m_integerScale = false;
 
@@ -578,9 +582,7 @@ bool HUD::drawModel(qreal pixelRatio)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     gl->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_integerScaleWidget.doDraw();
     m_integerScale = false;
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -610,15 +612,11 @@ bool HUD::drawModel(qreal pixelRatio)
     // the HUD in the window is collimated: it turns with the head but doesn't shift; the menu stays put
     glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
     setupGL(false);
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(viewTurn(m_scenario->projectionMatrix(), glm::mat3(head))*m_noScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(viewTurn(m_scenario->projectionMatrix(), glm::mat3(head))*m_noScaleProjectionMatrix);
     m_noScaleWidget.doDraw();
 
     m_integerScale = true;
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_integerScaleProjectionMatrix));
-    glMatrixMode(GL_MODELVIEW);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
     m_integerScale = false;
 
@@ -676,7 +674,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
         return;
     }
     // Alt+V switches between the 2D and the 3D cockpit
-    if (e->key() == Qt::Key_V && (e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+    if (e->key() == Qt::Key_V && (e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
     {
         setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
         if (cockpitMode() == CockpitMode::Model && !showsModel())
@@ -708,7 +706,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
         return;
     if (e->key() == Qt::Key_N)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
         {
             if (m_navPoint >= 0)
                 m_scenario->target().lockNavPoint(m_scenario->navPoints()[m_navPoint]);
@@ -724,7 +722,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_R)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
         {
             int scale = m_sonar1->scale();
             if (scale == 90)
@@ -762,7 +760,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
     }
     if (e->key() == Qt::Key_A)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::ALT)
+        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
         {
             if (m_scenario->conditionManager().autopilot())
             {

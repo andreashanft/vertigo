@@ -494,7 +494,7 @@ void Depot::buy()
 
     m_list2 = m_boat->getItems(mounting);
     m_itemList2->clear();
-    foreach (int model, m_list2)
+    for (int model : m_list2)
         m_itemList2->addItem(Items::get(model)->icon);
  
     updateCredits();
@@ -521,7 +521,7 @@ void Depot::sell()
 
     m_list2 = m_boat->getItems(mounting);
     m_itemList2->clear();
-    foreach (int model, m_list2)
+    for (int model : m_list2)
         m_itemList2->addItem(Items::get(model)->icon);
     if (m_selectedItem >= m_list2.size())
         m_selectedItem = m_list2.size() - 1;

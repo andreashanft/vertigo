@@ -21,6 +21,7 @@
 #include "fight/weapons/torpedo.h"
 #include "fight/scenario.h"
 #include "game/boat.h"
+#include "util/random.h"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -266,7 +267,7 @@ bool Player::update(float elapsedTime)
     {
         m_currentTime = 0;
         m_currentNoise1 = m_currentNoise2;
-        m_currentNoise2 = Vector3D(0.25f*qrand()/RAND_MAX, 0.25f*qrand()/RAND_MAX, 0.5f*qrand()/RAND_MAX);
+        m_currentNoise2 = Vector3D(0.25f*util::random()/RAND_MAX, 0.25f*util::random()/RAND_MAX, 0.5f*util::random()/RAND_MAX);
         if (m_currentNoise1.z > 0)
             m_currentNoise2 = -m_currentNoise2;
     }

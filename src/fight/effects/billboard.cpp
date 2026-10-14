@@ -20,10 +20,11 @@
 #include "gfx/texturemanager.h"
 #include "fight/boundingbox.h"
 #include "fight/collisionmesh.h"
+#include "gfx/pipeline.h"
 
-#include <QGLContext>
-#include <glm/gtc/type_ptr.hpp>
+#include <qopengl.h>
 #include <glm/gtx/norm.hpp>
+#include <glm/trigonometric.hpp>
 
 namespace fight {
 
@@ -162,25 +163,20 @@ void Billboard::draw(const Vector3D &position, float angle, float scale, float t
     gfx::Texture *texture;
     quad(position, angle, scale, time, camera, corners, texCoords, texture);
 
-    glEnable(GL_TEXTURE_2D);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    gfx::Pipeline::Vertex vertices[4];
+    for (int i = 0; i < 4; i++)
+        vertices[i] = { corners[i], texCoords[i] };
 
     if (m_blendColor)
         glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_NOTEQUAL, 0.0);
+    gfx::Pipeline::setAlphaTest(true);
 
     texture->bind();
-    glVertexPointer(3, GL_FLOAT, 0, corners);
-    glTexCoordPointer(2, GL_FLOAT, 0, texCoords);
-    glDrawArrays(GL_QUADS, 0, 4);
+    gfx::Pipeline::drawQuads(vertices, 4);
 
     if (m_blendColor)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_ALPHA_TEST);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    gfx::Pipeline::setAlphaTest(false);
 }
 
 

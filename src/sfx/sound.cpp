@@ -17,6 +17,7 @@
 
 #include "sound.h"
 #include "soundsystem.h"
+#include "util/datapath.h"
 #include <al.h>
 #include <QFile>
 #include <random>
@@ -216,8 +217,9 @@ void Sound::load(const QString &leftFile, const QString &rightFile)
 
 QByteArray Sound::loadFile(const QString &filename)
 {
-    QFile file(filename);
-    file.open(QFile::ReadOnly);
+    QFile file(util::DataPath::resolve(filename));
+    if (!file.open(QFile::ReadOnly))
+        return QByteArray();
     file.seek(31);
     return file.readAll();
 }

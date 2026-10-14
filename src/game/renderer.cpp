@@ -16,24 +16,14 @@
  ***************************************************************************/
 
 #include "renderer.h"
-#include <QGLContext>
+#include "gfx/pipeline.h"
+#include <qopengl.h>
 #include <glm/vec4.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 
 namespace game {
-
-void getMatrix(GLenum param, float *data)
-{
-    glGetFloatv(param, data);
-}
-
-void getMatrix(GLenum param, double *data)
-{
-    glGetDoublev(param, data);
-}
 
 Renderer::Renderer() :
     m_cursorVisible(true),
@@ -43,7 +33,7 @@ Renderer::Renderer() :
 }
 
 
-void Renderer::setWindow(QGLWidget *window)
+void Renderer::setWindow(Window *window)
 {
     m_window = window;
 }
@@ -101,16 +91,12 @@ void Renderer::setupGL(bool clear)
     if (clear)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_FOG);
     glDisable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(m_projectionMatrix));
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setFog(false);
+    gfx::Pipeline::setProjection(m_projectionMatrix);
+    gfx::Pipeline::setModelView(Matrix(1));
 }
 
 
@@ -118,6 +104,13 @@ QPointF Renderer::screenToImage(const QPointF &pos)
 {
     Vector4D p = m_projectionMatrixInverted * Vector4D(pos.x() / width() * 2.0f - 1.0f, 1.0f - pos.y() / height() * 2.0f, 0, 1);
     return QPointF(p.x, p.y);
+}
+
+
+QPointF Renderer::imageToScreen(const QPointF &pos)
+{
+    const Vector4D p = m_projectionMatrix * Vector4D(pos.x(), pos.y(), 0, 1);
+    return QPointF((p.x + 1.0f)/2.0f*width(), (1.0f - p.y)/2.0f*height());
 }
 
 

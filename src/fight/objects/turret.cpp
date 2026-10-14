@@ -17,6 +17,7 @@
 
 #include "turret.h"
 #include "fight/scenario.h"
+#include "gfx/pipeline.h"
 
 
 namespace fight {
@@ -53,24 +54,24 @@ Turret::Turret(Scenario *scenario, txt::DesFile &file) :
 
 void Turret::draw()
 {
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    //glScalef(m_scale, m_scale, m_scale);
+    gfx::Pipeline::translate(m_position);
+    //gfx::Pipeline::scale(m_scale);
     m_body->draw();
 
     if (m_armLeft != nullptr)
     {
-        glPushMatrix();
-        glTranslatef(m_armLeftPosition.x, m_armLeftPosition.y, m_armLeftPosition.z);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(m_armLeftPosition);
         m_armLeft->draw();
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
 
     if (m_armRight != nullptr)
     {
-        glPushMatrix();
-        glTranslatef(m_armRightPosition.x, m_armRightPosition.y, m_armRightPosition.z);
+        gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::translate(m_armRightPosition);
         m_armRight->draw();
-        glPopMatrix();
+        gfx::Pipeline::popMatrix();
     }
 }
 

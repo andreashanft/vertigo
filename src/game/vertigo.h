@@ -41,6 +41,7 @@ public:
         int timeout = 0;                                // test mode time limit in seconds
         bool debugOverlay = false;
         bool headless = false;                          // test mode: no window and no sound, simulated time
+        bool fixedStep = false;                         // test mode: 20 ms of mission time per frame
         std::vector<int> destroy;                       // test mode: destroy these units after one second
         struct Key { float time; QKeySequence key; float hold; };
         std::vector<Key> keys;                          // test mode: press these keys at these times (seconds), holding them
@@ -51,6 +52,8 @@ public:
         int near = 0;                                   // test mode: enable this unit and start next to it
         struct Screenshot { float time; QString file; };
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
+        struct Click { float time; QPointF pos; };
+        std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
         bool check = false;                             // report what the mission loader ignores
         QStringList checkScenarios;                     // empty = all missions
     };

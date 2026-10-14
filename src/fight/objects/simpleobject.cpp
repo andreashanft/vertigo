@@ -18,6 +18,7 @@
 #include "simpleobject.h"
 #include "fight/scenario.h"
 #include "fight/module.h"
+#include "gfx/pipeline.h"
 
 
 namespace fight {
@@ -43,11 +44,11 @@ SimpleObject::SimpleObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 
 void SimpleObject::draw()
 {
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glScalef(m_scale, m_scale, m_scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::scale(m_scale);
     m_base->draw();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

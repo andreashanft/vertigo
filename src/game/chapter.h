@@ -19,6 +19,7 @@
 #define GAME_CHAPTER_H
 
 
+#include <list>
 #include <memory>
 #include <queue>
 #include "area.h"
@@ -29,6 +30,8 @@
 #include "movie.h"
 #include "task.h"
 #include "boat.h"
+
+#include <QDateTime>
 
 
 namespace fight { class Scenario; }

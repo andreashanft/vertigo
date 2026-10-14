@@ -19,6 +19,8 @@
 #include "desktop.h"
 #include "txt/desfile.h"
 
+#include <QRegularExpression>
+
 
 namespace game {
 
@@ -47,10 +49,10 @@ void Area::load(const QString &name)
     m_map = file.value("Name").toString();
 
     foreach (const QString &section, file.sections()) {
-        QRegExp reg("^station(\\d*)$");
-        if (reg.indexIn(section) >= 0) {
+        const QRegularExpressionMatch match = QRegularExpression("^station(\\d*)$").match(section);
+        if (match.hasMatch()) {
             file.setSection(section);
-            const int index = reg.cap(1).toUInt();
+            const int index = match.captured(1).toUInt();
             const QString station = file.value("Name").toString();
             m_stations.insert(index, Station(index, station));
         }

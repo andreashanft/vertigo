@@ -1,10 +1,3 @@
-if(Qt4_FOUND)
-    set(QT_USE_QTMAIN true)
-    set(QT_USE_QTOPENGL true)
-    include(${QT_USE_FILE})
-endif()
-
-include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${GLM_INCLUDE_DIR})
 include_directories(${OPENAL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -154,6 +147,10 @@ set(SOURCES
     gfx/glbmodel.h
     gfx/image.cpp
     gfx/image.h
+    gfx/mesh.cpp
+    gfx/mesh.h
+    gfx/pipeline.cpp
+    gfx/pipeline.h
     gfx/texture.cpp
     gfx/texture.h
     gfx/texturemanager.cpp
@@ -242,6 +239,8 @@ set(SOURCES
     ui/widget.h
 
     util/core.h
+    util/datapath.cpp
+    util/datapath.h
     util/deferreddeletable.cpp
     util/deferreddeletable.h
     util/error.cpp
@@ -249,16 +248,19 @@ set(SOURCES
     util/event.hpp
     util/file.cpp
     util/file.h
+    util/random.cpp
+    util/random.h
     util/rect.hpp
+    util/ticks.h
     util/size.hpp
 )
 
 add_executable(vertigo WIN32 ${SOURCES})
-target_link_libraries(vertigo ${QT_LIBRARIES} ${SDL2_LIBRARY} ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
+target_link_libraries(vertigo Qt${QT_VERSION_MAJOR}::Widgets ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
+if (QT_VERSION_MAJOR EQUAL 6)
+    target_link_libraries(vertigo Qt6::OpenGL)
+endif()
 if (TARGET glm::glm)
     target_link_libraries(vertigo glm::glm)
-endif()
-if (Qt5OpenGL_FOUND)
-    target_link_libraries(vertigo Qt5::OpenGL)
 endif()
 install(TARGETS vertigo DESTINATION bin)

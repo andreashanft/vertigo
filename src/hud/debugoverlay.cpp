@@ -21,9 +21,11 @@
 #include "fight/objects/activeobject.h"
 #include "fight/boats/simpleboat.h"
 #include "fight/orders.h"
+#include "gfx/pipeline.h"
 
 #include <glm/geometric.hpp>
 #include <set>
+#include <vector>
 
 
 namespace hud {
@@ -80,10 +82,7 @@ void DebugOverlay::drawCurrents()
         return point4.z <= 0;
     };
 
-    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
-    glDisable(GL_TEXTURE_2D);
-    glColor3f(0.2f, 0.6f, 1.0f);
-    glBegin(GL_LINES);
+    std::vector<Vector3D> lines;
     for (const auto &cell : scenario->currentCells()) {
         const Vector3D centre((cell.x + 1)*scale.x, (cell.y + 1)*scale.y, scenario->position().z - 8.0f);
         if (glm::distance(centre, scenario->position()) > 200.0f)
@@ -94,12 +93,13 @@ void DebugOverlay::drawCurrents()
         Vector2D a, b, c, d;
         if (!project(centre, a) || !project(end, b) || !project(back + side, c) || !project(back - side, d))
             continue;
-        glVertex2f(a.x, a.y); glVertex2f(b.x, b.y);
-        glVertex2f(b.x, b.y); glVertex2f(c.x, c.y);
-        glVertex2f(b.x, b.y); glVertex2f(d.x, d.y);
+        for (const Vector2D &point : { a, b, b, c, b, d })
+            lines.push_back(Vector3D(point, 0));
     }
-    glEnd();
-    glPopAttrib();
+    const Vector4D color = gfx::Pipeline::color();
+    gfx::Pipeline::setColor(Vector4D(0.2f, 0.6f, 1.0f, 1.0f));
+    gfx::Pipeline::drawLines(lines.data(), int(lines.size()));
+    gfx::Pipeline::setColor(color);
 }
 
 

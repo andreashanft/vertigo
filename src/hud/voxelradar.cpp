@@ -24,9 +24,10 @@
 #include "fight/effects/trash.h"
 #include "fight/target.h"
 #include "txt/desfile.h"
+#include "util/datapath.h"
+#include "gfx/pipeline.h"
 
 #include <QFile>
-#include <QGLContext>
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
@@ -67,7 +68,7 @@ VoxelRadar::VoxelRadar(txt::DesFile &file)
     m_elevation = glm::radians(file.value("Projection", 30).toFloat());
     m_extent = file.value("WorldMaxY", 20).toFloat();
 
-    QFile table(QString("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString()));
+    QFile table(util::DataPath::resolve(QString("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString())));
     const QByteArray data = table.open(QIODevice::ReadOnly) ? table.readAll() : QByteArray();
     if (m_rect.width <= 0 || m_rect.height <= 0 || data.size() < TableOffset + FogRows*Entries*2)
         return;
@@ -393,7 +394,7 @@ void VoxelRadar::draw(fight::Scenario *scenario, const RectF &window)
     if (!m_texture.isValid())
         m_texture.createEmpty(m_image.width(), m_image.height(), gfx::Texture::RGBA, false);
     m_texture.update(0, 0, m_image);
-    glColor4f(1, 1, 1, 1);
+    gfx::Pipeline::setColor(Vector4D(1));
     m_texture.draw(window, RectF(0, 0, m_image.width(), m_image.height()));
 }
 

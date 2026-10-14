@@ -24,7 +24,7 @@
 #include "gfx/texture.h"
 #include "sfx/sound.h"
 #include "ui/label.h"
-#include <QTime>
+#include <QElapsedTimer>
 
 
 namespace game {
@@ -59,7 +59,7 @@ private:
     ui::Label *m_lblArrow;
     ui::Label *m_lblPressKey;
 
-    QTime m_time;
+    QElapsedTimer m_time;
     State m_state;
     bool m_toggleState;
     int m_nextLine;

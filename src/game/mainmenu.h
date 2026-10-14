@@ -22,7 +22,8 @@
 #include "gfx/texture.h"
 #include "sfx/sound.h"
 #include "ui/button.h"
-#include <QTime>
+#include <QElapsedTimer>
+#include <list>
 
 namespace game {
 
@@ -76,7 +77,7 @@ private:
     sfx::Sound m_backgroundSound;
     QString m_name;
     bool m_cursor;
-    QTime m_time;
+    QElapsedTimer m_time;
     std::function<void(QString)> m_funcStartGame;
     std::function<void(QString)> m_funcLoadGame;
     QString m_loadingGame;

@@ -23,7 +23,7 @@
 #include "sfx/soundsystem.h"
 #include "hud/hud.h"
 #include <QApplication>
-#include <QGLContext>
+#include <qopengl.h>
 #include <QKeyEvent>
 
 

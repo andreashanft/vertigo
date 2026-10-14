@@ -20,8 +20,10 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "txt/desfile.h"
-#include <QGLContext>
+#include "util/datapath.h"
+#include <qopengl.h>
 #include <QFile>
+#include <iostream>
 
 #include <glm/geometric.hpp>
 
@@ -45,8 +47,9 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     qreal sx, sy, sz;
     {
         file.setSection("map");
-        QFile scaleFile(QString("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/")));
-        scaleFile.open(QFile::ReadOnly);
+        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/"))));
+        if (!scaleFile.open(QFile::ReadOnly))
+            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
 
         QDataStream stream(&scaleFile);
         stream.setByteOrder(QDataStream::LittleEndian);
@@ -59,8 +62,9 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
 
     {
         file.setSection("texture");
-        QFile scaleFile(QString("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/")));
-        scaleFile.open(QFile::ReadOnly);
+        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/"))));
+        if (!scaleFile.open(QFile::ReadOnly))
+            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
         scaleFile.seek(12);
 
         m_textureMap = scaleFile.read(65536);
@@ -69,8 +73,9 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     QByteArray dir;
     {
         file.setSection("texture");
-        QFile scaleFile(QString("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/")));
-        scaleFile.open(QFile::ReadOnly);
+        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/"))));
+        if (!scaleFile.open(QFile::ReadOnly))
+            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
         scaleFile.seek(12);
 
         m_textureDir = scaleFile.read(65536);
@@ -133,9 +138,10 @@ bool Surface::testCollision(const Vector3D &start, const Vector3D &end, float ra
 }
 
 
-void Surface::bindTexture(int textureId)
+bool Surface::bindTexture(int textureId)
 {
     m_textures[textureId].bind();
+    return m_textures[textureId].isValid();
 }
 
 

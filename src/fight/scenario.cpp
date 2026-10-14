@@ -40,13 +40,15 @@
 
 #include "boats/simpleboat.h"
 #include "boats/tank.h"
+#include "util/random.h"
+#include "gfx/pipeline.h"
 
-#include <QGLContext>
+#include <qopengl.h>
 #include <QSettings>
 #include <QTime>
+#include <QRegularExpression>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
 #include <algorithm>
 
@@ -112,7 +114,7 @@ Scenario::Scenario(const QString &name) :
     m_forwards(0.0f),
     m_backwards(0.0f)
 {
-    qsrand(name.right(4).toInt());
+    util::seedRandom(name.right(4).toInt());
 
     m_file.load(QString("vfx:scenario/%1.des").arg(name));
 
@@ -152,7 +154,7 @@ Scenario::Scenario(const QString &name) :
     std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
     std::vector<ActiveObject *> absentUnits; // only at a higher difficulty
     const int difficulty = Scenario::difficulty();
-    foreach (const QString &section, m_file.sections().filter(QRegExp("^movable\\d*"))) {
+    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^movable\\d*"))) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -463,7 +465,7 @@ Scenario::Scenario(const QString &name) :
     }
 
     // currents: each cell covers a 2x2 block of map cells; speeds aren't in the data (docs/ROADMAP.md, appendix D)
-    foreach (const QString &section, m_file.sections().filter(QRegExp("^current\\d*", Qt::CaseInsensitive))) {
+    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^current\\d*", QRegularExpression::CaseInsensitiveOption))) {
         m_file.setSection(section);
         m_file.value("id");
         if (m_file.value("typ").toInt() != 3072 || m_file.value("pz").toInt() != 0)
@@ -485,7 +487,7 @@ Scenario::Scenario(const QString &name) :
         m_currentGrid[std::make_pair(x/2, y/2)] = direction*speed;
     }
 
-    foreach (const QString &section, m_file.sections().filter(QRegExp("^radio\\d*"))) {
+    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^radio\\d*"))) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -535,7 +537,7 @@ Scenario::Scenario(const QString &name) :
     m_endType = m_file.value("Type").toInt();
 
     // report what the loader ignored, with numbers in names collapsed to '#'
-    QRegExp digits("\\d+");
+    const QRegularExpression digits("\\d+");
     foreach (const QString &section, m_file.sections()) {
         if (placeholderSections.contains(section))
             continue;
@@ -550,7 +552,7 @@ Scenario::Scenario(const QString &name) :
 
 
 
-    qsrand(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
+    util::seedRandom(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
 
     sfx::SampleMap::load();
 }
@@ -657,64 +659,31 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
 {
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CW);
-    glEnable(GL_NORMALIZE);
 
     glClearColor(0.0, 0.0, 0.15, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(projection));
+    gfx::Pipeline::setProjection(projection);
+    gfx::Pipeline::setModelView(camera);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(glm::value_ptr(camera));
+    // the boat's headlight, a spot light from just behind it, and a blue ambient light
+    gfx::Pipeline::setLighting(true);
+    gfx::Pipeline::setAmbient(Vector3D(0.5f, 0.5f, 1.0f));
+    gfx::Pipeline::Light light;
+    light.position = Vector3D(camera*Vector4D(m_player->position() - m_player->dir()*5.0f, 1));
+    light.direction = glm::mat3(camera)*m_player->dir();
+    light.ambient = Vector3D(4.0f);
+    light.diffuse = Vector3D(1.0f);
+    light.cutoff = 90.0f;
+    light.exponent = 4.0f;
+    light.constantAttenuation = 0.1f;
+    light.quadraticAttenuation = 0.0002f;
+    gfx::Pipeline::setLight(light);
 
-    GLfloat global_ambient[] = { 0.5f, 0.5f, 1.0f, 1.0f };
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-
-    glEnable(GL_LIGHTING);
-
-    GLfloat light_ambient[] = { 4.0, 4.0, 4.0, 1.0 };
-    GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-    
-    glLightfv(GL_LIGHT0, GL_POSITION, glm::value_ptr(Vector4D(m_player->position() - m_player->dir()*5.0f, 1)));
-    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, glm::value_ptr(m_player->dir()));
-
-    glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 90.0);
-    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.1);
-    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0002);
-    glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 4.0);
-
-    glEnable(GL_LIGHT0);
-
-    if (m_lightSources.size() > 0)
-    {
-        Object *object = m_lightSources[0];
-
-        glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
-        glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
-        
-        glLightfv(GL_LIGHT1, GL_POSITION, glm::value_ptr(object->position()));
-        glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, glm::value_ptr(Vector3D(glm::cos(0.005f*m_time), glm::sin(0.005f*m_time), 0.0f)));
-
-        glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 90.0);
-        glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0.1);
-        glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0002);
-        glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 4.0);
-
-        glEnable(GL_LIGHT1);
-    }
-
-    glEnable(GL_FOG);
-    GLfloat fogColor[4] = {0.0, 0.0, 0.15, 1.0};
-    glFogi(GL_FOG_MODE, GL_LINEAR);
-    glFogfv(GL_FOG_COLOR, fogColor);
-    glHint(GL_FOG_HINT, GL_FASTEST);
-    glFogf(GL_FOG_START, 100.0);
-    glFogf(GL_FOG_END, 200.0);
+    gfx::Pipeline::setFog(true);
+    gfx::Pipeline::setFog(gfx::Pipeline::Fog{ Vector3D(0.0f, 0.0f, 0.15f), 100.0f, 200.0f });
 
     m_surface.draw(m_position, m_player->dir());
 

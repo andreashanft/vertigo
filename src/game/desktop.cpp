@@ -22,6 +22,7 @@
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
 #include <QKeyEvent>
+#include <QRegularExpression>
 
 
 namespace game {
@@ -77,12 +78,10 @@ Desktop::Desktop(const QString &name) :
     m_notebook.hide();
 
     m_widgetRooms = new ui::Label(&m_lblBackground);
-    foreach (const QString &section, file.sections().filter(QRegExp("^room"))) {
+    foreach (const QString &section, file.sections().filter(QRegularExpression("^room"))) {
         file.setSection(section);
 
-        QRegExp reg("^room(\\d*)$");
-        reg.indexIn(section);
-        const int index = reg.cap(1).toInt();
+        const int index = QRegularExpression("^room(\\d*)$").match(section).captured(1).toInt();
 
         const QString name = file.value("Name").toString();
         const QString arrow = file.value("Arrow").toString();

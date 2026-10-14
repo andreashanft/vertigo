@@ -11,6 +11,9 @@ nix run github:pnordhus/vertigo
 
 # Compiling
 
+Vertigo needs Qt 6, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
+or OpenGL ES 3. Qt 5.15 still works as a fallback, but isn't tested any more.
+
 ```
 mkdir build
 cd build
@@ -21,15 +24,12 @@ make
 ## macOS (Homebrew)
 
 ```
-brew install cmake qt@5 sdl2 glm
+brew install cmake qt glm
 mkdir build
 cd build
-cmake -DCMAKE_PREFIX_PATH="$(brew --prefix qt@5)" ..
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
-
-Qt has to be found through its real prefix; the symlinks Homebrew creates in
-`/opt/homebrew/lib/cmake` make Qt's CMake files look for `mkspecs` in the wrong place.
 
 ## Game data
 
@@ -37,7 +37,9 @@ Vertigo needs the complete game data, including the movies. A GOG installation
 only contains part of it; the rest is in the CD image (`game.gog`, a raw
 `MODE1/2352` track). Point Vertigo to a directory containing `DAT`, `GFX`,
 `SFX`, `TXT` and `VFX` from the CD's `SF` directory, with the installed files
-copied on top.
+copied on top. The case of the file names doesn't matter, also on file systems
+that tell upper and lower case apart. `--data <directory>` uses another
+directory for one run, without remembering it.
 
 ## Testing
 
@@ -63,7 +65,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--headless` runs the mission without a window and without sound, in
   simulated time as fast as possible (use it with `--timeout`; all test
   times are then mission seconds). Automated runs with a window and
-  `--timeout` don't take the focus.
+  `--timeout` don't take the focus; on macOS they run in the background,
+  without a Dock icon and without keyboard input other than `--keys`.
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
   Esc menu (here: restart the mission). `5=Space/0.1` holds a key for 0.1 s;
   keys like Space (fire) or the arrows need that to have an effect.
@@ -76,6 +79,18 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   instead of following their orders.
 - `--screenshot 3=front.png` saves the window at the given mission seconds
   (not with `--headless`).
+- `--fixed-step` advances the mission by 20 ms per frame instead of by the
+  real time, so runs with a window repeat exactly, frame by frame (test times
+  are then mission seconds). Screenshots of two builds can be compared pixel
+  by pixel this way, e.g. after changes to the renderer.
+- `--click 2=320,300` clicks at the given seconds at a point of the 640×480
+  screen (the mouse moves there first).
+- Without a mission, `--timeout`, `--keys`, `--click` and `--screenshot`
+  work in the main menu and the game it starts, in seconds since the start,
+  e.g. `vertigo --click 1=320,240 --screenshot 3=menu.png --timeout 4`.
+- `--seed 5` picks the random numbers (default 1), so a run repeats exactly.
+  Compare runs only between builds of the same build type: an optimized
+  build rounds floating point differently, and missions can end differently.
 - The mission ends as soon as it is accomplished (no need to press Alt+A), 10
   seconds after it failed, or 3 seconds after the player was destroyed. The
   exit code tells how it ended: 0 success, 1 failed, 2 aborted (Esc menu or

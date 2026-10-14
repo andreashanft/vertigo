@@ -137,17 +137,33 @@ void SlaveMonitor::drawWeapon(const Rect &rect)
         font.draw(line.toUpper(), Rect(rect.x, y, rect.width, -1), true, false);
         y += m_spacingY - 1;
     }
+    // at the bottom; the 48x48 pictures don't fit below three lines on a 70 pixel monitor,
+    // so they shrink to the space left
     if (gfx::Texture *texture = picture(image))
-        texture->draw(rect.x + (rect.width - texture->width())/2, std::max(y, rect.y + rect.height - 2 - texture->height()));
+    {
+        const int bottom = rect.y + rect.height - 2;
+        const float scale = std::min(1.0f, float(bottom - y)/texture->height());
+        if (scale > 0)
+        {
+            const float width = texture->width()*scale;
+            const float height = texture->height()*scale;
+            texture->draw(RectF(rect.x + (rect.width - width)/2, bottom - height, width, height));
+        }
+    }
 }
 
 
 void SlaveMonitor::drawArmor(const Rect &rect)
 {
     const fight::Player *player = m_hud->scenario()->player();
-    // the pieces make up a 64x64 silhouette: front on top, left and right side by side, back below
-    const int x = rect.x + (rect.width - 64)/2;
-    const int y = rect.y + (rect.height - 64)/2;
+    gfx::Font &font = m_hud->fontGreen();
+    // the pieces make up a 64x64 silhouette: front on top, left and right side by side, back
+    // below. It shrinks to fit between the front's percentage and the back's
+    const int top = rect.y + 12 + font.height() + 1;
+    const int bottom = rect.y + rect.height - 10 - 1;
+    const float scale = std::max(0.0f, std::min(1.0f, (bottom - top)/64.0f));
+    const float x = rect.x + (rect.width - 64*scale)/2;
+    const float y = (top + bottom - 64*scale)/2;
     for (int side = 0; side < 4; side++)
     {
         // level 1 above 75 % of the shield, 4 below 25 %
@@ -155,17 +171,19 @@ void SlaveMonitor::drawArmor(const Rect &rect)
         const int level = left > 0.75f ? 0 : left > 0.5f ? 1 : left > 0.25f ? 2 : 3;
         gfx::Texture &texture = m_armor[level][side];
         const int frontHeight = m_armor[level][0].height();
+        float offsetX = 0;
+        float offsetY = 0;
         switch (side)
         {
-        case 0: texture.draw(x, y); break;
-        case 1: texture.draw(x, y + frontHeight); break;
-        case 2: texture.draw(x + 64 - texture.width(), y + frontHeight); break;
-        case 3: texture.draw(x, y + 64 - texture.height()); break;
+        case 0: break;
+        case 1: offsetY = frontHeight; break;
+        case 2: offsetX = 64 - texture.width(); offsetY = frontHeight; break;
+        case 3: offsetY = 64 - texture.height(); break;
         }
+        texture.draw(RectF(x + offsetX*scale, y + offsetY*scale, texture.width()*scale, texture.height()*scale));
     }
 
     // the title, and what is left of each side around the silhouette: front above, back below
-    gfx::Font &font = m_hud->fontGreen();
     auto percent = [player](int side) {
         return QString("%1%").arg(player->shieldMax(side) > 0 ? std::max(0, 100*player->shield(side)/player->shieldMax(side)) : 0);
     };

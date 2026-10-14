@@ -153,7 +153,7 @@ private:
     int m_person;
     bool m_finished;
     bool m_remove;
-    QMap<int, Message> m_messages;
+    QMultiMap<int, Message> m_messages;
     int m_changeChapter;
     bool m_gameOver;
     bool m_isSmallTalk;

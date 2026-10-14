@@ -17,9 +17,8 @@
 
 #include "file.h"
 
+#include "datapath.h"
 #include "error.h"
-
-#include "SDL.h"
 
 #include <iostream>
 
@@ -37,13 +36,14 @@ File::File(const std::string &name)
 
 void File::open(const std::string &name)
 {
-    m_name = m_dataPath + name;
+    const QString path = DataPath::resolve(QString::fromStdString(name));
+    m_name = path.toStdString();
 
     m_stream.close();
 #ifdef _MSC_VER
-	wchar_t *nameUTF16 = reinterpret_cast<wchar_t*>(SDL_iconv_string("UTF-16LE", "UTF-8", m_name.c_str(), m_name.size() + 1));
-	m_stream.open(nameUTF16, std::ios_base::in | std::ios_base::binary);
-	SDL_free(nameUTF16);
+    // the narrow names of MSVC's streams are in the ANSI code page, not UTF-8
+    const std::wstring nameUTF16 = path.toStdWString();
+    m_stream.open(nameUTF16.c_str(), std::ios_base::in | std::ios_base::binary);
 #else
 	m_stream.open(m_name, std::ios_base::in | std::ios_base::binary);
 #endif
@@ -61,12 +61,5 @@ void File::seek(std::size_t offset)
 {
     m_stream.seekg(offset, std::ios_base::beg);
 }
-
-void File::setDataPath(const std::string &path)
-{
-    m_dataPath = path + '/';
-}
-
-std::string File::m_dataPath;
 
 } // namespace util

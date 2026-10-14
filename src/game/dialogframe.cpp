@@ -1,6 +1,7 @@
 #include "dialogframe.h"
 #include "txt/stringtable.h"
 #include "gfx/image.h"
+#include "util/datapath.h"
 
 #include <QFile>
 
@@ -20,7 +21,7 @@ DialogFrame::DialogFrame(Dialog* dialog, const QString &roomName, std::function<
 
     // not every room has its own dialog background, and loading a missing image aborts
     QString background = QString("gfx:img/desktop/bground/d_%1.img").arg(roomName);
-    if (!QFile::exists(background))
+    if (!QFile::exists(util::DataPath::resolve(background)))
         background = "gfx:img/desktop/bground/d_ew1.img";
     QImage image = gfx::Image::load(background, colorTable);
 

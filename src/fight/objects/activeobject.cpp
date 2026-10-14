@@ -23,6 +23,7 @@
 #include "fight/orders.h"
 #include "fight/weapons/torpedo.h"
 #include "fight/boats/simpleboat.h"
+#include "util/random.h"
 #include <glm/geometric.hpp>
 #include <algorithm>
 
@@ -114,9 +115,9 @@ void ActiveObject::destroy()
     m_scenario->explosionAt(at, size < 8.0f ? 0.3f : size < 20.0f ? 0.6f : 1.0f);
 
     // debris (DEBRIS.DES): plates 0-2, engine 3, small parts 4-8, large parts 9-13, bodies 14-16
-    auto random = [](int min, int max) { return min + qrand()%(max - min + 1); };
+    auto random = [](int min, int max) { return min + util::random()%(max - min + 1); };
     auto direction = []() {
-        const Vector3D d(qrand()/float(RAND_MAX) - 0.5f, qrand()/float(RAND_MAX) - 0.5f, 0.5f*qrand()/float(RAND_MAX));
+        const Vector3D d(util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f, 0.5f*util::random()/float(RAND_MAX));
         return glm::length(d) > 0.01f ? glm::normalize(d) : Vector3D(0, 0, 1);
     };
     auto debris = [this, &direction](int index) {

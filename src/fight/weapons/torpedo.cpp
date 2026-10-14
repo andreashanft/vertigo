@@ -21,9 +21,10 @@
 #include "fight/effects/effectmanager.h"
 #include "sfx/samplemap.h"
 #include "txt/desfile.h"
+#include "util/random.h"
+#include "gfx/pipeline.h"
 
 #include <glm/geometric.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -180,7 +181,7 @@ bool Torpedo::update(float elapsedTime)
     if (m_trailTime >= TrailInterval)
     {
         m_trailTime = 0;
-        m_scenario->effectManager().addEffect(Effects(int(Effects::Explosion_21) + qrand()%3), m_position - m_dir*1.5f);
+        m_scenario->effectManager().addEffect(Effects(int(Effects::Explosion_21) + util::random()%3), m_position - m_dir*1.5f);
     }
 
     m_speed = std::min(m_type.maxVelocity, m_speed + m_type.acceleration*elapsedTime);
@@ -225,7 +226,7 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit)
             blast(dynamic_cast<ActiveObject *>(record.object));
         m_scenario->effectManager().addEffect(Effects::Explosion_2, position);
         for (int i = 0; i < 5; i++)
-            m_scenario->effectManager().addEffect(Effects::Explosion_9, position + Vector3D(qrand()%21 - 10, qrand()%21 - 10, qrand()%11 - 5));
+            m_scenario->effectManager().addEffect(Effects::Explosion_9, position + Vector3D(util::random()%21 - 10, util::random()%21 - 10, util::random()%11 - 5));
         sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, position.x, position.y, position.z);
         m_scenario->explosionAt(position, 1.0f);
         return;
@@ -270,12 +271,12 @@ void Torpedo::draw()
     const Vector3D up = glm::cross(right, m_dir);
     const Matrix orientation(Vector4D(right, 0), Vector4D(m_dir, 0), Vector4D(up, 0), Vector4D(0, 0, 0, 1));
 
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glMultMatrixf(glm::value_ptr(orientation));
-    glScalef(m_type.scale, m_type.scale, m_type.scale);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::multiply(orientation);
+    gfx::Pipeline::scale(m_type.scale);
     m_model->draw();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 }
 
 

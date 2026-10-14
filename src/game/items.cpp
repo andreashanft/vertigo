@@ -19,6 +19,7 @@
 #include "chapter.h"
 #include "txt/desfile.h"
 #include "gfx/colortable.h"
+#include "util/datapath.h"
 #include <QFile>
 
 QString trimEnd(const QString& str);
@@ -126,7 +127,7 @@ void Items::addItem(int model, Type type, const QString &name, const QString &im
         colorTable.loadFromFile("gfx:pal/depot/specs.pal");
     item.icon = gfx::Image::load(QString("gfx:img/icon/%1.img").arg(imgname), colorTable);
 
-    QFile file("txt:thing/" + txtname);
+    QFile file(util::DataPath::resolve("txt:thing/" + txtname));
     if (file.open(QFile::ReadOnly))
     {
         while (!file.atEnd())

@@ -1,13 +1,18 @@
-# Roadmap: implementing todo.txt
+# Roadmap
 
-This plan covers the items in [todo.txt](../todo.txt). It is based on a code
-review of this repository and on an analysis of the original German game data
-(CD release) and of strings and tables in the original `FIGHT.EXE`
-(October 2026). Reference data gathered during that analysis is collected in
-the [appendix](#appendix-reference-data).
+This plan started out covering the items of the former `todo.txt`: currents,
+the 11 AI orders, the HUD items, effects and engine sounds. All of them are
+done (phases 1–6) except the radiation icon, which waits for the comparison
+with the original. What is still open is collected in
+[gaps found after milestone 6](#gaps-found-after-milestone-6) and the
+[iPad port](#ipad-port). The plan is based on a code review of this
+repository and on an analysis of the original German game data (CD release)
+and of strings and tables in the original `FIGHT.EXE` (October 2026).
+Reference data gathered during that analysis is collected in the
+[appendix](#appendix-reference-data).
 
-Most todo items need groundwork that doesn't exist yet; without it they
-couldn't be built or tested in a real mission. Right now:
+Most of those items needed groundwork that didn't exist yet; without it they
+couldn't be built or tested in a real mission. When the plan was written:
 
 - About half of all units with orders (1,110 of 2,345) never appear in
   missions, because their `dtyp` has no object file mapping.
@@ -228,6 +233,11 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    the original, which comes near the end. (**Done**; what the voxel radar's
    settings, the lamps and the dust sprite mean in the original is to be
    compared then. Test mode gained `--near` to start next to a unit.)
+7. **Mission completeness:** G1–G6 from the
+   [gaps found after milestone 6](#gaps-found-after-milestone-6): mission
+   music, complete minefields, the unit keys nobody reads yet, the five
+   missions with unresolved conditions, s00705, and the choice of station
+   after a mission.
 
 ## Differences to the original's cockpit (screenshots, October 2026)
 
@@ -259,6 +269,22 @@ cargo-ship blocks, `u` and the armor symbol now follow the screenshots.
 Already alike: lock ring with name, distance, shield bars and sensor icon;
 turret brackets; heading tape; THREAT; the lamps beside the sonar monitors lit;
 the master monitor's target picture, D/H/V/N and R.
+
+## Gaps found after milestone 6
+
+A review in October 2026, after milestone 6, found these gaps outside the
+former todo list. At that point `--check` matched
+[mission-check.txt](mission-check.txt), and running each of the 71 scenarios
+headless for 60 s with the idle chapter-1 boat crashed none of them.
+
+| # | Gap | Effort | Notes |
+|---|---|---|---|
+| G1 | Mission music | S–M | Each scenario's `[CD] Track` (1–4; 0 only in s02005) presumably picks one of the CD's audio tracks 2–5 (`game.ins`: track 1 is data). Vertigo plays no music in missions, and the data directory doesn't contain these tracks. They are plain 44.1 kHz 16-bit stereo PCM in `game.gog` (2,352-byte sectors), so they can be copied out once (or on import, see the [iPad port](#ipad-port)) and streamed like the other sounds. Whether 0 means silence, and whether the stations use CD music too, is to be checked |
+| G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 20 missions are missing. How the original lays them out is to be compared |
+| G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing |
+| G4 | Unresolved conditions | S each | `--check` reports an empty faction in s00402 and objectives that don't exist in s00404 (objective 14, 8 times), s01802 (24), s02003 (32, 36) and s02006 (21). Check whether these missions can still be won, and what the original makes of such references |
+| G5 | s00705 | S | Ended with success after 33 s while the player did nothing (seed 1, with `qrand()`); with other seeds the player died or the time ran out, and with `util::random()` (P2) seeds 1–4 run out of time. Find out which units can fulfil the objectives without the player and whether that is right |
+| G6 | Station after a mission | S | When several stations are enabled after a mission, the first one is taken (`TODO` in `Chapter`); the player should choose |
 
 ## Open questions and how to settle them
 
@@ -356,19 +382,46 @@ they can land on master one by one.
 
 | # | Step | Effort | Notes |
 |---|---|---|---|
-| P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion |
-| P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below |
-| P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) |
-| P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import |
-| P5 | iOS build | S | `qt_add_executable` with an Info.plist, icons and signing. Qt 6 for iOS comes from the Qt online installer, not Homebrew. Test in the iPad simulator first |
+| P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion (**done**: `util::ticks()` on `std::chrono::steady_clock`, `QString::toStdWString()` for MSVC's wide file names) |
+| P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below (**done**: the code only uses what Qt 5.15 and Qt 6 both have, and CMake takes either. Tested with Qt 6.12 and Qt 5.15 (Homebrew): the same `--check` report, the same results in all 71 missions and identical unit traces, as long as both builds use the same build type. `Window` is a `QWindow` with one `QOpenGLContext`, current from the start on a `QOffscreenSurface` while the window isn't shown, so loading and headless runs work as before; `QApplication` stays for the folder dialog until P6. The window comes back with its last size; the `QWidget` geometry saved before is read once. `util::random()` (a `std::mt19937`) replaces `qrand()`, so seeded runs give other results than before; over 3 seeds × 71 missions the counts stay the same (13 runs destroyed, 3 failed). `QRegularExpression`, `QElapsedTimer`, `QMultiMap`, `QStandardPaths::AppLocalDataLocation` (the same directory as before), C++17) |
+| P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) (**done**: `gfx::Pipeline` keeps the model-view stack, the colour, the boat's spot light, linear fog, the alpha test and projective texture coordinates (the 3D cockpit's HUD decal) and draws with one shader, GLSL 1.50 on OpenGL 3.2 core (4.1 on macOS) and GLSL ES 3.00; lighting stays per vertex as in OpenGL 1. `gfx::Mesh` keeps models, terrain and the 3D cockpit in vertex buffers, quads and text are streamed. With `--fixed-step`, screenshots of 23 scenes (menus, a station, a movie, missions in the 2D and 3D cockpits with explosions, gun and torpedo fire and the debug overlay) match the fixed-function renderer to within 0.04 % of the pixels (rounding at texel and triangle edges), at the same CPU time. The OpenGL ES variant is untested until P5) |
+| P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import (**done**: `util::DataPath` indexes the data directory once (about 4,300 entries) and resolves `gfx:…` and `gfx/…` names in any case; every file opener goes through it, and the Qt search paths are gone. `--data <directory>` picks the data for one run. Tested with the data on a case-sensitive APFS volume: `--check` gives the same report, missions, cockpits and the main menu load) |
+| P5 | iOS build | S | An app bundle with an Info.plist, icons and signing. After Q1–Q5 there is no Qt to install: SDL3 and the other libraries are built for iOS from source with CMake. Test in the iPad simulator first |
 | P6 | Data import | S (M with the CD image) | Replaces the folder dialog: show the app's Documents folder in the Files app (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`) and look for `DAT`, `GFX`, `SFX`, `TXT` and `VFX` there. Optionally import straight from `game.gog` and the GOG installation |
 | P7 | App lifecycle and audio session | S | Pause the mission and save the settings when the app goes to the background (`closeEvent` never comes on iOS), and make no GL calls while in the background. Set an `AVAudioSession` category and suspend the OpenAL context during interruptions (calls, Siri) |
 | P8 | Keyboard | S | A hardware keyboard works as is, but older Magic Keyboards for iPad have no Esc and no F keys (F5–F12 are the turret orders), so add second bindings. Bring up the on-screen keyboard for save-game names |
-| P9 | Game controller | M | GameController.framework through a small Objective-C++ bridge (Qt 6 has no gamepad module), or SDL3. The sticks feed the analog `m_left`/`m_right`/`m_up`/`m_down` in `Scenario`. There are more actions than buttons, so turret orders and torpedo selection need a menu or button combinations. Useful on the desktop too |
-| P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as Qt turns taps into mouse clicks; hover highlights only show with a trackpad or Pencil |
+| P9 | Game controller | M | SDL3's gamepad API (after Q5; Qt 6 has no gamepad module). The sticks feed the analog `m_left`/`m_right`/`m_up`/`m_down` in `Scenario`. There are more actions than buttons, so turret orders and torpedo selection need a menu or button combinations. Useful on the desktop too |
+| P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as taps arrive as mouse clicks; hover highlights only show with a trackpad or Pencil |
 
-Order of work: P1 → P2 → P3 → P4 on the desktop, then P5–P8 (playable with a
-hardware keyboard), then P9 and P10.
+### Replacing Qt with SDL3
+
+Prebuilt Qt for iOS comes from Qt's online installer, which needs a Qt account
+(the source is public, but every player building the game would first have to
+cross-compile Qt). That is too much to ask of players, so Qt goes before the
+iOS build. SDL3 (zlib licence) takes over the platform layer: it is in
+Homebrew, builds for iOS from source with CMake in minutes, and also brings
+what P7–P9 need (app lifecycle events, the on-screen keyboard, touch and game
+controllers). The rest of Qt is used as a general-purpose library and is
+replaced by our own types with the part of Qt's API the code uses, so call
+sites keep their shape (counted October 2026, 32,000 lines; 144 of 238 files
+use Qt types).
+
+| # | Step | Effort | Notes |
+|---|---|---|---|
+| Q1 | Strings and data values | L | `util::String` (UTF-8 in a `std::string`) with the about 40 `QString` methods in use (`arg` 289 times, `toInt`/`toFloat` about 370, `QString("…")` 232) and a string list; `DesFile` returns its own value type instead of `QVariant` (466 `value()` calls). The data's Latin-1 text (German umlauts) is converted on load and save, the fonts take Latin-1 when drawing. Conversions must behave exactly like Qt's (e.g. `toInt("10.5")` is 0 and not ok), so this step brings a small unit test target |
+| Q2 | Images | M | `gfx::Image` with the formats in use (indexed with a colour table, ARGB, RGB, RGBA) and `setPixel`, `scanLine`, `copy`, `fill`, `scaled`, format conversion; PNG/JPEG decoding (glTF cockpits) with stb_image and PNG screenshots with stb_image_write (public domain). Also `QRgb` and implicit sharing (`std::shared_ptr`) |
+| Q3 | Containers, files, the rest | M | `QMap`, `QList`, `QVector`, `QSet`, `QHash` (about 150 uses) to the standard library; `QFile`, `QDir`, `QDataStream`, `QTextStream` (about 90) to `std::filesystem`, `util::File` and a small binary reader; `QRegularExpression` (48) to `std::regex` or plain parsing; `QJson` (glTF only) to a single-header JSON library (MIT); `QPoint`/`QRect`/`QSize` (about 120) to our glm-based types; `QLocale`/`QDateTime` for the save-game list |
+| Q4 | Settings, paths, command line | S | `QSettings` (17 uses) to a small settings file, the save folder unchanged; `QCommandLineParser` (22 options) to our own parser; `QElapsedTimer` to `util::ticks()` |
+| Q5 | Platform layer | M | SDL3 window and OpenGL 3.2 core / ES 3 context, fullscreen, HiDPI, saved geometry; the main loop as SDL's per-frame callbacks (which iOS wants) instead of the `QTimer`; our own key enum and event structs for the 66 input handlers in 33 files (43 `Qt::Key_` values); SDL text input for save-game names; OpenGL linked directly on macOS and iOS and through a generated loader (glad) on Windows and Linux, replacing `QOpenGLExtraFunctions`; a plain framebuffer object for the 3D cockpit's instruments; the SDL cursor and `SDL_ShowOpenFolderDialog`; `--keys` and `--click` through our own event queue. Then Qt is gone, and with it the Qt 5 fallback |
+
+Q1–Q4 happen while Qt is still linked, so the game works after every step;
+Q5 removes Qt. Each step must leave the `--check` report, seeded headless runs
+of all 71 missions and `--fixed-step` screenshots of menus and missions
+unchanged.
+
+Order of work: P1 → P2 → P3 → P4 on the desktop, then Q1–Q5, then P5–P8
+(playable with a hardware keyboard), then P9 and P10. P1 to P4 are done
+(October 2026); next is Q1.
 
 Platform notes:
 
@@ -396,11 +449,12 @@ themselves:
 
 - Turning on enemy fire before the AI is tuned will make early missions
   unfair, so keep it behind an option until then.
-- Collision cost in large missions (`s0220x`) will need a spatial grid.
 - How cargo-ship blocks fit together is unverified.
 - Keep renderer changes self-contained so the later modern renderer and VR
   work stays easy.
-- Qt 5 support ends in Homebrew in May 2027.
+- Qt 5 support ends in Homebrew in May 2027 (settled: Qt 6 is the default
+  since step P2 of the iPad port; Qt 5.15 still builds, untested). Qt goes
+  altogether with steps Q1–Q5.
 
 Effort: S is up to a day, M a few days, L one to three weeks, all rough and
 for one developer.

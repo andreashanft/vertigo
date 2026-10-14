@@ -17,6 +17,8 @@
 
 #include "placeholder.h"
 #include "fight/scenario.h"
+#include "gfx/pipeline.h"
+#include <qopengl.h>
 
 #include <algorithm>
 #include <limits>
@@ -47,25 +49,30 @@ void Placeholder::draw()
     };
     static const float shades[6] = { 0.55f, 0.45f, 0.5f, 0.4f, 0.7f, 0.3f };
 
-    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
+    // unlit and untextured, on both sides
+    const bool lighting = gfx::Pipeline::lighting();
+    const Vector4D color = gfx::Pipeline::color();
+    const bool cull = glIsEnabled(GL_CULL_FACE);
+    gfx::Pipeline::setLighting(false);
     glDisable(GL_CULL_FACE);
 
-    glPushMatrix();
-    glTranslatef(m_position.x, m_position.y, m_position.z);
-    glScalef(m_halfSize, m_halfSize, m_halfSize);
-    glBegin(GL_QUADS);
+    gfx::Pipeline::pushMatrix();
+    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::scale(m_halfSize);
     for (int i = 0; i < 6; i++)
     {
-        glColor3f(shades[i], shades[i], 0.8f*shades[i]);
+        gfx::Pipeline::Vertex quad[4];
         for (int j = 0; j < 4; j++)
-            glVertex3fv(faces[i][j]);
+            quad[j] = { Vector3D(faces[i][j][0], faces[i][j][1], faces[i][j][2]), Vector2D(0) };
+        gfx::Pipeline::setColor(Vector4D(shades[i], shades[i], 0.8f*shades[i], 1.0f));
+        gfx::Pipeline::drawQuads(quad, 4, false);
     }
-    glEnd();
-    glPopMatrix();
+    gfx::Pipeline::popMatrix();
 
-    glPopAttrib();
+    gfx::Pipeline::setColor(color);
+    gfx::Pipeline::setLighting(lighting);
+    if (cull)
+        glEnable(GL_CULL_FACE);
 }
 
 

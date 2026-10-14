@@ -21,7 +21,9 @@
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
 #include "txt/stringtable.h"
+#include "util/datapath.h"
 #include <QFile>
+#include <QRegularExpression>
 
 
 namespace game {
@@ -73,18 +75,18 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
 
     m_name = file.value("Name").toString();
 
-    QRegExp reg("(\\d*)\\/(\\d*)\\/(\\d*)\\/(\\d*)");
-    if (reg.indexIn(file.value("Position").toString()) >= 0) {
-        m_area = reg.cap(1).toInt();
-        m_station = reg.cap(2).toInt();
-        m_room = reg.cap(3).toInt();
-        m_person = reg.cap(4).toInt();
+    const QRegularExpressionMatch position = QRegularExpression("(\\d*)\\/(\\d*)\\/(\\d*)\\/(\\d*)").match(file.value("Position").toString());
+    if (position.hasMatch()) {
+        m_area = position.captured(1).toInt();
+        m_station = position.captured(2).toInt();
+        m_room = position.captured(3).toInt();
+        m_person = position.captured(4).toInt();
     }
 
     m_female = file.value("Sex").toString() == "f";
     m_isSmallTalk = file.value("Type").toString() == "smalltalk";
 
-    foreach (const QString &section, file.sections().filter(QRegExp("^message"))) {
+    foreach (const QString &section, file.sections().filter(QRegularExpression("^message"))) {
         file.setSection(section);
         const int id = file.value("Id").toInt();
         const QString type = file.value("Type").toString();
@@ -132,10 +134,10 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
             message.type = Message::GameOver;
         }
 
-        m_messages.insertMulti(id, message);
+        m_messages.insert(id, message);
     }
 
-    foreach (const QString &section, file.sections().filter(QRegExp("^precondition"))) {
+    foreach (const QString &section, file.sections().filter(QRegularExpression("^precondition"))) {
         file.setSection(section);
 
         const QString type = file.value("Type").toString().toLower();
@@ -331,8 +333,9 @@ bool Dialog::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
 
 void Dialog::loadTree(const QString &filename)
 {
-    QFile file(filename);
-    file.open(QFile::ReadOnly);
+    QFile file(util::DataPath::resolve(filename));
+    if (!file.open(QFile::ReadOnly))
+        return;
 
     QDataStream stream(&file);
     stream.setByteOrder(QDataStream::LittleEndian);
@@ -384,18 +387,20 @@ void Dialog::loadTree(const QString &filename)
 
 void Dialog::loadStrings(const QString &filename)
 {
-    QFile file(filename);
-    file.open(QFile::ReadOnly);
+    QFile file(util::DataPath::resolve(filename));
+    if (!file.open(QFile::ReadOnly))
+        return;
 
-    QRegExp regexp("#(\\d*).*\\{(.*)\\}");
+    const QRegularExpression regexp("#(\\d*).*\\{(.*)\\}");
     while (!file.atEnd())  {
         QString line = QString::fromLatin1(file.readLine());
         if (file.error() != QFile::NoError)
             break;
 
-        if (regexp.indexIn(line) != -1) {
-            const int index = regexp.cap(1).toInt();
-            const QString text = regexp.cap(2);
+        const QRegularExpressionMatch match = regexp.match(line);
+        if (match.hasMatch()) {
+            const int index = match.captured(1).toInt();
+            const QString text = match.captured(2);
             m_strings.insert(index, text);
         }
     }
