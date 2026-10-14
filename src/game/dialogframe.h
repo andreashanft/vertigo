@@ -4,6 +4,7 @@
 
 #include "dialog.h"
 #include "ui/frame.h"
+#include "util/string.hpp"
 
 
 namespace game {
@@ -12,7 +13,7 @@ namespace game {
 class DialogFrame : public ui::Frame
 {
 public:
-    DialogFrame(Dialog* dialog, const QString &roomName, std::function<void()> &&funcClose);
+    DialogFrame(Dialog* dialog, const String &roomName, std::function<void()> &&funcClose);
     ~DialogFrame();
 
 private:

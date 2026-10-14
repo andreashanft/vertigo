@@ -18,58 +18,88 @@
 #ifndef GAME_WINDOW_H
 #define GAME_WINDOW_H
 
-#include <QCursor>
-#include <QOffscreenSurface>
-#include <QOpenGLContext>
-#include <QStringList>
-#include <QWindow>
+#include "input.hpp"
+
+#include <deque>
+#include <string>
+#include <vector>
+
+struct SDL_Cursor;
+struct SDL_Window;
+typedef struct SDL_GLContextState *SDL_GLContext;
+union SDL_Event;
 
 namespace game {
 
 class Renderer;
 
-// The game's window, with the one OpenGL context everything draws with. The
-// context is current from the start: on an offscreen surface while the window
-// isn't shown (loading before the first frame, headless test runs), on the
-// window while it draws.
-class Window : public QWindow
+// The game's window, with the one OpenGL context everything draws with. It exists (hidden)
+// from the start, so that the context is there for loading before the first frame and for
+// headless test runs.
+class Window
 {
 public:
-    Window();
+    // without focus for automated runs
+    explicit Window(bool focusable = true);
+    ~Window();
 
 public:
+    void show();
+    // saves the settings and hides the window
+    void close();
+    bool isVisible() const { return m_shown && !m_closed; }
+
     void setRenderer(Renderer *renderer);
     Renderer* renderer() const { return m_renderer; }
-    // saves the next frame as an image file
-    void saveScreenshot(const QString &fileName);
+    // the size in the window's coordinates (points), and how many pixels one has
+    int width() const;
+    int height() const;
+    double devicePixelRatio() const;
+
+    // what the platform reports; sends input on to the renderer
+    void handle(const SDL_Event &event);
+    // input that test runs make up, delivered before the next frame as if it came from the
+    // platform
+    enum class EventType { KeyPress, KeyRelease, MousePress, MouseRelease, MouseMove };
+    void post(EventType type, const input::KeyEvent &event);
+    void post(EventType type, const input::MouseEvent &event);
+    void deliverPosted();
+
+    // draws a frame (when shown)
+    void render();
+    // saves the next frame as an image file, a path in UTF-8
+    void saveScreenshot(const std::string &fileName);
     // shows what has been drawn so far, e.g. a loading screen before a long load
     void swapBuffers();
-    QRect rect() const { return QRect(QPoint(0, 0), size()); }
-
-protected:
-    bool event(QEvent *event) override;
-    void exposeEvent(QExposeEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
-    void keyReleaseEvent(QKeyEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
-    void moveEvent(QMoveEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
 
 private:
-    void render();
+    void keyPressEvent(input::KeyEvent *event);
     void saveSettings();
     void loadSettings();
+    void toggleFullScreen();
 
 private:
-    QOpenGLContext m_context;
-    QOffscreenSurface m_offscreen;
-    QSize m_viewport;
-    QRect m_geometry;   // the last one outside full screen
-    QCursor m_cursor;
-    Renderer *m_renderer;
-    QStringList m_screenshots;
+    struct Posted
+    {
+        EventType type;
+        input::KeyEvent key;
+        input::MouseEvent mouse;
+    };
+
+    SDL_Window *m_window = nullptr;
+    SDL_GLContext m_context = nullptr;
+    SDL_Cursor *m_cursor = nullptr;
+    bool m_shown = false;
+    bool m_closed = false;
+    bool m_cursorVisible = true;
+    int m_viewportWidth = 0;
+    int m_viewportHeight = 0;
+    int m_buttons = input::NoButton;
+    // the last geometry outside full screen: x, y, width, height
+    int m_geometry[4] = { 0, 0, 0, 0 };
+    Renderer *m_renderer = nullptr;
+    std::vector<std::string> m_screenshots;
+    std::deque<Posted> m_posted;
 };
 
 } // namespace game

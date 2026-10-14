@@ -26,6 +26,7 @@
 #include "gfx/font.h"
 
 #include <functional>
+#include "util/string.hpp"
 
 namespace game {
 
@@ -41,24 +42,24 @@ public:
     };
 
 public:
-    Movie(const QString &filename, MovieType type, const QString &textLarge = "", const QString &textSmall = "");
+    Movie(const String &filename, MovieType type, const String &textLarge = "", const String &textSmall = "");
 
 public:
     void play(std::function<void()> &&funcFinished);
-    void setRect(const QRect &rect);
+    void setRect(const Rect &rect);
 
 private:
     void activate();
     void deactivate();
     void draw();
-    void keyPressEvent(QKeyEvent *);
-    void mousePressEvent(QMouseEvent *);
+    void keyPressEvent(input::KeyEvent *);
+    void mousePressEvent(input::MouseEvent *);
 
 private:
-    QString m_filename;
+    String m_filename;
     MovieType m_type;
-    QString m_textLarge;
-    QString m_textSmall;
+    String m_textLarge;
+    String m_textSmall;
 
     gfx::Texture m_logo;
     gfx::Font m_fontLarge;

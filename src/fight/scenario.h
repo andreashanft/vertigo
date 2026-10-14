@@ -18,7 +18,6 @@
 #ifndef FIGHT_SCENARIO_H
 #define FIGHT_SCENARIO_H
 
-#include <QKeyEvent>
 #include <functional>
 #include <map>
 #include <list>
@@ -27,6 +26,7 @@
 #include "util/geometry3d.h"
 #include "util/deferreddeletable.h"
 #include "gfx/texturemanager.h"
+#include "game/input.hpp"
 #include "txt/desfile.h"
 #include "boats/player.h"
 #include "surface/surface.h"
@@ -37,6 +37,7 @@
 #include "sonar.h"
 #include "target.h"
 #include "headmotion.h"
+#include "util/string.hpp"
 
 namespace game { class Boat; }
 
@@ -52,7 +53,7 @@ class NavPoint;
 class Scenario : public util::DeferredDeletable
 {
 public:
-    Scenario(const QString &name);
+    Scenario(const String &name);
     ~Scenario();
 
     // the game's difficulty: 0 easy, 1 normal, 2 hard. Units whose "diff" key is higher stay out of the mission.
@@ -68,16 +69,16 @@ public:
     {
         int id;
         int type;
-        QString des;
+        String des;
         Object *object;
     };
 
 public:
-    const QString& name() const { return m_name; }
+    const String& name() const { return m_name; }
     const std::vector<ObjectRecord>& objectRecords() const { return m_records; }
 
     // everything the loader skipped or ignored, one line per occurrence
-    QStringList loadReport() const;
+    StringList loadReport() const;
 
     const Matrix& projectionMatrix() const { return m_projectionMatrix; }
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
@@ -146,12 +147,12 @@ public:
     void draw();
     // with another projection and camera, e.g. a wider view or the pilot's head moved
     void draw(const Matrix &projection, const Matrix &camera);
-    void keyPressEvent(QKeyEvent *);
-    void keyReleaseEvent(QKeyEvent *);
+    void keyPressEvent(input::KeyEvent *);
+    void keyReleaseEvent(input::KeyEvent *);
 
 private:
     Vector3D getPosition();
-    void loadIssue(const QString &text);
+    void loadIssue(const String &text);
 
 private:
     enum Type
@@ -194,8 +195,8 @@ private:
     Target m_target;
     HeadMotion m_headMotion;
 
-    QString m_name;
-    QStringList m_loadIssues;
+    String m_name;
+    StringList m_loadIssues;
     std::vector<std::unique_ptr<Object>> m_objects;
     std::vector<ObjectRecord> m_records;
     std::vector<CurrentCell> m_currentCells;

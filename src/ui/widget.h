@@ -19,9 +19,10 @@
 #define UI_WIDGET_H
 
 #include "util/deferreddeletable.h"
+#include "util/geometry2d.h"
 
-#include <QList>
-#include <QRectF>
+#include "game/input.hpp"
+#include <vector>
 
 
 namespace ui {
@@ -46,40 +47,40 @@ public:
     bool isEnabled() const { return m_enabled; }
     bool isVisible() const { return m_visible; }
     void setPosition(int x, int y);
-    void setPosition(const QPoint &pos);
+    void setPosition(const Point &pos);
     void setSize(int w, int h);
-    void setSize(const QSize &size);
+    void setSize(const Size &size);
     void setWidth(int w);
     void setHeight(int h);
-    const QRect& rect() const { return m_rect; }
-    QSize size() const { return m_rect.size(); }
-    float width() const { return m_rect.width(); }
-    float height() const { return m_rect.height(); }
-    QRect mapToGlobal(QRect rect) const;
+    const Rect& rect() const { return m_rect; }
+    Size size() const { return m_rect.size(); }
+    float width() const { return m_rect.width; }
+    float height() const { return m_rect.height; }
+    Rect mapToGlobal(Rect rect) const;
 
     void doDraw();
-    bool doMousePressEvent(const QPoint &pos, Qt::MouseButton button);
-    void doMouseReleaseEvent(const QPoint &pos, Qt::MouseButton button);
-    void doMouseMoveEvent(const QPoint &pos);
+    bool doMousePressEvent(const Point &pos, input::MouseButton button);
+    void doMouseReleaseEvent(const Point &pos, input::MouseButton button);
+    void doMouseMoveEvent(const Point &pos);
 
 private:
     virtual void draw() = 0;
-    virtual bool mousePressEvent(const QPoint &pos, Qt::MouseButton button) { return false; }
-    virtual void mouseReleaseEvent(const QPoint &pos, Qt::MouseButton button) {}
-    virtual void mouseMoveEvent(const QPoint &pos) {}
+    virtual bool mousePressEvent(const Point &pos, input::MouseButton button) { return false; }
+    virtual void mouseReleaseEvent(const Point &pos, input::MouseButton button) {}
+    virtual void mouseMoveEvent(const Point &pos) {}
 
 private:
     Widget *m_parent;
     bool m_enabled;
     bool m_visible;
-    QList<Widget*> m_children;
-    QRect m_rect;
+    std::vector<Widget*> m_children;
+    Rect m_rect;
 };
 
 
 inline void Widget::setSize(int w, int h)
 {
-    setSize(QSize(w, h));
+    setSize(Size(w, h));
 }
 
 

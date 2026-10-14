@@ -30,9 +30,8 @@ Departure::Departure(std::function<void()> &&funcClose) :
     const gfx::ColorTable colorTable("gfx:pal/notebook/notebook.pal");
     gfx::Font font("gfx:fnt/nfont1b.fnt", colorTable, true);
 
-    QImage image(640, 480, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgba(0, 0, 0, 128));
+    gfx::Image image(640, 480, gfx::Image::Indexed8);
+    image.setColorTable(gfx::ColorTable{ gfx::rgba(0, 0, 0, 128) });
     setTexture(image);
 
     ui::Label *label;
@@ -41,7 +40,7 @@ Departure::Departure(std::function<void()> &&funcClose) :
     label->setPosition(186, 74);
 
     ui::Label *lblMap = new ui::Label(label);
-    lblMap->setTexture(gfx::Image::loadPCX(QString("gfx:pic/apilot/%1.pcx").arg(Chapter::get()->area()->map())));
+    lblMap->setTexture(gfx::Image::loadPCX(String("gfx:pic/apilot/%1.pcx").arg(Chapter::get()->area()->map())));
     lblMap->setPosition(46, 41);
 
     label = new ui::Label(lblMap);
@@ -52,7 +51,8 @@ Departure::Departure(std::function<void()> &&funcClose) :
     label->setAlignment(ui::Label::AlignHCenter);
 
     int y = 30;
-    foreach (const Station &station, Chapter::get()->stations()) {
+    for (const auto &entry : Chapter::get()->stations()) {
+        const Station &station = entry.second;
         if (station.index() == Chapter::get()->currentStation())
             continue;
         if (!station.isEnabled())
@@ -71,9 +71,9 @@ Departure::Departure(std::function<void()> &&funcClose) :
 
     y += 4;
 
-    foreach (Mission* mission, Chapter::get()->missions()) {
+    for (Mission *mission : Chapter::get()->missions()) {
         if (mission->station() == -1) {
-            const QString shortName = mission->shortName();
+            const String shortName = mission->shortName();
             ui::Button *button = new ui::Button([this, shortName]() { Chapter::get()->startMission(shortName); }, lblMap);
             button->setFont(font);
             button->setText(mission->name());
@@ -96,10 +96,10 @@ Departure::Departure(std::function<void()> &&funcClose) :
 }
 
 
-bool Departure::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Departure::mousePressEvent(const Point &pos, input::MouseButton button)
 {
 
-    if (button == Qt::RightButton) {
+    if (button == input::RightButton) {
         m_funcClose();
         return true;
     }

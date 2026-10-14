@@ -21,7 +21,7 @@
 
 #include <vector>
 #include "util/geometry3d.h"
-#include <QString>
+#include "util/string.hpp"
 
 
 namespace fight {
@@ -137,11 +137,11 @@ private:
 class ConditionRadio : public Condition
 {
 public:
-    ConditionRadio(Scenario *scenario, const Vector3D &pos, const QString &text);
+    ConditionRadio(Scenario *scenario, const Vector3D &pos, const String &text);
 
 public:
     const Vector3D& pos() const { return m_pos; }
-    const QString& text() const { return m_text; }
+    const String& text() const { return m_text; }
     float time() const { return m_time; }
 
 public:
@@ -149,7 +149,7 @@ public:
 
 private:
     Vector3D m_pos;
-    QString m_text;
+    String m_text;
     float m_time;
 };
 

@@ -23,15 +23,14 @@
 #include "txt/stringtable.h"
 #include "ui/button.h"
 #include "window.h"
-#include <qopengl.h>
-#include <QKeyEvent>
-#include <QLocale>
-#include <QRegularExpression>
+#include "util/error.h"
+#include "gfx/gl.hpp"
+#include "util/datetimetext.hpp"
 #include <algorithm>
 
 namespace game {
 
-MainMenu::MainMenu(std::function<void(QString)> funcStartGame, std::function<void(QString)> funcLoadGame, std::function<void()> funcQuit) :
+MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void()> funcQuit) :
     m_state(Invalid),
     m_lblVersion(&m_title),
     m_lblBar1(&m_title),
@@ -155,11 +154,13 @@ void MainMenu::draw()
     }
     if (m_state == Loading)
     {
-        // show the loading screen during the load
-        window()->swapBuffers();
+        // show the loading screen during the load; the game takes over the window, so the menu
+        // has none afterwards
+        Window *win = window();
+        win->swapBuffers();
         m_funcLoadGame(m_loadingGame);
         changeState(Title);
-        window()->swapBuffers();
+        win->swapBuffers();
     }
 }
 
@@ -194,11 +195,11 @@ void MainMenu::changeState(State state)
         break;
 
     default:
-        qFatal("Cannot change state!");
+        util::fatal("Cannot change state!");
     }
 }
 
-void MainMenu::mousePressEvent(QMouseEvent *event)
+void MainMenu::mousePressEvent(input::MouseEvent *event)
 {
     Menu::mousePressEvent(event);
 
@@ -211,26 +212,30 @@ void MainMenu::mousePressEvent(QMouseEvent *event)
         ; // nothing to do
     }
 
-    if (event->button() == Qt::RightButton) {
+    if (event->button() == input::RightButton) {
         showMain();
     }
 }
 
-void MainMenu::keyPressEvent(QKeyEvent *event)
+void MainMenu::keyPressEvent(input::KeyEvent *event)
 {
     Menu::keyPressEvent(event);
 
     if (m_lblNew.isVisible()) {
-        if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
+        if (event->key() == input::Key_Enter || event->key() == input::Key_Return) {
             m_funcStartGame(m_name.trimmed());
             showMain();
         }
 
-        if (event->key() == Qt::Key_Backspace)
+        if (event->key() == input::Key_Backspace)
             m_name.chop(1);
 
-        QString text = event->text().toLower().toLatin1();
-        text.remove(QRegularExpression("[^a-z\\-0-9 ]*"));
+        // only lower-case letters, digits, '-' and spaces
+        const String typed = String(event->text()).toLower();
+        String text;
+        for (const char c : typed)
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == ' ')
+                text += c;
         if (!text.isEmpty())
             m_name += text;
 
@@ -264,10 +269,10 @@ void MainMenu::showLoad()
     m_lblLoadSave.clear();
     m_btnLoadSave.clear();
 
-    QList<Chapter::SavedGame> games = Chapter::savedGames();
+    std::vector<Chapter::SavedGame> games = Chapter::savedGames();
     std::sort(games.begin(), games.end());
-    foreach (const Chapter::SavedGame &game, games) {
-        QString name = game.name;
+    for (const Chapter::SavedGame &game : games) {
+        String name = game.name;
 
         m_btnLoadSave.emplace_back([this, name]() { changeState(Loading); m_loadingGame = name; }, &m_lblLoad);
         ui::Button &button = m_btnLoadSave.back();
@@ -275,7 +280,7 @@ void MainMenu::showLoad()
         button.setWidth(640);
         button.setAlignment(ui::Button::AlignHCenter);
         button.setFont(gfx::Font::Large);
-        button.setText(QString("%1: %2").arg(game.name, game.station));
+        button.setText(String("%1: %2").arg(game.name, game.station));
 
         y += 13;
 
@@ -285,7 +290,7 @@ void MainMenu::showLoad()
         label.setWidth(640);
         label.setAlignment(ui::Button::AlignHCenter);
         label.setFont(gfx::Font::Small);
-        label.setText(QLocale().toString(game.time, QLocale::ShortFormat));
+        label.setText(util::shortDateTime(game.time));
 
         y += 20;
     }
@@ -301,7 +306,7 @@ void MainMenu::showLoading()
 
 void MainMenu::updateDifficulty()
 {
-    m_btnMainDifficulty.setText(txt::StringTable::get(txt::String(txt::Text107 + fight::Scenario::difficulty())));
+    m_btnMainDifficulty.setText(txt::StringTable::get(txt::StringId(txt::Text107 + fight::Scenario::difficulty())));
 }
 
 

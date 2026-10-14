@@ -16,12 +16,10 @@
  ***************************************************************************/
 
 #include "hud.h"
-#include <QKeyEvent>
-#include <QMouseEvent>
-#include <QOpenGLContext>
-#include <QOpenGLFramebufferObject>
-#include <QOpenGLFunctions>
-#include <QSettings>
+#include "gfx/framebuffer.hpp"
+#include "gfx/gl.hpp"
+#include <cmath>
+#include "util/settings.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -88,9 +86,8 @@ void readSettings()
     if (g_settingsRead)
         return;
     g_settingsRead = true;
-    QSettings settings;
-    g_cockpitMode = settings.value("cockpit/mode").toString() == "3d" ? HUD::CockpitMode::Model : HUD::CockpitMode::Art;
-    g_headMotion = settings.value("cockpit/shake", 1.0f).toFloat();
+    g_cockpitMode = util::Settings::value("cockpit/mode") == "3d" ? HUD::CockpitMode::Model : HUD::CockpitMode::Art;
+    g_headMotion = util::Settings::floatValue("cockpit/shake", 1.0f);
 }
 
 // The pilot's head turned by `rotation` (boat camera frame): how points at infinity move in the
@@ -135,7 +132,7 @@ void HUD::setCockpitMode(CockpitMode mode, bool save)
     readSettings();
     g_cockpitMode = mode;
     if (save)
-        QSettings().setValue("cockpit/mode", mode == CockpitMode::Model ? "3d" : "2d");
+        util::Settings::setValue("cockpit/mode", mode == CockpitMode::Model ? "3d" : "2d");
 }
 
 
@@ -164,7 +161,7 @@ void HUD::setHeadMotion(float strength, bool save)
     readSettings();
     g_headMotion = strength;
     if (save)
-        QSettings().setValue("cockpit/shake", strength);
+        util::Settings::setValue("cockpit/shake", strength);
 }
 
 
@@ -206,9 +203,9 @@ Rect HUD::readRect(const txt::DesFile &file)
 }
 
 
-gfx::Image HUD::getImage(const QString &name)
+gfx::Image HUD::getImage(const String &name)
 {
-    return gfx::Image::load(QString("gfx:img/cockpit/%1.img").arg(name), m_colorTable);
+    return gfx::Image::load(String("gfx:img/cockpit/%1.img").arg(name), m_colorTable);
 }
 
 
@@ -220,9 +217,9 @@ void HUD::load(game::Boat *boat)
     m_children.clear();
 
     m_wide = false;
-    m_cockpit.setTexture(gfx::Image::load(QString("vfx:cockpit/%1/cockpit.r16").arg(boat->cockpit()), 640, 480, true));
+    m_cockpit.setTexture(gfx::Image::load(String("vfx:cockpit/%1/cockpit.r16").arg(boat->cockpit()), 640, 480, true));
 
-    txt::DesFile file(QString("vfx:cockpit/%1.des").arg(boat->cockpit()));
+    txt::DesFile file(String("vfx:cockpit/%1.des").arg(boat->cockpit()));
 
     file.setSection("front");
     m_center = glm::ivec2(file.value("VFX_StartX").toInt() + file.value("VFX_FlightX").toInt(), file.value("VFX_StartY").toInt() + file.value("VFX_FlightY").toInt());
@@ -231,13 +228,13 @@ void HUD::load(game::Boat *boat)
     file.setSection("camera");
     const float viewAngle = file.contains("ViewAngle") ? file.value("ViewAngle").toFloat() : 105.0f;
     m_focal = 320/std::tan(glm::radians(viewAngle)/2);
-    const QString model = Cockpit3D::find(boat->cockpit());
-    m_model = model.isEmpty() ? nullptr : Cockpit3D::get(model);
+    const std::string model = Cockpit3D::find(boat->cockpit());
+    m_model = model.empty() ? nullptr : Cockpit3D::get(model);
     if (m_model)
         m_model->setCamera(m_focal, m_center);
     else if (cockpitMode() == CockpitMode::Model)
-        std::cerr << "No 3D cockpit cockpit_" << boat->cockpit().toUtf8().constData() << ".glb in "
-                  << Cockpit3D::directory().toUtf8().constData() << ", showing the 2D cockpit" << std::endl;
+        std::cerr << "No 3D cockpit cockpit_" << boat->cockpit() << ".glb in "
+                  << Cockpit3D::directory() << ", showing the 2D cockpit" << std::endl;
     m_rectGL = Rect();
 
     m_integerScale = true;
@@ -263,7 +260,7 @@ void HUD::load(game::Boat *boat)
     m_slaveMonitors.clear();
     for (int i = 0; i < 2; i++)
     {
-        file.setSection(QString("slavemonitor%1").arg(i));
+        file.setSection(String("slavemonitor%1").arg(i));
         if (!file.contains("X1"))
             continue;
         SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Weapon : SlaveMonitor::Page::Armor);
@@ -457,22 +454,23 @@ void HUD::leave(util::event<> &event)
 }
 
 
-void HUD::setRect(const QRect &rect)
+void HUD::setRect(const Rect &rect)
 {
-    if (m_rectGL.width == rect.width() && m_rectGL.height == rect.height())
+    if (m_rectGL.width == rect.width && m_rectGL.height == rect.height)
         return;
 
-    m_rectGL = Rect(rect.x(), rect.y(), rect.width(), rect.height());
+    m_rectGL = rect;
     Renderer::setRect(rect);
 
+    const RectD ortho = rectOrtho();
     if (m_wide)
-        m_rectHUD = RectF(rect.x(), rect.y() - rectOrtho().y()/rectOrtho().height()*rect.height(), rect.width(), rect.height()*480/rectOrtho().height());
+        m_rectHUD = RectF(rect.x, rect.y - ortho.y/ortho.height*rect.height, rect.width, rect.height*480/ortho.height);
     else
-        m_rectHUD = RectF(rect.x() - rectOrtho().x()/rectOrtho().width()*rect.width(), rect.y() - rectOrtho().y()/rectOrtho().height()*rect.height(), rect.width()*640/rectOrtho().width(), rect.height()*480/rectOrtho().height());
+        m_rectHUD = RectF(rect.x - ortho.x/ortho.width*rect.width, rect.y - ortho.y/ortho.height*rect.height, rect.width*640/ortho.width, rect.height*480/ortho.height);
 
     if (m_scenario)
     {
-        Renderer::setRect(QRect(glm::round(m_rectHUD.x), glm::round(m_rectHUD.y), glm::round(m_rectHUD.width), glm::round(m_rectHUD.height)));
+        Renderer::setRect(Rect(glm::round(m_rectHUD.x), glm::round(m_rectHUD.y), glm::round(m_rectHUD.width), glm::round(m_rectHUD.height)));
         m_centerNDC = Vector2D(m_projectionMatrix * Vector4D(m_center, 0, 1));
         // the 3D cockpit needs the world in the perspective of the cockpit art
         m_scenario->setRect(m_rectHUD, m_centerNDC, showsModel() ? glm::degrees(2*std::atan(240/m_focal)) : 60.0f);
@@ -480,7 +478,7 @@ void HUD::setRect(const QRect &rect)
 
     int w = 640;
     int h = 480;
-    while (w + 640 <= rect.width() && h + 480 <= rect.height())
+    while (w + 640 <= rect.width && h + 480 <= rect.height)
     {
         w += 640;
         h += 480;
@@ -529,11 +527,11 @@ void HUD::draw()
     }
 
     // the GL viewport is in device pixels, the rects in logical pixels
-    const qreal pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
+    const double pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
     if (showsModel() && drawModel(pixelRatio))
         return;
-    if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
-        glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
+    if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
+        glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
 
     m_scenario->draw();
 
@@ -553,7 +551,7 @@ void HUD::draw()
     m_menu->doDraw();
     m_integerScale = false;
 
-    if (rect().x() != m_rectGL.x || rect().y() != m_rectGL.y)
+    if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
 }
 
@@ -561,26 +559,24 @@ void HUD::draw()
 // The 3D cockpit: the instruments go into a texture that is projected onto the model, the world
 // and the model are drawn in the whole window as seen from the pilot's head, and the HUD in the
 // window and the menu are drawn on top. False if the model can't be shown.
-bool HUD::drawModel(qreal pixelRatio)
+bool HUD::drawModel(double pixelRatio)
 {
-    QOpenGLFunctions *gl = QOpenGLContext::currentContext() ? QOpenGLContext::currentContext()->functions() : nullptr;
-    if (!gl || !QOpenGLFramebufferObject::hasOpenGLFramebufferObjects())
+    // the instruments (everything in the art's pixel scale) with premultiplied alpha
+    const int width = int(std::lround(m_rectHUD.width*pixelRatio)), height = int(std::lround(m_rectHUD.height*pixelRatio));
+    if (!m_instruments || m_instruments->width() != width || m_instruments->height() != height)
+        m_instruments.reset(new gfx::Framebuffer(width, height));
+    if (!m_instruments->isValid())
     {
         m_model.reset();
         m_rectGL = Rect();
         return false;
     }
-
-    // the instruments (everything in the art's pixel scale) with premultiplied alpha
-    const QSize size(qRound(m_rectHUD.width*pixelRatio), qRound(m_rectHUD.height*pixelRatio));
-    if (!m_instruments || m_instruments->size() != size)
-        m_instruments.reset(new QOpenGLFramebufferObject(size, QOpenGLFramebufferObject::Depth));
     m_instruments->bind();
-    glViewport(0, 0, size.width(), size.height());
+    glViewport(0, 0, width, height);
     setupGL(false);
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gl->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     m_integerScale = true;
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_integerScaleWidget.doDraw();
@@ -610,7 +606,7 @@ bool HUD::drawModel(qreal pixelRatio)
     m_model->drawDecal(modelProjection, headInverse, m_instruments->texture());
 
     // the HUD in the window is collimated: it turns with the head but doesn't shift; the menu stays put
-    glViewport(rect().x()*pixelRatio, rect().y()*pixelRatio, rect().width()*pixelRatio, rect().height()*pixelRatio);
+    glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
     setupGL(false);
     gfx::Pipeline::setProjection(viewTurn(m_scenario->projectionMatrix(), glm::mat3(head))*m_noScaleProjectionMatrix);
     m_noScaleWidget.doDraw();
@@ -625,14 +621,14 @@ bool HUD::drawModel(qreal pixelRatio)
 }
 
 
-void HUD::keyPressEvent(QKeyEvent *e)
+void HUD::keyPressEvent(input::KeyEvent *e)
 {
     if (!m_scenario)
         return;
 
     // the turret menu only takes digits, Esc and O; everything else still steers the boat
     const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
-    const bool menuKey = (e->key() >= Qt::Key_0 && e->key() <= Qt::Key_9) || e->key() == Qt::Key_Escape || e->key() == Qt::Key_O;
+    const bool menuKey = (e->key() >= input::Key_0 && e->key() <= input::Key_9) || e->key() == input::Key_Escape || e->key() == input::Key_O;
     if (m_menu->page() != MissionMenu::Page::None && (!turretMenu || menuKey))
     {
         switch (m_menu->keyPressEvent(e->key()))
@@ -662,51 +658,51 @@ void HUD::keyPressEvent(QKeyEvent *e)
         return;
     }
 
-    if (e->key() == Qt::Key_Escape)
+    if (e->key() == input::Key_Escape)
     {
         m_menu->open(MissionMenu::Page::Main);
         return;
     }
-    if (e->key() == Qt::Key_O)
+    if (e->key() == input::Key_O)
     {
         m_menu->setTurrets((m_scenario->player()->turret(0) ? 1 : 0) + (m_scenario->player()->turret(1) ? 1 : 0));
         m_menu->open(MissionMenu::Page::Turrets);
         return;
     }
     // Alt+V switches between the 2D and the 3D cockpit
-    if (e->key() == Qt::Key_V && (e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+    if (e->key() == input::Key_V && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
     {
         setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
         if (cockpitMode() == CockpitMode::Model && !showsModel())
-            std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit().toUtf8().constData() << " in "
-                      << Cockpit3D::directory().toUtf8().constData() << std::endl;
+            std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit() << " in "
+                      << Cockpit3D::directory() << std::endl;
         m_menu->notice({ showsModel() ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
         // the view angle changes with it
         m_rectGL = Rect();
         return;
     }
     // Ctrl+D, Cmd+D on macOS
-    if (e->key() == Qt::Key_D && (e->modifiers() & Qt::ControlModifier))
+    if (e->key() == input::Key_D && (e->modifiers() & input::ControlModifier))
     {
         setDebugOverlay(!m_debugOverlayVisible);
         return;
     }
     // debug: Ctrl+K (Cmd+K on macOS) skips the mission as if it had been accomplished
-    if (e->key() == Qt::Key_K && (e->modifiers() & Qt::ControlModifier))
+    if (e->key() == input::Key_K && (e->modifiers() & input::ControlModifier))
     {
         leave(m_eventSuccess);
         return;
     }
-    if (e->key() == Qt::Key_P)
+    if (e->key() == input::Key_P)
     {
         m_paused = !m_paused;
         return;
     }
     if (m_paused || m_scenario->playerDestroyed())
         return;
-    if (e->key() == Qt::Key_N)
+    if (e->key() == input::Key_N)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+        if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_navPoint >= 0)
                 m_scenario->target().lockNavPoint(m_scenario->navPoints()[m_navPoint]);
@@ -720,9 +716,9 @@ void HUD::keyPressEvent(QKeyEvent *e)
                 m_navPoint = -1;
         }
     }
-    if (e->key() == Qt::Key_R)
+    if (e->key() == input::Key_R)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+        if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             int scale = m_sonar1->scale();
             if (scale == 90)
@@ -735,11 +731,11 @@ void HUD::keyPressEvent(QKeyEvent *e)
         else
             m_scenario->sonar().toggle();
     }
-    if (e->key() == Qt::Key_L)
+    if (e->key() == input::Key_L)
         m_scenario->target().lockReticle();
-    if (e->key() == Qt::Key_U)
+    if (e->key() == input::Key_U)
         m_scenario->target().lockNearestEnemy();
-    if (e->key() == Qt::Key_I && !m_slaveMonitors.empty())
+    if (e->key() == input::Key_I && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.back();
         switch (monitor->page())
@@ -752,15 +748,15 @@ void HUD::keyPressEvent(QKeyEvent *e)
         }
     }
     // F1-F4: the gun, the magazine or a turret on the weapon page
-    if (e->key() >= Qt::Key_F1 && e->key() <= Qt::Key_F4 && !(e->modifiers() & Qt::AltModifier) && !m_slaveMonitors.empty())
+    if (e->key() >= input::Key_F1 && e->key() <= input::Key_F4 && !(e->modifiers() & input::AltModifier) && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.front();
         monitor->setPage(SlaveMonitor::Page::Weapon);
-        monitor->showWeapon(SlaveMonitor::Weapon(e->key() - Qt::Key_F1));
+        monitor->showWeapon(SlaveMonitor::Weapon(e->key() - input::Key_F1));
     }
-    if (e->key() == Qt::Key_A)
+    if (e->key() == input::Key_A)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+        if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_scenario->conditionManager().autopilot())
             {
@@ -790,34 +786,34 @@ Matrix HUD::lookTransform() const
 }
 
 
-void HUD::mousePressEvent(QMouseEvent *e)
+void HUD::mousePressEvent(input::MouseEvent *e)
 {
     if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
         return;
     m_looking = true;
-    m_lookStart = e->pos();
+    m_lookStart = e->position();
     m_lookFrom = m_look;
 }
 
 
-void HUD::mouseMoveEvent(QMouseEvent *e)
+void HUD::mouseMoveEvent(input::MouseEvent *e)
 {
     if (!m_looking)
         return;
     // drag right to look right, up to look up
-    const QPoint drag = e->pos() - m_lookStart;
-    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag.x(), drag.y()), LookMin, LookMax);
+    const PointD drag = e->position() - m_lookStart;
+    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag), LookMin, LookMax);
 }
 
 
-void HUD::mouseReleaseEvent(QMouseEvent *e)
+void HUD::mouseReleaseEvent(input::MouseEvent *e)
 {
-    if (e->buttons() == Qt::NoButton)
+    if (e->buttons() == input::NoButton)
         m_looking = false;
 }
 
 
-void HUD::keyReleaseEvent(QKeyEvent *e)
+void HUD::keyReleaseEvent(input::KeyEvent *e)
 {
     if (!m_scenario)
         return;

@@ -19,7 +19,7 @@
 #define GAME_STATION_H
 
 
-#include <QString>
+#include "util/string.hpp"
 #include <map>
 
 
@@ -30,21 +30,21 @@ class Station
 {
 public:
     Station();
-    Station(int index, const QString &name);
+    Station(int index, const String &name);
 
 public:
     void enable();
     void disable();
     bool isEnabled() const { return m_enabled; }
     int index() const { return m_index; }
-    const QString& shortName() const { return m_shortName; }
-    const QString& name() const { return m_name; }
+    const String& shortName() const { return m_shortName; }
+    const String& name() const { return m_name; }
     const std::map<int, float>& depotPrices() const { return m_depotPrices; }
 
 private:
     int m_index;
-    QString m_shortName;
-    QString m_name;
+    String m_shortName;
+    String m_name;
     bool m_enabled;
     std::map<int, float> m_depotPrices;
 };

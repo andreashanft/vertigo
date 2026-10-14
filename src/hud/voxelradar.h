@@ -19,10 +19,10 @@
 #define HUD_VOXELRADAR_H
 
 
+#include "gfx/image.h"
 #include "gfx/texture.h"
 #include "util/geometry2d.h"
 #include "util/geometry3d.h"
-#include <QImage>
 #include <vector>
 
 
@@ -61,7 +61,7 @@ public:
 
 private:
     void render(fight::Scenario *scenario);
-    QRgb shade(int fog, int light) const;
+    gfx::Rgb shade(int fog, int light) const;
 
 private:
     bool m_valid = false;
@@ -70,10 +70,10 @@ private:
     float m_extent = 20;        // cells from the boat to each side of the patch
     float m_lowest = 1, m_highest = 0;  // the heights the shades span, following the patch
     float m_time = 0;
-    QImage m_fine;                      // rendered at a higher resolution
+    gfx::Image m_fine;                      // rendered at a higher resolution
     std::vector<float> m_depth;         // per pixel of m_fine
-    std::vector<QRgb> m_table;  // FogRows x Entries, fog row 0 is the farthest
-    QImage m_image;
+    std::vector<gfx::Rgb> m_table;  // FogRows x Entries, fog row 0 is the farthest
+    gfx::Image m_image;
     gfx::Texture m_texture;
 };
 

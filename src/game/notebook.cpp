@@ -45,9 +45,8 @@ Notebook::Notebook(std::function<void()> funcClose) :
     m_fontYellow.load("gfx:fnt/nfont1b.fnt", colorTable, true);
     m_background.fromImage(gfx::Image::load("gfx:img/desktop/notebook/noteback.img", colorTable));
 
-    QImage image(640, 480, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgba(0, 0, 0, 128));
+    gfx::Image image(640, 480, gfx::Image::Indexed8);
+    image.setColorTable(gfx::ColorTable{ gfx::rgba(0, 0, 0, 128) });
     setTexture(image);
 
     m_lblBackground.setPosition(48, 48);
@@ -101,7 +100,7 @@ Notebook::Notebook(std::function<void()> funcClose) :
 
     {
         m_lblMap.setPosition(164, 75);
-        m_lblMap.setTexture(gfx::Image::load(QString("gfx:pic/notebook/%1.r16").arg(Chapter::get()->area()->map()), 304, 284));
+        m_lblMap.setTexture(gfx::Image::load(String("gfx:pic/notebook/%1.r16").arg(Chapter::get()->area()->map()), 304, 284));
     }
 
     {
@@ -131,19 +130,19 @@ Notebook::Notebook(std::function<void()> funcClose) :
     }
 }
 
-void Notebook::createLabel(ui::Widget *parent, txt::String text, float posY)
+void Notebook::createLabel(ui::Widget *parent, txt::StringId text, float posY)
 {
     m_labels.emplace_back(parent);
     setupLabel(m_labels.back(), text, posY);
 }
 
-void Notebook::createButton(std::function<void()> funcClick, ui::Widget *parent, txt::String text, float posY)
+void Notebook::createButton(std::function<void()> funcClick, ui::Widget *parent, txt::StringId text, float posY)
 {
     m_buttons.emplace_back(funcClick, parent);
     setupButton(m_buttons.back(), text, posY);
 }
 
-void Notebook::setupLabel(ui::Label &label, txt::String text, float posY)
+void Notebook::setupLabel(ui::Label &label, txt::StringId text, float posY)
 {
     label.setFont(m_fontYellow);
     label.setText(txt::StringTable::get(text));
@@ -152,7 +151,7 @@ void Notebook::setupLabel(ui::Label &label, txt::String text, float posY)
     label.setAlignment(ui::Label::AlignHCenter);
 }
 
-void Notebook::setupButton(ui::Button &button, txt::String text, float posY)
+void Notebook::setupButton(ui::Button &button, txt::StringId text, float posY)
 {
     setupLabel(button, text, posY);
     button.setFont(m_fontGreen);
@@ -163,8 +162,8 @@ void Notebook::showMissions()
     m_lblMain.hide();
     m_lblMissions.show();
 
-    QStringList tasks;
-    foreach (const Task &task, Chapter::get()->tasks()) {
+    StringList tasks;
+    for (const Task &task : Chapter::get()->tasks()) {
         switch (task.type()) {
         case Task::Tip:
             tasks.append(txt::StringTable::get(txt::Notebook_Tip));
@@ -222,11 +221,13 @@ void Notebook::showMoviePlayer()
     m_lblMoviePlayer.show();
 
     m_movieButtons.clear();
-    const QSet<int>& movies = Chapter::get()->playedMovies();
+    // in the order of their numbers (they were in the order of a hash before, which changed from
+    // run to run)
+    const std::set<int>& movies = Chapter::get()->playedMovies();
     int y = 40;
-    foreach (int movie, movies) {
+    for (int movie : movies) {
         m_movieButtons.emplace_back([this, movie]() { Chapter::get()->playMovie(movie); }, &m_lblMoviePlayer);
-        setupButton(m_movieButtons.back(), txt::String(txt::FirstMovie + movie), y);
+        setupButton(m_movieButtons.back(), txt::StringId(txt::FirstMovie + movie), y);
         y += 10;
     }
     m_btnMoviePlayerHide.setPosition(0, y + 10);
@@ -252,30 +253,30 @@ void Notebook::hideMap()
 
 void Notebook::updateMovies()
 {
-    txt::String autopilot = txt::Notebook_Movies_Autopilot_No;
+    txt::StringId autopilot = txt::Notebook_Movies_Autopilot_No;
     if (Chapter::get()->movieAutopilot())
         autopilot = txt::Notebook_Movies_Autopilot_Yes;
     m_btnMoviesAutopilot.setText(txt::StringTable::get(autopilot));
 
-    txt::String approach = txt::Notebook_Movies_Approach_No;
+    txt::StringId approach = txt::Notebook_Movies_Approach_No;
     if (Chapter::get()->movieApproach())
         approach = txt::Notebook_Movies_Approach_Yes;
     m_btnMoviesApproach.setText(txt::StringTable::get(approach));
 
-    txt::String harbour = txt::Notebook_Movies_Harbour_No;
+    txt::StringId harbour = txt::Notebook_Movies_Harbour_No;
     if (Chapter::get()->movieHarbour())
         harbour = txt::Notebook_Movies_Harbour_Yes;
     m_btnMoviesHarbour.setText(txt::StringTable::get(harbour));
 }
 
-bool Notebook::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
+bool Notebook::mousePressEvent(const Point &pos, input::MouseButton button)
 {
     if (m_lblMap.isVisible()) {
         hideMap();
         return true;
     }
 
-    if (button == Qt::RightButton) {
+    if (button == input::RightButton) {
         if (m_lblMissions.isVisible()) {
             hideMissions();
             return true;

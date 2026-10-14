@@ -19,9 +19,13 @@
 #define GAME_CHAPTER_H
 
 
+#include <cassert>
 #include <list>
+#include <map>
 #include <memory>
 #include <queue>
+#include <set>
+#include <vector>
 #include "area.h"
 #include "briefing.h"
 #include "desktop.h"
@@ -31,7 +35,8 @@
 #include "task.h"
 #include "boat.h"
 
-#include <QDateTime>
+#include "util/datetime.hpp"
+#include "util/string.hpp"
 
 
 namespace fight { class Scenario; }
@@ -51,13 +56,13 @@ public:
             return time > rho.time;
         }
 
-        QString name;
-        QString station;
-        QDateTime time;
+        String name;
+        String station;
+        util::DateTime time;   // local
     };
 
 public:
-    Chapter(const QString &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame);
+    Chapter(const String &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame);
     ~Chapter();
 
 public:
@@ -68,34 +73,34 @@ public:
     void addCredit(int credit);
 
     void save() const;
-    void load(const QString &name);
+    void load(const String &name);
     void loadChapter(int chapter);
     void setStation(int station, bool load = false);
     Area* area() const { return m_area; }
-    const QMap<int, Station>& stations() const { return m_stations; }
+    const std::map<int, Station>& stations() const { return m_stations; }
     int currentStation() const { return m_currentStation; }
     Dialog* dialog(int dialogId) const;
-    QList<Dialog*> dialogs(int room);
-    QList<Dialog*> dialogsEnCom(bool room);
-    QList<Dialog*> dialogsDirect();
-    const QSet<int>& messages() const { return m_messages; }
+    std::vector<Dialog*> dialogs(int room);
+    std::vector<Dialog*> dialogsEnCom(bool room);
+    std::vector<Dialog*> dialogsDirect();
+    const std::set<int>& messages() const { return m_messages; }
     int numSmallTalks() const { return m_numSmallTalks; }
     bool movieAutopilot() const { return m_movieAutopilot; }
     bool movieApproach() const { return m_movieApproach; }
     bool movieHarbour() const { return m_movieHarbour; }
-    const QSet<int>& playedMovies() const { return m_playedMovies; }
+    const std::set<int>& playedMovies() const { return m_playedMovies; }
     void playMovie(int movie);
-    const QList<Mission*>& missions() const { return m_missions; }
-    const QStringList& successfulMissions() const { return m_successfulMissions; }
-    void startMission(const QString &name);
+    const std::vector<Mission*>& missions() const { return m_missions; }
+    const StringList& successfulMissions() const { return m_successfulMissions; }
+    void startMission(const String &name);
     const Mission* mission() const { return m_mission; }
-    QList<Task> tasks();
+    std::vector<Task> tasks();
     Boat* boat() const { return m_boat; }
     int credits() const { return m_credits; }
     hud::HUD* hud() const { return m_HUD.get(); }
 
 private:
-    void load(const QString &filename, bool load);
+    void load(const std::string &filename, bool load);
     void playApproach(bool autopilot);
     void playMovies();
     void startMission();
@@ -111,8 +116,8 @@ private:
     void removeDialog(int dialogId);
     void enableStation(int station);
     void disableStation(int station);
-    void addMission(const QString &mission, int station);
-    void replaceApproachMovie(int station, const QString &movie);
+    void addMission(const String &mission, int station);
+    void replaceApproachMovie(int station, const String &movie);
     void upgradeBoat(int type);
     void gameOver();
     void startScenario();
@@ -122,8 +127,8 @@ private:
     void loadLastSave();
 
 public:
-    static Chapter* get() { Q_ASSERT(m_singleton); return m_singleton; }
-    static QList<SavedGame> savedGames();
+    static Chapter* get() { assert(m_singleton); return m_singleton; }
+    static std::vector<SavedGame> savedGames();
 
 private:
     int m_code;
@@ -132,17 +137,17 @@ private:
     Briefing *m_briefing;
     Movie *m_movie;
     std::queue<Movie, std::list<Movie>> m_movies;
-    QMap<int, QString> m_approachMovieReplacement;
-    QMap<int, Station> m_stations;
+    std::map<int, String> m_approachMovieReplacement;
+    std::map<int, Station> m_stations;
     int m_currentStation;
-    QString m_currentStationName;
-    QSet<int> m_playedMovies;
-    QMap<int, Dialog*> m_pendingDialogues;
+    String m_currentStationName;
+    std::set<int> m_playedMovies;
+    std::map<int, Dialog*> m_pendingDialogues;
     static Chapter *m_singleton;
-    QSet<int> m_messages;
-    QList<int> m_runningTasks;
-    QList<Mission*> m_missions;
-    QStringList m_successfulMissions;
+    std::set<int> m_messages;
+    std::vector<int> m_runningTasks;
+    std::vector<Mission*> m_missions;
+    StringList m_successfulMissions;
     int m_credits;
     int m_numSmallTalks;
     bool m_movieAutopilot;
@@ -155,7 +160,7 @@ private:
     bool m_save;
     Boat *m_boat;
     bool m_end;
-    QString m_name;
+    String m_name;
     std::function<void(Renderer*)> m_funcSetRenderer;
     std::function<void()> m_funcEndGame;
 };

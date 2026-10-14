@@ -24,7 +24,7 @@
 #include "gfx/texture.h"
 #include "sfx/sound.h"
 #include "ui/label.h"
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 
 
 namespace game {
@@ -45,9 +45,9 @@ public:
 private:
     void activate();
     void deactivate();
-    void setRect(const QRect &rect);
+    void setRect(const Rect &rect);
     void draw();
-    void keyPressEvent(QKeyEvent *);
+    void keyPressEvent(input::KeyEvent *);
 
 private:
     gfx::Font m_font;
@@ -59,7 +59,7 @@ private:
     ui::Label *m_lblArrow;
     ui::Label *m_lblPressKey;
 
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
     State m_state;
     bool m_toggleState;
     int m_nextLine;

@@ -30,7 +30,7 @@ public:
     Departure(std::function<void()> &&funcClose);
 
 private:
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
 
 private:
     std::function<void()> m_funcClose;

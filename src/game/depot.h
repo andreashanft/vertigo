@@ -26,10 +26,11 @@
 #include "ui/list.h"
 #include "ui/itemlist.h"
 
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 #include <map>
 #include <deque>
 #include <list>
+#include "util/string.hpp"
 
 namespace game {
 
@@ -44,14 +45,14 @@ private:
     {
     public:
         int model;
-        QString mounting;
+        String mounting;
         int state;
         int cost;
         ui::Label lblState;
         ui::Label lblCost;
         ui::Button btnRepair;
         
-        RepairItem(int model, const QString &mounting, ui::Label *parent) : model(model), mounting(mounting), lblState(parent), lblCost(parent), btnRepair(parent) { }
+        RepairItem(int model, const String &mounting, ui::Label *parent) : model(model), mounting(mounting), lblState(parent), lblCost(parent), btnRepair(parent) { }
     };
 
 public:
@@ -74,7 +75,7 @@ private:
 
 protected:
     void draw();
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
 
 private:
     ui::Label m_backgroundLabel;
@@ -122,7 +123,7 @@ private:
     int m_selectedList;
     int m_selectedItem;
 
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
     State m_state;
     LoadingState m_loadingState;
     int m_loadingItem;

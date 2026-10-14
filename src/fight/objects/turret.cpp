@@ -32,7 +32,7 @@ Turret::Turret(Scenario *scenario, txt::DesFile &file) :
     m_body = scenario->moduleManager().get(file.value("body").toString());
     m_box = m_body->box();
 
-    if (file.contains("arml") && file.value("arml") != "no")
+    if (file.contains("arml") && file.value("arml").toString() != "no")
     {
         m_armLeft = scenario->moduleManager().get(file.value("arml").toString());
         m_armLeftPosition.x = file.value("ArmLOffsetX").toFloat();
@@ -41,7 +41,7 @@ Turret::Turret(Scenario *scenario, txt::DesFile &file) :
         m_box.add(m_armLeft->box().translate(m_armLeftPosition));
     }
 
-    if (file.contains("armr") && file.value("armr") != "no")
+    if (file.contains("armr") && file.value("armr").toString() != "no")
     {
         m_armRight = scenario->moduleManager().get(file.value("armr").toString());
         m_armRightPosition.x = file.value("ArmROffsetX").toFloat();

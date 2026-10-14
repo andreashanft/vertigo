@@ -27,7 +27,7 @@
 #include "util/datapath.h"
 #include "gfx/pipeline.h"
 
-#include <QFile>
+#include "util/path.hpp"
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
@@ -68,18 +68,17 @@ VoxelRadar::VoxelRadar(txt::DesFile &file)
     m_elevation = glm::radians(file.value("Projection", 30).toFloat());
     m_extent = file.value("WorldMaxY", 20).toFloat();
 
-    QFile table(util::DataPath::resolve(QString("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString())));
-    const QByteArray data = table.open(QIODevice::ReadOnly) ? table.readAll() : QByteArray();
-    if (m_rect.width <= 0 || m_rect.height <= 0 || data.size() < TableOffset + FogRows*Entries*2)
+    const std::vector<char> data = util::readFile(util::DataPath::resolve(String("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString())));
+    if (m_rect.width <= 0 || m_rect.height <= 0 || int(data.size()) < TableOffset + FogRows*Entries*2)
         return;
     m_table.resize(FogRows*Entries);
-    const uchar *colors = reinterpret_cast<const uchar *>(data.constData()) + TableOffset;
+    const std::uint8_t *colors = reinterpret_cast<const std::uint8_t *>(data.data()) + TableOffset;
     for (int i = 0; i < FogRows*Entries; i++)
     {
         const int c = colors[2*i] | (colors[2*i + 1] << 8);
-        m_table[i] = qRgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31);
+        m_table[i] = gfx::rgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31);
     }
-    m_image = QImage(m_rect.width, m_rect.height, QImage::Format_ARGB32);
+    m_image = gfx::Image(m_rect.width, m_rect.height, gfx::Image::ARGB32);
     m_valid = true;
 }
 
@@ -89,12 +88,12 @@ void VoxelRadar::limitHeight(int height)
     if (m_valid && height > 0 && height < m_rect.height)
     {
         m_rect.height = height;
-        m_image = QImage(m_rect.width, m_rect.height, QImage::Format_ARGB32);
+        m_image = gfx::Image(m_rect.width, m_rect.height, gfx::Image::ARGB32);
     }
 }
 
 
-QRgb VoxelRadar::shade(int fog, int light) const
+gfx::Rgb VoxelRadar::shade(int fog, int light) const
 {
     return m_table[glm::clamp(fog, 0, FogRows - 1)*Entries + light];
 }
@@ -144,7 +143,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
     const Vector3D viewRight(right, 0);
     const Vector3D viewUp = glm::cross(viewRight, viewForward);
     if (m_fine.width() != m_image.width()*SuperSample || m_fine.height() != m_image.height()*SuperSample)
-        m_fine = QImage(m_image.width()*SuperSample, m_image.height()*SuperSample, QImage::Format_ARGB32);
+        m_fine = gfx::Image(m_image.width()*SuperSample, m_image.height()*SuperSample, gfx::Image::ARGB32);
     const int width = m_fine.width(), height = m_fine.height();
 
     // fitted so that the patch, flat at the boat's ground level, fills the view and sits on its
@@ -175,27 +174,27 @@ void VoxelRadar::render(fight::Scenario *scenario)
         return Vector3D(centre.x + focal*v.x, centre.y - focal*v.y, v.z);
     };
 
-    m_fine.fill(Qt::transparent);
+    m_fine.fill(0);
     m_depth.assign(width*height, 1e30f);
-    auto blend = [](QRgb under, QRgb over) {
-        const int a = qAlpha(over);
-        if (a == 255 || qAlpha(under) == 0)
+    auto blend = [](gfx::Rgb under, gfx::Rgb over) {
+        const int a = gfx::alpha(over);
+        if (a == 255 || gfx::alpha(under) == 0)
             return over;
         auto mix = [a](int u, int o) { return (o*a + u*(255 - a))/255; };
-        return qRgba(mix(qRed(under), qRed(over)), mix(qGreen(under), qGreen(over)), mix(qBlue(under), qBlue(over)), std::max(qAlpha(under), a));
+        return gfx::rgba(mix(gfx::red(under), gfx::red(over)), mix(gfx::green(under), gfx::green(over)), mix(gfx::blue(under), gfx::blue(over)), std::max(gfx::alpha(under), a));
     };
     // translucent triangles are blended over what is there and leave the depth as it is
-    auto fillTriangle = [&](const Vector3D &a, const Vector3D &b, const Vector3D &c, QRgb colour) {
+    auto fillTriangle = [&](const Vector3D &a, const Vector3D &b, const Vector3D &c, gfx::Rgb colour) {
         auto edge = [](const Vector3D &p, const Vector3D &q, float x, float y) { return (q.x - p.x)*(y - p.y) - (q.y - p.y)*(x - p.x); };
         const float area = edge(a, b, c.x, c.y);
         if (std::abs(area) < 1e-6f)
             return;
         const int x0 = std::max(0, int(std::floor(std::min({ a.x, b.x, c.x })))), x1 = std::min(width - 1, int(std::ceil(std::max({ a.x, b.x, c.x }))));
         const int y0 = std::max(0, int(std::floor(std::min({ a.y, b.y, c.y })))), y1 = std::min(height - 1, int(std::ceil(std::max({ a.y, b.y, c.y }))));
-        const bool opaque = qAlpha(colour) == 255;
+        const bool opaque = gfx::alpha(colour) == 255;
         for (int y = y0; y <= y1; y++)
         {
-            QRgb *line = reinterpret_cast<QRgb *>(m_fine.scanLine(y));
+            gfx::Rgb *line = reinterpret_cast<gfx::Rgb *>(m_fine.scanLine(y));
             for (int x = x0; x <= x1; x++)
             {
                 const float px = x + 0.5f, py = y + 0.5f;
@@ -216,7 +215,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
             }
         }
     };
-    auto fillPolygon = [&](const std::vector<Vector3D> &corners, QRgb colour) {
+    auto fillPolygon = [&](const std::vector<Vector3D> &corners, gfx::Rgb colour) {
         std::vector<Vector3D> screen;
         for (const Vector3D &corner : corners)
             screen.push_back(project(corner));
@@ -225,9 +224,9 @@ void VoxelRadar::render(fight::Scenario *scenario)
     };
     // lines from the ground up to positions on the patch; drawn at the end, at the radar's own
     // resolution so they stay crisp, and hidden where something nearer is
-    struct Line { Vector3D foot, top; QRgb colour; };
+    struct Line { Vector3D foot, top; gfx::Rgb colour; };
     std::vector<Line> lines;
-    auto drawLine = [&](const Vector3D &position, QRgb colour) {
+    auto drawLine = [&](const Vector3D &position, gfx::Rgb colour) {
         if (inPatch(position))
             lines.push_back({ project(Vector3D(position.x, position.y, ground(position.x, position.y))), project(position), colour });
     };
@@ -295,7 +294,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
     }
 
     // a block on the patch (a box in the patch's frame, cut off at its edges)
-    auto fillBlock = [&](const Vector3D &a, const Vector3D &b, const QColor &colour) {
+    auto fillBlock = [&](const Vector3D &a, const Vector3D &b, gfx::Rgb colour) {
         Vector2D lo(1e9f), hi(-1e9f);
         for (const Vector3D &corner : { a, Vector3D(a.x, b.y, 0), Vector3D(b.x, a.y, 0), b })
         {
@@ -307,15 +306,15 @@ void VoxelRadar::render(fight::Scenario *scenario)
         if (lo.x >= hi.x || lo.y >= hi.y)
             return;
         const float z0 = a.z, z1 = b.z;
-        fillPolygon({ fromPatch(lo.x, lo.y, z1), fromPatch(hi.x, lo.y, z1), fromPatch(hi.x, hi.y, z1), fromPatch(lo.x, hi.y, z1) }, colour.lighter(130).rgba());
-        fillPolygon({ fromPatch(lo.x, lo.y, z0), fromPatch(hi.x, lo.y, z0), fromPatch(hi.x, lo.y, z1), fromPatch(lo.x, lo.y, z1) }, colour.rgba());
-        fillPolygon({ fromPatch(lo.x, hi.y, z0), fromPatch(hi.x, hi.y, z0), fromPatch(hi.x, hi.y, z1), fromPatch(lo.x, hi.y, z1) }, colour.rgba());
-        fillPolygon({ fromPatch(lo.x, lo.y, z0), fromPatch(lo.x, hi.y, z0), fromPatch(lo.x, hi.y, z1), fromPatch(lo.x, lo.y, z1) }, colour.darker(130).rgba());
-        fillPolygon({ fromPatch(hi.x, lo.y, z0), fromPatch(hi.x, hi.y, z0), fromPatch(hi.x, hi.y, z1), fromPatch(hi.x, lo.y, z1) }, colour.darker(130).rgba());
+        fillPolygon({ fromPatch(lo.x, lo.y, z1), fromPatch(hi.x, lo.y, z1), fromPatch(hi.x, hi.y, z1), fromPatch(lo.x, hi.y, z1) }, gfx::lighter(colour, 130));
+        fillPolygon({ fromPatch(lo.x, lo.y, z0), fromPatch(hi.x, lo.y, z0), fromPatch(hi.x, lo.y, z1), fromPatch(lo.x, lo.y, z1) }, colour);
+        fillPolygon({ fromPatch(lo.x, hi.y, z0), fromPatch(hi.x, hi.y, z0), fromPatch(hi.x, hi.y, z1), fromPatch(lo.x, hi.y, z1) }, colour);
+        fillPolygon({ fromPatch(lo.x, lo.y, z0), fromPatch(lo.x, hi.y, z0), fromPatch(lo.x, hi.y, z1), fromPatch(lo.x, lo.y, z1) }, gfx::darker(colour, 130));
+        fillPolygon({ fromPatch(hi.x, lo.y, z0), fromPatch(hi.x, hi.y, z0), fromPatch(hi.x, hi.y, z1), fromPatch(hi.x, lo.y, z1) }, gfx::darker(colour, 130));
     };
 
     // buildings as orange blocks (opaque, so before anything translucent)
-    const QColor orange(shade(FogRows - 1, Orange));
+    const gfx::Rgb orange = shade(FogRows - 1, Orange);
     for (const auto &object : *scenario)
         if (object->isEnabled() && dynamic_cast<const fight::Building *>(object.get()))
             fillBlock(object->box().minPoint(), object->box().maxPoint(), orange);
@@ -326,43 +325,43 @@ void VoxelRadar::render(fight::Scenario *scenario)
     {
         const Vector2D a(current.x*scale.x, current.y*scale.y), b = a + Vector2D(2*scale.x, 2*scale.y);
         const float bottom = ground(0.5f*(a.x + b.x), 0.5f*(a.y + b.y));
-        fillBlock(Vector3D(a, bottom), Vector3D(b, bottom + scale.x), QColor(40, 72, 232, 160));
+        fillBlock(Vector3D(a, bottom), Vector3D(b, bottom + scale.x), gfx::rgba(40, 72, 232, 160));
     }
 
     // lines: debris (trash) green; sonar contacts red hostile, green friendly, blue neutral, the
     // locked target grey; the boat orange
     for (const auto &object : *scenario)
         if (object->isEnabled() && dynamic_cast<const fight::Trash *>(object.get()))
-            drawLine(object->position(), qRgb(64, 200, 64));
+            drawLine(object->position(), gfx::rgb(64, 200, 64));
     const fight::ActiveObject *locked = scenario->target().locked();
     for (const auto &entry : scenario->sonar())
     {
         const bool hostile = scenario->isHostile(fight::Scenario::PlayerFaction, entry.object->iff());
-        drawLine(entry.object->center(), entry.object == locked ? qRgb(160, 160, 160) :
-                 entry.isFriend ? qRgb(64, 200, 64) : hostile ? qRgb(232, 32, 24) : qRgb(64, 96, 255));
+        drawLine(entry.object->center(), entry.object == locked ? gfx::rgb(160, 160, 160) :
+                 entry.isFriend ? gfx::rgb(64, 200, 64) : hostile ? gfx::rgb(232, 32, 24) : gfx::rgb(64, 96, 255));
     }
-    drawLine(boat, orange.rgb());
+    drawLine(boat, orange);
 
     // averaged down to the radar's pixels (weighted by coverage, so edges fade out)
     for (int y = 0; y < m_image.height(); y++)
     {
-        QRgb *out = reinterpret_cast<QRgb *>(m_image.scanLine(y));
+        gfx::Rgb *out = reinterpret_cast<gfx::Rgb *>(m_image.scanLine(y));
         for (int x = 0; x < m_image.width(); x++)
         {
             int r = 0, g = 0, b = 0, a = 0;
             for (int dy = 0; dy < SuperSample; dy++)
             {
-                const QRgb *in = reinterpret_cast<const QRgb *>(m_fine.constScanLine(y*SuperSample + dy)) + x*SuperSample;
+                const gfx::Rgb *in = reinterpret_cast<const gfx::Rgb *>(m_fine.constScanLine(y*SuperSample + dy)) + x*SuperSample;
                 for (int dx = 0; dx < SuperSample; dx++)
                 {
-                    const int alpha = qAlpha(in[dx]);
-                    r += qRed(in[dx])*alpha;
-                    g += qGreen(in[dx])*alpha;
-                    b += qBlue(in[dx])*alpha;
+                    const int alpha = gfx::alpha(in[dx]);
+                    r += gfx::red(in[dx])*alpha;
+                    g += gfx::green(in[dx])*alpha;
+                    b += gfx::blue(in[dx])*alpha;
                     a += alpha;
                 }
             }
-            out[x] = a > 0 ? qRgba(r/a, g/a, b/a, a/(SuperSample*SuperSample)) : 0;
+            out[x] = a > 0 ? gfx::rgba(r/a, g/a, b/a, a/(SuperSample*SuperSample)) : 0;
         }
     }
 
@@ -380,7 +379,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
             const int fx = glm::clamp(int(p.x), 0, width - 1), fy = glm::clamp(int(p.y), 0, height - 1);
             if (p.z > m_depth[fy*width + fx] + 0.5f*step)
                 continue;
-            reinterpret_cast<QRgb *>(m_image.scanLine(y))[x] = line.colour;
+            reinterpret_cast<gfx::Rgb *>(m_image.scanLine(y))[x] = line.colour;
         }
     }
 }

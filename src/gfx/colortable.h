@@ -18,22 +18,27 @@
 #ifndef GFX_COLORTABLE_H
 #define GFX_COLORTABLE_H
 
+#include "rgb.h"
 #include "util/file.h"
+#include "util/string.hpp"
 
-#include <QImage>
+#include <initializer_list>
+#include <vector>
 
 namespace gfx {
 
-class ColorTable : public QVector<QRgb>
+class ColorTable : public std::vector<Rgb>
 {
 public:
-    ColorTable();
-    ColorTable(const QVector<QRgb> &colorTable);
-    ColorTable(const QString &filename);
+    ColorTable() = default;
+    ColorTable(std::initializer_list<Rgb> colors) : std::vector<Rgb>(colors) {}
+    explicit ColorTable(const String &filename);
 
 public:
-    bool loadFromFile(const QString &filename);
-    void load(const QByteArray &data);
+    int size() const { return int(std::vector<Rgb>::size()); }
+    ColorTable& operator<<(Rgb color) { push_back(color); return *this; }
+
+    bool loadFromFile(const String &filename);
     void load(util::File &file);
     void toRgb565();
 };

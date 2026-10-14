@@ -19,7 +19,7 @@
 #include "desktop.h"
 #include "txt/desfile.h"
 
-#include <QRegularExpression>
+#include "txt/parse.hpp"
 
 
 namespace game {
@@ -31,16 +31,16 @@ Area::Area()
 }
 
 
-Area::Area(const QString &name)
+Area::Area(const String &name)
 {
     load(name);
 }
 
 
-void Area::load(const QString &name)
+void Area::load(const String &name)
 {
     m_shortName = name;
-    txt::DesFile file(QString("dat:world/%1.des").arg(name));
+    txt::DesFile file(String("dat:world/%1.des").arg(name));
     file.setSection("Area");
     m_name = file.value("Name").toString();
     m_code = file.value("Code").toInt();
@@ -48,13 +48,13 @@ void Area::load(const QString &name)
     file.setSection("Map");
     m_map = file.value("Name").toString();
 
-    foreach (const QString &section, file.sections()) {
-        const QRegularExpressionMatch match = QRegularExpression("^station(\\d*)$").match(section);
-        if (match.hasMatch()) {
+    for (const String &section : file.sections()) {
+        String number;
+        if (txt::parseNumbered(section, "station", number)) {
             file.setSection(section);
-            const int index = match.captured(1).toUInt();
-            const QString station = file.value("Name").toString();
-            m_stations.insert(index, Station(index, station));
+            const int index = number.toUInt();
+            const String station = file.value("Name").toString();
+            m_stations[index] = Station(index, station);
         }
     }
 }

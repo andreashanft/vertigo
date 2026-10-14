@@ -28,6 +28,7 @@
 #include "game/boat.h"
 #include "sfx/samplemap.h"
 #include "util/debug.h"
+#include "txt/parse.hpp"
 #include "txt/stringtable.h"
 
 #include "objects/building.h"
@@ -43,10 +44,9 @@
 #include "util/random.h"
 #include "gfx/pipeline.h"
 
-#include <qopengl.h>
-#include <QSettings>
-#include <QTime>
-#include <QRegularExpression>
+#include "gfx/gl.hpp"
+#include "util/settings.hpp"
+#include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtx/transform.hpp>
@@ -64,13 +64,13 @@ int Scenario::difficulty()
 {
     if (s_difficultyOverride >= 0)
         return s_difficultyOverride;
-    return glm::clamp(QSettings().value("Game/difficulty", 1).toInt(), 0, 2);
+    return glm::clamp(util::Settings::intValue("Game/difficulty", 1), 0, 2);
 }
 
 
 void Scenario::setDifficulty(int difficulty)
 {
-    QSettings().setValue("Game/difficulty", glm::clamp(difficulty, 0, 2));
+    util::Settings::setValue("Game/difficulty", glm::clamp(difficulty, 0, 2));
 }
 
 
@@ -95,7 +95,7 @@ const float CurrentSpeedFast = 12.0f;
 }
 
 
-Scenario::Scenario(const QString &name) :
+Scenario::Scenario(const String &name) :
     m_name(name),
     m_playerId(-1),
     m_moduleManager(m_textureManager),
@@ -116,14 +116,14 @@ Scenario::Scenario(const QString &name) :
 {
     util::seedRandom(name.right(4).toInt());
 
-    m_file.load(QString("vfx:scenario/%1.des").arg(name));
+    m_file.load(String("vfx:scenario/%1.des").arg(name));
 
     m_file.setSection("surface");
     m_depth = m_file.value("depth").toInt();
     m_surface.load(m_file.value("name").toString().toLower(), m_file.value("maxheightscale").toInt(), m_file.value("patchcomb").toInt());
 
     // dtyp -> object file, decoded from the original FIGHT.EXE (docs/ROADMAP.md, appendix A)
-    std::map<int, QString> types = {
+    std::map<int, String> types = {
         // scouts
         { 1, "anscout2" }, { 8, "bioscout" }, { 9, "honglong" }, {10, "russcout" }, {11, "prscout1" },
         {12, "atscout" }, {13, "prscout2" }, {14, "moghboot" }, {15, "indrboot" }, {39, "anscout1" },
@@ -145,16 +145,16 @@ Scenario::Scenario(const QString &name) :
     };
     for (int i = 0; i < 10; i++)
     {
-        types[68 + i] = QString("cship%1").arg(i);
-        types[78 + i] = QString("bship%1").arg(i);
+        types[68 + i] = String("cship%1").arg(i);
+        types[78 + i] = String("bship%1").arg(i);
     }
 
     float initialDir = 0.0f;
-    QSet<QString> placeholderSections;
+    std::set<String> placeholderSections;
     std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
     std::vector<ActiveObject *> absentUnits; // only at a higher difficulty
     const int difficulty = Scenario::difficulty();
-    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^movable\\d*"))) {
+    for (const String &section : m_file.sections().withPrefix("movable")) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -178,7 +178,7 @@ Scenario::Scenario(const QString &name) :
         Object *object = NULL;
         const int type = m_file.value("typ").toInt();
         const int dType = m_file.value("dtyp").toInt();
-        QString desName;
+        String desName;
 
         txt::DesFile objectDes;
         bool placeholder = false;
@@ -195,7 +195,7 @@ Scenario::Scenario(const QString &name) :
             else
                 placeholder = true;
             if (!desName.isEmpty())
-                objectDes.load(QString("vfx:sobjects/%1.des").arg(desName));
+                objectDes.load(String("vfx:sobjects/%1.des").arg(desName));
         }
 
         ActiveObject::ObjectInfo info;
@@ -246,7 +246,7 @@ Scenario::Scenario(const QString &name) :
 
         case TypeBuilding:
             {
-                objectDes.load(QString("vfx:sobjects/gp%1x%1_%2.des").arg(m_file.value("siz").toInt() + 1).arg(m_file.value("buityp").toInt()));
+                objectDes.load(String("vfx:sobjects/gp%1x%1_%2.des").arg(m_file.value("siz").toInt() + 1).arg(m_file.value("buityp").toInt()));
                 object = new Building(this, objectDes, m_file.value("siz").toInt(), m_file.value("card", 0).toInt() * 45.0f, m_file.value("px").toInt(), m_file.value("py").toInt(), m_file.value("refx").toInt(), m_file.value("refy").toInt());
             }
             break;
@@ -351,8 +351,8 @@ Scenario::Scenario(const QString &name) :
 
         default:
             {
-                loadIssue(QString("placeholder: typ %1 dtyp %2").arg(type).arg(dType));
-                placeholderSections << section;
+                loadIssue(String("placeholder: typ %1 dtyp %2").arg(type).arg(dType));
+                placeholderSections.insert(section);
                 object = new Placeholder(this, objectDes, info, 4.0f);
                 object->setPosition(getPosition());
             }
@@ -402,7 +402,7 @@ Scenario::Scenario(const QString &name) :
         for (int n = 0; n < 8; n++)
         {
             auto value = [this, n](const char *name, int defaultValue) {
-                const QString key = QString("o%1%2").arg(n).arg(name);
+                const String key = String("o%1%2").arg(n).arg(name);
                 return m_file.contains(key) ? m_file.value(key).toInt() : defaultValue;
             };
             OrderSlot slot;
@@ -445,19 +445,19 @@ Scenario::Scenario(const QString &name) :
                     const bool forAll = slot.type == OrderSlot::Wait || slot.type == OrderSlot::CardinalPatrol ||
                                         slot.type == OrderSlot::CardinalAttack || slot.type == OrderSlot::Explode;
                     if (!OrderSlot::isImplemented(slot.type))
-                        loadIssue(QString("order not implemented: %1").arg(OrderSlot::name(slot.type)));
+                        loadIssue(String("order not implemented: %1").arg(OrderSlot::name(slot.type)));
                     else if (!moves && !forAll)
-                        loadIssue(QString("order not run: %1 for typ %2").arg(OrderSlot::name(slot.type)).arg(type));
+                        loadIssue(String("order not run: %1 for typ %2").arg(OrderSlot::name(slot.type)).arg(type));
                 }
             }
             else if (object)
-                loadIssue(QString("orders not run: typ %1").arg(type));
+                loadIssue(String("orders not run: typ %1").arg(type));
         }
 
         // Reading Objectives
         for (int i = 0; i < 16; i++)
         {
-            int wccond = m_file.value(QString("wccond%1").arg(i)).toInt();
+            int wccond = m_file.value(String("wccond%1").arg(i)).toInt();
             if (wccond == 0)
                 continue;
             m_conditionManager.updateObjective(id, i, wccond);
@@ -465,11 +465,11 @@ Scenario::Scenario(const QString &name) :
     }
 
     // currents: each cell covers a 2x2 block of map cells; speeds aren't in the data (docs/ROADMAP.md, appendix D)
-    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^current\\d*", QRegularExpression::CaseInsensitiveOption))) {
+    for (const String &section : m_file.sections().withPrefix("current")) {
         m_file.setSection(section);
         m_file.value("id");
         if (m_file.value("typ").toInt() != 3072 || m_file.value("pz").toInt() != 0)
-            loadIssue(QString("unhandled: current typ %1 pz %2").arg(m_file.value("typ").toInt()).arg(m_file.value("pz").toInt()));
+            loadIssue(String("unhandled: current typ %1 pz %2").arg(m_file.value("typ").toInt()).arg(m_file.value("pz").toInt()));
 
         const int card = m_file.value("card").toInt();
         const float speed = m_file.value("spd").toInt() == 0 ? CurrentSpeedSlow : CurrentSpeedFast;
@@ -487,7 +487,7 @@ Scenario::Scenario(const QString &name) :
         m_currentGrid[std::make_pair(x/2, y/2)] = direction*speed;
     }
 
-    foreach (const QString &section, m_file.sections().filter(QRegularExpression("^radio\\d*"))) {
+    for (const String &section : m_file.sections().withPrefix("radio")) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -503,7 +503,7 @@ Scenario::Scenario(const QString &name) :
 
         const int type = m_file.value("typ").toInt();
         if (type != 5120)
-            loadIssue(QString("unhandled: radio typ %1").arg(type));
+            loadIssue(String("unhandled: radio typ %1").arg(type));
 
         ConditionRadio *radio = m_conditionManager.addCondRadio(getPosition(), m_file.valueText("rtxt"));
         entry.condTrigger = radio;
@@ -531,28 +531,29 @@ Scenario::Scenario(const QString &name) :
     m_file.setSection("AttitudeMatrix");
     for (int i = 0; i < 9; i++)
         for (int j = 0; j < 9; j++)
-            m_attitudeMatrix[i][j] = m_file.value(QString("X%1Y%2").arg(j).arg(i)).toInt();
+            m_attitudeMatrix[i][j] = m_file.value(String("X%1Y%2").arg(j).arg(i)).toInt();
 
     m_file.setSection("End");
     m_endType = m_file.value("Type").toInt();
 
     // report what the loader ignored, with numbers in names collapsed to '#'
-    const QRegularExpression digits("\\d+");
-    foreach (const QString &section, m_file.sections()) {
-        if (placeholderSections.contains(section))
+    for (const String &section : m_file.sections()) {
+        if (placeholderSections.count(section))
             continue;
-        const QString sectionName = QString(section).replace(digits, "#");
+        const String sectionName = txt::replaceNumbers(section, "#");
         if (!m_file.wasSectionRead(section)) {
-            loadIssue(QString("unread section: %1").arg(sectionName));
+            loadIssue(String("unread section: %1").arg(sectionName));
             continue;
         }
-        foreach (const QString &key, m_file.unreadKeys(section))
-            loadIssue(QString("unread key: %1/%2").arg(sectionName, QString(key).replace(digits, "#")));
+        for (const String &key : m_file.unreadKeys(section))
+            loadIssue(String("unread key: %1/%2").arg(sectionName, txt::replaceNumbers(key, "#")));
     }
 
 
 
-    util::seedRandom(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
+    // without a seed of its own, the milliseconds of the current minute
+    const long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    util::seedRandom(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(milliseconds % 60000));
 
     sfx::SampleMap::load();
 }
@@ -697,21 +698,21 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
 }
 
 static float pitch = 1.0f;
-void Scenario::keyPressEvent(QKeyEvent *e)
+void Scenario::keyPressEvent(input::KeyEvent *e)
 {
-    if (e->key() == Qt::Key_Left || e->key() == Qt::Key_4)
+    if (e->key() == input::Key_Left || e->key() == input::Key_4)
         m_left = 1.0f;
-    if (e->key() == Qt::Key_Right || e->key() == Qt::Key_6)
+    if (e->key() == input::Key_Right || e->key() == input::Key_6)
         m_right = 1.0f;
-    if (e->key() == Qt::Key_Up || e->key() == Qt::Key_8)
+    if (e->key() == input::Key_Up || e->key() == input::Key_8)
         m_up = 1.0f;
-    if (e->key() == Qt::Key_Down || e->key() == Qt::Key_5)
+    if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 1.0f;
-    if (e->key() == Qt::Key_Q)
+    if (e->key() == input::Key_Q)
         m_player->setDebugBoost(100);
-    if (e->key() == Qt::Key_W)
+    if (e->key() == input::Key_W)
         m_player->setDebugBoost(-100);
-    if (e->key() == Qt::Key_A)
+    if (e->key() == input::Key_A)
     {
         m_forwards = m_backwards + 1;
         if (m_player->engineRunning())
@@ -720,7 +721,7 @@ void Scenario::keyPressEvent(QKeyEvent *e)
             m_player->setFullThrottle(true);
         }
     }
-    if (e->key() == Qt::Key_Z)
+    if (e->key() == input::Key_Z)
     {
         m_backwards = m_forwards + 1;
         if (m_player->engineRunning())
@@ -729,7 +730,7 @@ void Scenario::keyPressEvent(QKeyEvent *e)
             m_player->setFullThrottle(true);
         }
     }
-    if (e->key() == Qt::Key_S)
+    if (e->key() == input::Key_S)
     {
         m_velocityTarget += 2.778f;
         if (m_velocityTarget > m_player->maxVelocity())
@@ -737,7 +738,7 @@ void Scenario::keyPressEvent(QKeyEvent *e)
         if (m_forwards == 0 && m_backwards == 0 && m_player->engineRunning())
             m_player->setVelocityTarget(m_velocityTarget);
     }
-    if (e->key() == Qt::Key_X)
+    if (e->key() == input::Key_X)
     {
         m_velocityTarget -= 2.778f;
         if (m_velocityTarget < m_player->minVelocity())
@@ -745,13 +746,13 @@ void Scenario::keyPressEvent(QKeyEvent *e)
         if (m_forwards == 0 && m_backwards == 0 && m_player->engineRunning())
             m_player->setVelocityTarget(m_velocityTarget);
     }
-    if (e->key() == Qt::Key_C)
+    if (e->key() == input::Key_C)
     {
         m_velocityTarget = 0;
         if (m_forwards == 0 && m_backwards == 0 && m_player->engineRunning())
             m_player->setVelocityTarget(m_velocityTarget);
     }
-    if (e->key() == Qt::Key_QuoteLeft)
+    if (e->key() == input::Key_QuoteLeft)
     {
         m_player->engineToggle();
         if (m_player->engineRunning())
@@ -773,40 +774,40 @@ void Scenario::keyPressEvent(QKeyEvent *e)
             m_player->setFullThrottle(false);
         }
     }
-    if (e->key() == Qt::Key_Space)
+    if (e->key() == input::Key_Space)
         m_player->fire();
     // turret orders: F5-F8 for turret 1, F9-F12 for turret 2 (attack my target, sync, search and destroy, stop)
-    if (e->key() >= Qt::Key_F5 && e->key() <= Qt::Key_F12)
+    if (e->key() >= input::Key_F5 && e->key() <= input::Key_F12)
     {
-        const int index = e->key() >= Qt::Key_F9 ? 1 : 0;
+        const int index = e->key() >= input::Key_F9 ? 1 : 0;
         const PlayerTurret::Order orders[4] = { PlayerTurret::Order::Attack, PlayerTurret::Order::Sync, PlayerTurret::Order::Search, PlayerTurret::Order::Stop };
         if (PlayerTurret *turret = m_player->turret(index))
-            turret->setOrder(orders[(e->key() - Qt::Key_F5) % 4]);
+            turret->setOrder(orders[(e->key() - input::Key_F5) % 4]);
     }
-    if (e->key() == Qt::Key_Tab)
+    if (e->key() == input::Key_Tab)
         m_player->fireTorpedo();
-    if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter)
+    if (e->key() == input::Key_Return || e->key() == input::Key_Enter)
         m_player->selectNextTorpedo();
-    if (e->key() == Qt::Key_Backspace || e->key() == Qt::Key_D)
+    if (e->key() == input::Key_Backspace || e->key() == input::Key_D)
         m_player->dropBuzzer();
 }
 
 
-void Scenario::keyReleaseEvent(QKeyEvent *e)
+void Scenario::keyReleaseEvent(input::KeyEvent *e)
 {
-    if (e->key() == Qt::Key_Left || e->key() == Qt::Key_4)
+    if (e->key() == input::Key_Left || e->key() == input::Key_4)
         m_left = 0.0f;
-    if (e->key() == Qt::Key_Right || e->key() == Qt::Key_6)
+    if (e->key() == input::Key_Right || e->key() == input::Key_6)
         m_right = 0.0f;
-    if (e->key() == Qt::Key_Up || e->key() == Qt::Key_8)
+    if (e->key() == input::Key_Up || e->key() == input::Key_8)
         m_up = 0.0f;
-    if (e->key() == Qt::Key_Down || e->key() == Qt::Key_5)
+    if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 0.0f;
-    if (e->key() == Qt::Key_Q)
+    if (e->key() == input::Key_Q)
         m_player->setDebugBoost(0);
-    if (e->key() == Qt::Key_W)
+    if (e->key() == input::Key_W)
         m_player->setDebugBoost(0);
-    if (e->key() == Qt::Key_A)
+    if (e->key() == input::Key_A)
     {
         m_forwards = 0;
         if (m_backwards > 0 && m_player->engineRunning())
@@ -817,7 +818,7 @@ void Scenario::keyReleaseEvent(QKeyEvent *e)
             m_player->setFullThrottle(false);
         }
     }
-    if (e->key() == Qt::Key_Z)
+    if (e->key() == input::Key_Z)
     {
         m_backwards = 0;
         if (m_forwards > 0 && m_player->engineRunning())
@@ -828,21 +829,21 @@ void Scenario::keyReleaseEvent(QKeyEvent *e)
             m_player->setFullThrottle(false);
         }
     }
-    if (e->key() == Qt::Key_Space)
+    if (e->key() == input::Key_Space)
         m_player->fireStop();
 }
 
 
-QStringList Scenario::loadReport() const
+StringList Scenario::loadReport() const
 {
-    QStringList report = m_loadIssues;
-    foreach (const QString &issue, m_conditionManager.issues())
+    StringList report = m_loadIssues;
+    for (const String &issue : m_conditionManager.issues())
         report << "condition: " + issue;
     return report;
 }
 
 
-void Scenario::loadIssue(const QString &text)
+void Scenario::loadIssue(const String &text)
 {
     m_loadIssues << text;
 }

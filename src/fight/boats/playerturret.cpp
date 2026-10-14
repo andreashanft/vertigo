@@ -67,7 +67,7 @@ PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int 
     // items 7169-7177 are Software0-8: Claw (torpedoes), Punisher (vessels), Eraser (both); 9 is "No Software"
     const int index = softwareItem >= 7169 && softwareItem <= 7177 ? softwareItem - 7169 : 9;
     txt::DesFile file("vfx:sobjects/globweap.des");
-    file.setSection(QString("software%1").arg(index));
+    file.setSection(String("software%1").arg(index));
     m_software.shortName = file.value("short").toString();
     m_software.hit = file.value("hit", 0.8).toFloat();
     m_software.scan = file.value("scan", 0.5).toFloat();
@@ -82,15 +82,15 @@ PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int 
 namespace {
 
 // GLOBWEAP [TurretStateN]: short (true) or verbose names
-const QStringList& turretStateNames(bool brief)
+const StringList& turretStateNames(bool brief)
 {
-    static QStringList shortNames, verboseNames;
+    static StringList shortNames, verboseNames;
     if (shortNames.isEmpty())
     {
         txt::DesFile file("vfx:sobjects/globweap.des");
         for (int i = 0; i < 9; i++)
         {
-            file.setSection(QString("turretstate%1").arg(i));
+            file.setSection(String("turretstate%1").arg(i));
             shortNames << file.value("short").toString();
             verboseNames << file.value("verbose").toString();
         }
@@ -101,13 +101,13 @@ const QStringList& turretStateNames(bool brief)
 }
 
 
-QString PlayerTurret::stateName() const
+String PlayerTurret::stateName() const
 {
     return turretStateNames(true).value(int(m_state));
 }
 
 
-QString PlayerTurret::stateText() const
+String PlayerTurret::stateText() const
 {
     return turretStateNames(false).value(int(m_state));
 }

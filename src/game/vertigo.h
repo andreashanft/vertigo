@@ -25,8 +25,14 @@
 
 #include "gfx/fontmanager.h"
 #include "sfx/soundsystem.h"
+#include "util/string.hpp"
+#include "util/timer.hpp"
 
-#include <QKeySequence>
+#include <memory>
+
+union SDL_Event;
+namespace fight { class Scenario; }
+namespace hud { class HUD; }
 
 namespace game {
 
@@ -35,27 +41,27 @@ class Vertigo
 public:
     struct Options
     {
-        QString scenario;                               // start this mission directly (test mode)
+        String scenario;                               // start this mission directly (test mode)
         int boat = 0;                                   // test mode boat type, 0 = chapter 1 boat
-        std::vector<std::pair<QString, int>> equipment; // test mode items: mounting, model
+        std::vector<std::pair<String, int>> equipment; // test mode items: mounting, model
         int timeout = 0;                                // test mode time limit in seconds
         bool debugOverlay = false;
         bool headless = false;                          // test mode: no window and no sound, simulated time
         bool fixedStep = false;                         // test mode: 20 ms of mission time per frame
         std::vector<int> destroy;                       // test mode: destroy these units after one second
-        struct Key { float time; QKeySequence key; float hold; };
+        struct Key { float time; input::Key key; int modifiers; float hold; };
         std::vector<Key> keys;                          // test mode: press these keys at these times (seconds), holding them
         struct Drive { int id; float speed; float turn; };
         std::vector<Drive> drive;                       // test mode: let these boats move straight or in a circle
         std::vector<int> trace;                         // test mode: print these units' state every second
         std::vector<int> fire;                          // test mode: these units fire (towers and tanks aim at the player)
         int near = 0;                                   // test mode: enable this unit and start next to it
-        struct Screenshot { float time; QString file; };
+        struct Screenshot { float time; std::string file; };        // the file is a path in UTF-8
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
-        struct Click { float time; QPointF pos; };
+        struct Click { float time; PointD pos; };
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
         bool check = false;                             // report what the mission loader ignores
-        QStringList checkScenarios;                     // empty = all missions
+        StringList checkScenarios;                     // empty = all missions
     };
 
     enum ExitCode
@@ -69,29 +75,58 @@ public:
     };
 
 public:
-    Vertigo();
+    explicit Vertigo(const Options &options);
+    ~Vertigo();
 
 public:
-    int start(const Options &options);
+    // Run until 0 or more comes back, the exit code: start() once, then iterate() for each frame
+    // and event() for what the platform reports in between
+    int start();
+    int iterate();
+    void event(const SDL_Event &event);
 
 private:
-    int check(const QStringList &names);
+    int check(const StringList &names);
+    // test mode
+    void startScenario();
+    void finish(int code);
+    // seconds: of the mission in test mode (simulated without a window, by frames with a fixed
+    // step), else since the start
+    float elapsed() const;
+    void testFrame();
 
-    void startGame(const QString &name);
-    void loadGame(const QString &name);
+    void startGame(const String &name);
+    void loadGame(const String &name);
     void endGame();
     void introFinished();
     void createMainMenu(bool skipToTitle);
     void createChapter();
 
 private:
+    Options m_options;
     Window m_window;
     sfx::SoundSystem m_soundSystem;
     gfx::FontManager m_fontManager;
     MainMenu m_mainMenu;
     std::unique_ptr<Movie> m_intro;
     std::unique_ptr<Chapter> m_chapter;
-    QString m_name;
+    String m_name;
+
+    // test mode, and the main menu's --keys, --click and --screenshot
+    std::unique_ptr<game::Boat> m_boat;
+    std::unique_ptr<hud::HUD> m_hud;
+    std::unique_ptr<fight::Scenario> m_scenario;
+    int m_result = ExitSuccess;
+    bool m_running = true;
+    bool m_headless = false;
+    std::vector<int> m_destroy;
+    std::vector<Options::Screenshot> m_screenshots;
+    std::vector<Options::Key> m_keys;
+    std::vector<Options::Click> m_clicks;
+    util::ElapsedTimer m_timer;
+    float m_simulatedTime = 0;
+    float m_fixedStep = 0;
+    float m_nextTrace = 0;
 };
 
 } // namespace game

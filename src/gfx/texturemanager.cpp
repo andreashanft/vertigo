@@ -29,17 +29,18 @@ TextureManager::TextureManager()
 }
 
 
-Texture TextureManager::getModule(const QString &filename, bool colorKey)
+Texture TextureManager::getModule(const String &filename, bool colorKey)
 {
-    QString basename = QString("vfx:texture/%1").arg(filename);
-    if (m_textures.contains(basename))
-        return m_textures.value(basename);
+    String basename = String("vfx:texture/%1").arg(filename);
+    const auto it = m_textures.find(basename);
+    if (it != m_textures.end())
+        return it->second;
 
     ColorTable colorTable(basename + ".s16");
     if (colorKey)
-        colorTable[0] = qRgba(0, 0, 0, 0);
+        colorTable[0] = rgba(0, 0, 0, 0);
     Texture texture = Image::load(basename + ".imb", colorTable);
-    m_textures.insert(basename, texture);
+    m_textures[basename] = texture;
     return texture;
 }
 

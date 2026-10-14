@@ -49,7 +49,7 @@ void Label::setFont(const gfx::Font &font)
 }
 
 
-void Label::setText(const QString &text)
+void Label::setText(const String &text)
 {
     m_text = text;
 }

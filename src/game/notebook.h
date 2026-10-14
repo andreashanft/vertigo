@@ -46,13 +46,13 @@ private:
     void updateMovies();
 
 private:
-    void createLabel(ui::Widget *parent, txt::String text, float posY);
-    void createButton(std::function<void()> funcClick, ui::Widget *parent, txt::String text, float posY);
-    void setupLabel(ui::Label &label, txt::String text, float posY);
-    void setupButton(ui::Button &button, txt::String text, float posY);
+    void createLabel(ui::Widget *parent, txt::StringId text, float posY);
+    void createButton(std::function<void()> funcClick, ui::Widget *parent, txt::StringId text, float posY);
+    void setupLabel(ui::Label &label, txt::StringId text, float posY);
+    void setupButton(ui::Button &button, txt::StringId text, float posY);
 
 private:
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
 
 private:
     gfx::Font m_fontGreen;

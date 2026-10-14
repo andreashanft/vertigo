@@ -20,8 +20,7 @@
 #include "txt/desfile.h"
 #include "util/datapath.h"
 
-#include <QFile>
-#include <QImage>
+#include "util/path.hpp"
 
 
 namespace hud {
@@ -34,19 +33,18 @@ Lamp::Lamp(HUD *hud, const txt::DesFile &file) :
     if (!file.contains("LampDataName") || m_rect.width <= 0 || m_rect.height <= 0)
         return;
     // e.g. 001\smon0: VFX/COCKPIT/001/SMON0.D16
-    QFile data(util::DataPath::resolve(QString("vfx:cockpit/%1.d16").arg(file.value("LampDataName").toString().replace('\\', '/'))));
-    const QByteArray bytes = data.open(QIODevice::ReadOnly) ? data.readAll() : QByteArray();
+    const std::vector<char> bytes = util::readFile(util::DataPath::resolve(String("vfx:cockpit/%1.d16").arg(file.value("LampDataName").toString().replace('\\', '/'))));
     const int pixels = m_rect.width*m_rect.height;
-    if (bytes.size() < 4*pixels)
+    if (int(bytes.size()) < 4*pixels)
         return;
-    const uchar *p = reinterpret_cast<const uchar *>(bytes.constData());
+    const std::uint8_t *p = reinterpret_cast<const std::uint8_t *>(bytes.data());
     for (int frame = 0; frame < 2; frame++)
     {
-        QImage image(m_rect.width, m_rect.height, QImage::Format_RGB32);
+        gfx::Image image(m_rect.width, m_rect.height, gfx::Image::ARGB32);
         for (int i = 0; i < pixels; i++, p += 2)
         {
             const int c = p[0] | (p[1] << 8);
-            image.setPixel(i % m_rect.width, i/m_rect.width, qRgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31));
+            image.setPixel(i % m_rect.width, i/m_rect.width, gfx::rgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31));
         }
         m_frames[frame] = gfx::Texture(image, false);
     }

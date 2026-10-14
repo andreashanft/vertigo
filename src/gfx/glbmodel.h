@@ -19,11 +19,11 @@
 #define GFX_GLBMODEL_H
 
 
+#include "image.h"
 #include "util/geometry3d.h"
+#include "util/json.hpp"
 
-#include <QImage>
-#include <QString>
-#include <QVariantMap>
+#include <string>
 #include <vector>
 
 
@@ -38,31 +38,32 @@ class GlbModel
 public:
     struct Mesh
     {
-        QString name;               // of the node
-        QVariantMap extras;         // the node's glTF extras, e.g. "role" and "des_section"
-        QString material;
+        std::string name;           // of the node
+        util::Json extras;          // the node's glTF extras, e.g. "role" and "des_section"
+        std::string material;
         int image = -1;             // base colour image, -1 for none
         Vector4D color = Vector4D(1);
         bool blend = false;         // alphaMode BLEND
         std::vector<Vector3D> positions;    // node transforms applied
         std::vector<Vector2D> texCoords;    // of the base colour texture; empty without one
-        std::vector<quint32> indices;       // triangles
+        std::vector<std::uint32_t> indices;       // triangles
     };
 
 public:
-    bool load(const QString &fileName);
-    const QString& error() const { return m_error; }
+    // a path in UTF-8
+    bool load(const std::string &fileName);
+    const std::string& error() const { return m_error; }
 
     const std::vector<Mesh>& meshes() const { return m_meshes; }
-    const std::vector<QImage>& images() const { return m_images; }
+    const std::vector<Image>& images() const { return m_images; }
 
 private:
-    bool fail(const QString &error);
+    bool fail(const std::string &error);
 
 private:
-    QString m_error;
+    std::string m_error;
     std::vector<Mesh> m_meshes;
-    std::vector<QImage> m_images;
+    std::vector<Image> m_images;
 };
 
 

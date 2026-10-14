@@ -20,7 +20,7 @@
 
 
 #include "fight/objects/activeobject.h"
-#include <QString>
+#include "util/string.hpp"
 #include <vector>
 
 
@@ -34,12 +34,12 @@ class Module;
 // Item numbers 1-22 are types 0-21.
 struct TorpedoType
 {
-    QString name;
-    QString shortName;
-    QString image;          // its picture in GFX/IMG/COCKPIT, e.g. stanley2
+    String name;
+    String shortName;
+    String image;          // its picture in GFX/IMG/COCKPIT, e.g. stanley2
     int lockType = 0;       // 0 none (straight), 1 noise (homing)
     float lockDelay = 0;    // seconds the target must be locked before launch
-    QString model;
+    String model;
     float scale = 0;
     float noise = 0;
     float maxVelocity = 0;  // m/s

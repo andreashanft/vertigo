@@ -57,11 +57,11 @@ float random(float min, float max)
 }
 
 
-QString OrderSlot::name(int type)
+String OrderSlot::name(int type)
 {
     static const char *names[] = { "none", "wait", "goto", "patrol", "attack", "escort", "ambush",
                                    "cardinalpatrol", "cardinalattack", "gotowitharrive", "gotowithinfiltrate", "explode" };
-    return type >= 0 && type <= Explode ? names[type] : QString::number(type);
+    return type >= 0 && type <= Explode ? names[type] : String::number(type);
 }
 
 
@@ -152,11 +152,11 @@ ActiveObject* Orders::dockingTarget() const
 }
 
 
-QString Orders::state() const
+String Orders::state() const
 {
     if (m_current < 0)
-        return QString();
-    QString text = OrderSlot::name(m_slots[m_current].type);
+        return String();
+    String text = OrderSlot::name(m_slots[m_current].type);
     const int type = m_slots[m_current].type;
     if (m_engaged)
         text += " engaging";

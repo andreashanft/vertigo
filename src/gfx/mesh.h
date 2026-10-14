@@ -19,7 +19,7 @@
 #define GFX_MESH_H
 
 #include "util/geometry3d.h"
-#include <QtGlobal>
+#include <cstdint>
 
 namespace gfx {
 
@@ -37,9 +37,9 @@ public:
     bool isValid() const { return m_vertexArray != 0; }
     // normals and texture coordinates may be null; needs a current OpenGL context
     void create(int vertexCount, const Vector3D *positions, const Vector3D *normals, const Vector2D *texCoords,
-                int indexCount, const quint16 *indices);
+                int indexCount, const std::uint16_t *indices);
     void create(int vertexCount, const Vector3D *positions, const Vector3D *normals, const Vector2D *texCoords,
-                int indexCount, const quint32 *indices);
+                int indexCount, const std::uint32_t *indices);
     void destroy();
     // count indices from first on, all by default; untextured also when there is no texture
     void draw(int first = 0, int count = -1, bool textured = true);

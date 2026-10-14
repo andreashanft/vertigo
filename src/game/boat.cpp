@@ -40,7 +40,7 @@ Boat::Boat(txt::DesFile &file) :
     for (int i = 0; i < m_mountings.size(); i++)
     {
         const Mounting &mounting = m_mountings[i];
-        file.setSection(QString("ShipMounting%1").arg(i));
+        file.setSection(String("ShipMounting%1").arg(i));
         if (file.contains("armor"))
             buy(file.value("armor").toInt(), mounting.name);
         if (file.contains("nrs"))
@@ -49,7 +49,7 @@ Boat::Boat(txt::DesFile &file) :
             buy(file.value("sensor").toInt(), mounting.name);
         if (file.contains("fixer"))
             buy(9218, mounting.name);
-        for (int buzzer = 0; file.contains(QString("buzzer%1").arg(buzzer)); buzzer++)
+        for (int buzzer = 0; file.contains(String("buzzer%1").arg(buzzer)); buzzer++)
             buy(9217, mounting.name);
         if (file.contains("engine"))
             buy(file.value("engine").toInt(), mounting.name);
@@ -59,8 +59,8 @@ Boat::Boat(txt::DesFile &file) :
             buy(4101, mounting.name);
         if (file.contains("model"))
             buy(file.value("model").toInt(), mounting.name);
-        for (int torpedo = 0; file.contains(QString("torpedo%1").arg(torpedo)); torpedo++)
-            buy(file.value(QString("torpedo%1").arg(torpedo)).toInt(), mounting.name);
+        for (int torpedo = 0; file.contains(String("torpedo%1").arg(torpedo)); torpedo++)
+            buy(file.value(String("torpedo%1").arg(torpedo)).toInt(), mounting.name);
         if (file.contains("software"))
             buy(file.value("software").toInt(), mounting.name);
     }
@@ -135,20 +135,20 @@ void Boat::load()
     m_cockpit = m_boatFile.value("Name").toString();
 
     m_boatFile.setSection("Compatibility");
-    for (int comp = 0; m_boatFile.contains(QString("Comp%1").arg(comp)); comp++)
+    for (int comp = 0; m_boatFile.contains(String("Comp%1").arg(comp)); comp++)
     {
-        const QString str = m_boatFile.value(QString("Comp%1").arg(comp)).toString();
-        int model = str.section(' ', 0, 0, QString::SectionSkipEmpty).toInt();
+        const String str = m_boatFile.value(String("Comp%1").arg(comp)).toString();
+        int model = str.section(' ', 0, 0, String::SectionSkipEmpty).toInt();
         if (model != 99999)
             m_compatibility.insert(model);
     }
 }
 
 
-void Boat::addMounting(const QString &name, int side, int type, int x, int y, const QString &dir)
+void Boat::addMounting(const String &name, int side, int type, int x, int y, const String &dir)
 {
     Vector3D rel;
-    m_boatFile.setSection(QString("shipmounting%1").arg(m_mountings.size()));
+    m_boatFile.setSection(String("shipmounting%1").arg(m_mountings.size()));
     if (m_boatFile.contains("relativex"))
         rel = Vector3D(m_boatFile.value("relativex").toFloat()/32, m_boatFile.value("relativey").toFloat()/32, m_boatFile.value("relativez").toFloat()/32);
     if (m_boatFile.contains("relative0x"))
@@ -165,7 +165,7 @@ void Boat::addMounting(const QString &name, int side, int type, int x, int y, co
 }
 
 
-const Boat::Mounting* Boat::getMounting(const QString& mounting)
+const Boat::Mounting* Boat::getMounting(const String& mounting)
 {
     auto it = std::find_if(m_mountings.begin(), m_mountings.end(), [&mounting](const Mounting &x) { return x.name == mounting; });
     if (it != m_mountings.end())
@@ -205,7 +205,7 @@ int Boat::getCapacity(int magazine)
 }
 
 
-std::vector<int> Boat::getItems(const QString& mounting)
+std::vector<int> Boat::getItems(const String& mounting)
 {
     std::vector<int> list;
     if (mounting == "DEFE")
@@ -255,7 +255,7 @@ std::vector<int> Boat::getItems(const QString& mounting)
 }
 
 
-bool Boat::canBuy(int model, const QString& mounting, int *oldModel)
+bool Boat::canBuy(int model, const String& mounting, int *oldModel)
 {
     Items::Item *item = Items::get(model);
     *oldModel = -1;
@@ -322,7 +322,7 @@ bool Boat::canBuy(int model, const QString& mounting, int *oldModel)
 }
 
 
-bool Boat::canSell(int model, const QString& mounting)
+bool Boat::canSell(int model, const String& mounting)
 {
     Items::Item *item = Items::get(model);
     if (mounting == "DEFE")
@@ -373,7 +373,7 @@ bool Boat::isCompatible(int model)
 }
 
 
-int Boat::repairState(int model, const QString& mounting)
+int Boat::repairState(int model, const String& mounting)
 {
     if (model == 0)
         return 100;
@@ -416,7 +416,7 @@ int Boat::repairState(int model, const QString& mounting)
 }
 
 
-int Boat::repairCost(int model, const QString& mounting)
+int Boat::repairCost(int model, const String& mounting)
 {
     if (model == 0)
         return 0;
@@ -460,7 +460,7 @@ int Boat::repairCost(int model, const QString& mounting)
 }
 
 
-void Boat::repair(int model, const QString& mounting, float amount)
+void Boat::repair(int model, const String& mounting, float amount)
 {
     Items::Item *item = Items::get(model);
     if (mounting == "DEFE")
@@ -499,7 +499,7 @@ void Boat::repair(int model, const QString& mounting, float amount)
 }
 
 
-void Boat::buy(int model, const QString& mounting)
+void Boat::buy(int model, const String& mounting)
 {
     Items::Item *item = Items::get(model);
 
@@ -554,7 +554,7 @@ void Boat::buy(int model, const QString& mounting)
 }
 
 
-void Boat::sell(int model, int index, const QString& mounting)
+void Boat::sell(int model, int index, const String& mounting)
 {
     Items::Item *item = Items::get(model);
     if (mounting == "DEFE")

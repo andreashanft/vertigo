@@ -29,9 +29,14 @@ typedef util::RectangleExclusive<int> Rect;
 
 typedef util::RectangleInclusive<float> RectF;
 
+// in double precision, for positions in the window
+typedef util::RectangleInclusive<double> RectD;
+
 typedef glm::ivec2 Point;
 
 typedef glm::vec2 PointF;
+
+typedef glm::dvec2 PointD;
 
 typedef util::Size2D<int> Size;
 

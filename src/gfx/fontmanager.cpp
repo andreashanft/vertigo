@@ -17,6 +17,8 @@
 
 #include "colortable.h"
 #include "fontmanager.h"
+#include "util/containers.hpp"
+#include <cassert>
 
 
 namespace gfx {
@@ -27,18 +29,18 @@ FontManager *FontManager::m_singleton = NULL;
 
 FontManager::FontManager()
 {
-    Q_ASSERT(m_singleton == NULL);
+    assert(m_singleton == NULL);
     m_singleton = this;
 
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
-    m_fonts.insert(Font::Small, Font("gfx:fnt/dpsmall.fnt", colorTable));
-    m_fonts.insert(Font::Medium, Font("gfx:fnt/dpmedium.fnt", colorTable));
-    m_fonts.insert(Font::Large, Font("gfx:fnt/dplarge.fnt", colorTable));
+    m_fonts.emplace(Font::Small, Font("gfx:fnt/dpsmall.fnt", colorTable));
+    m_fonts.emplace(Font::Medium, Font("gfx:fnt/dpmedium.fnt", colorTable));
+    m_fonts.emplace(Font::Large, Font("gfx:fnt/dplarge.fnt", colorTable));
 
-    m_fonts.insert(Font::DialogTop, Font("gfx:fnt/dpsmamon.fnt", 0xffb89c00, 0xffc0c400, true));
-    m_fonts.insert(Font::DialogBottom, Font("gfx:fnt/dpsmamon.fnt", 0xff00a8d0, 0xff00a8d0, true));
-    m_fonts.insert(Font::DialogHighlight, Font("gfx:fnt/dpsmamon.fnt", 0xff00e4f8, 0xff00e4f8, true));
+    m_fonts.emplace(Font::DialogTop, Font("gfx:fnt/dpsmamon.fnt", 0xffb89c00, 0xffc0c400, true));
+    m_fonts.emplace(Font::DialogBottom, Font("gfx:fnt/dpsmamon.fnt", 0xff00a8d0, 0xff00a8d0, true));
+    m_fonts.emplace(Font::DialogHighlight, Font("gfx:fnt/dpsmamon.fnt", 0xff00e4f8, 0xff00e4f8, true));
 }
 
 
@@ -50,8 +52,8 @@ FontManager::~FontManager()
 
 Font FontManager::font(Font::Name name) const
 {
-    Q_ASSERT(m_fonts.contains(name));
-    return m_fonts.value(name);
+    assert(m_fonts.count(name));
+    return util::value(m_fonts, name);
 }
 
 

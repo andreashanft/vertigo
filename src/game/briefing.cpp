@@ -22,9 +22,7 @@
 #include "txt/stringtable.h"
 #include "sfx/soundsystem.h"
 #include "hud/hud.h"
-#include <QApplication>
-#include <qopengl.h>
-#include <QKeyEvent>
+#include "gfx/gl.hpp"
 
 
 namespace game {
@@ -45,17 +43,16 @@ Briefing::Briefing() :
     m_woopSound.load("sfx:snd/desktop/woop.pcm", 33075);
     m_woopSound.setVolume(0.1f);
 
-    QImage image(640, 480, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgba(0, 0, 0, 128));
+    gfx::Image image(640, 480, gfx::Image::Indexed8);
+    image.setColorTable(gfx::ColorTable{ gfx::rgba(0, 0, 0, 128) });
     m_lblMain.setTexture(image);
 
     m_lblMap = new ui::Label(&m_lblMain);
     m_lblMap->setPosition(304, 32);
-    m_lblMap->setTexture(gfx::Image::load(QString("gfx:pic/area/%1.r16").arg(Chapter::get()->area()->map()), 304, 284, true));
+    m_lblMap->setTexture(gfx::Image::load(String("gfx:pic/area/%1.r16").arg(Chapter::get()->area()->map()), 304, 284, true));
 
     m_lblArrow = new ui::Label(m_lblMap);
-    m_lblArrow->setPosition(Chapter::get()->mission()->pos() - QPoint(7, 7));
+    m_lblArrow->setPosition(Chapter::get()->mission()->pos() - Point(7, 7));
     m_lblArrow->setTexture(gfx::Image::load("gfx:img/connect/areapoin.img", colorTableArrow));
     m_lblArrow->setVisible(false);
 }
@@ -73,7 +70,7 @@ void Briefing::deactivate()
 }
 
 
-void Briefing::setRect(const QRect &rect)
+void Briefing::setRect(const Rect &rect)
 {
     Chapter::get()->hud()->setRect(rect);
     Renderer::setRect(rect);
@@ -215,7 +212,7 @@ void Briefing::draw()
     }
 }
 
-void Briefing::keyPressEvent(QKeyEvent *event)
+void Briefing::keyPressEvent(input::KeyEvent *event)
 {
     if (m_state == PressKey) {
         m_eventStart();

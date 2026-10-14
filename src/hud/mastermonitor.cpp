@@ -25,7 +25,7 @@
 #include "fight/orders.h"
 #include "txt/stringtable.h"
 #include "gfx/pipeline.h"
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include <glm/geometric.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -50,16 +50,16 @@ void MasterMonitor::draw()
 {
     Point pos;
     bool isFriend = true;
-    QString txtName = txt::StringTable::get(txt::Target_NoTargetLocked);
-    QString txtAction = "";
-    QString txtCargo = "-------";
-    QString txtDistance = "---";
-    QString txtHeight = "---";
-    QString txtVelocity = "---";
-    QString txtNoise = "---";
-    QString txtRange = "----";
-    QString txtGun = "----";
-    QString txtTorpedo = "----";
+    String txtName = txt::StringTable::get(txt::Target_NoTargetLocked);
+    String txtAction = "";
+    String txtCargo = "-------";
+    String txtDistance = "---";
+    String txtHeight = "---";
+    String txtVelocity = "---";
+    String txtNoise = "---";
+    String txtRange = "----";
+    String txtGun = "----";
+    String txtTorpedo = "----";
 
     fight::Target &target = m_hud->scenario()->target();
     fight::ActiveObject *object = target.locked();
@@ -81,15 +81,15 @@ void MasterMonitor::draw()
             txtCargo = txt::StringTable::get(txt::Target_NotIdentified);
 
         int distance = static_cast<int>(glm::round(target.distance()));
-        txtDistance = QString("%1M").arg(distance);
+        txtDistance = String("%1M").arg(distance);
         int height = static_cast<int>(glm::round(object->center().z - m_hud->scenario()->surface().heightAt(object->center().x, object->center().y)));
-        txtHeight = QString("%1M").arg(height);
+        txtHeight = String("%1M").arg(height);
 
-        txtVelocity = QString("%1KMH").arg(static_cast<int>(glm::round(3.6f*glm::length(object->velocity()))));
-        txtNoise = QString("%1").arg(object->noise());
+        txtVelocity = String("%1KMH").arg(static_cast<int>(glm::round(3.6f*glm::length(object->velocity()))));
+        txtNoise = String("%1").arg(object->noise());
 
         if (m_hud->scenario()->sonar().detectRange() && !target.isPassive() && object->sensor() > 0)
-            txtRange = QString("%1M").arg(object->sensorRange());
+            txtRange = String("%1M").arg(object->sensorRange());
         if (m_hud->scenario()->sonar().detectWeapons() && !target.isPassive())
         {
             // the short names of its gun and torpedoes (GLOBWEAP)
@@ -103,8 +103,8 @@ void MasterMonitor::draw()
     fight::NavPoint *navPoint = target.lockedNavPoint();
     if (navPoint != nullptr)
     {
-        txtName = QString("NAV %1").arg(static_cast<char>('A' + navPoint->num()));
-        txtDistance = QString("%1M").arg(static_cast<int>(glm::round(target.distance())));
+        txtName = String("NAV %1").arg(static_cast<char>('A' + navPoint->num()));
+        txtDistance = String("%1M").arg(static_cast<int>(glm::round(target.distance())));
         txtHeight = "10M";
         txtVelocity = "0KMH";
         txtNoise = "0";
@@ -121,7 +121,7 @@ void MasterMonitor::draw()
     }
 
     fight::ActiveObject *pictured = target.locked();
-    const QString picture = pictured ? pictured->observationImage() : QString();
+    const String picture = pictured ? pictured->observationImage() : String();
     if (!picture.isEmpty())
     {
         // big ships: a picture of the ship (SHP*.IMG, the size of the observation area)
@@ -164,29 +164,29 @@ void MasterMonitor::draw()
     m_hud->fontGreen().draw(txtAction, Rect(pos.x - 100, pos.y, 200, -1), true, false);
 
     pos = m_hud->project(m_rect.pos() + Point(m_rect.width/2, m_rect.height - 12));
-    m_hud->fontGreen().draw(QString("%1%2").arg(txt::StringTable::get(txt::Target_Cargo)).arg(txtCargo), Rect(pos.x - 100, pos.y, 200, -1), true, false);
+    m_hud->fontGreen().draw(String("%1%2").arg(txt::StringTable::get(txt::Target_Cargo)).arg(txtCargo), Rect(pos.x - 100, pos.y, 200, -1), true, false);
 
     pos = m_hud->project(m_rect.pos() + Point(0, 32));
-    m_hud->fontGreen().draw(QString("D:%1").arg(txtDistance), pos);
+    m_hud->fontGreen().draw(String("D:%1").arg(txtDistance), pos);
     
     pos.y += 12;
-    m_hud->fontGreen().draw(QString("H:%1").arg(txtHeight), pos);
+    m_hud->fontGreen().draw(String("H:%1").arg(txtHeight), pos);
 
     pos.y += 12;
-    m_hud->fontGreen().draw(QString("V:%1").arg(txtVelocity), pos);
+    m_hud->fontGreen().draw(String("V:%1").arg(txtVelocity), pos);
 
     pos.y += 12;
-    m_hud->fontGreen().draw(QString("N:%1").arg(txtNoise), pos);
+    m_hud->fontGreen().draw(String("N:%1").arg(txtNoise), pos);
 
     pos = m_hud->project(m_rect.pos() + Point(m_rect.width, 32));
     pos.x -= 36;
-    m_hud->fontGreen().draw(QString("R:%1").arg(txtRange), pos);
+    m_hud->fontGreen().draw(String("R:%1").arg(txtRange), pos);
 
     pos.y += 12;
-    m_hud->fontGreen().draw(QString("G:%1").arg(txtGun), pos);
+    m_hud->fontGreen().draw(String("G:%1").arg(txtGun), pos);
 
     pos.y += 12;
-    m_hud->fontGreen().draw(QString("T:%1").arg(txtTorpedo), pos);
+    m_hud->fontGreen().draw(String("T:%1").arg(txtTorpedo), pos);
 }
 
 

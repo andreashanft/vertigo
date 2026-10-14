@@ -1,6 +1,8 @@
 include_directories(${GLM_INCLUDE_DIR})
 include_directories(${OPENAL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+# stb_image and stb_image_write
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/3rdparty/stb)
 
 set(SOURCES
     fight/boundingbox.cpp
@@ -109,6 +111,8 @@ set(SOURCES
     game/dialogframe.h
     game/encom.cpp
     game/encom.h
+    game/input.cpp
+    game/input.hpp
     game/items.cpp
     game/items.h
     game/main.cpp
@@ -143,6 +147,10 @@ set(SOURCES
     gfx/font.h
     gfx/fontmanager.cpp
     gfx/fontmanager.h
+    gfx/framebuffer.cpp
+    gfx/framebuffer.hpp
+    gfx/gl.cpp
+    gfx/gl.hpp
     gfx/glbmodel.cpp
     gfx/glbmodel.h
     gfx/image.cpp
@@ -151,6 +159,8 @@ set(SOURCES
     gfx/mesh.h
     gfx/pipeline.cpp
     gfx/pipeline.h
+    gfx/rgb.cpp
+    gfx/rgb.h
     gfx/texture.cpp
     gfx/texture.h
     gfx/texturemanager.cpp
@@ -218,6 +228,10 @@ set(SOURCES
     sfx/samplemap.cpp
     sfx/samplemap.h
 
+    txt/parse.cpp
+    txt/parse.hpp
+    txt/value.cpp
+    txt/value.h
     txt/desfile.cpp
     txt/desfile.h
     txt/stringtable.cpp
@@ -238,8 +252,16 @@ set(SOURCES
     ui/widget.cpp
     ui/widget.h
 
+    util/bytereader.hpp
+    util/commandline.cpp
+    util/commandline.hpp
+    util/containers.hpp
     util/core.h
     util/datapath.cpp
+    util/datetime.cpp
+    util/datetime.hpp
+    util/datetimetext.cpp
+    util/datetimetext.hpp
     util/datapath.h
     util/deferreddeletable.cpp
     util/deferreddeletable.h
@@ -248,17 +270,31 @@ set(SOURCES
     util/event.hpp
     util/file.cpp
     util/file.h
+    util/json.cpp
+    util/json.hpp
+    util/path.cpp
+    util/path.hpp
     util/random.cpp
     util/random.h
+    util/settings.cpp
+    util/settings.hpp
     util/rect.hpp
     util/ticks.h
+    util/timer.hpp
     util/size.hpp
+    util/string.cpp
+    util/string.hpp
 )
 
 add_executable(vertigo WIN32 ${SOURCES})
-target_link_libraries(vertigo Qt${QT_VERSION_MAJOR}::Widgets ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
-if (QT_VERSION_MAJOR EQUAL 6)
-    target_link_libraries(vertigo Qt6::OpenGL)
+target_link_libraries(vertigo SDL3::SDL3 ${OPENAL_LIBRARY})
+if(APPLE)
+    # the region's date format for the saved games
+    target_link_libraries(vertigo "-framework CoreFoundation")
+endif()
+if(WIN32)
+    # CommandLineToArgvW() for the arguments in UTF-8
+    target_link_libraries(vertigo shell32)
 endif()
 if (TARGET glm::glm)
     target_link_libraries(vertigo glm::glm)

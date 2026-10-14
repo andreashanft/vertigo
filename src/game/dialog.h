@@ -20,10 +20,12 @@
 
 
 #include "ui/widget.h"
-#include <QMap>
-#include <QSet>
+#include <map>
+#include <set>
+#include <vector>
 
 #include <functional>
+#include "util/string.hpp"
 
 namespace game {
 
@@ -36,14 +38,14 @@ private:
         int text;
         int next;
         int message;
-        QSet<int> onlyIf;
-        QSet<int> notIf;
+        std::set<int> onlyIf;
+        std::set<int> notIf;
     };
 
     struct Entry
     {
         int text;
-        QList<Option> options;
+        std::vector<Option> options;
     };
 
     struct Message
@@ -70,7 +72,7 @@ private:
 
         Type type;
         int value;
-        QString name;
+        String name;
     };
 
     struct Precondition
@@ -86,7 +88,7 @@ private:
 
         Type type;
         int amount;
-        QString name;
+        String name;
     };
 
     enum Return
@@ -106,8 +108,8 @@ public:
        std::function<void(int)> funcAddCredit,
        std::function<void(int)> funcEnableStation,
        std::function<void(int)> funcDisableStation,
-       std::function<void(QString, int)> funcAddMission,
-       std::function<void(int, QString)> funcReplaceApproachMovie,
+       std::function<void(String, int)> funcAddMission,
+       std::function<void(int, String)> funcReplaceApproachMovie,
        std::function<void(int)> funcUpgradeBoat,
        std::function<void()> funcGameOver
     );
@@ -116,7 +118,7 @@ public:
 
 public:
     int id() const { return m_id; }
-    const QString& name() const { return m_name; }
+    const String& name() const { return m_name; }
     bool isFemale() const { return m_female; }
     int room() const { return m_room; }
     int person() const { return m_person; }
@@ -129,23 +131,23 @@ public:
 private:
     void draw();
     int drawOption(int y, const Option *option);
-    void mouseMoveEvent(const QPoint &pos);
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    void mouseMoveEvent(const Point &pos);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
     void select();
-    void loadTree(const QString &filename);
-    void loadStrings(const QString &filename);
+    void loadTree(const String &filename);
+    void loadStrings(const String &filename);
     bool testPreconditions() const;
 
 private:
     int m_id;
-    QMap<int, Entry> m_entries;
-    QMap<int, QString> m_strings;
+    std::map<int, Entry> m_entries;
+    std::map<int, String> m_strings;
     int m_current;
     int m_optionIndex;
-    QPoint m_mousePos;
-    QRect m_rect;
+    Point m_mousePos;
+    Rect m_rect;
     const Option *m_option;
-    QString m_name;
+    String m_name;
     bool m_female;
     int m_area;
     int m_station;
@@ -153,11 +155,12 @@ private:
     int m_person;
     bool m_finished;
     bool m_remove;
-    QMultiMap<int, Message> m_messages;
+    // the messages of an id, the last one read first
+    std::multimap<int, Message> m_messages;
     int m_changeChapter;
     bool m_gameOver;
     bool m_isSmallTalk;
-    QList<Precondition> m_preconditions;
+    std::vector<Precondition> m_preconditions;
     std::function<void(int)> m_funcRemove;
     std::function<void(int)> m_funcAddMessage;
     std::function<void(int)> m_funcAddTask;
@@ -168,8 +171,8 @@ private:
     std::function<void(int)> m_funcAddCredit;
     std::function<void(int)> m_funcEnableStation;
     std::function<void(int)> m_funcDisableStation;
-    std::function<void(QString, int)> m_funcAddMission;
-    std::function<void(int, QString)> m_funcReplaceApproachMovie;
+    std::function<void(String, int)> m_funcAddMission;
+    std::function<void(int, String)> m_funcReplaceApproachMovie;
     std::function<void(int)> m_funcUpgradeBoat;
     std::function<void()> m_funcGameOver;
 };

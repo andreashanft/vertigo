@@ -22,7 +22,7 @@
 #include <map>
 #include <list>
 #include <set>
-#include <QStringList>
+#include "util/string.hpp"
 #include "condition.h"
 
 
@@ -67,7 +67,7 @@ public:
     Condition* addCondition(int limit = 0);
     // a condition for an order slot's "stop when" settings, nullptr if it has none
     Condition* addBreakCondition(int cond1, int dep1, int ref1, int op, int cond2, int dep2, int ref2, int del);
-    ConditionRadio* addCondRadio(const Vector3D &pos, const QString &text);
+    ConditionRadio* addCondRadio(const Vector3D &pos, const String &text);
     ConditionSpace* addCondSpace(int x, int y, int dimx, int dimy, int minz, int maxz);
     void testSpace(float x, float y, float height);
     void delayComplete(Condition *cond, int delay);
@@ -84,10 +84,10 @@ public:
     bool failureEnded() const { return m_condFailure.ended(); }
 
     // problems found while setting up the conditions, e.g. unresolved references
-    const QStringList& issues() const { return m_issues; }
+    const StringList& issues() const { return m_issues; }
 
 private:
-    void issue(const QString &text);
+    void issue(const String &text);
 
 private:
     Scenario *m_scenario;
@@ -98,7 +98,7 @@ private:
 
     ConditionSuccess m_condSuccess;
     ConditionFailure m_condFailure;
-    QStringList m_issues;
+    StringList m_issues;
     std::map<int, Condition> m_condObjectives;
     std::set<int> m_destroyTargets;
     std::list<ConditionEvent> m_absentEvents; // completed once the dependencies are built

@@ -16,16 +16,16 @@
  ***************************************************************************/
 
 #include "minimovie.h"
+#include "util/containers.hpp"
 #include "gfx/image.h"
 #include "util/random.h"
-#include <QStringList>
-#include <QRegularExpression>
+#include "util/string.hpp"
 
 
 namespace game {
 
 
-MiniMovie::MiniMovie(const QString &path, std::function<void()> &&funcFinished) :
+MiniMovie::MiniMovie(const String &path, std::function<void()> &&funcFinished) :
     m_path(path),
     m_funcFinished(std::move(funcFinished))
 {
@@ -35,20 +35,20 @@ MiniMovie::MiniMovie(const QString &path, std::function<void()> &&funcFinished) 
 
 MiniMovie::~MiniMovie()
 {
-    qDeleteAll(m_videos);
+    util::deleteAll(m_videos);
 }
 
 
 void MiniMovie::load(txt::DesFile &file)
 {
-    foreach (const QString &section, file.sections().filter(QRegularExpression("^minimovie"))) {
+    for (const String &section : file.sections().withPrefix("minimovie")) {
         file.setSection(section);
 
-        const QString name = file.value("Name").toString();
-        const QString type = file.value("Type").toString().toLower();
+        const String name = file.value("Name").toString();
+        const String type = file.value("Type").toString().toLower();
 
         Video *video = new Video;
-        video->video.open(QString("%1/%2.mvi").arg(m_path, name));
+        video->video.open(String("%1/%2.mvi").arg(m_path, name));
         video->x = file.value("X1").toInt();
         video->y = file.value("Y1").toInt();
         video->rndMax = 0;
@@ -65,7 +65,7 @@ void MiniMovie::load(txt::DesFile &file)
 
         video->time = float(util::random()) / RAND_MAX * video->rndMax;
 
-        m_videos.append(video);
+        m_videos.push_back(video);
     }
 }
 
@@ -78,9 +78,9 @@ void MiniMovie::start()
 
 void MiniMovie::update(gfx::Texture texture)
 {
-    const quint32 time = m_time.restart();
+    const std::uint32_t time = m_time.restart();
     bool oneshotPlaying = false;
-    foreach (Video *video, m_videos) {
+    for (Video *video : m_videos) {
         if (video->oneShot)
             oneshotPlaying = video->video.isPlaying();
         if (video->rndMax > 0 && !video->video.isPlaying()) {
@@ -99,7 +99,7 @@ void MiniMovie::update(gfx::Texture texture)
     }
 
     if (oneshotPlaying) {
-        foreach (Video *video, m_videos) {
+        for (Video *video : m_videos) {
             if (video->oneShot) {
                 if (!video->video.isPlaying()) {
                     m_funcFinished();
@@ -119,7 +119,7 @@ void MiniMovie::setColorTable(const gfx::ColorTable &colorTable)
 
 void MiniMovie::playOneshot()
 {
-    foreach (Video *video, m_videos) {
+    for (Video *video : m_videos) {
         if (video->oneShot)
             video->video.play();
     }
@@ -128,7 +128,7 @@ void MiniMovie::playOneshot()
 
 void MiniMovie::stopOneshot()
 {
-    foreach (Video *video, m_videos) {
+    for (Video *video : m_videos) {
         if (video->oneShot)
             video->video.stop();
     }

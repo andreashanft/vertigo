@@ -21,8 +21,7 @@
 
 #include "widget.h"
 #include "gfx/font.h"
-#include <QRectF>
-#include <QString>
+#include "util/string.hpp"
 
 
 namespace ui {
@@ -37,7 +36,8 @@ public:
         AlignHCenter = 1,
         AlignBottom = 2,
     };
-    Q_DECLARE_FLAGS(Alignment, AlignmentFlags);
+    // AlignmentFlags combined
+    using Alignment = int;
 
 public:
     Label(Widget *parent = NULL, bool visible = true);
@@ -46,7 +46,7 @@ public:
 public:
     void setAlignment(Alignment alignment);
     void setFont(const gfx::Font &font);
-    void setText(const QString &text);
+    void setText(const String &text);
     void setTexture(const gfx::Texture &texture);
 
 public:
@@ -58,13 +58,12 @@ protected:
 protected:
     gfx::Font m_font;
     Rect m_drawRect;
-    QString m_text;
+    String m_text;
     gfx::Texture m_texture;
     Alignment m_alignment;
 };
 
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(Label::Alignment);
 
 
 } // namespace ui

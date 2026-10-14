@@ -30,7 +30,7 @@ Shield::Shield(HUD *hud, Rect rect) :
     m_rect(rect)
 {
     for (int i = 1; i <= 9; i++)
-        m_shield.emplace_back(m_hud->getImage(QString("hudshie%1").arg(i)), true);
+        m_shield.emplace_back(m_hud->getImage(String("hudshie%1").arg(i)), true);
 }
 
 

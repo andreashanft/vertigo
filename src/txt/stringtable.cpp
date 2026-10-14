@@ -18,22 +18,22 @@
 #include "desfile.h"
 #include "stringtable.h"
 #include "util/datapath.h"
-#include <QFile>
+#include "util/path.hpp"
 
 
 namespace txt {
 
 
-QString StringTable::m_language;
-QStringList StringTable::m_tableDesktop;
-QStringList StringTable::m_tableFight;
+String StringTable::m_language;
+StringList StringTable::m_tableDesktop;
+StringList StringTable::m_tableFight;
 
 
 bool StringTable::load()
 {
-    if (QFile::exists(util::DataPath::resolve("txt:german.lan")))
+    if (util::exists(util::DataPath::resolve("txt:german.lan")))
         m_language = "German";
-    if (QFile::exists(util::DataPath::resolve("txt:english.lan")))
+    if (util::exists(util::DataPath::resolve("txt:english.lan")))
         m_language = "English";
 
     DesFile fileDes("txt:deeptext.des");
@@ -43,7 +43,7 @@ bool StringTable::load()
         return false;
 
     for (int i = 0; ; i++) {
-        const QString key = QString("Text%1").arg(i);
+        const String key = String("Text%1").arg(i);
         if (!fileDes.contains(key))
             break;
 
@@ -54,7 +54,7 @@ bool StringTable::load()
     fileDes.setSection("Text");
 
     for (int i = 0; ; i++) {
-        const QString key = QString("Text%1").arg(i);
+        const String key = String("Text%1").arg(i);
         if (!fileDes.contains(key))
             break;
 
@@ -65,12 +65,12 @@ bool StringTable::load()
 }
 
 
-QString StringTable::get(String string)
+String StringTable::get(StringId string)
 {
     return m_tableDesktop.at(string);
 }
 
-QString StringTable::get(StringFight string)
+String StringTable::get(StringFight string)
 {
     return m_tableFight.at(string);
 }

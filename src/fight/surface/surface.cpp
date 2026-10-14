@@ -20,9 +20,10 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "txt/desfile.h"
+#include "util/bytereader.hpp"
 #include "util/datapath.h"
-#include <qopengl.h>
-#include <QFile>
+#include "util/path.hpp"
+#include "gfx/gl.hpp"
 #include <iostream>
 
 #include <glm/geometric.hpp>
@@ -36,56 +37,46 @@ Surface::Surface() :
 }
 
 
-void Surface::load(const QString &name, int maxheightscale, int mapping)
+void Surface::load(const String &name, int maxheightscale, int mapping)
 {
     m_mapping = mapping;
 
-    txt::DesFile file(QString("vfx:surface/%1.des").arg(name));
+    txt::DesFile file(String("vfx:surface/%1.des").arg(name));
     file.setSection("height");
-    m_heightMap = gfx::Image::loadPCX(QString("vfx:surface/%2").arg(file.value("name").toString().replace("\\", "/")));
+    m_heightMap = gfx::Image::loadPCX(String("vfx:surface/%2").arg(file.value("name").toString().replace("\\", "/")));
 
-    qreal sx, sy, sz;
+    // three floats, from which the 32 heights of the map are scaled
+    auto load = [](const String &name, std::size_t offset) {
+        const std::string path = util::DataPath::resolve(String("vfx:surface/%1").arg(String(name).replace("\\", "/")));
+        std::vector<char> data;
+        if (!util::readFile(path, data, offset))
+            std::cerr << "Cannot open " << path << std::endl;
+        return data;
+    };
     {
         file.setSection("map");
-        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/"))));
-        if (!scaleFile.open(QFile::ReadOnly))
-            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
-
-        QDataStream stream(&scaleFile);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-        stream >> sx >> sy >> sz;
+        const std::vector<char> data = load(file.value("scale").toString(), 0);
+        util::ByteReader stream(data);
+        float x, y, z;
+        stream >> x >> y >> z;
+        double sx = x, sy = y, sz = z;
         if (sz < maxheightscale)
             sz = maxheightscale;
         m_scale = Vector3D(sx / 32.0f, sy / 32.0f, sz / 32.0f);
     }
 
-    {
-        file.setSection("texture");
-        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/"))));
-        if (!scaleFile.open(QFile::ReadOnly))
-            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
-        scaleFile.seek(12);
+    // a byte for each cell of the map after a header
+    file.setSection("texture");
+    m_textureMap = load(file.value("mapping").toString(), 12);
+    m_textureMap.resize(std::min<std::size_t>(m_textureMap.size(), 65536));
+    m_textureDir = load(file.value("direction").toString(), 12);
+    m_textureDir.resize(std::min<std::size_t>(m_textureDir.size(), 65536));
 
-        m_textureMap = scaleFile.read(65536);
-    }
-
-    QByteArray dir;
-    {
-        file.setSection("texture");
-        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/"))));
-        if (!scaleFile.open(QFile::ReadOnly))
-            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
-        scaleFile.seek(12);
-
-        m_textureDir = scaleFile.read(65536);
-    }
-
-    const QString sName = file.value("sname").toString();
-    const QString tName = file.value("tname").toString();
+    const String sName = file.value("sname").toString();
+    const String tName = file.value("tname").toString();
     for (int i = 0; i <= 16; i++) {
-        gfx::ColorTable colorTable(QString("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, QChar('0')));
-        m_textures.push_back(gfx::Image::load(QString("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, QChar('0')), colorTable));
+        gfx::ColorTable colorTable(String("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, '0'));
+        m_textures.push_back(gfx::Image::load(String("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, '0'), colorTable));
     }
 }
 
@@ -104,13 +95,16 @@ float Surface::heightAt(float x, float y, Vector3D &normal)
 
 float Surface::height(int x, int y) const
 {
-    return qGray(m_heightMap.pixel(x & 0xff, y & 0xff));
+    return gfx::gray(m_heightMap.pixel(x & 0xff, y & 0xff));
 }
 
 
 void Surface::setHeight(int x, int y, int refx, int refy, int offset)
 {
-    int i = m_heightMap.pixelIndex(refx, refy);
+    // a reference off the map, or a height past the colour table's, changes nothing
+    if (!m_heightMap.valid(refx, refy))
+        return;
+    const int i = m_heightMap.pixelIndex(refx, refy);
 
     for (int dy = -1; dy < 3; dy++) {
         for (int dx = -1; dx < 3; dx++) {

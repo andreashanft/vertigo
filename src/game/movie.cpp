@@ -16,14 +16,12 @@
  ***************************************************************************/
 
 #include "movie.h"
-#include <QApplication>
-#include <QKeyEvent>
 
 
 namespace game {
 
 
-    Movie::Movie(const QString &filename, MovieType type, const QString &textLarge, const QString &textSmall) :
+    Movie::Movie(const String &filename, MovieType type, const String &textLarge, const String &textSmall) :
     m_pause(false),
     m_filename(filename),
     m_type(type),
@@ -57,16 +55,15 @@ void Movie::play(std::function<void()> &&funcFinished)
 
     m_texture.createEmpty(m_video.width(), m_video.height() + 4, gfx::Texture::RGBA);
 
-    QImage line(m_texture.width(), 1, QImage::Format_Indexed8);
-    line.setColorTable(QVector<QRgb>() << qRgb(44, 44, 51));
-    line.fill(0);
+    gfx::Image line(m_texture.width(), 1, gfx::Image::Indexed8);
+    line.setColorTable(gfx::ColorTable{ gfx::rgb(44, 44, 51) });
 
     m_texture.update(0, 0, line);
     m_texture.update(0, m_texture.height() - 1, line);
 }
 
 
-void Movie::setRect(const QRect &rect)
+void Movie::setRect(const Rect &rect)
 {
     Renderer::setRect(rect);
 
@@ -89,7 +86,7 @@ void Movie::draw()
                 }
             }
 
-            QImage image = m_video.getFrame();
+            const gfx::Image image = m_video.getFrame();
             if (!image.isNull())
                 m_texture.update(0, 2, image);
         }
@@ -97,7 +94,7 @@ void Movie::draw()
         setupGL();
         m_texture.draw();
 
-        int y = static_cast<int>((2 - rectOrtho().y())/rectOrtho().height()*height());
+        int y = static_cast<int>((2 - rectOrtho().y)/rectOrtho().height*height());
         if (m_type == MovieFilm && y >= 74)
         {
             setupOrthographicMatrix(190, height());
@@ -122,14 +119,14 @@ void Movie::draw()
 }
 
 
-void Movie::keyPressEvent(QKeyEvent *event)
+void Movie::keyPressEvent(input::KeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape) {
+    if (event->key() == input::Key_Escape) {
         m_funcFinished();
         return;
     }
 
-    if (event->key() == Qt::Key_Space) {
+    if (event->key() == input::Key_Space) {
         m_pause = !m_pause;
         if (m_pause)
             m_stream.pause();
@@ -139,7 +136,7 @@ void Movie::keyPressEvent(QKeyEvent *event)
 }
 
 
-void Movie::mousePressEvent(QMouseEvent *event)
+void Movie::mousePressEvent(input::MouseEvent *event)
 {
 
 }

@@ -17,7 +17,7 @@
 
 #include "menu.h"
 #include "sfx/soundsystem.h"
-#include <QMouseEvent>
+#include <cmath>
 
 
 namespace game {
@@ -52,25 +52,32 @@ void Menu::setRootWidget(ui::Widget *widget)
 }
 
 
-void Menu::mousePressEvent(QMouseEvent *event)
+Point Menu::imagePos(input::MouseEvent *event)
+{
+    const PointD pos = screenToImage(event->position());
+    return Point(int(std::lround(pos.x)), int(std::lround(pos.y)));
+}
+
+
+void Menu::mousePressEvent(input::MouseEvent *event)
 {
     if (m_rootWidget)
-        if (m_rootWidget->doMousePressEvent(screenToImage(event->pos()).toPoint(), event->button()) && m_click)
+        if (m_rootWidget->doMousePressEvent(imagePos(event), event->button()) && m_click)
             sfx::SoundSystem::get()->sound(sfx::Click)->play();
 }
 
 
-void Menu::mouseReleaseEvent(QMouseEvent *event)
+void Menu::mouseReleaseEvent(input::MouseEvent *event)
 {
     if (m_rootWidget)
-        m_rootWidget->doMouseReleaseEvent(screenToImage(event->pos()).toPoint(), event->button());
+        m_rootWidget->doMouseReleaseEvent(imagePos(event), event->button());
 }
 
 
-void Menu::mouseMoveEvent(QMouseEvent *event)
+void Menu::mouseMoveEvent(input::MouseEvent *event)
 {
     if (m_rootWidget)
-        m_rootWidget->doMouseMoveEvent(screenToImage(event->pos()).toPoint());
+        m_rootWidget->doMouseMoveEvent(imagePos(event));
 }
 
 

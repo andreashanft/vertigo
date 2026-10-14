@@ -25,7 +25,7 @@
 #include "gfx/image.h"
 #include "sfx/sound.h"
 
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 
 namespace ui {
 
@@ -42,7 +42,7 @@ public:
 
 private:
     void draw();
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
     void updateButtons();
     void scrollLeft();
     void scrollRight();
@@ -64,7 +64,7 @@ private:
     int m_firstItem;
     int m_selectedItem;
     int m_offset;
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
 };
 
 } // namespace ui

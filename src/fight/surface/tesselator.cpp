@@ -211,14 +211,14 @@ bool Tesselator::intersect(const Vector3D &start, const Vector3D &end, float rad
 }
 
 
-void Tesselator::tesselate(Element &element, int level, const Vector3D &scale, QByteArray &textureMap, QByteArray &textureDir, int mapping)
+void Tesselator::tesselate(Element &element, int level, const Vector3D &scale, const std::vector<char> &textureMap, const std::vector<char> &textureDir, int mapping)
 {
     for (int y = element.rect().top(); y <= element.rect().bottom(); y++) {
         for (int x = element.rect().left(); x <= element.rect().right(); x++) {
             const int x1 = ((y & 0xff) << 8) + (x & 0xff);
 
-            const quint8 m = textureMap[x1];
-            const quint8 d = textureDir[x1];
+            const std::uint8_t m = textureMap[x1];
+            const std::uint8_t d = textureDir[x1];
 
             int texture = (m >> 2);
 

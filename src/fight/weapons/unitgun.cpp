@@ -33,11 +33,11 @@ UnitGun::UnitGun(Scenario *scenario, ActiveObject *owner, int model, const std::
     if (volleyFile)
     {
         volleyFile->setSection("volleygun");
-        for (int i = 0; volleyFile->contains(QString("state%1").arg(i)); i++)
+        for (int i = 0; volleyFile->contains(String("state%1").arg(i)); i++)
         {
-            const bool active = volleyFile->value(QString("state%1").arg(i)).toString().trimmed().toLower() == "a";
-            const float duration = volleyFile->value(QString("duration%1").arg(i)).toFloat();
-            volleyFile->value(QString("tolerance%1").arg(i));
+            const bool active = volleyFile->value(String("state%1").arg(i)).toString().trimmed().toLower() == "a";
+            const float duration = volleyFile->value(String("duration%1").arg(i)).toFloat();
+            volleyFile->value(String("tolerance%1").arg(i));
             if (duration > 0)
                 m_volley.push_back({ active, duration });
         }
@@ -53,10 +53,10 @@ UnitGun::Mount UnitGun::readMount(txt::DesFile &file)
         return mount;
     mount.model = file.value("model").toInt();
     mount.ammunition = file.value("ammunition", -1).toInt();
-    for (int i = 0; file.contains(QString("relative%1x").arg(i)); i++)
-        mount.muzzles.push_back(Vector3D(file.value(QString("relative%1x").arg(i)).toFloat(),
-                                         file.value(QString("relative%1y").arg(i)).toFloat(),
-                                         file.value(QString("relative%1z").arg(i)).toFloat()));
+    for (int i = 0; file.contains(String("relative%1x").arg(i)); i++)
+        mount.muzzles.push_back(Vector3D(file.value(String("relative%1x").arg(i)).toFloat(),
+                                         file.value(String("relative%1y").arg(i)).toFloat(),
+                                         file.value(String("relative%1z").arg(i)).toFloat()));
     return mount;
 }
 

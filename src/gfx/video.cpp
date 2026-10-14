@@ -28,12 +28,12 @@ Video::Video()
 
 }
 
-Video::Video(const QString &filename)
+Video::Video(const String &filename)
 {
     open(filename);
 }
 
-void Video::open(const QString &filename)
+void Video::open(const String &filename)
 {
     m_playing = false;
     m_looping = false;
@@ -44,7 +44,7 @@ void Video::open(const QString &filename)
     m_entries.clear();
     m_frame.clear();
 
-    m_file.open(QString(filename).replace(":", "/").toUtf8().constData());
+    m_file.open(String(filename).replace(":", "/").toUtf8());
 
     std::uint32_t totalFrames;
     std::uint32_t audioFrames;
@@ -126,7 +126,7 @@ void Video::reset()
 Image Video::getFrame()
 {
     if (!m_playing)
-        return QImage();
+        return Image();
 
     bool gotFrame = false;
 
@@ -135,12 +135,12 @@ Image Video::getFrame()
             reset();
         } else {
             m_playing = false;
-            return QImage();
+            return Image();
         }
     }
 
     if (m_time.elapsed() < 1000.0f / m_frameRate)
-        return QImage();
+        return Image();
 
     m_time.restart();
 
@@ -177,7 +177,7 @@ Image Video::getFrame()
     if (gotFrame)
         return createImage();
 
-    return QImage();
+    return Image();
 }
 
 std::vector<char> Video::getAudio()
@@ -414,13 +414,12 @@ bool Video::decompressLZW(std::size_t size, std::vector<char> &out)
     return true;
 }
 
-QImage Video::createImage()
+Image Video::createImage()
 {
     if (m_frame.size() == 0)
         return createEmpty();
 
-    QImage image(m_width, m_height, QImage::Format_Indexed8);
-    image.fill(0);
+    Image image(m_width, m_height, Image::Indexed8);
     image.setColorTable(m_colorTable);
 
     const bool wide = std::size_t(m_width) * m_height > m_frame.size();
@@ -456,11 +455,10 @@ QImage Video::createImage()
     return image;
 }
 
-QImage Video::createEmpty()
+Image Video::createEmpty()
 {
-    QImage image(m_width, m_height, QImage::Format_Indexed8);
-    image.fill(0);
-    image.setColorTable(QVector<QRgb>() << qRgb(0, 0, 0));
+    Image image(m_width, m_height, Image::Indexed8);
+    image.setColorTable(ColorTable{ rgb(0, 0, 0) });
     return image;
 }
 

@@ -24,6 +24,7 @@
 #include "gfx/texture.h"
 
 #include <functional>
+#include "util/string.hpp"
 
 namespace ui {
 
@@ -33,14 +34,14 @@ public:
     Frame(std::function<void()> &&funcClose, ui::Widget *parent = NULL);
 
 public:
-    void setupFrame(const QSize &size, const QString &title, bool closable);
+    void setupFrame(const Size &size, const String &title, bool closable);
 
 protected:
     void closeFrame();
 
 private:
     static int updateBorder(gfx::Texture texture, const gfx::ColorTable &colorTable, int x, int id);
-    static QImage getBorder(const gfx::ColorTable &colorTable, int id);
+    static gfx::Image getBorder(const gfx::ColorTable &colorTable, int id);
 
 private:
     std::function<void()> m_funcClose;

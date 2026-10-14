@@ -17,7 +17,7 @@
 
 #include "renderer.h"
 #include "gfx/pipeline.h"
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include <glm/vec4.hpp>
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -51,7 +51,7 @@ void Renderer::hideCursor()
 }
 
 
-void Renderer::setRect(const QRect &rect)
+void Renderer::setRect(const Rect &rect)
 {
     m_rect = rect;
 
@@ -76,7 +76,7 @@ void Renderer::setupOrthographicMatrix(float w, float h)
         left = ((width() / scale) - w) / 2;
     }
 
-    m_rectOrtho = QRectF(-left, -top, w + 2*left, h + 2*top);
+    m_rectOrtho = RectD(-left, -top, w + 2*left, h + 2*top);
 
     m_projectionMatrix = glm::ortho(m_rectOrtho.left(), m_rectOrtho.right(), m_rectOrtho.bottom(), m_rectOrtho.top());
     m_projectionMatrixInverted = glm::inverse(m_projectionMatrix);
@@ -100,17 +100,17 @@ void Renderer::setupGL(bool clear)
 }
 
 
-QPointF Renderer::screenToImage(const QPointF &pos)
+PointD Renderer::screenToImage(const PointD &pos)
 {
-    Vector4D p = m_projectionMatrixInverted * Vector4D(pos.x() / width() * 2.0f - 1.0f, 1.0f - pos.y() / height() * 2.0f, 0, 1);
-    return QPointF(p.x, p.y);
+    Vector4D p = m_projectionMatrixInverted * Vector4D(pos.x / width() * 2.0f - 1.0f, 1.0f - pos.y / height() * 2.0f, 0, 1);
+    return PointD(p.x, p.y);
 }
 
 
-QPointF Renderer::imageToScreen(const QPointF &pos)
+PointD Renderer::imageToScreen(const PointD &pos)
 {
-    const Vector4D p = m_projectionMatrix * Vector4D(pos.x(), pos.y(), 0, 1);
-    return QPointF((p.x + 1.0f)/2.0f*width(), (1.0f - p.y)/2.0f*height());
+    const Vector4D p = m_projectionMatrix * Vector4D(pos.x, pos.y, 0, 1);
+    return PointD((p.x + 1.0f)/2.0f*width(), (1.0f - p.y)/2.0f*height());
 }
 
 

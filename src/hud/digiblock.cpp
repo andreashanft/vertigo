@@ -48,19 +48,19 @@ void DigiBlock::draw()
 
     int depth = static_cast<int>(glm::round(m_hud->scenario()->depth()));
     m_children[0]->setFont(depth > 100 ? m_hud->fontGreen() : m_hud->fontRed());
-    m_children[0]->setText(QString("%1M").arg(depth));
+    m_children[0]->setText(String("%1M").arg(depth));
     
     int height = static_cast<int>(glm::round(m_hud->scenario()->height()));
     m_children[1]->setFont(height > 5 ? m_hud->fontGreen() : m_hud->fontRed());
-    m_children[1]->setText(QString("%1M").arg(height));
+    m_children[1]->setText(String("%1M").arg(height));
     
     int speed = static_cast<int>(glm::round(m_hud->scenario()->player()->speed()));
     m_children[2]->setFont(speed > -5 ? m_hud->fontGreen() : m_hud->fontRed());
-    m_children[2]->setText(QString("%1KM/H").arg(speed));
+    m_children[2]->setText(String("%1KM/H").arg(speed));
     
     int noise = static_cast<int>(glm::round(m_hud->scenario()->player()->noise()));
     m_children[3]->setFont(noise <= 2 ? m_hud->fontGreen() : m_hud->fontRed());
-    m_children[3]->setText(QString("NL %1").arg(noise));
+    m_children[3]->setText(String("NL %1").arg(noise));
 
     int time = static_cast<int>(m_hud->scenario()->time());
     std::stringstream st;
@@ -80,11 +80,11 @@ void DigiBlock::draw()
 
     int nav = 0;
     m_children[5]->setFont(m_hud->fontGreen());
-    m_children[5]->setText(m_hud->navPoint() < 0 ? QString("NAV NONE") : QString("NAV %1").arg(static_cast<char>('A' + m_hud->scenario()->navPoints()[m_hud->navPoint()]->num())));
+    m_children[5]->setText(m_hud->navPoint() < 0 ? String("NAV NONE") : String("NAV %1").arg(static_cast<char>('A' + m_hud->scenario()->navPoints()[m_hud->navPoint()]->num())));
 
     int buzzers = m_hud->scenario()->buzzers();
     m_children[6]->setFont(buzzers > 0 ? m_hud->fontGreen() : m_hud->fontRed());
-    m_children[6]->setText(QString("BUZ %1").arg(buzzers));
+    m_children[6]->setText(String("BUZ %1").arg(buzzers));
 }
 
 } // namespace hud

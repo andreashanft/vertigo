@@ -19,14 +19,11 @@
 #include "gfx/glbmodel.h"
 #include "gfx/pipeline.h"
 #include "util/datapath.h"
+#include "util/path.hpp"
 
-#include <QDir>
-#include <QElapsedTimer>
-#include <QFileInfo>
-#include <qopengl.h>
-#include <QOpenGLContext>
-#include <QOpenGLExtraFunctions>
-#include <QSettings>
+#include "util/timer.hpp"
+#include "gfx/gl.hpp"
+#include "util/settings.hpp"
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -52,26 +49,26 @@ const float DecalNear = 0.03f;
 }
 
 
-QString Cockpit3D::directory()
+std::string Cockpit3D::directory()
 {
-    QSettings settings;
-    const QString directory = settings.value("cockpit/directory").toString();
-    if (!directory.isEmpty())
+    const std::string directory = util::Settings::value("cockpit/directory");
+    if (!directory.empty())
         return directory;
-    return QDir(util::DataPath::directory()).filePath("3d-cockpits");
+    return util::joinPath(util::DataPath::directory(), "3d-cockpits");
 }
 
 
-QString Cockpit3D::find(const QString &cockpit)
+std::string Cockpit3D::find(const String &cockpit)
 {
-    const QFileInfo file(QDir(directory()).filePath(QString("cockpit_%1.glb").arg(cockpit)));
-    return file.isFile() ? file.absoluteFilePath() : QString();
+    const std::filesystem::path file = util::toPath(util::joinPath(directory(), String("cockpit_%1.glb").arg(cockpit).toUtf8()));
+    std::error_code error;
+    return std::filesystem::is_regular_file(file, error) ? util::fromPath(std::filesystem::absolute(file, error).lexically_normal()) : std::string();
 }
 
 
-std::shared_ptr<Cockpit3D> Cockpit3D::get(const QString &fileName)
+std::shared_ptr<Cockpit3D> Cockpit3D::get(const std::string &fileName)
 {
-    static std::map<QString, std::weak_ptr<Cockpit3D>> cache;
+    static std::map<std::string, std::weak_ptr<Cockpit3D>> cache;
     std::shared_ptr<Cockpit3D> cockpit = cache[fileName].lock();
     if (!cockpit)
     {
@@ -82,7 +79,7 @@ std::shared_ptr<Cockpit3D> Cockpit3D::get(const QString &fileName)
 }
 
 
-Cockpit3D::Cockpit3D(const QString &fileName) :
+Cockpit3D::Cockpit3D(const std::string &fileName) :
     m_fileName(fileName)
 {
 }
@@ -91,7 +88,7 @@ Cockpit3D::Cockpit3D(const QString &fileName) :
 Cockpit3D::~Cockpit3D()
 {
     // the texture went with the context otherwise
-    if (m_texture != 0 && QOpenGLContext::currentContext())
+    if (m_texture != 0 && gfx::gl::hasContext())
         glDeleteTextures(1, &m_texture);
 }
 
@@ -121,12 +118,12 @@ bool Cockpit3D::create()
         return m_state == State::Ready;
     m_state = State::Failed;
 
-    QElapsedTimer timer;
+    util::ElapsedTimer timer;
     timer.start();
     gfx::GlbModel model;
     if (!model.load(m_fileName))
     {
-        std::cerr << "3D cockpit: " << model.error().toUtf8().constData() << std::endl;
+        std::cerr << "3D cockpit: " << model.error() << std::endl;
         return false;
     }
 
@@ -134,7 +131,7 @@ bool Cockpit3D::create()
     // the HUD (the 2D art shows no glass either)
     std::vector<Vector3D> positions;
     std::vector<Vector2D> texCoords;
-    std::vector<quint32> base, decal;
+    std::vector<std::uint32_t> base, decal;
     int image = -1;
     auto inView = [](const Vector3D &p) {
         return -p.z > DecalNear;
@@ -145,16 +142,16 @@ bool Cockpit3D::create()
     for (const gfx::GlbModel::Mesh &mesh : model.meshes())
     {
         const bool textured = mesh.image >= 0 && !mesh.blend;
-        const bool glass = mesh.blend && mesh.extras.value("role").toString() != "hud";
+        const bool glass = mesh.blend && mesh.extras["role"].toString() != "hud";
         if (!textured && !glass)
             continue;
         if (textured)
         {
             if (image >= 0 && mesh.image != image)
-                std::cerr << "3D cockpit: " << mesh.name.toUtf8().constData() << " uses a second texture, which isn't supported" << std::endl;
+                std::cerr << "3D cockpit: " << mesh.name << " uses a second texture, which isn't supported" << std::endl;
             image = image < 0 ? mesh.image : image;
         }
-        const quint32 first = quint32(positions.size());
+        const std::uint32_t first = std::uint32_t(positions.size());
         for (size_t i = 0; i < mesh.positions.size(); i++)
         {
             positions.push_back(mesh.positions[i]);
@@ -162,7 +159,7 @@ bool Cockpit3D::create()
         }
         for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3)
         {
-            const quint32 a = mesh.indices[i], b = mesh.indices[i + 1], c = mesh.indices[i + 2];
+            const std::uint32_t a = mesh.indices[i], b = mesh.indices[i + 1], c = mesh.indices[i + 2];
             if (textured)
                 base.insert(base.end(), { first + a, first + b, first + c });
             // the HUD covers the 640x480 view: only triangles in front of the eye that reach into it
@@ -177,7 +174,7 @@ bool Cockpit3D::create()
     }
     if (base.empty() || image < 0)
     {
-        std::cerr << "3D cockpit: " << m_fileName.toUtf8().constData() << " has no textured meshes" << std::endl;
+        std::cerr << "3D cockpit: " << m_fileName << " has no textured meshes" << std::endl;
         return false;
     }
 
@@ -187,29 +184,31 @@ bool Cockpit3D::create()
     m_mesh.create(int(positions.size()), positions.data(), nullptr, texCoords.data(), int(base.size()), base.data());
 
     // the baked texture: trilinear and anisotropic, as most surfaces are seen at an angle
-    QImage texture = model.images()[image].convertToFormat(QImage::Format_RGB888);
+    gfx::Image texture = model.images()[image].convertToFormat(gfx::Image::RGB888);
     GLint maxSize = 0;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
     if (maxSize > 0 && (texture.width() > maxSize || texture.height() > maxSize))
-        texture = texture.scaled(std::min(texture.width(), int(maxSize)), std::min(texture.height(), int(maxSize)), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        texture = texture.scaled(std::min(texture.width(), int(maxSize)), std::min(texture.height(), int(maxSize)), true);
     glGenTextures(1, &m_texture);
     glBindTexture(GL_TEXTURE_2D, m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (QOpenGLContext::currentContext()->hasExtension("GL_EXT_texture_filter_anisotropic"))
+    if (gfx::gl::hasExtension("GL_EXT_texture_filter_anisotropic") || gfx::gl::hasExtension("GL_ARB_texture_filter_anisotropic"))
     {
         GLfloat anisotropy = 1;
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(8.0f, anisotropy));
     }
-    // QImage pads lines to 4 bytes, GL's default unpack alignment
+    // the rows follow each other without padding to 4 bytes, GL's default
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, texture.width(), texture.height(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture.constBits());
-    QOpenGLContext::currentContext()->extraFunctions()->glGenerateMipmap(GL_TEXTURE_2D);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    std::cout << "3D cockpit: " << QFileInfo(m_fileName).fileName().toUtf8().constData() << ", " << m_baseCount/3 << " triangles, "
+    std::cout << "3D cockpit: " << util::fileName(m_fileName) << ", " << m_baseCount/3 << " triangles, "
               << texture.width() << "x" << texture.height() << " texture, loaded in " << timer.elapsed() << " ms" << std::endl;
     m_state = State::Ready;
     return true;

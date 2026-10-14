@@ -20,8 +20,10 @@
 
 
 #include "cliprect.h"
-#include <QImage>
-#include <QExplicitlySharedDataPointer>
+#include "image.h"
+#include "util/geometry2d.h"
+#include <cstdint>
+#include <memory>
 
 
 namespace gfx {
@@ -38,19 +40,19 @@ public:
 
 public:
     Texture();
-    Texture(const QImage &image, bool smooth = true);
+    Texture(const Image &image, bool smooth = true);
 
 public:
     bool isValid() const;
     int width() const;
     int height() const;
-    QSize size() const;
+    Size size() const;
     unsigned int id() const;
     void bind();
-    void fromImage(const QImage &image, bool smooth = true);
+    void fromImage(const Image &image, bool smooth = true);
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
-    void createEmpty(const QSize &size, Texture::Format format, bool smooth = true);
-    void update(int x, int y, QImage image);
+    void createEmpty(const Size &size, Texture::Format format, bool smooth = true);
+    void update(int x, int y, const Image &image);
     RectF draw(const ClipRect *clipRect = nullptr);
     RectF draw(float x, float y, const ClipRect *clipRect = nullptr);
     RectF draw(const PointF &dstPos, const ClipRect *clipRect = nullptr);
@@ -60,11 +62,12 @@ public:
     RectF draw(const RectF &dstRect, const RectF &srcRect, const ClipRect *clipRect = nullptr);
 
 private:
-    QExplicitlySharedDataPointer<TexturePrivate> d;
+    // shared by the copies
+    std::shared_ptr<TexturePrivate> d;
 };
 
 
-class TexturePrivate : public QSharedData
+class TexturePrivate
 {
 public:
     TexturePrivate();
@@ -78,9 +81,9 @@ public:
     unsigned int id() const { return m_texture; }
     void bind();
     void setFilter(bool smooth);
-    void fromImage(const QImage &image, bool smooth);
+    void fromImage(const Image &image, bool smooth);
     void createEmpty(int w, int h, Texture::Format format, bool smooth);
-    void update(int x, int y, QImage image);
+    void update(int x, int y, const Image &image);
     RectF draw(const RectF &dstRect, const RectF &srcRect, const ClipRect *clipRect);
 
 private:
@@ -89,10 +92,10 @@ private:
 private:
     unsigned int m_texture;
     Texture::Format m_format;
-    quint32 m_width;
-    quint32 m_height;
-    quint32 m_textureWidth;
-    quint32 m_textureHeight;
+    std::uint32_t m_width;
+    std::uint32_t m_height;
+    std::uint32_t m_textureWidth;
+    std::uint32_t m_textureHeight;
 };
 
 
@@ -103,7 +106,7 @@ inline Texture::Texture() :
 }
 
 
-inline Texture::Texture(const QImage &image, bool smooth) :
+inline Texture::Texture(const Image &image, bool smooth) :
     d(new TexturePrivate)
 {
     d->fromImage(image, smooth);
@@ -128,9 +131,9 @@ inline int Texture::height() const
 }
 
 
-inline QSize Texture::size() const
+inline Size Texture::size() const
 {
-    return QSize(width(), height());
+    return Size(width(), height());
 }
 
 
@@ -146,7 +149,7 @@ inline void Texture::bind()
 }
 
 
-inline void Texture::fromImage(const QImage &image, bool smooth)
+inline void Texture::fromImage(const Image &image, bool smooth)
 {
     d->fromImage(image, smooth);
 }
@@ -158,13 +161,13 @@ inline void Texture::createEmpty(int w, int h, Texture::Format format, bool smoo
 }
 
 
-inline void Texture::createEmpty(const QSize &size, Texture::Format format, bool smooth)
+inline void Texture::createEmpty(const Size &size, Texture::Format format, bool smooth)
 {
-    d->createEmpty(size.width(), size.height(), format, smooth);
+    d->createEmpty(size.width, size.height, format, smooth);
 }
 
 
-inline void Texture::update(int x, int y, QImage image)
+inline void Texture::update(int x, int y, const Image &image)
 {
     d->update(x, y, image);
 }

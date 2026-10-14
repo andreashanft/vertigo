@@ -21,7 +21,7 @@
 
 #include "widget.h"
 #include "gfx/font.h"
-#include <QStringList>
+#include "util/string.hpp"
 
 
 namespace ui {
@@ -33,7 +33,7 @@ public:
     List(Widget *parent);
 
 public:
-    void setText(const QStringList &text);
+    void setText(const StringList &text);
     void setFont(const gfx::Font &font);
     void setAlignCenter(bool alignCenter);
 
@@ -41,7 +41,7 @@ protected:
     void draw();
 
 private:
-    QStringList m_text;
+    StringList m_text;
     gfx::Font m_font;
     bool m_alignCenter;
 };

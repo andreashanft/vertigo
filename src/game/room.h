@@ -25,6 +25,7 @@
 #include "ui/frame.h"
 
 #include <list>
+#include "util/string.hpp"
 
 
 namespace game {
@@ -36,7 +37,7 @@ class Dialog;
 class Room : public ui::Frame
 {
 public:
-    Room(int index, const QString &title, const QString &name,
+    Room(int index, const String &title, const String &name,
          std::function<void()> funcClose,
          std::function<void(Dialog*)> funcStartDialog,
          std::function<void(Dialog*)> funcStartEnCom,
@@ -47,12 +48,12 @@ public:
     ~Room();
 
 public:
-    const QString& name() const { return m_name; }
+    const String& name() const { return m_name; }
     void restart();
 
 protected:
     void draw();
-    bool mousePressEvent(const QPoint &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
 
 private:
     void showDock();
@@ -70,15 +71,15 @@ private:
 
     int m_index;
     MiniMovie m_miniMovie;
-    QString m_name;
-    QImage m_backgroundImage;
+    String m_name;
+    gfx::Image m_backgroundImage;
     ui::Label *m_backgroundLabel;
     gfx::Texture m_background;
     sfx::Sound m_backgroundSound;
     sfx::Sound m_dockSound;
-    QMap<int, Person*> m_persons;
+    std::map<int, Person*> m_persons;
     Person* m_dockMan;
-    QString m_dockManName;
+    String m_dockManName;
     std::function<void(Dialog*)> m_funcStartDialog;
     std::function<void(Dialog*)> m_funcStartEnCom;
     std::function<void()> m_funcShowDeparture;

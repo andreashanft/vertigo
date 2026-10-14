@@ -22,7 +22,8 @@
 #include "gfx/mesh.h"
 #include "util/geometry3d.h"
 
-#include <QString>
+#include "util/string.hpp"
+#include <string>
 #include <memory>
 
 
@@ -38,18 +39,18 @@ class Cockpit3D
 {
 public:
     // where the models are: the setting "cockpit/directory", else 3d-cockpits in the data directory
-    static QString directory();
+    static std::string directory();
     // cockpit_NNN.glb of the cockpit NNN, or an empty string if there is none
-    static QString find(const QString &cockpit);
+    static std::string find(const String &cockpit);
     // the model in this file, shared while it is in use; it is loaded on the first draw
-    static std::shared_ptr<Cockpit3D> get(const QString &fileName);
+    static std::shared_ptr<Cockpit3D> get(const std::string &fileName);
 
 public:
-    explicit Cockpit3D(const QString &fileName);
+    explicit Cockpit3D(const std::string &fileName);
     ~Cockpit3D();
 
 public:
-    const QString& fileName() const { return m_fileName; }
+    const std::string& fileName() const { return m_fileName; }
     // false once loading failed
     bool isValid() const { return m_state != State::Failed; }
     // the camera of the cockpit art: focal length and optical centre in pixels of the 640x480 view
@@ -67,7 +68,7 @@ private:
 private:
     enum class State { Unloaded, Ready, Failed };
 
-    QString m_fileName;
+    std::string m_fileName;
     State m_state = State::Unloaded;
     float m_focal = 245.5f;
     Vector2D m_center = Vector2D(320, 240);

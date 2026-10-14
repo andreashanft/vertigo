@@ -11,8 +11,9 @@ nix run github:pnordhus/vertigo
 
 # Compiling
 
-Vertigo needs Qt 6, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
-or OpenGL ES 3. Qt 5.15 still works as a fallback, but isn't tested any more.
+Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
+or OpenGL ES 3. The build also has tests of the game's own types for text,
+data values, images and JSON (`ctest`).
 
 ```
 mkdir build
@@ -24,7 +25,7 @@ make
 ## macOS (Homebrew)
 
 ```
-brew install cmake qt glm
+brew install cmake sdl3 glm
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
@@ -38,8 +39,17 @@ only contains part of it; the rest is in the CD image (`game.gog`, a raw
 `MODE1/2352` track). Point Vertigo to a directory containing `DAT`, `GFX`,
 `SFX`, `TXT` and `VFX` from the CD's `SF` directory, with the installed files
 copied on top. The case of the file names doesn't matter, also on file systems
-that tell upper and lower case apart. `--data <directory>` uses another
-directory for one run, without remembering it.
+that tell upper and lower case apart. Vertigo asks for the directory at the
+first start, and again whenever the remembered one lacks part of the data.
+`--data <directory>` uses another directory for one run, without remembering it.
+
+## Saved games and settings
+
+Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
+`~/Library/Application Support/Vertigo/Vertigo` on macOS,
+`%LOCALAPPDATA%\Vertigo\Vertigo` on Windows and
+`~/.local/share/Vertigo/Vertigo` on Linux. The first start of a version with
+`settings.ini` takes over the settings of the versions before.
 
 ## Testing
 
@@ -77,8 +87,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
   at a fraction of their maximum turn rate (the sign picks the direction),
   instead of following their orders.
-- `--screenshot 3=front.png` saves the window at the given mission seconds
-  (not with `--headless`).
+- `--screenshot 3=front.png` saves the window as PNG at the given mission
+  seconds (not with `--headless`).
 - `--fixed-step` advances the mission by 20 ms per frame instead of by the
   real time, so runs with a window repeat exactly, frame by frame (test times
   are then mission seconds). Screenshots of two builds can be compared pixel

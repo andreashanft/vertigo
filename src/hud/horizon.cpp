@@ -27,7 +27,7 @@ namespace hud {
 
 
 // Bresenham's line algorithm
-void drawLine(QImage &image, float x1, float y1, float x2, float y2, int color)
+void drawLine(gfx::Image &image, float x1, float y1, float x2, float y2, gfx::Rgb color)
 {
     const bool steep = (glm::abs(y2 - y1) > glm::abs(x2 - x1));
     if (steep)
@@ -68,7 +68,7 @@ void drawLine(QImage &image, float x1, float y1, float x2, float y2, int color)
 }
 
 
-void drawSegment(QImage &image, const PointF &c, std::vector<PointF> &points, std::vector<int> &colors, int i)
+void drawSegment(gfx::Image &image, const PointF &c, std::vector<PointF> &points, std::vector<int> &colors, int i)
 {
     drawLine(image, c.x + points[i].x, c.y + points[i].y, c.x + points[i + 1].x, c.y + points[i + 1].y, 0xff000000 + colors[i]*32);
     drawLine(image, c.x - points[i].x, c.y + points[i].y, c.x - points[i + 1].x, c.y + points[i + 1].y, 0xff000000 + colors[i]*32);
@@ -90,34 +90,31 @@ Horizon::Horizon(HUD *hud, glm::ivec2 center, const txt::DesFile &file) :
     std::vector<int> upColors(file.value("UP_NumOfPoints").toInt());
     for (i = 0; i < upPoints.size(); i++)
     {
-        upPoints[i] = PointF(file.value(QString("UP_PointX%1").arg(i)).toFloat(), file.value(QString("UP_PointY%1").arg(i)).toFloat());
-        upColors[i] = file.value(QString("UP_Color%1").arg(i)).toInt();
+        upPoints[i] = PointF(file.value(String("UP_PointX%1").arg(i)).toFloat(), file.value(String("UP_PointY%1").arg(i)).toFloat());
+        upColors[i] = file.value(String("UP_Color%1").arg(i)).toInt();
     }
         
     std::vector<PointF> downPoints(file.value("DN_NumOfPoints").toInt());
     std::vector<int> downColors(file.value("DN_NumOfPoints").toInt());
     for (i = 0; i < downPoints.size(); i++)
     {
-        downPoints[i] = PointF(file.value(QString("DN_PointX%1").arg(i)).toFloat(), file.value(QString("DN_PointY%1").arg(i)).toFloat());
-        downColors[i] = file.value(QString("DN_Color%1").arg(i)).toInt();
+        downPoints[i] = PointF(file.value(String("DN_PointX%1").arg(i)).toFloat(), file.value(String("DN_PointY%1").arg(i)).toFloat());
+        downColors[i] = file.value(String("DN_Color%1").arg(i)).toInt();
     }
 
     PointF c(upPoints[1].x, 10);
-    QImage pitch(c.x*2 + 1, c.y*2 + 1, QImage::Format_ARGB32);
-    pitch.fill(0);
+    gfx::Image pitch(c.x*2 + 1, c.y*2 + 1, gfx::Image::ARGB32);
     drawSegment(pitch, c, upPoints, upColors, 0);
     m_pitch = gfx::Texture(pitch, true);
 
     c = PointF(upPoints[upPoints.size() - 1].x, 10);
-    QImage up(c.x*2 + 1, c.y*2 + 1, QImage::Format_ARGB32);
-    up.fill(0);
+    gfx::Image up(c.x*2 + 1, c.y*2 + 1, gfx::Image::ARGB32);
     for (i = 1; i < upPoints.size() - 1; i++)
         drawSegment(up, c, upPoints, upColors, i);
     m_up = gfx::Texture(up, true);
 
     c = PointF(downPoints[downPoints.size() - 1].x, 10);
-    QImage down(c.x*2 + 1, c.y*2 + 1, QImage::Format_ARGB32);
-    down.fill(0);
+    gfx::Image down(c.x*2 + 1, c.y*2 + 1, gfx::Image::ARGB32);
     for (i = 1; i < downPoints.size() - 1; i++)
         drawSegment(down, c, downPoints, downColors, i);
     m_down = gfx::Texture(down, true);

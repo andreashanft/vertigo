@@ -20,10 +20,11 @@
 
 #include "element.h"
 #include "tesselator.h"
+#include "gfx/image.h"
 
 #include <map>
 #include <vector>
-#include <QImage>
+#include "util/string.hpp"
 
 namespace gfx { class Texture; }
 
@@ -33,7 +34,7 @@ class Surface
 {
 public:
     Surface();
-    void load(const QString &name, int maxheightscale, int mapping);
+    void load(const String &name, int maxheightscale, int mapping);
 
 public:
     void draw(const Vector3D &position, const Vector3D &direction);
@@ -52,9 +53,9 @@ private:
 private:
     std::vector<gfx::Texture> m_textures;
     std::map<int, Element> m_elements;
-    QImage m_heightMap;
-    QByteArray m_textureMap;
-    QByteArray m_textureDir;
+    gfx::Image m_heightMap;
+    std::vector<char> m_textureMap;
+    std::vector<char> m_textureDir;
     Vector3D m_scale;
     int m_mapping;
 

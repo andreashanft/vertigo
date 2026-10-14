@@ -39,7 +39,7 @@ Condition* ConditionManager::addCondition(int limit)
 }
 
 
-ConditionRadio* ConditionManager::addCondRadio(const Vector3D &pos, const QString &text)
+ConditionRadio* ConditionManager::addCondRadio(const Vector3D &pos, const String &text)
 {
     m_condRadio.emplace_back(m_scenario, pos, text);
     return &m_condRadio.back();
@@ -155,10 +155,10 @@ void ConditionManager::updateObjective(int id, int index, int wccond)
         condFailure = entry.condSignal;
         break;
     default:
-        issue(QString("Unhandled objective condition %1 %2").arg(id).arg(wccond));
+        issue(String("Unhandled objective condition %1 %2").arg(id).arg(wccond));
     }
     if (condSuccess == NULL && condFailure == NULL)
-        issue(QString("Unachievable objective %1 %2").arg(id).arg(index));
+        issue(String("Unachievable objective %1 %2").arg(id).arg(index));
 
     Condition *cond;
     if (condSuccess != NULL)
@@ -245,7 +245,7 @@ void ConditionManager::buildDependencies()
         const ConditionEntry &entry = pair.second;
         if (entry.condTrigger == nullptr)
         {
-            issue(QString("Undefined object %1").arg(pair.first));
+            issue(String("Undefined object %1").arg(pair.first));
             continue;
         }
 
@@ -267,7 +267,7 @@ void ConditionManager::buildDependencies()
         // op 0 is "and", op 1 is "or"
         entry.condTrigger->setLimit(count == 2 && entry.op == 0 ? 2 : 1);
         if (count == 2 && entry.op != 0 && entry.op != 1)
-            issue(QString("Unhandled condition operation %1").arg(entry.op));
+            issue(String("Unhandled condition operation %1").arg(entry.op));
     }
     for (const auto &pair : condEntries)
         if (pair.second.condTrigger)
@@ -283,9 +283,9 @@ void ConditionManager::initCondition(int cond, int dep, int ref, Condition *cond
     if (cond == 4 || cond == 5 || (cond >= 6 && cond <= 37))
     {
         if (dep != 0)
-            issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
+            issue(String("Unhandled condition dep %1 %2").arg(cond).arg(dep));
         if (ref != -1)
-            issue(QString("Unexpected reference %1 %2").arg(cond).arg(ref));
+            issue(String("Unexpected reference %1 %2").arg(cond).arg(ref));
     }
 
     if (cond == 4)
@@ -309,7 +309,7 @@ void ConditionManager::initCondition(int cond, int dep, int ref, Condition *cond
             // objectives that can only fail (protect, avoid an area) count as achieved until they fail
             m_condObjectives.at(objective + 1).addDependency(condDepend, false);
         else
-            issue(QString("Objective not found %1").arg(cond));
+            issue(String("Objective not found %1").arg(cond));
         return;
     }
 
@@ -325,7 +325,7 @@ void ConditionManager::initCondition(int cond, int dep, int ref, Condition *cond
         positive = false;
         break;
     default:
-        issue(QString("Unhandled condition %1").arg(cond));
+        issue(String("Unhandled condition %1").arg(cond));
         return;
     }
 
@@ -335,7 +335,7 @@ void ConditionManager::initCondition(int cond, int dep, int ref, Condition *cond
     else if (dep == 2)
         event = factionEvent(cond, ref);
     else
-        issue(QString("Unhandled condition dep %1 %2").arg(cond).arg(dep));
+        issue(String("Unhandled condition dep %1 %2").arg(cond).arg(dep));
 
     if (event)
         event->addDependency(condDepend, positive);
@@ -347,7 +347,7 @@ ConditionEvent* ConditionManager::unitEvent(int cond, int ref)
     const auto it = condEntries.find(ref);
     if (it == condEntries.end())
     {
-        issue(QString("Condition reference not found %1").arg(ref));
+        issue(String("Condition reference not found %1").arg(ref));
         return nullptr;
     }
 
@@ -363,7 +363,7 @@ ConditionEvent* ConditionManager::unitEvent(int cond, int ref)
     case 45: case 46: event = entry.condBoarded; break;
     }
     if (event == nullptr)
-        issue(QString("Undefined object %1").arg(ref));
+        issue(String("Undefined object %1").arg(ref));
     return event;
 }
 
@@ -374,7 +374,7 @@ ConditionEvent* ConditionManager::factionEvent(int cond, int iff)
     const bool destroyed = cond == 1 || cond == 39;
     if (!destroyed && cond != 2 && cond != 40)
     {
-        issue(QString("Unhandled faction condition %1").arg(cond));
+        issue(String("Unhandled faction condition %1").arg(cond));
         return nullptr;
     }
 
@@ -390,7 +390,7 @@ ConditionEvent* ConditionManager::factionEvent(int cond, int iff)
 
     // a faction without units is never destroyed nor attacked
     if (members.empty())
-        issue(QString("Empty faction %1").arg(iff));
+        issue(String("Empty faction %1").arg(iff));
     Condition *event = addCondition(members.empty() ? -1 : destroyed ? int(members.size()) : 1);
     for (ConditionEvent *member : members)
         member->addDependency(event);
@@ -400,10 +400,10 @@ ConditionEvent* ConditionManager::factionEvent(int cond, int iff)
 }
 
 
-void ConditionManager::issue(const QString &text)
+void ConditionManager::issue(const String &text)
 {
     m_issues << text;
-    util::Debug() << text.toUtf8().constData();
+    util::Debug() << text.toUtf8().c_str();
 }
 
 

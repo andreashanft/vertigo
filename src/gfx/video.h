@@ -23,7 +23,8 @@
 
 #include "util/file.h"
 
-#include <QElapsedTimer>
+#include "util/timer.hpp"
+#include "util/string.hpp"
 
 namespace gfx {
 
@@ -31,10 +32,10 @@ class Video
 {
 public:
     Video();
-    Video(const QString &filename);
+    Video(const String &filename);
 
 public:
-    void open(const QString &filename);
+    void open(const String &filename);
     void play();
     void playLoop();
     void stop();
@@ -54,8 +55,8 @@ private:
     void loadVideoDiff(std::size_t size);
     void decode(std::size_t size, std::vector<char> &output);
     bool decompressLZW(std::size_t size, std::vector<char> &out);
-    QImage createImage();
-    QImage createEmpty();
+    Image createImage();
+    Image createEmpty();
 
 private:
     struct Entry
@@ -81,7 +82,7 @@ private:
     bool m_hasAudio;
     std::uint32_t m_frameRate;
 
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
     bool m_playing;
     bool m_looping;
 };

@@ -20,7 +20,8 @@
 
 
 #include "font.h"
-#include <QMap>
+#include <map>
+#include <cassert>
 
 
 namespace gfx {
@@ -36,11 +37,12 @@ public:
     Font font(Font::Name name) const;
 
 public:
-    static FontManager* get() { Q_ASSERT(m_singleton); return m_singleton; }
+    static FontManager* get() { assert(m_singleton); return m_singleton; }
 
 private:
-    Q_DISABLE_COPY(FontManager);
-    QMap<Font::Name, Font> m_fonts;
+    FontManager(const FontManager&) = delete;
+    FontManager& operator=(const FontManager&) = delete;
+    std::map<Font::Name, Font> m_fonts;
 
 private:
     static FontManager *m_singleton;

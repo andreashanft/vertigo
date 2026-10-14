@@ -19,10 +19,11 @@
 #include "chapter.h"
 #include "txt/desfile.h"
 #include "gfx/colortable.h"
+#include "util/containers.hpp"
 #include "util/datapath.h"
-#include <QFile>
+#include "util/path.hpp"
 
-QString trimEnd(const QString& str);
+String trimEnd(const String& str);
 
 namespace game {
 
@@ -100,17 +101,17 @@ Items::Items()
     txt::DesFile file("dat:world/weapcost.des");
     file.setSection("Cost");
     int c;
-    for (int c = 0; file.contains(QString("C%1").arg(c)); c++)
+    for (int c = 0; file.contains(String("C%1").arg(c)); c++)
     {
-        const QString str = file.value(QString("C%1").arg(c)).toString();
-        auto it = m_items.find(str.section(' ', 0, 0, QString::SectionSkipEmpty).toInt());
+        const String str = file.value(String("C%1").arg(c)).toString();
+        auto it = m_items.find(str.section(' ', 0, 0, String::SectionSkipEmpty).toInt());
         if (it != m_items.end())
-            it->second.cost = file.value(QString("C%1C").arg(c)).toInt();
+            it->second.cost = file.value(String("C%1C").arg(c)).toInt();
     }
 }
 
 
-void Items::addItem(int model, Type type, const QString &name, const QString &imgname, const QString &txtname)
+void Items::addItem(int model, Type type, const String &name, const String &imgname, const String &txtname)
 {
     Item &item = m_items[model];
     item.model = model;
@@ -125,14 +126,10 @@ void Items::addItem(int model, Type type, const QString &name, const QString &im
         colorTable.loadFromFile("gfx:pal/depot/gun.pal");
     else
         colorTable.loadFromFile("gfx:pal/depot/specs.pal");
-    item.icon = gfx::Image::load(QString("gfx:img/icon/%1.img").arg(imgname), colorTable);
+    item.icon = gfx::Image::load(String("gfx:img/icon/%1.img").arg(imgname), colorTable);
 
-    QFile file(util::DataPath::resolve("txt:thing/" + txtname));
-    if (file.open(QFile::ReadOnly))
-    {
-        while (!file.atEnd())
-            item.text.append(trimEnd(QString::fromLatin1(file.readLine())));
-    }
+    for (const std::string &line : util::lines(util::readFile(util::DataPath::resolve("txt:thing/" + txtname))))
+        item.text.append(trimEnd(String::fromLatin1(line)));
 
 }
 
@@ -156,14 +153,14 @@ const std::map<int, Items::Item>& Items::all()
 
 void Items::insertType(Type type, std::vector<int> &list)
 {
-    Station station = Chapter::get()->stations().value(Chapter::get()->currentStation());
+    Station station = util::value(Chapter::get()->stations(), Chapter::get()->currentStation());
     for (const auto &pair : items->m_items)
         if (pair.second.type == type && station.depotPrices().find(pair.second.model) != station.depotPrices().end())
             list.push_back(pair.second.model);
 }
 
 
-std::vector<int> Items::getDepotItems(const QString &mounting)
+std::vector<int> Items::getDepotItems(const String &mounting)
 {
     if (items == NULL)
         items = new Items();
@@ -208,7 +205,7 @@ int Items::getDepotPrice(int model)
     if (item == items->m_items.end())
         return 0;
     // stations that don't sell an item use its base price
-    Station station = Chapter::get()->stations().value(Chapter::get()->currentStation());
+    Station station = util::value(Chapter::get()->stations(), Chapter::get()->currentStation());
     auto factor = station.depotPrices().find(model);
     return (int)(0.9*item->second.cost*(factor != station.depotPrices().end() ? factor->second : 1.0f));
 }

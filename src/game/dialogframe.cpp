@@ -3,27 +3,28 @@
 #include "gfx/image.h"
 #include "util/datapath.h"
 
-#include <QFile>
+#include "util/path.hpp"
+#include <cassert>
 
 
 namespace game {
 
 
-DialogFrame::DialogFrame(Dialog* dialog, const QString &roomName, std::function<void()> &&funcClose) :
+DialogFrame::DialogFrame(Dialog* dialog, const String &roomName, std::function<void()> &&funcClose) :
     Frame(std::move(funcClose)),
     m_dialog(dialog)
 {
-    Q_ASSERT(dialog);
+    assert(dialog);
 
-    setupFrame(QSize(378, 159), txt::StringTable::get(txt::DialogTitle), false);
+    setupFrame(Size(378, 159), txt::StringTable::get(txt::DialogTitle), false);
 
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
     // not every room has its own dialog background, and loading a missing image aborts
-    QString background = QString("gfx:img/desktop/bground/d_%1.img").arg(roomName);
-    if (!QFile::exists(util::DataPath::resolve(background)))
+    String background = String("gfx:img/desktop/bground/d_%1.img").arg(roomName);
+    if (!util::exists(util::DataPath::resolve(background)))
         background = "gfx:img/desktop/bground/d_ew1.img";
-    QImage image = gfx::Image::load(background, colorTable);
+    const gfx::Image image = gfx::Image::load(background, colorTable);
 
     ui::Label *label;
 

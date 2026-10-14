@@ -46,7 +46,7 @@ TurretBase::TurretBase(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
         if (!file.contains("name"))
             continue;
         m_turretName = file.value("name").toString();
-        txt::DesFile turretFile(QString("vfx:sobjects/%1.des").arg(m_turretName));
+        txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(m_turretName));
         m_body.reset(new Turret(scenario, turretFile)); // TODO: TurretTorpedo
         m_turretPosition = Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat());
         m_body->setPosition(m_turretPosition);
@@ -64,7 +64,7 @@ void TurretBase::arm(int model, txt::DesFile &file)
 {
     if (m_turretName.isEmpty())
         return;
-    txt::DesFile turretFile(QString("vfx:sobjects/%1.des").arg(m_turretName));
+    txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(m_turretName));
     const UnitGun::Mount mount = UnitGun::readMount(turretFile);
     if (mount.model < 0)
         return; // torpedo towers

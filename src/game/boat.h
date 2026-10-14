@@ -19,8 +19,7 @@
 #define GAME_BOAT_H
 
 
-#include <QString>
-#include <QPoint>
+#include "util/string.hpp"
 #include <vector>
 #include <set>
 #include "txt/desfile.h"
@@ -39,11 +38,11 @@ public:
 public:
     struct Mounting
     {
-        QString name;
+        String name;
         int side;
         int type;
         Point pos;
-        QString dir;
+        String dir;
         Vector3D rel;
     };
     enum Defect
@@ -60,23 +59,23 @@ public:
 
 public:
     int type() const { return m_type; }
-    const QString& name() const { return m_name; }
-    const QString& cockpit() const { return m_cockpit; }
-    const QString& moviePrefix() const { return m_moviePrefix; }
+    const String& name() const { return m_name; }
+    const String& cockpit() const { return m_cockpit; }
+    const String& moviePrefix() const { return m_moviePrefix; }
     txt::DesFile& boatFile() { return m_boatFile; }
 
     const std::vector<Mounting>& mountings() const { return m_mountings; }
-    const Mounting* getMounting(const QString& mounting);
+    const Mounting* getMounting(const String& mounting);
 
-    std::vector<int> getItems(const QString& mounting);
-    bool canBuy(int model, const QString& mounting, int *oldModel);
-    bool canSell(int model, const QString& mounting);
+    std::vector<int> getItems(const String& mounting);
+    bool canBuy(int model, const String& mounting, int *oldModel);
+    bool canSell(int model, const String& mounting);
     bool isCompatible(int model);
-    int repairState(int model, const QString& mounting);
-    int repairCost(int model, const QString& mounting);
-    void repair(int model, const QString& mounting, float amount);
-    void buy(int model, const QString& mounting);
-    void sell(int model, int index, const QString& mounting);
+    int repairState(int model, const String& mounting);
+    int repairCost(int model, const String& mounting);
+    void repair(int model, const String& mounting, float amount);
+    void buy(int model, const String& mounting);
+    void sell(int model, int index, const String& mounting);
     // used up in a mission
     void useTorpedo(int index) { if (index >= 0 && index < int(m_torpedoes.size())) m_torpedoes.erase(m_torpedoes.begin() + index); }
     void useBuzzer() { if (!m_buzzers.empty()) m_buzzers.pop_back(); }
@@ -103,14 +102,14 @@ public:
 
 private:
     void load();
-    void addMounting(const QString &name, int side, int type, int x, int y, const QString &dir);
+    void addMounting(const String &name, int side, int type, int x, int y, const String &dir);
     int getCapacity(int magazine);
 
 private:
     int m_type;
-    QString m_name;
-    QString m_cockpit;
-    QString m_moviePrefix;
+    String m_name;
+    String m_cockpit;
+    String m_moviePrefix;
     txt::DesFile m_boatFile;
 
     std::vector<Mounting> m_mountings;

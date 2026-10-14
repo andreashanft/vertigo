@@ -27,9 +27,10 @@
 #include "gfx/image.h"
 
 #include <memory>
+#include "util/string.hpp"
 
 
-class QOpenGLFramebufferObject;
+namespace gfx { class Framebuffer; }
 
 
 namespace fight { class Scenario; class ActiveObject; }
@@ -95,7 +96,7 @@ public:
     const RectF& rectHUD() const { return m_rectHUD; }
     const Point& center() const { return m_center; }
     ui::Widget* widget() { return m_integerScale ? &m_integerScaleWidget : &m_noScaleWidget; }
-    gfx::Image getImage(const QString &name);
+    gfx::Image getImage(const String &name);
     gfx::Font& fontGreen() { return m_fontGreen; }
     gfx::Font& fontRed() { return m_fontRed; }
     gfx::Font& fontYellow() { return m_fontYellow; }
@@ -108,25 +109,25 @@ public:
     void load(game::Boat *boat);
     void start(fight::Scenario *scenario);
 
-    void setRect(const QRect &rect);
+    void setRect(const Rect &rect);
     void draw();
     // advances the mission without drawing (draw() calls it with the time since the last frame)
     void step(float elapsedTime);
 
 protected:
-    void keyPressEvent(QKeyEvent *);
-    void keyReleaseEvent(QKeyEvent *);
+    void keyPressEvent(input::KeyEvent *);
+    void keyReleaseEvent(input::KeyEvent *);
     // mouse look in the 3D cockpit: dragging with a mouse button turns the pilot's head
-    void mousePressEvent(QMouseEvent *);
-    void mouseReleaseEvent(QMouseEvent *);
-    void mouseMoveEvent(QMouseEvent *);
+    void mousePressEvent(input::MouseEvent *);
+    void mouseReleaseEvent(input::MouseEvent *);
+    void mouseMoveEvent(input::MouseEvent *);
 
 private:
     Rect readRect(const txt::DesFile &file);
     void setFrozen(bool frozen);
     void updateMissionState();
     void leave(util::event<> &event);
-    bool drawModel(qreal pixelRatio);
+    bool drawModel(double pixelRatio);
     void updateLook(float elapsedTime);
     // the pilot's head turned by the mouse look, in the boat's camera frame
     Matrix lookTransform() const;
@@ -153,10 +154,10 @@ private:
     float m_focal;          // of the cockpit art's camera, in pixels of the 640x480 view
 
     std::shared_ptr<Cockpit3D> m_model;
-    std::unique_ptr<QOpenGLFramebufferObject> m_instruments;   // the instruments, projected onto the model
+    std::unique_ptr<gfx::Framebuffer> m_instruments;   // the instruments, projected onto the model
     Vector2D m_look;        // yaw (left) and pitch (up) of the pilot's head in radians
     bool m_looking;         // a mouse button is held
-    QPoint m_lookStart;     // where the drag started
+    PointD m_lookStart;     // where the drag started
     Vector2D m_lookFrom;    // and the look direction then
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;

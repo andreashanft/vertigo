@@ -17,8 +17,10 @@
 
 #include "soundsystem.h"
 #include "samplemap.h"
+#include "util/containers.hpp"
 #include <al.h>
 #include <alc.h>
+#include <cassert>
 
 
 namespace sfx {
@@ -34,9 +36,10 @@ struct SoundSystemPrivate
 };
 
 
-SoundSystem::SoundSystem()
+SoundSystem::SoundSystem(bool silent) :
+    m_silent(silent)
 {
-    Q_ASSERT(m_singleton == NULL);
+    assert(m_singleton == NULL);
     m_singleton = this;
 
     d = new SoundSystemPrivate;
@@ -44,35 +47,34 @@ SoundSystem::SoundSystem()
     d->context = alcCreateContext(d->device, NULL);
     alcMakeContextCurrent(d->context);
 
-    m_standardSounds.insert(Click, new Sound("sfx:snd/desktop/click.pcm"));
-    m_standardSounds.insert(Woop, new Sound("sfx:snd/desktop/woop.pcm"));
-    m_standardSounds.value(Woop)->setVolume(0.1f);
-    m_standardSounds.insert(FrameOpen, new Sound("sfx:snd/desktop/fopen.pcm"));
-    m_standardSounds.value(FrameOpen)->setVolume(0.1f);
-    m_standardSounds.insert(FrameClose, new Sound("sfx:snd/desktop/fclose.pcm"));
-    m_standardSounds.value(FrameClose)->setVolume(0.1f);
+    m_standardSounds.emplace(Click, new Sound("sfx:snd/desktop/click.pcm"));
+    m_standardSounds.emplace(Woop, new Sound("sfx:snd/desktop/woop.pcm"));
+    util::value(m_standardSounds, Woop)->setVolume(0.1f);
+    m_standardSounds.emplace(FrameOpen, new Sound("sfx:snd/desktop/fopen.pcm"));
+    util::value(m_standardSounds, FrameOpen)->setVolume(0.1f);
+    m_standardSounds.emplace(FrameClose, new Sound("sfx:snd/desktop/fclose.pcm"));
+    util::value(m_standardSounds, FrameClose)->setVolume(0.1f);
 
-    m_standardSounds.insert(NotebookShow, new Sound("sfx:snd/desktop/noteb1.pcm"));
-    m_standardSounds.insert(NotebookHide, new Sound("sfx:snd/desktop/noteb3.pcm"));
-    m_standardSounds.insert(EnComShow, new Sound("sfx:snd/desktop/noteb2.pcm"));
-    m_standardSounds.insert(NotebookBackground, new Sound("sfx:snd/desktop/noteback.pcm"));
-    m_standardSounds.value(NotebookBackground)->setVolume(0.033f);
+    m_standardSounds.emplace(NotebookShow, new Sound("sfx:snd/desktop/noteb1.pcm"));
+    m_standardSounds.emplace(NotebookHide, new Sound("sfx:snd/desktop/noteb3.pcm"));
+    m_standardSounds.emplace(EnComShow, new Sound("sfx:snd/desktop/noteb2.pcm"));
+    m_standardSounds.emplace(NotebookBackground, new Sound("sfx:snd/desktop/noteback.pcm"));
+    util::value(m_standardSounds, NotebookBackground)->setVolume(0.033f);
 }
 
 
 SoundSystem::~SoundSystem()
 {
-    QMapIterator<quint32, Sound*> it(m_sources);
-    while (it.hasNext()) {
-        it.next();
-        if (it.value()->isInstance())
-            it.value()->stop();
-    }
+    // (over a copy, as stopping a sound releases its source)
+    const std::map<std::uint32_t, Sound*> sources = m_sources;
+    for (const auto &source : sources)
+        if (source.second->isInstance())
+            source.second->stop();
 
-    qDeleteAll(m_standardSounds);
+    util::deleteAll(m_standardSounds);
     SampleMap::reset();
 
-    Q_ASSERT(m_sources.isEmpty());
+    assert(m_sources.empty());
 
     alcDestroyContext(d->context);
     alcCloseDevice(d->device);
@@ -83,8 +85,8 @@ SoundSystem::~SoundSystem()
 
 Sound* SoundSystem::sound(StandardSound snd)
 {
-    Sound *sound = m_standardSounds.value(snd);
-    Q_ASSERT(sound);
+    Sound *sound = util::value(m_standardSounds, snd);
+    assert(sound);
     return sound;
 }
 
@@ -93,39 +95,37 @@ void SoundSystem::releaseUnused()
 {
     // stop all Sounds with stopped sources
     // this implicitly frees the sources
-    QMapIterator<quint32, Sound*> it(m_sources);
-    while (it.hasNext()) {
-        it.next();
-
+    const std::map<std::uint32_t, Sound*> sources = m_sources;
+    for (const auto &source : sources) {
         ALint state;
-        alGetSourcei(it.key(), AL_SOURCE_STATE, &state);
+        alGetSourcei(source.first, AL_SOURCE_STATE, &state);
         if (state == AL_STOPPED)
-            it.value()->stop();
+            source.second->stop();
     }
 }
 
 
-quint32 SoundSystem::acquire(Sound *sound)
+std::uint32_t SoundSystem::acquire(Sound *sound)
 {
     releaseUnused();
     if (m_sources.size() == 32)
         return 0;
 
-    quint32 source;
+    std::uint32_t source;
     alGenSources(1, &source);
     // attached to the listener unless the sound is given a position
     alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
     alSource3f(source, AL_POSITION, 0, 0, 0);
-    m_sources.insert(source, sound);
+    m_sources[source] = sound;
     return source;
 }
 
 
-void SoundSystem::release(quint32 source)
+void SoundSystem::release(std::uint32_t source)
 {
     alSourceStop(source);
     alDeleteSources(1, &source);
-    m_sources.remove(source);
+    m_sources.erase(source);
 }
 
 
@@ -133,8 +133,9 @@ void SoundSystem::pauseAll()
 {
     releaseUnused();
 
-    foreach (Sound* sound, m_sources)
-        sound->pause();
+    const std::map<std::uint32_t, Sound*> sources = m_sources;
+    for (const auto &source : sources)
+        source.second->pause();
 }
 
 
@@ -146,16 +147,21 @@ void SoundSystem::setListener(float x, float y, float z, float fx, float fy, flo
 }
 
 
-void SoundSystem::setVolume(float volume)
+void SoundSystem::setBufferData(std::uint32_t buffer, bool stereo, const std::vector<char> &data, int rate)
 {
-    alListenerf(AL_GAIN, volume);
+    // (silence rather than a gain of 0, as the listener's gain left macOS's OpenAL audible; and
+    // never a null pointer, also without data)
+    const std::vector<char> silence(m_silent ? data.size() : 0, char(0x80));
+    const std::vector<char> &samples = m_silent ? silence : data;
+    alBufferData(buffer, stereo ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8, samples.empty() ? "" : samples.data(), ALsizei(samples.size()), rate);
 }
 
 
 void SoundSystem::resumeAll()
 {
-    foreach (Sound* sound, m_sources)
-        sound->resume();
+    const std::map<std::uint32_t, Sound*> sources = m_sources;
+    for (const auto &source : sources)
+        source.second->resume();
 }
 
 

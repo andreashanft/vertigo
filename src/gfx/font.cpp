@@ -18,6 +18,7 @@
 #include "fontmanager.h"
 #include "image.h"
 #include "pipeline.h"
+#include "util/error.h"
 #include <vector>
 
 namespace gfx {
@@ -33,15 +34,15 @@ FontPrivate::FontPrivate() :
 
 }
 
-void FontPrivate::load(const QString &filename, const QVector<QRgb> &colorTable, bool scale, bool smooth)
+void FontPrivate::load(const String &filename, const ColorTable &colorTable, bool scale, bool smooth)
 {
-    util::File file(QString(filename).replace(":", "/").toUtf8().data());
+    util::File file(String(filename).replace(":", "/").toUtf8().data());
 
     int scaleFactor = scale ? 2 : 1;
     const float res = 256 * scaleFactor;
 
-    quint8 type;
-    quint32 numEntries;
+    std::uint8_t type;
+    std::uint32_t numEntries;
 
     file >> type;
     file.skipBytes(5);
@@ -62,7 +63,7 @@ void FontPrivate::load(const QString &filename, const QVector<QRgb> &colorTable,
     int x = 1;
     int y = 1;
     for (unsigned int i = 0; i < numEntries; i++) {
-        QImage image;
+        Image image;
         switch (type) {
         case 2:
             image = Image::load(file, Image::PaletteRLE, colorTable);
@@ -78,7 +79,7 @@ void FontPrivate::load(const QString &filename, const QVector<QRgb> &colorTable,
             break;
 
         default:
-            qFatal("Unknown font type");
+            util::fatal("Unknown font type");
         }
 
         image = image.scaled(image.width() * scaleFactor, image.height() * scaleFactor);
@@ -97,9 +98,9 @@ void FontPrivate::load(const QString &filename, const QVector<QRgb> &colorTable,
         symbol.rect.height = image.height() / res;
         symbol.width = image.width() / scaleFactor;
         symbol.height = image.height() / scaleFactor;
-        m_symbols.append(symbol);
+        m_symbols.push_back(symbol);
 
-        maxHeight = qMax(maxHeight, image.height());
+        maxHeight = std::max(maxHeight, image.height());
 
         x += image.width() + 1;
     }
@@ -107,7 +108,7 @@ void FontPrivate::load(const QString &filename, const QVector<QRgb> &colorTable,
     m_height = maxHeight / scaleFactor;
 }
 
-Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCenter, bool alignBottom, const ClipRect *clipRect)
+Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCenter, bool alignBottom, const ClipRect *clipRect)
 {
     m_texture.bind();
 
@@ -119,7 +120,7 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
             drawRect.x += (dstRect.width - totalW) / 2;
     }
 
-    QStringList strings = text.split(" ");
+    StringList strings = text.split(" ");
     if (alignBottom) {
         const int totalH = height(dstRect.width, strings);
         if (dstRect.height > totalH)
@@ -134,8 +135,8 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
         Pipeline::drawQuads(quads.data(), int(quads.size()));
         quads.clear();
     };
-    auto setColor = [&](QRgb rgb) {
-        const Vector4D color(qRed(rgb) / 255.0f, qGreen(rgb) / 255.0f, qBlue(rgb) / 255.0f, qAlpha(rgb) / 255.0f);
+    auto setColor = [&](Rgb rgb) {
+        const Vector4D color(red(rgb) / 255.0f, green(rgb) / 255.0f, blue(rgb) / 255.0f, alpha(rgb) / 255.0f);
         if (color != Pipeline::color()) {
             flush();
             Pipeline::setColor(color);
@@ -145,24 +146,24 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
     bool highlight = false;
     int lineWidth = 0;
     int current = 0;
-    foreach (QString word, strings) {
+    for (String word : strings) {
         if (++current < strings.size())
             word += " ";
         const int wordWidth = width(word);
         if (dstRect.width > 0 && lineWidth + wordWidth > dstRect.width) {
             pos.x -= lineWidth;
             pos.y += m_height + 1;
-            drawRect.width = qMax(drawRect.width, lineWidth);
+            drawRect.width = std::max(drawRect.width, lineWidth);
             drawRect.height += m_height + 1;
             lineWidth = 0;
         }
 
-        const QByteArray latin1 = word.toLatin1();
-        for (int i = 0; i < latin1.length(); i++) {
-            quint8 c = latin1[i];
+        const std::string latin1 = word.toLatin1();
+        for (int i = 0; i < int(latin1.length()); i++) {
+            std::uint8_t c = latin1[i];
             if (c == '~') {
                 i++;
-                c = word[i].toLatin1();
+                c = word[i];
                 switch (c) {
                 case '0':
                     highlight = false;
@@ -199,7 +200,7 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
             lineWidth += symbol.width;
         }
     }
-    drawRect.width = qMax(drawRect.width, lineWidth);
+    drawRect.width = std::max(drawRect.width, lineWidth);
 
     flush();
     Pipeline::setColor(Vector4D(1));
@@ -207,11 +208,11 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
     return drawRect;
 }
 
-int FontPrivate::height(int w, const QStringList &strings) const
+int FontPrivate::height(int w, const StringList &strings) const
 {
     int totalHeight = m_height;
     int lineWidth = 0.0f;
-    foreach (QString word, strings) {
+    for (String word : strings) {
         word += " ";
         const int wordWidth = width(word);
         if (w > 0 && lineWidth + wordWidth > w) {
@@ -225,12 +226,12 @@ int FontPrivate::height(int w, const QStringList &strings) const
     return totalHeight;
 }
 
-int FontPrivate::width(const QString &text) const
+int FontPrivate::width(const String &text) const
 {
     int totalW = 0;
-    const QByteArray latin1 = text.toLatin1();
-    for (int i = 0; i < latin1.size(); i++) {
-        quint8 c = latin1[i];
+    const std::string latin1 = text.toLatin1();
+    for (int i = 0; i < int(latin1.size()); i++) {
+        std::uint8_t c = latin1[i];
         if (c == '~') {
             i++;
             continue;

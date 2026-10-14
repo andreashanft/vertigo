@@ -43,7 +43,7 @@ public:
     glm::tvec2<T> pos() const { return glm::tvec2<T>(x, y); }
     Size2D<T> size() const { return Size2D<T>(width, height); }
     void setPos(const glm::tvec2<T> &pos) { x = pos.x; y = pos.y; }
-    void setSize(const Size2D<T> &size) { width = size.x; height = size.y; }
+    void setSize(const Size2D<T> &size) { width = size.width; height = size.height; }
 
 public:
     union

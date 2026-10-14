@@ -19,7 +19,7 @@
 #include "soundsystem.h"
 #include "util/datapath.h"
 #include <al.h>
-#include <QFile>
+#include "util/path.hpp"
 #include <random>
 
 
@@ -48,7 +48,7 @@ Sound::Sound(Sound&& o)
     o.m_buffer = 0;
 }
 
-Sound::Sound(const QString &file) :
+Sound::Sound(const String &file) :
     m_source(0),
     m_buffer(0),
     m_volume(1.0f),
@@ -181,28 +181,27 @@ void Sound::resume()
 }
 
 
-void Sound::load(const QString &file, int rate)
+void Sound::load(const String &file, int rate)
 {
-    const QByteArray data = loadFile(file);
+    const std::vector<char> data = loadFile(file);
 
     stop();
     if (m_buffer != 0)
         alDeleteBuffers(1, &m_buffer);
     alGenBuffers(1, &m_buffer);
-    alBufferData(m_buffer, AL_FORMAT_MONO8, data.data(), data.size(), rate <= 0 ? 22050 : rate);
+    SoundSystem::get()->setBufferData(m_buffer, false, data, rate <= 0 ? 22050 : rate);
 }
 
 
-void Sound::load(const QString &leftFile, const QString &rightFile)
+void Sound::load(const String &leftFile, const String &rightFile)
 {
-    const QByteArray left = loadFile(leftFile);
-    const QByteArray right = loadFile(rightFile);
+    const std::vector<char> left = loadFile(leftFile);
+    const std::vector<char> right = loadFile(rightFile);
 
     // both channels must have the same length
-    const int length = qMin(left.size(), right.size());
-    QByteArray data;
-    data.resize(2 * length);
-    for (int i = 0; i < length; i++) {
+    const std::size_t length = std::min(left.size(), right.size());
+    std::vector<char> data(2 * length);
+    for (std::size_t i = 0; i < length; i++) {
         data[i * 2 + 0] = left[i];
         data[i * 2 + 1] = right[i];
     }
@@ -211,17 +210,14 @@ void Sound::load(const QString &leftFile, const QString &rightFile)
     if (m_buffer != 0)
         alDeleteBuffers(1, &m_buffer);
     alGenBuffers(1, &m_buffer);
-    alBufferData(m_buffer, AL_FORMAT_STEREO8, data.data(), data.size(), 22050);
+    SoundSystem::get()->setBufferData(m_buffer, true, data, 22050);
 }
 
 
-QByteArray Sound::loadFile(const QString &filename)
+// the samples after a header
+std::vector<char> Sound::loadFile(const String &filename)
 {
-    QFile file(util::DataPath::resolve(filename));
-    if (!file.open(QFile::ReadOnly))
-        return QByteArray();
-    file.seek(31);
-    return file.readAll();
+    return util::readFile(util::DataPath::resolve(filename), 31);
 }
 
 

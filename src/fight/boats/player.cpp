@@ -68,7 +68,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     if (boat->magazine() >= 1025)
     {
         txt::DesFile weapons("vfx:sobjects/globweap.des");
-        weapons.setSection(QString("torpedomagazine%1").arg(boat->magazine() - 1025));
+        weapons.setSection(String("torpedomagazine%1").arg(boat->magazine() - 1025));
         m_rearmingTime = weapons.value("rearmingtime", 5).toFloat();
     }
 
@@ -83,7 +83,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
 
     file.setSection("defense");
     for (i = 0; i < 4; i++)
-        m_shieldMax[i] = file.value(QString("kineticshield%1").arg(i)).toInt();
+        m_shieldMax[i] = file.value(String("kineticshield%1").arg(i)).toInt();
 
     int armor = 0;
     if (boat->armor() == 5121)

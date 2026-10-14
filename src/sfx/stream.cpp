@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "stream.h"
+#include "soundsystem.h"
 
 #include <al.h>
 
@@ -39,7 +40,7 @@ void Stream::add(const std::vector<char> &data)
 
     ALuint buffer;
     alGenBuffers(1, &buffer);
-    alBufferData(buffer, AL_FORMAT_STEREO8, data.data(), data.size(), 22050);
+    sfx::SoundSystem::get()->setBufferData(buffer, true, data, 22050);
     alSourceQueueBuffers(m_source, 1, &buffer);
 }
 

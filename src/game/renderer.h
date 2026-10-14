@@ -19,12 +19,10 @@
 #define GAME_RENDERER_H
 
 #include "util/deferreddeletable.h"
+#include "util/geometry2d.h"
 #include "util/geometry3d.h"
+#include "input.hpp"
 
-#include <QRect>
-
-class QKeyEvent;
-class QMouseEvent;
 
 namespace game {
 
@@ -43,22 +41,25 @@ public:
 public:
     void setWindow(Window *window);
     virtual bool isCursorVisible() const { return m_cursorVisible; }
-    virtual void setRect(const QRect &rect);
-    QRect rect() const { return m_rect; }
-    int width() const { return m_rect.width(); }
-    int height() const { return m_rect.height(); }
+    // typing text, e.g. a new game's name: only then do keys go through the system's text input
+    // (which on macOS takes held letters for its accent menu, on iOS shows the keyboard)
+    virtual bool wantsTextInput() const { return false; }
+    virtual void setRect(const Rect &rect);
+    Rect rect() const { return m_rect; }
+    int width() const { return m_rect.width; }
+    int height() const { return m_rect.height; }
     const Matrix& projectionMatrix() const { return m_projectionMatrix; }
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
-    QRectF rectOrtho() const { return m_rectOrtho; }
-    QPointF screenToImage(const QPointF &pos);
-    QPointF imageToScreen(const QPointF &pos);
+    RectD rectOrtho() const { return m_rectOrtho; }
+    PointD screenToImage(const PointD &pos);
+    PointD imageToScreen(const PointD &pos);
 
 public:
-    virtual void keyPressEvent(QKeyEvent *) {}
-    virtual void keyReleaseEvent(QKeyEvent *) {}
-    virtual void mousePressEvent(QMouseEvent *) {}
-    virtual void mouseReleaseEvent(QMouseEvent *) {}
-    virtual void mouseMoveEvent(QMouseEvent *) {}
+    virtual void keyPressEvent(input::KeyEvent *) {}
+    virtual void keyReleaseEvent(input::KeyEvent *) {}
+    virtual void mousePressEvent(input::MouseEvent *) {}
+    virtual void mouseReleaseEvent(input::MouseEvent *) {}
+    virtual void mouseMoveEvent(input::MouseEvent *) {}
 
 protected:
     void showCursor();
@@ -73,8 +74,8 @@ protected:
 
 private:
     bool m_cursorVisible;
-    QRect m_rect;
-    QRectF m_rectOrtho;
+    Rect m_rect;
+    RectD m_rectOrtho;
     Window *m_window;
 };
 
