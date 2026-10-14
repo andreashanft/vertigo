@@ -20,7 +20,7 @@
 #include "txt/stringtable.h"
 
 #include <Qt>
-#include "SDL.h"
+#include "util/ticks.h"
 
 
 namespace hud {
@@ -59,7 +59,7 @@ void MissionMenu::open(Page page)
 void MissionMenu::notice(const QStringList &lines, float seconds)
 {
     m_notice = lines;
-    m_noticeEnd = SDL_GetTicks() + unsigned(seconds*1000);
+    m_noticeEnd = util::ticks() + unsigned(seconds*1000);
 }
 
 
@@ -172,7 +172,7 @@ std::vector<MissionMenu::Line> MissionMenu::lines() const
     }
 
     std::vector<Line> notice;
-    if (SDL_GetTicks() < m_noticeEnd)
+    if (util::ticks() < m_noticeEnd)
         for (const QString &line : m_notice)
             notice.push_back({ line, red });
     return notice;

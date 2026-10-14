@@ -20,7 +20,6 @@
           cmake
           glm
           openal
-          SDL2
           qt5.wrapQtAppsHook
         ];
 

@@ -382,7 +382,7 @@ they can land on master one by one.
 
 | # | Step | Effort | Notes |
 |---|---|---|---|
-| P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion |
+| P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion (**done**: `util::ticks()` on `std::chrono::steady_clock`, `QString::toStdWString()` for MSVC's wide file names) |
 | P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below |
 | P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) |
 | P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import |

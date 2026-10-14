@@ -21,7 +21,7 @@ make
 ## macOS (Homebrew)
 
 ```
-brew install cmake qt@5 sdl2 glm
+brew install cmake qt@5 glm
 mkdir build
 cd build
 cmake -DCMAKE_PREFIX_PATH="$(brew --prefix qt@5)" ..

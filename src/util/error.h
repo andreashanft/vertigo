@@ -21,7 +21,6 @@
 namespace util {
 
 void errorHandlerDefault(const char *file, int line);
-void errorHandlerSDL(const char *file, int line);
 
 template <typename Func, typename Handler>
 auto errorVerify(Func &&expr, const char *file, int line, Handler &&handler) -> decltype(expr())
@@ -36,7 +35,6 @@ auto errorVerify(Func &&expr, const char *file, int line, Handler &&handler) -> 
 } // namespace util
 
 #define VERIFY(expr) util::errorVerify([&]() { return expr; }, __FILE__, __LINE__, util::errorHandlerDefault)
-#define VERIFY_SDL(expr) util::errorVerify([&]() { return expr; }, __FILE__, __LINE__, util::errorHandlerSDL)
 
 #define ASSERT(expr) VERIFY(expr)
 

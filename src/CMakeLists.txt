@@ -4,7 +4,6 @@ if(Qt4_FOUND)
     include(${QT_USE_FILE})
 endif()
 
-include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${GLM_INCLUDE_DIR})
 include_directories(${OPENAL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -250,11 +249,12 @@ set(SOURCES
     util/file.cpp
     util/file.h
     util/rect.hpp
+    util/ticks.h
     util/size.hpp
 )
 
 add_executable(vertigo WIN32 ${SOURCES})
-target_link_libraries(vertigo ${QT_LIBRARIES} ${SDL2_LIBRARY} ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
+target_link_libraries(vertigo ${QT_LIBRARIES} ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
 if (TARGET glm::glm)
     target_link_libraries(vertigo glm::glm)
 endif()

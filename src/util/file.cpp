@@ -19,9 +19,11 @@
 
 #include "error.h"
 
-#include "SDL.h"
-
 #include <iostream>
+
+#ifdef _MSC_VER
+#include <QString>
+#endif
 
 namespace util {
 
@@ -41,9 +43,9 @@ void File::open(const std::string &name)
 
     m_stream.close();
 #ifdef _MSC_VER
-	wchar_t *nameUTF16 = reinterpret_cast<wchar_t*>(SDL_iconv_string("UTF-16LE", "UTF-8", m_name.c_str(), m_name.size() + 1));
-	m_stream.open(nameUTF16, std::ios_base::in | std::ios_base::binary);
-	SDL_free(nameUTF16);
+    // the narrow names of MSVC's streams are in the ANSI code page, not UTF-8
+    const std::wstring nameUTF16 = QString::fromStdString(m_name).toStdWString();
+    m_stream.open(nameUTF16.c_str(), std::ios_base::in | std::ios_base::binary);
 #else
 	m_stream.open(m_name, std::ios_base::in | std::ios_base::binary);
 #endif

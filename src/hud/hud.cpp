@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include "SDL.h"
+#include "util/ticks.h"
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
@@ -358,7 +358,7 @@ void HUD::start(fight::Scenario *scenario)
     m_rectGL = Rect();
     m_scenario = scenario;
     m_scenario->setBoat(m_boat);
-    m_lastTicks = SDL_GetTicks();
+    m_lastTicks = util::ticks();
     m_navPoint = -1;
     m_paused = false;
     m_frozen = false;
@@ -505,7 +505,7 @@ void HUD::draw()
         return;
     }
 
-    const int ticks = SDL_GetTicks();
+    const int ticks = util::ticks();
     // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
     step(std::min((ticks - m_lastTicks)/1000.0f, 0.25f));
     updateLook((ticks - m_lastTicks)/1000.0f);

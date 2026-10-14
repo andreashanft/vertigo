@@ -17,7 +17,7 @@
 
 #include "error.h"
 
-#include <SDL.h>
+#include <cstdlib>
 #include <iostream>
 
 namespace util {
@@ -25,12 +25,6 @@ namespace util {
 void errorHandlerDefault(const char *file, int line)
 {
     std::cerr << file << ":" << line << std::endl;
-    std::abort();
-}
-
-void errorHandlerSDL(const char *file, int line)
-{
-    std::cerr << "'" << SDL_GetError() << "' in " << file << ":" << line << std::endl;
     std::abort();
 }
 
