@@ -2,20 +2,8 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 project(vertigo)
 
-# Qt 6; Qt 5.15 still works as a fallback, but isn't tested any more
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
-if(QT_VERSION_MAJOR EQUAL 6)
-    # QOpenGLFramebufferObject and QOpenGLFunctions left Qt GUI in Qt 6
-    find_package(Qt6 REQUIRED COMPONENTS OpenGL)
-elseif(Qt5Widgets_VERSION VERSION_LESS 5.15)
-    message(FATAL_ERROR "Qt 5.15 or Qt 6 is needed, found Qt ${Qt5Widgets_VERSION}")
-endif()
-find_package(OpenGL REQUIRED)
-if(APPLE)
-    # OpenGL is deprecated on macOS but still available
-    add_definitions(-DGL_SILENCE_DEPRECATION)
-endif()
+# the window, the input and the OpenGL context
+find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3)
 find_package(OpenAL REQUIRED)
 find_package(glm REQUIRED)
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)

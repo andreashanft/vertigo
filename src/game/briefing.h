@@ -47,7 +47,7 @@ private:
     void deactivate();
     void setRect(const Rect &rect);
     void draw();
-    void keyPressEvent(QKeyEvent *);
+    void keyPressEvent(input::KeyEvent *);
 
 private:
     gfx::Font m_font;

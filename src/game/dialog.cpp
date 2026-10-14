@@ -330,9 +330,9 @@ void Dialog::mouseMoveEvent(const Point &pos)
 }
 
 
-bool Dialog::mousePressEvent(const Point &pos, Qt::MouseButton button)
+bool Dialog::mousePressEvent(const Point &pos, input::MouseButton button)
 {
-    if (button == Qt::LeftButton && mapToGlobal(m_rect).contains(pos)) {
+    if (button == input::LeftButton && mapToGlobal(m_rect).contains(pos)) {
         select();
         return true;
     }

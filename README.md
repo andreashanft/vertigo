@@ -11,8 +11,10 @@ nix run github:pnordhus/vertigo
 
 # Compiling
 
-Vertigo needs Qt 6, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
-or OpenGL ES 3. Qt 5.15 still works as a fallback, but isn't tested any more.
+Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
+or OpenGL ES 3. Where Qt 6 is installed, the build also has tests that compare
+our replacements of Qt's types with Qt (`ctest`); the game itself doesn't need
+Qt.
 
 ```
 mkdir build
@@ -24,7 +26,7 @@ make
 ## macOS (Homebrew)
 
 ```
-brew install cmake qt glm
+brew install cmake sdl3 glm
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..

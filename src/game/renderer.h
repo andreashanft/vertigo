@@ -21,9 +21,8 @@
 #include "util/deferreddeletable.h"
 #include "util/geometry2d.h"
 #include "util/geometry3d.h"
+#include "input.hpp"
 
-class QKeyEvent;
-class QMouseEvent;
 
 namespace game {
 
@@ -53,11 +52,11 @@ public:
     PointD imageToScreen(const PointD &pos);
 
 public:
-    virtual void keyPressEvent(QKeyEvent *) {}
-    virtual void keyReleaseEvent(QKeyEvent *) {}
-    virtual void mousePressEvent(QMouseEvent *) {}
-    virtual void mouseReleaseEvent(QMouseEvent *) {}
-    virtual void mouseMoveEvent(QMouseEvent *) {}
+    virtual void keyPressEvent(input::KeyEvent *) {}
+    virtual void keyReleaseEvent(input::KeyEvent *) {}
+    virtual void mousePressEvent(input::MouseEvent *) {}
+    virtual void mouseReleaseEvent(input::MouseEvent *) {}
+    virtual void mouseMoveEvent(input::MouseEvent *) {}
 
 protected:
     void showCursor();

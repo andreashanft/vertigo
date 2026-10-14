@@ -44,7 +44,7 @@
 #include "util/random.h"
 #include "gfx/pipeline.h"
 
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include "util/settings.hpp"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
@@ -698,21 +698,21 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
 }
 
 static float pitch = 1.0f;
-void Scenario::keyPressEvent(QKeyEvent *e)
+void Scenario::keyPressEvent(input::KeyEvent *e)
 {
-    if (e->key() == Qt::Key_Left || e->key() == Qt::Key_4)
+    if (e->key() == input::Key_Left || e->key() == input::Key_4)
         m_left = 1.0f;
-    if (e->key() == Qt::Key_Right || e->key() == Qt::Key_6)
+    if (e->key() == input::Key_Right || e->key() == input::Key_6)
         m_right = 1.0f;
-    if (e->key() == Qt::Key_Up || e->key() == Qt::Key_8)
+    if (e->key() == input::Key_Up || e->key() == input::Key_8)
         m_up = 1.0f;
-    if (e->key() == Qt::Key_Down || e->key() == Qt::Key_5)
+    if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 1.0f;
-    if (e->key() == Qt::Key_Q)
+    if (e->key() == input::Key_Q)
         m_player->setDebugBoost(100);
-    if (e->key() == Qt::Key_W)
+    if (e->key() == input::Key_W)
         m_player->setDebugBoost(-100);
-    if (e->key() == Qt::Key_A)
+    if (e->key() == input::Key_A)
     {
         m_forwards = m_backwards + 1;
         if (m_player->engineRunning())
@@ -721,7 +721,7 @@ void Scenario::keyPressEvent(QKeyEvent *e)
             m_player->setFullThrottle(true);
         }
     }
-    if (e->key() == Qt::Key_Z)
+    if (e->key() == input::Key_Z)
     {
         m_backwards = m_forwards + 1;
         if (m_player->engineRunning())
@@ -730,7 +730,7 @@ void Scenario::keyPressEvent(QKeyEvent *e)
             m_player->setFullThrottle(true);
         }
     }
-    if (e->key() == Qt::Key_S)
+    if (e->key() == input::Key_S)
     {
         m_velocityTarget += 2.778f;
         if (m_velocityTarget > m_player->maxVelocity())
@@ -738,7 +738,7 @@ void Scenario::keyPressEvent(QKeyEvent *e)
         if (m_forwards == 0 && m_backwards == 0 && m_player->engineRunning())
             m_player->setVelocityTarget(m_velocityTarget);
     }
-    if (e->key() == Qt::Key_X)
+    if (e->key() == input::Key_X)
     {
         m_velocityTarget -= 2.778f;
         if (m_velocityTarget < m_player->minVelocity())
@@ -746,13 +746,13 @@ void Scenario::keyPressEvent(QKeyEvent *e)
         if (m_forwards == 0 && m_backwards == 0 && m_player->engineRunning())
             m_player->setVelocityTarget(m_velocityTarget);
     }
-    if (e->key() == Qt::Key_C)
+    if (e->key() == input::Key_C)
     {
         m_velocityTarget = 0;
         if (m_forwards == 0 && m_backwards == 0 && m_player->engineRunning())
             m_player->setVelocityTarget(m_velocityTarget);
     }
-    if (e->key() == Qt::Key_QuoteLeft)
+    if (e->key() == input::Key_QuoteLeft)
     {
         m_player->engineToggle();
         if (m_player->engineRunning())
@@ -774,40 +774,40 @@ void Scenario::keyPressEvent(QKeyEvent *e)
             m_player->setFullThrottle(false);
         }
     }
-    if (e->key() == Qt::Key_Space)
+    if (e->key() == input::Key_Space)
         m_player->fire();
     // turret orders: F5-F8 for turret 1, F9-F12 for turret 2 (attack my target, sync, search and destroy, stop)
-    if (e->key() >= Qt::Key_F5 && e->key() <= Qt::Key_F12)
+    if (e->key() >= input::Key_F5 && e->key() <= input::Key_F12)
     {
-        const int index = e->key() >= Qt::Key_F9 ? 1 : 0;
+        const int index = e->key() >= input::Key_F9 ? 1 : 0;
         const PlayerTurret::Order orders[4] = { PlayerTurret::Order::Attack, PlayerTurret::Order::Sync, PlayerTurret::Order::Search, PlayerTurret::Order::Stop };
         if (PlayerTurret *turret = m_player->turret(index))
-            turret->setOrder(orders[(e->key() - Qt::Key_F5) % 4]);
+            turret->setOrder(orders[(e->key() - input::Key_F5) % 4]);
     }
-    if (e->key() == Qt::Key_Tab)
+    if (e->key() == input::Key_Tab)
         m_player->fireTorpedo();
-    if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter)
+    if (e->key() == input::Key_Return || e->key() == input::Key_Enter)
         m_player->selectNextTorpedo();
-    if (e->key() == Qt::Key_Backspace || e->key() == Qt::Key_D)
+    if (e->key() == input::Key_Backspace || e->key() == input::Key_D)
         m_player->dropBuzzer();
 }
 
 
-void Scenario::keyReleaseEvent(QKeyEvent *e)
+void Scenario::keyReleaseEvent(input::KeyEvent *e)
 {
-    if (e->key() == Qt::Key_Left || e->key() == Qt::Key_4)
+    if (e->key() == input::Key_Left || e->key() == input::Key_4)
         m_left = 0.0f;
-    if (e->key() == Qt::Key_Right || e->key() == Qt::Key_6)
+    if (e->key() == input::Key_Right || e->key() == input::Key_6)
         m_right = 0.0f;
-    if (e->key() == Qt::Key_Up || e->key() == Qt::Key_8)
+    if (e->key() == input::Key_Up || e->key() == input::Key_8)
         m_up = 0.0f;
-    if (e->key() == Qt::Key_Down || e->key() == Qt::Key_5)
+    if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 0.0f;
-    if (e->key() == Qt::Key_Q)
+    if (e->key() == input::Key_Q)
         m_player->setDebugBoost(0);
-    if (e->key() == Qt::Key_W)
+    if (e->key() == input::Key_W)
         m_player->setDebugBoost(0);
-    if (e->key() == Qt::Key_A)
+    if (e->key() == input::Key_A)
     {
         m_forwards = 0;
         if (m_backwards > 0 && m_player->engineRunning())
@@ -818,7 +818,7 @@ void Scenario::keyReleaseEvent(QKeyEvent *e)
             m_player->setFullThrottle(false);
         }
     }
-    if (e->key() == Qt::Key_Z)
+    if (e->key() == input::Key_Z)
     {
         m_backwards = 0;
         if (m_forwards > 0 && m_player->engineRunning())
@@ -829,7 +829,7 @@ void Scenario::keyReleaseEvent(QKeyEvent *e)
             m_player->setFullThrottle(false);
         }
     }
-    if (e->key() == Qt::Key_Space)
+    if (e->key() == input::Key_Space)
         m_player->fireStop();
 }
 

@@ -75,7 +75,7 @@ private:
 
 protected:
     void draw();
-    bool mousePressEvent(const Point &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
 
 private:
     ui::Label m_backgroundLabel;

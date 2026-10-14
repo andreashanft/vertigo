@@ -52,7 +52,7 @@ private:
     void setupButton(ui::Button &button, txt::StringId text, float posY);
 
 private:
-    bool mousePressEvent(const Point &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
 
 private:
     gfx::Font m_fontGreen;

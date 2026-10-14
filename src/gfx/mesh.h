@@ -19,7 +19,7 @@
 #define GFX_MESH_H
 
 #include "util/geometry3d.h"
-#include <QtGlobal>
+#include <cstdint>
 
 namespace gfx {
 

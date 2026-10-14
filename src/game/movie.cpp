@@ -16,8 +16,6 @@
  ***************************************************************************/
 
 #include "movie.h"
-#include <QApplication>
-#include <QKeyEvent>
 
 
 namespace game {
@@ -121,14 +119,14 @@ void Movie::draw()
 }
 
 
-void Movie::keyPressEvent(QKeyEvent *event)
+void Movie::keyPressEvent(input::KeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape) {
+    if (event->key() == input::Key_Escape) {
         m_funcFinished();
         return;
     }
 
-    if (event->key() == Qt::Key_Space) {
+    if (event->key() == input::Key_Space) {
         m_pause = !m_pause;
         if (m_pause)
             m_stream.pause();
@@ -138,7 +136,7 @@ void Movie::keyPressEvent(QKeyEvent *event)
 }
 
 
-void Movie::mousePressEvent(QMouseEvent *event)
+void Movie::mousePressEvent(input::MouseEvent *event)
 {
 
 }

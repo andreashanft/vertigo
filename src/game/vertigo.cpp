@@ -34,15 +34,15 @@
 #include "util/datapath.h"
 #include "util/path.hpp"
 
-#include <QCoreApplication>
 #include "util/timer.hpp"
-#include <QKeyEvent>
-#include <QMouseEvent>
 #include <iostream>
 
 namespace game {
 
-Vertigo::Vertigo() :
+Vertigo::Vertigo(const Options &options) :
+    m_options(options),
+    // automated runs (with a time limit) shouldn't take the focus (on macOS see also main())
+    m_window(options.timeout <= 0),
     m_mainMenu(
        [this](String name) { startGame(name); },
        [this](String name) { loadGame(name); },
@@ -51,287 +51,296 @@ Vertigo::Vertigo() :
 {
 }
 
-int Vertigo::start(const Options &options)
+Vertigo::~Vertigo()
 {
-    if (options.check)
-        return check(options.checkScenarios);
+    // before the window and its context
+    m_window.setRenderer(nullptr);
+    m_scenario.reset();
+    m_hud.reset();
+}
 
-    std::unique_ptr<hud::HUD> hud;
-    std::unique_ptr<game::Boat> boat;
-    std::unique_ptr<fight::Scenario> scenario;
+int Vertigo::start()
+{
+    if (m_options.check)
+        return check(m_options.checkScenarios);
 
     // test mode: closing the window counts as aborting the mission
-    int result = options.scenario.isEmpty() ? ExitSuccess : ExitAborted;
-    bool running = true;
-    auto finish = [&](int code) {
-        result = code;
-        running = false;
-        m_window.close();
-    };
-    const bool headless = options.headless && !options.scenario.isEmpty();
+    m_result = m_options.scenario.isEmpty() ? ExitSuccess : ExitAborted;
+    m_headless = m_options.headless && !m_options.scenario.isEmpty();
 
-    if (options.scenario.isEmpty()) {
+    if (m_options.scenario.isEmpty()) {
         m_window.setRenderer(&m_mainMenu);
     } else {
         txt::DesFile desfile("dat:story/ch1.des");
-        boat.reset(new game::Boat(desfile));
-        if (options.boat != 0) {
-            if (options.boat < 2049 || options.boat > 2052) {
-                std::cerr << "Unknown boat type " << options.boat << " (2049-2052)" << std::endl;
+        m_boat.reset(new game::Boat(desfile));
+        if (m_options.boat != 0) {
+            if (m_options.boat < 2049 || m_options.boat > 2052) {
+                std::cerr << "Unknown boat type " << m_options.boat << " (2049-2052)" << std::endl;
                 return ExitUsage;
             }
-            boat->upgrade(options.boat);
+            m_boat->upgrade(m_options.boat);
         }
-        for (const auto &item : options.equipment) {
+        for (const auto &item : m_options.equipment) {
             if (Items::all().count(item.second) == 0) {
                 std::cerr << "Unknown item " << item.second << " (see --list-items)" << std::endl;
                 return ExitUsage;
             }
-            if (!boat->getMounting(item.first)) {
+            if (!m_boat->getMounting(item.first)) {
                 std::cerr << "The boat has no mounting " << item.first << std::endl;
                 return ExitUsage;
             }
-            boat->buy(item.second, item.first);
+            m_boat->buy(item.second, item.first);
         }
 
-        hud.reset(new hud::HUD());
-        hud->eventSuccess() += [&]() { finish(ExitSuccess); };
-        hud->eventAbort() += [&]() { finish(ExitAborted); };
-        hud->eventFailure() += [&]() { finish(ExitFailed); };
-        hud->eventDied() += [&]() { finish(ExitDied); };
+        m_hud.reset(new hud::HUD());
+        m_hud->eventSuccess() += [this]() { finish(ExitSuccess); };
+        m_hud->eventAbort() += [this]() { finish(ExitAborted); };
+        m_hud->eventFailure() += [this]() { finish(ExitFailed); };
+        m_hud->eventDied() += [this]() { finish(ExitDied); };
         // there is no saved game in test mode
-        hud->eventLoad() += [&]() { finish(ExitAborted); };
-        auto startScenario = [&]() {
-            scenario.reset(new fight::Scenario(options.scenario));
-            hud->start(scenario.get());
-            for (const Options::Drive &drive : options.drive) {
-                fight::SimpleBoat *unit = nullptr;
-                for (const auto &record : scenario->objectRecords())
-                    if (record.id == drive.id)
-                        unit = dynamic_cast<fight::SimpleBoat *>(record.object);
-                if (!unit) {
-                    std::cerr << "--drive: no boat " << drive.id << std::endl;
-                    continue;
-                }
-                // the test drives the unit instead of its orders
-                unit->setOrders(nullptr);
-                unit->setVelocityTarget(drive.speed/3.6f);
-                unit->setTurnVelocity(Vector3D(0, 0, drive.turn));
-            }
-            if (options.near) {
-                fight::ActiveObject *unit = nullptr;
-                for (const auto &record : scenario->objectRecords())
-                    if (record.id == options.near)
-                        unit = dynamic_cast<fight::ActiveObject *>(record.object);
-                if (!unit) {
-                    std::cerr << "--near: no unit " << options.near << std::endl;
-                } else {
-                    // 40 m away on the side of the player's start, 10 m higher, looking at the unit
-                    unit->enable();
-                    const Vector3D center = unit->center();
-                    Vector2D away = Vector2D(scenario->player()->position() - center);
-                    away = glm::length(away) > 1 ? glm::normalize(away) : Vector2D(0, -1);
-                    Vector3D position = center + Vector3D(away*40.0f, 10.0f);
-                    position.z = std::max(position.z, scenario->surface().heightAt(position.x, position.y) + 10.0f);
-                    scenario->player()->place(position, center - position);
-                }
-            }
-        };
-        hud->eventRestart() += startScenario;
-        hud->setDebugOverlay(options.debugOverlay);
-        hud->load(boat.get());
+        m_hud->eventLoad() += [this]() { finish(ExitAborted); };
+        m_hud->eventRestart() += [this]() { startScenario(); };
+        m_hud->setDebugOverlay(m_options.debugOverlay);
+        m_hud->load(m_boat.get());
         startScenario();
-        m_window.setRenderer(hud.get());
+        m_window.setRenderer(m_hud.get());
     }
 
-    std::vector<int> destroy = options.destroy;
-    auto screenshots = options.screenshots;
-    if (headless && !screenshots.empty()) {
+    m_destroy = m_options.destroy;
+    m_screenshots = m_options.screenshots;
+    if (m_headless && !m_screenshots.empty()) {
         std::cerr << "--screenshot needs a window, ignored with --headless" << std::endl;
-        screenshots.clear();
+        m_screenshots.clear();
     }
-    float nextTrace = 0;
-    auto keys = options.keys;
-    auto clicks = options.clicks;
-    util::ElapsedTimer timer;
-    timer.start();
+    m_keys = m_options.keys;
+    m_clicks = m_options.clicks;
+    m_timer.start();
     // test times are mission seconds: simulated without a window, real time with one, unless the
     // mission advances by a fixed step per frame
-    float simulatedTime = 0;
-    const float fixedStep = options.fixedStep && !headless && hud ? 0.02f : 0;
-    hud::HUD::setFixedStep(fixedStep);
-    auto elapsed = [&]() { return headless ? simulatedTime : fixedStep > 0 ? hud->frames()*fixedStep : timer.elapsed()/1000.0f; };
+    m_fixedStep = m_options.fixedStep && !m_headless && m_hud ? 0.02f : 0;
+    hud::HUD::setFixedStep(m_fixedStep);
 
-    if (headless) {
+    if (m_headless)
         sfx::SoundSystem::get()->setVolume(0);
-    } else {
-        // automated runs (with a time limit) shouldn't take the focus (on macOS see also main())
-        if (options.timeout > 0)
-            // what Qt::WA_ShowWithoutActivating sets for a widget
-            m_window.setProperty("_q_showWithoutActivating", true);
+    else
         m_window.show();
+    return -1;
+}
+
+void Vertigo::startScenario()
+{
+    m_scenario.reset(new fight::Scenario(m_options.scenario));
+    m_hud->start(m_scenario.get());
+    for (const Options::Drive &drive : m_options.drive) {
+        fight::SimpleBoat *unit = nullptr;
+        for (const auto &record : m_scenario->objectRecords())
+            if (record.id == drive.id)
+                unit = dynamic_cast<fight::SimpleBoat *>(record.object);
+        if (!unit) {
+            std::cerr << "--drive: no boat " << drive.id << std::endl;
+            continue;
+        }
+        // the test drives the unit instead of its orders
+        unit->setOrders(nullptr);
+        unit->setVelocityTarget(drive.speed/3.6f);
+        unit->setTurnVelocity(Vector3D(0, 0, drive.turn));
     }
-    while (running && (headless || m_window.isVisible())) {
-        if (headless) {
-            qApp->processEvents(QEventLoop::AllEvents);
-            if (scenario)
-                hud->step(0.02f);
-            simulatedTime += 0.02f;
+    if (m_options.near) {
+        fight::ActiveObject *unit = nullptr;
+        for (const auto &record : m_scenario->objectRecords())
+            if (record.id == m_options.near)
+                unit = dynamic_cast<fight::ActiveObject *>(record.object);
+        if (!unit) {
+            std::cerr << "--near: no unit " << m_options.near << std::endl;
         } else {
-            // block until the next event (at least the 20ms frame timer) instead of spinning
-            qApp->processEvents(QEventLoop::WaitForMoreEvents);
+            // 40 m away on the side of the player's start, 10 m higher, looking at the unit
+            unit->enable();
+            const Vector3D center = unit->center();
+            Vector2D away = Vector2D(m_scenario->player()->position() - center);
+            away = glm::length(away) > 1 ? glm::normalize(away) : Vector2D(0, -1);
+            Vector3D position = center + Vector3D(away*40.0f, 10.0f);
+            position.z = std::max(position.z, m_scenario->surface().heightAt(position.x, position.y) + 10.0f);
+            m_scenario->player()->place(position, center - position);
         }
-        util::DeferredDeletable::clear();
-
-        if (scenario && !destroy.empty() && elapsed() >= 1) {
-            for (const int id : destroy) {
-                bool found = false;
-                if (id == scenario->playerId()) {
-                    scenario->player()->destroy();
-                    found = true;
-                }
-                for (const auto &record : scenario->objectRecords()) {
-                    fight::ActiveObject *object = dynamic_cast<fight::ActiveObject *>(record.object);
-                    if (record.id == id && object) {
-                        // a hit by the player strong enough to destroy it, so "attacked" fires as well
-                        object->damage(object->kineticShield() + 1, 0, object->position(), scenario->player());
-                        found = true;
-                    }
-                }
-                // areas and nav points are reached instead
-                if (!found)
-                    found = scenario->conditionManager().signal(id);
-                if (!found)
-                    std::cerr << "--destroy: no unit " << id << std::endl;
-            }
-            destroy.clear();
-        }
-        // keys and screenshots work in the main menu too, at seconds since the start
-        for (auto it = keys.begin(); it != keys.end(); ) {
-            // a key's release is due at time + hold; hold < 0 marks a key that is already pressed
-            const bool pressed = it->hold < 0;
-            if (elapsed() < it->time) {
-                ++it;
-                continue;
-            }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-            const int key = it->key[0].key();
-            const Qt::KeyboardModifiers modifiers = it->key[0].keyboardModifiers();
-#else
-            const int key = it->key[0] & ~Qt::KeyboardModifierMask;
-            const Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(it->key[0] & Qt::KeyboardModifierMask);
-#endif
-            const String text = key < 0x80 ? String(QChar(key)).toLower() : String();
-            if (!pressed)
-                QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyPress, key, modifiers, text));
-            if (pressed || it->hold == 0) {
-                QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyRelease, key, modifiers, text));
-                it = keys.erase(it);
-            } else {
-                it->time += it->hold;
-                it->hold = -1;
-                ++it;
-            }
-        }
-        if (scenario) {
-            for (const auto &record : scenario->objectRecords()) {
-                if (std::find(options.fire.begin(), options.fire.end(), record.id) == options.fire.end())
-                    continue;
-                if (fight::ActiveObject *unit = dynamic_cast<fight::ActiveObject *>(record.object)) {
-                    unit->setTrigger(true);
-                    unit->aimAt(scenario->player()->position());
-                }
-            }
-        }
-        if (scenario && !options.trace.empty() && scenario->time() >= nextTrace) {
-            nextTrace = std::floor(scenario->time()) + 1;
-            const Vector3D &scale = scenario->surface().scale();
-            for (const int id : options.trace) {
-                if (id == scenario->playerId()) {
-                    const Vector3D pos = scenario->player()->position();
-                    const Vector3D current = scenario->current(pos);
-                    const fight::Player *player = scenario->player();
-                    const fight::HeadMotion &head = scenario->headMotion();
-                    std::cout << String("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg%14")
-                        .arg(options.scenario).arg(int(scenario->time()))
-                        .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
-                        .arg(int(scenario->height())).arg(int(scenario->player()->speed()))
-                        .arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1)
-                        .arg(player->shield(0)).arg(player->shield(1)).arg(player->shield(2)).arg(player->shield(3))
-                        .arg(scenario->playerDestroyed() ? " destroyed" : "")
-                        .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1) << std::endl;
-                }
-                for (const auto &record : scenario->objectRecords()) {
-                    if (record.id != id)
-                        continue;
-                    const Vector3D pos = record.object->position();
-                    String line = String("%1 t%2 %3: cell %4 %5 h%6")
-                        .arg(options.scenario).arg(int(scenario->time())).arg(id)
-                        .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
-                        .arg(int(pos.z - scenario->surface().heightAt(pos.x, pos.y)));
-                    if (!record.object->isEnabled())
-                        line += " disabled";
-                    if (fight::ActiveObject *unit = dynamic_cast<fight::ActiveObject *>(record.object)) {
-                        line += String(" %1 km/h shield %2").arg(int(glm::length(unit->velocity())*3.6f)).arg(unit->kineticShield());
-                        if (unit->eventAttack()->isCompleted())
-                            line += " attacked";
-                        if (unit->eventDestroy()->isCompleted())
-                            line += " destroyed";
-                    }
-                    if (const fight::ActiveObject *unit = dynamic_cast<const fight::ActiveObject *>(record.object)) {
-                        if (unit->orders() && unit->orders()->currentSlot())
-                            line += String(" order %1 %2").arg(unit->orders()->current()).arg(unit->orders()->state());
-                        else if (unit->orders())
-                            line += " orders done";
-                    }
-                    std::cout << line << std::endl;
-                }
-            }
-        }
-        for (auto it = clicks.begin(); it != clicks.end(); ) {
-            if (elapsed() < it->time || !m_window.renderer()) {
-                ++it;
-                continue;
-            }
-            // the mouse moves there first, so the button under it is highlighted as for a player
-            const PointD image = m_window.renderer()->imageToScreen(it->pos);
-            const QPointF pos(image.x, image.y);
-            const QPointF global = m_window.mapToGlobal(pos.toPoint());
-            QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseMove, pos, global, Qt::NoButton, Qt::NoButton, Qt::NoModifier));
-            QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseButtonPress, pos, global, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier));
-            QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseButtonRelease, pos, global, Qt::LeftButton, Qt::NoButton, Qt::NoModifier));
-            it = clicks.erase(it);
-        }
-        for (auto it = screenshots.begin(); it != screenshots.end(); ) {
-            if (elapsed() < it->time) {
-                ++it;
-                continue;
-            }
-            m_window.saveScreenshot(it->file);
-            it = screenshots.erase(it);
-        }
-        if (scenario && result == ExitAborted && scenario->conditionManager().failed())
-            result = ExitFailed;
-        // test mode doesn't wait for the autopilot key
-        if (scenario && result == ExitAborted && scenario->conditionManager().autopilot())
-            finish(ExitSuccess);
-        if (options.timeout > 0 && elapsed() >= options.timeout)
-            finish(result == ExitAborted ? ExitTimeout : result);
     }
+}
 
-    if (scenario) {
+void Vertigo::finish(int code)
+{
+    m_result = code;
+    m_running = false;
+    m_window.close();
+}
+
+float Vertigo::elapsed() const
+{
+    return m_headless ? m_simulatedTime : m_fixedStep > 0 ? m_hud->frames()*m_fixedStep : m_timer.elapsed()/1000.0f;
+}
+
+void Vertigo::event(const SDL_Event &event)
+{
+    m_window.handle(event);
+}
+
+int Vertigo::iterate()
+{
+    // what test runs make up comes first, as the platform's input would
+    m_window.deliverPosted();
+    if (m_headless) {
+        if (m_scenario)
+            m_hud->step(0.02f);
+        m_simulatedTime += 0.02f;
+    } else {
+        m_window.render();
+    }
+    util::DeferredDeletable::clear();
+    testFrame();
+
+    if (m_running && (m_headless || m_window.isVisible()))
+        return -1;
+    if (m_scenario) {
         int enabled = 0;
-        for (const auto &record : scenario->objectRecords())
+        for (const auto &record : m_scenario->objectRecords())
             if (record.object->isEnabled())
                 enabled++;
         static const char *results[] = { "success", "failed", "aborted", "timeout", "died" };
-        std::cout << options.scenario << ": " << results[result]
-                  << " after " << elapsed() << " s, " << enabled << "/" << scenario->objectRecords().size()
-                  << " units enabled, " << scenario->radio().size() << " radio messages, "
-                  << scenario->torpedoesLaunched() << " torpedoes" << std::endl;
+        std::cout << m_options.scenario << ": " << results[m_result]
+                  << " after " << elapsed() << " s, " << enabled << "/" << m_scenario->objectRecords().size()
+                  << " units enabled, " << m_scenario->radio().size() << " radio messages, "
+                  << m_scenario->torpedoesLaunched() << " torpedoes" << std::endl;
     }
 
-    return result;
+    return m_result;
+}
+
+// the test options, once a frame
+void Vertigo::testFrame()
+{
+    if (m_scenario && !m_destroy.empty() && elapsed() >= 1) {
+        for (const int id : m_destroy) {
+            bool found = false;
+            if (id == m_scenario->playerId()) {
+                m_scenario->player()->destroy();
+                found = true;
+            }
+            for (const auto &record : m_scenario->objectRecords()) {
+                fight::ActiveObject *object = dynamic_cast<fight::ActiveObject *>(record.object);
+                if (record.id == id && object) {
+                    // a hit by the player strong enough to destroy it, so "attacked" fires as well
+                    object->damage(object->kineticShield() + 1, 0, object->position(), m_scenario->player());
+                    found = true;
+                }
+            }
+            // areas and nav points are reached instead
+            if (!found)
+                found = m_scenario->conditionManager().signal(id);
+            if (!found)
+                std::cerr << "--destroy: no unit " << id << std::endl;
+        }
+        m_destroy.clear();
+    }
+    // keys and screenshots work in the main menu too, at seconds since the start
+    for (auto it = m_keys.begin(); it != m_keys.end(); ) {
+        // a key's release is due at time + hold; hold < 0 marks a key that is already pressed
+        const bool pressed = it->hold < 0;
+        if (elapsed() < it->time) {
+            ++it;
+            continue;
+        }
+        const input::KeyEvent key(it->key, it->modifiers, it->key < 0x80 ? String(1, char(it->key)).toLower() : String());
+        if (!pressed)
+            m_window.post(Window::EventType::KeyPress, key);
+        if (pressed || it->hold == 0) {
+            m_window.post(Window::EventType::KeyRelease, key);
+            it = m_keys.erase(it);
+        } else {
+            it->time += it->hold;
+            it->hold = -1;
+            ++it;
+        }
+    }
+    if (m_scenario) {
+        for (const auto &record : m_scenario->objectRecords()) {
+            if (std::find(m_options.fire.begin(), m_options.fire.end(), record.id) == m_options.fire.end())
+                continue;
+            if (fight::ActiveObject *unit = dynamic_cast<fight::ActiveObject *>(record.object)) {
+                unit->setTrigger(true);
+                unit->aimAt(m_scenario->player()->position());
+            }
+        }
+    }
+if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace) {
+        m_nextTrace = std::floor(m_scenario->time()) + 1;
+        const Vector3D &scale = m_scenario->surface().scale();
+        for (const int id : m_options.trace) {
+            if (id == m_scenario->playerId()) {
+                const Vector3D pos = m_scenario->player()->position();
+                const Vector3D current = m_scenario->current(pos);
+                const fight::Player *player = m_scenario->player();
+                const fight::HeadMotion &head = m_scenario->headMotion();
+                std::cout << String("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg%14")
+                    .arg(m_options.scenario).arg(int(m_scenario->time()))
+                    .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
+                    .arg(int(m_scenario->height())).arg(int(m_scenario->player()->speed()))
+                    .arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1)
+                    .arg(player->shield(0)).arg(player->shield(1)).arg(player->shield(2)).arg(player->shield(3))
+                    .arg(m_scenario->playerDestroyed() ? " destroyed" : "")
+                    .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1) << std::endl;
+            }
+            for (const auto &record : m_scenario->objectRecords()) {
+                if (record.id != id)
+                    continue;
+                const Vector3D pos = record.object->position();
+                String line = String("%1 t%2 %3: cell %4 %5 h%6")
+                    .arg(m_options.scenario).arg(int(m_scenario->time())).arg(id)
+                    .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
+                    .arg(int(pos.z - m_scenario->surface().heightAt(pos.x, pos.y)));
+                if (!record.object->isEnabled())
+                    line += " disabled";
+                if (fight::ActiveObject *unit = dynamic_cast<fight::ActiveObject *>(record.object)) {
+                    line += String(" %1 km/h shield %2").arg(int(glm::length(unit->velocity())*3.6f)).arg(unit->kineticShield());
+                    if (unit->eventAttack()->isCompleted())
+                        line += " attacked";
+                    if (unit->eventDestroy()->isCompleted())
+                        line += " destroyed";
+                }
+                if (const fight::ActiveObject *unit = dynamic_cast<const fight::ActiveObject *>(record.object)) {
+                    if (unit->orders() && unit->orders()->currentSlot())
+                        line += String(" order %1 %2").arg(unit->orders()->current()).arg(unit->orders()->state());
+                    else if (unit->orders())
+                        line += " orders done";
+                }
+                std::cout << line << std::endl;
+            }
+        }
+    }
+    for (auto it = m_clicks.begin(); it != m_clicks.end(); ) {
+        if (elapsed() < it->time || !m_window.renderer()) {
+            ++it;
+            continue;
+        }
+        // the mouse moves there first, so the button under it is highlighted as for a player
+        const PointD pos = m_window.renderer()->imageToScreen(it->pos);
+        m_window.post(Window::EventType::MouseMove, input::MouseEvent(pos, input::NoButton, input::NoButton));
+        m_window.post(Window::EventType::MousePress, input::MouseEvent(pos, input::LeftButton, input::LeftButton));
+        m_window.post(Window::EventType::MouseRelease, input::MouseEvent(pos, input::LeftButton, input::NoButton));
+        it = m_clicks.erase(it);
+    }
+    for (auto it = m_screenshots.begin(); it != m_screenshots.end(); ) {
+        if (elapsed() < it->time) {
+            ++it;
+            continue;
+        }
+        m_window.saveScreenshot(it->file);
+        it = m_screenshots.erase(it);
+    }
+    if (m_scenario && m_result == ExitAborted && m_scenario->conditionManager().failed())
+        m_result = ExitFailed;
+    // test mode doesn't wait for the autopilot key
+    if (m_scenario && m_result == ExitAborted && m_scenario->conditionManager().autopilot())
+        finish(ExitSuccess);
+    if (m_options.timeout > 0 && elapsed() >= m_options.timeout)
+        finish(m_result == ExitAborted ? ExitTimeout : m_result);
 }
 
 int Vertigo::check(const StringList &names)

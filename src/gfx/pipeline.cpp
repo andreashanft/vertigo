@@ -16,9 +16,9 @@
  ***************************************************************************/
 
 #include "pipeline.h"
-#include <QOpenGLContext>
-#include <QOpenGLExtraFunctions>
-#include <qopengl.h>
+#include "gl.hpp"
+#include <SDL3/SDL_video.h>
+#include "gfx/gl.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
@@ -161,8 +161,7 @@ struct Uniforms
 // the shader and the buffers for drawing from client memory, made for the current context
 struct Gpu
 {
-    QOpenGLContext *context = nullptr;
-    QOpenGLExtraFunctions *gl = nullptr;
+    SDL_GLContext context = nullptr;
     GLuint program = 0;
     Uniforms uniforms;
     GLuint streamArray = 0;
@@ -175,18 +174,18 @@ struct Gpu
 Gpu g_gpu;
 
 
-GLuint compile(QOpenGLExtraFunctions *gl, GLenum type, const std::string &source)
+GLuint compile(GLenum type, const std::string &source)
 {
-    const GLuint shader = gl->glCreateShader(type);
+    const GLuint shader = glCreateShader(type);
     const char *text = source.c_str();
-    gl->glShaderSource(shader, 1, &text, nullptr);
-    gl->glCompileShader(shader);
+    glShaderSource(shader, 1, &text, nullptr);
+    glCompileShader(shader);
     GLint ok = 0;
-    gl->glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
     if (!ok)
     {
         char log[4096];
-        gl->glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
+        glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
         std::cerr << "Cannot compile the " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader: " << log << std::endl;
     }
     return shader;
@@ -195,46 +194,41 @@ GLuint compile(QOpenGLExtraFunctions *gl, GLenum type, const std::string &source
 
 Gpu& gpu()
 {
-    QOpenGLContext *context = QOpenGLContext::currentContext();
+    SDL_GLContext context = SDL_GL_GetCurrentContext();
     if (g_gpu.context == context)
         return g_gpu;
 
     g_gpu = Gpu();
     g_gpu.context = context;
-    QOpenGLExtraFunctions *gl = g_gpu.gl = context->extraFunctions();
 
     // GLSL 1.50 is OpenGL 3.2's
-    const std::string header = context->isOpenGLES() ? "#version 300 es\nprecision highp float;\n" : "#version 150\n";
-    const GLuint vertexShader = compile(gl, GL_VERTEX_SHADER, header + VertexShader);
-    const GLuint fragmentShader = compile(gl, GL_FRAGMENT_SHADER, header + FragmentShader);
-    const GLuint program = g_gpu.program = gl->glCreateProgram();
-    gl->glAttachShader(program, vertexShader);
-    gl->glAttachShader(program, fragmentShader);
-    gl->glBindAttribLocation(program, Pipeline::Position, "position");
-    gl->glBindAttribLocation(program, Pipeline::Normal, "normal");
-    gl->glBindAttribLocation(program, Pipeline::TexCoord, "texCoord");
-    if (!context->isOpenGLES())
-    {
-        // OpenGL ES has only one output; OpenGL 3.2 binds it without a location of its own, too, but
-        // only by convention
-        typedef void (QOPENGLF_APIENTRYP BindFragDataLocation)(GLuint, GLuint, const char *);
-        if (auto bind = reinterpret_cast<BindFragDataLocation>(context->getProcAddress("glBindFragDataLocation")))
-            bind(program, 0, "fragColor");
-    }
-    gl->glLinkProgram(program);
-    gl->glDeleteShader(vertexShader);
-    gl->glDeleteShader(fragmentShader);
+    const std::string header = gl::isES() ? "#version 300 es\nprecision highp float;\n" : "#version 150\n";
+    const GLuint vertexShader = compile(GL_VERTEX_SHADER, header + VertexShader);
+    const GLuint fragmentShader = compile(GL_FRAGMENT_SHADER, header + FragmentShader);
+    const GLuint program = g_gpu.program = glCreateProgram();
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    glBindAttribLocation(program, Pipeline::Position, "position");
+    glBindAttribLocation(program, Pipeline::Normal, "normal");
+    glBindAttribLocation(program, Pipeline::TexCoord, "texCoord");
+    // OpenGL ES has only one output; OpenGL 3.2 binds it without a location of its own, too, but
+    // only by convention
+    if (!gl::isES() && glBindFragDataLocation)
+        glBindFragDataLocation(program, 0, "fragColor");
+    glLinkProgram(program);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
     GLint ok = 0;
-    gl->glGetProgramiv(program, GL_LINK_STATUS, &ok);
+    glGetProgramiv(program, GL_LINK_STATUS, &ok);
     if (!ok)
     {
         char log[4096];
-        gl->glGetProgramInfoLog(program, sizeof(log), nullptr, log);
+        glGetProgramInfoLog(program, sizeof(log), nullptr, log);
         std::cerr << "Cannot link the shader: " << log << std::endl;
     }
 
     Uniforms &u = g_gpu.uniforms;
-    auto location = [gl, program](const char *name) { return gl->glGetUniformLocation(program, name); };
+    auto location = [program](const char *name) { return glGetUniformLocation(program, name); };
     u.modelView = location("modelView");
     u.projection = location("projection");
     u.normalMatrix = location("normalMatrix");
@@ -255,28 +249,28 @@ Gpu& gpu()
     u.fog = location("fog");
     u.fogColor = location("fogColor");
     u.fogRange = location("fogRange");
-    gl->glUseProgram(program);
-    gl->glUniform1i(location("tex"), 0);
+    glUseProgram(program);
+    glUniform1i(location("tex"), 0);
 
     // the stream: positions and texture coordinates interleaved, normals from setNormal()
-    gl->glGenVertexArrays(1, &g_gpu.streamArray);
-    gl->glGenBuffers(1, &g_gpu.streamBuffer);
-    gl->glGenBuffers(1, &g_gpu.quadIndices);
-    gl->glBindVertexArray(g_gpu.streamArray);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, g_gpu.streamBuffer);
-    gl->glEnableVertexAttribArray(Pipeline::Position);
-    gl->glVertexAttribPointer(Pipeline::Position, 3, GL_FLOAT, GL_FALSE, sizeof(Pipeline::Vertex), reinterpret_cast<void *>(offsetof(Pipeline::Vertex, position)));
-    gl->glEnableVertexAttribArray(Pipeline::TexCoord);
-    gl->glVertexAttribPointer(Pipeline::TexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Pipeline::Vertex), reinterpret_cast<void *>(offsetof(Pipeline::Vertex, texCoord)));
+    glGenVertexArrays(1, &g_gpu.streamArray);
+    glGenBuffers(1, &g_gpu.streamBuffer);
+    glGenBuffers(1, &g_gpu.quadIndices);
+    glBindVertexArray(g_gpu.streamArray);
+    glBindBuffer(GL_ARRAY_BUFFER, g_gpu.streamBuffer);
+    glEnableVertexAttribArray(Pipeline::Position);
+    glVertexAttribPointer(Pipeline::Position, 3, GL_FLOAT, GL_FALSE, sizeof(Pipeline::Vertex), reinterpret_cast<void *>(offsetof(Pipeline::Vertex, position)));
+    glEnableVertexAttribArray(Pipeline::TexCoord);
+    glVertexAttribPointer(Pipeline::TexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Pipeline::Vertex), reinterpret_cast<void *>(offsetof(Pipeline::Vertex, texCoord)));
     std::vector<GLushort> indices;
     indices.reserve(MaxQuads*6);
     for (int i = 0; i < MaxQuads; i++)
         for (int corner : { 0, 1, 2, 0, 2, 3 })
             indices.push_back(GLushort(i*4 + corner));
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_gpu.quadIndices);
-    gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.size()*sizeof(GLushort)), indices.data(), GL_STATIC_DRAW);
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_gpu.quadIndices);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.size()*sizeof(GLushort)), indices.data(), GL_STATIC_DRAW);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     const std::uint32_t white = 0xffffffff;
     GLint bound = 0;
@@ -443,51 +437,50 @@ void Pipeline::apply(bool textured)
 {
     Gpu &g = gpu();
     State &s = state();
-    QOpenGLExtraFunctions *gl = g.gl;
     const Uniforms &u = g.uniforms;
-    gl->glUseProgram(g.program);
+    glUseProgram(g.program);
 
     if (s.parametersChanged)
     {
         // the default material: ambient 0.2, diffuse 0.8
         const Light &light = s.light;
-        gl->glUniform3fv(u.sceneColor, 1, glm::value_ptr(s.ambient*0.2f));
-        gl->glUniform3fv(u.lightPosition, 1, glm::value_ptr(light.position));
-        gl->glUniform3fv(u.lightDirection, 1, glm::value_ptr(glm::normalize(light.direction)));
-        gl->glUniform3fv(u.lightAmbient, 1, glm::value_ptr(light.ambient*0.2f));
-        gl->glUniform3fv(u.lightDiffuse, 1, glm::value_ptr(light.diffuse*0.8f));
+        glUniform3fv(u.sceneColor, 1, glm::value_ptr(s.ambient*0.2f));
+        glUniform3fv(u.lightPosition, 1, glm::value_ptr(light.position));
+        glUniform3fv(u.lightDirection, 1, glm::value_ptr(glm::normalize(light.direction)));
+        glUniform3fv(u.lightAmbient, 1, glm::value_ptr(light.ambient*0.2f));
+        glUniform3fv(u.lightDiffuse, 1, glm::value_ptr(light.diffuse*0.8f));
         // a cutoff of 180 degrees is a point light
-        gl->glUniform1f(u.lightCosCutoff, light.cutoff >= 180 ? -2.0f : std::cos(glm::radians(light.cutoff)));
-        gl->glUniform1f(u.lightExponent, light.exponent);
-        gl->glUniform2f(u.lightAttenuation, light.constantAttenuation, light.quadraticAttenuation);
-        gl->glUniform3fv(u.fogColor, 1, glm::value_ptr(s.fogParameters.color));
-        gl->glUniform2f(u.fogRange, s.fogParameters.start, s.fogParameters.end);
+        glUniform1f(u.lightCosCutoff, light.cutoff >= 180 ? -2.0f : std::cos(glm::radians(light.cutoff)));
+        glUniform1f(u.lightExponent, light.exponent);
+        glUniform2f(u.lightAttenuation, light.constantAttenuation, light.quadraticAttenuation);
+        glUniform3fv(u.fogColor, 1, glm::value_ptr(s.fogParameters.color));
+        glUniform2f(u.fogRange, s.fogParameters.start, s.fogParameters.end);
         s.parametersChanged = false;
     }
 
     const Matrix &modelView = s.modelView.back();
-    gl->glUniformMatrix4fv(u.modelView, 1, GL_FALSE, glm::value_ptr(modelView));
-    gl->glUniformMatrix4fv(u.projection, 1, GL_FALSE, glm::value_ptr(s.projection));
-    gl->glUniform4fv(u.color, 1, glm::value_ptr(s.color));
-    gl->glUniform1i(u.lighting, s.lighting);
+    glUniformMatrix4fv(u.modelView, 1, GL_FALSE, glm::value_ptr(modelView));
+    glUniformMatrix4fv(u.projection, 1, GL_FALSE, glm::value_ptr(s.projection));
+    glUniform4fv(u.color, 1, glm::value_ptr(s.color));
+    glUniform1i(u.lighting, s.lighting);
     if (s.lighting)
     {
         const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelView)));
-        gl->glUniformMatrix3fv(u.normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+        glUniformMatrix3fv(u.normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
     }
     // the colour alone without a texture
     if (!textured)
         glBindTexture(GL_TEXTURE_2D, g.white);
-    gl->glUniform1i(u.textureProjection, s.textureProjection);
+    glUniform1i(u.textureProjection, s.textureProjection);
     if (s.textureProjection)
     {
-        gl->glUniformMatrix4fv(u.textureMatrix, 1, GL_FALSE, glm::value_ptr(s.textureMatrix));
-        gl->glUniform1f(u.textureNear, s.textureNear);
+        glUniformMatrix4fv(u.textureMatrix, 1, GL_FALSE, glm::value_ptr(s.textureMatrix));
+        glUniform1f(u.textureNear, s.textureNear);
     }
-    gl->glUniform1i(u.alphaTest, s.alphaTest);
-    gl->glUniform1i(u.fog, s.fog);
+    glUniform1i(u.alphaTest, s.alphaTest);
+    glUniform1i(u.fog, s.fog);
     // the value of the normal attribute where there is no array of normals
-    gl->glVertexAttrib3f(Normal, s.normal.x, s.normal.y, s.normal.z);
+    glVertexAttrib3f(Normal, s.normal.x, s.normal.y, s.normal.z);
 }
 
 
@@ -497,24 +490,23 @@ void Pipeline::drawStream(unsigned int mode, const Vertex *vertices, int count, 
         return;
     apply(textured);
     Gpu &g = gpu();
-    QOpenGLExtraFunctions *gl = g.gl;
-    gl->glBindVertexArray(g.streamArray);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, g.streamBuffer);
+    glBindVertexArray(g.streamArray);
+    glBindBuffer(GL_ARRAY_BUFFER, g.streamBuffer);
     for (int first = 0; first < count; )
     {
         // a new buffer each time, so the driver needn't wait for the draws before
         const int n = quads ? std::min(count - first, MaxQuads*4)/4*4 : count;
         if (n == 0)
             break;
-        gl->glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n*sizeof(Vertex)), vertices + first, GL_STREAM_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(n*sizeof(Vertex)), vertices + first, GL_STREAM_DRAW);
         if (quads)
-            gl->glDrawElements(GL_TRIANGLES, n/4*6, GL_UNSIGNED_SHORT, nullptr);
+            glDrawElements(GL_TRIANGLES, n/4*6, GL_UNSIGNED_SHORT, nullptr);
         else
-            gl->glDrawArrays(mode, 0, n);
+            glDrawArrays(mode, 0, n);
         first += n;
     }
-    gl->glBindVertexArray(0);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 

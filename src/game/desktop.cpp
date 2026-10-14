@@ -21,7 +21,6 @@
 #include "gfx/font.h"
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
-#include <QKeyEvent>
 #include "txt/parse.hpp"
 #include <cassert>
 

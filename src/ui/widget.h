@@ -21,8 +21,7 @@
 #include "util/deferreddeletable.h"
 #include "util/geometry2d.h"
 
-// Qt::MouseButton, until the events are our own (step Q5 of the iPad port)
-#include <qnamespace.h>
+#include "game/input.hpp"
 #include <vector>
 
 
@@ -60,14 +59,14 @@ public:
     Rect mapToGlobal(Rect rect) const;
 
     void doDraw();
-    bool doMousePressEvent(const Point &pos, Qt::MouseButton button);
-    void doMouseReleaseEvent(const Point &pos, Qt::MouseButton button);
+    bool doMousePressEvent(const Point &pos, input::MouseButton button);
+    void doMouseReleaseEvent(const Point &pos, input::MouseButton button);
     void doMouseMoveEvent(const Point &pos);
 
 private:
     virtual void draw() = 0;
-    virtual bool mousePressEvent(const Point &pos, Qt::MouseButton button) { return false; }
-    virtual void mouseReleaseEvent(const Point &pos, Qt::MouseButton button) {}
+    virtual bool mousePressEvent(const Point &pos, input::MouseButton button) { return false; }
+    virtual void mouseReleaseEvent(const Point &pos, input::MouseButton button) {}
     virtual void mouseMoveEvent(const Point &pos) {}
 
 private:

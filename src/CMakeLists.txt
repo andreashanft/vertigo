@@ -111,6 +111,8 @@ set(SOURCES
     game/dialogframe.h
     game/encom.cpp
     game/encom.h
+    game/input.cpp
+    game/input.hpp
     game/items.cpp
     game/items.h
     game/main.cpp
@@ -145,6 +147,10 @@ set(SOURCES
     gfx/font.h
     gfx/fontmanager.cpp
     gfx/fontmanager.h
+    gfx/framebuffer.cpp
+    gfx/framebuffer.hpp
+    gfx/gl.cpp
+    gfx/gl.hpp
     gfx/glbmodel.cpp
     gfx/glbmodel.h
     gfx/image.cpp
@@ -254,6 +260,8 @@ set(SOURCES
     util/datapath.cpp
     util/datetime.cpp
     util/datetime.hpp
+    util/datetimetext.cpp
+    util/datetimetext.hpp
     util/datapath.h
     util/deferreddeletable.cpp
     util/deferreddeletable.h
@@ -279,13 +287,14 @@ set(SOURCES
 )
 
 add_executable(vertigo WIN32 ${SOURCES})
-target_link_libraries(vertigo Qt${QT_VERSION_MAJOR}::Widgets ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
+target_link_libraries(vertigo SDL3::SDL3 ${OPENAL_LIBRARY})
+if(APPLE)
+    # the region's date format for the saved games
+    target_link_libraries(vertigo "-framework CoreFoundation")
+endif()
 if(WIN32)
     # CommandLineToArgvW() for the arguments in UTF-8
     target_link_libraries(vertigo shell32)
-endif()
-if (QT_VERSION_MAJOR EQUAL 6)
-    target_link_libraries(vertigo Qt6::OpenGL)
 endif()
 if (TARGET glm::glm)
     target_link_libraries(vertigo glm::glm)

@@ -42,8 +42,8 @@ public:
 
 protected:
     void draw();
-    bool mousePressEvent(const Point &pos, Qt::MouseButton button);
-    void mouseReleaseEvent(const Point &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
+    void mouseReleaseEvent(const Point &pos, input::MouseButton button);
 
 private:
     bool m_pressed;

@@ -269,14 +269,14 @@ void Notebook::updateMovies()
     m_btnMoviesHarbour.setText(txt::StringTable::get(harbour));
 }
 
-bool Notebook::mousePressEvent(const Point &pos, Qt::MouseButton button)
+bool Notebook::mousePressEvent(const Point &pos, input::MouseButton button)
 {
     if (m_lblMap.isVisible()) {
         hideMap();
         return true;
     }
 
-    if (button == Qt::RightButton) {
+    if (button == input::RightButton) {
         if (m_lblMissions.isVisible()) {
             hideMissions();
             return true;

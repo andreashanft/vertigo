@@ -18,13 +18,12 @@
 
         nativeBuildInputs = [
           cmake
-          glm
-          openal
-          qt6.wrapQtAppsHook
         ];
 
         buildInputs = [
-          qt6.qtbase
+          glm
+          openal
+          sdl3
         ];
       };
     };

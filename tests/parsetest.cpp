@@ -33,6 +33,14 @@
 
 namespace {
 
+// all of it, also past a zero byte
+String fromQt(const QString &s)
+{
+    const QByteArray latin1 = s.toLatin1();
+    return String::fromLatin1(latin1.constData(), int(latin1.size()));
+}
+
+
 int g_checks = 0;
 int g_failures = 0;
 std::map<std::string, int> g_kinds;
@@ -61,7 +69,7 @@ void same(const char *kind, const String &text, const QRegularExpressionMatch &e
     g_checks++;
     bool ok = expected.hasMatch() == matched;
     for (std::size_t i = 0; ok && matched && i < groups.size(); i++)
-        ok = String::fromLatin1(expected.captured(int(i) + 1).toLatin1()) == groups[i];
+        ok = fromQt(expected.captured(int(i) + 1)) == groups[i];
     if (ok)
         return;
     g_failures++;
@@ -69,7 +77,7 @@ void same(const char *kind, const String &text, const QRegularExpressionMatch &e
         return;
     std::cerr << "FAIL " << kind << " on " << describe(text) << ": Qt " << (expected.hasMatch() ? "matches" : "doesn't match");
     for (int i = 1; expected.hasMatch() && i <= expected.lastCapturedIndex(); i++)
-        std::cerr << " " << describe(String::fromLatin1(expected.captured(i).toLatin1()));
+        std::cerr << " " << describe(fromQt(expected.captured(i)));
     std::cerr << ", ours " << (matched ? "matches" : "doesn't match");
     for (std::size_t i = 0; matched && i < groups.size(); i++)
         std::cerr << " " << describe(groups[i]);
@@ -116,7 +124,7 @@ void check(const String &text)
     g_checks++;
     static const QRegularExpression digits("\\d+");
     const String replaced = txt::replaceNumbers(text, "#");
-    const String expected = String::fromLatin1(QString(q).replace(digits, "#").toLatin1());
+    const String expected = fromQt(QString(q).replace(digits, "#"));
     if (replaced != expected) {
         g_failures++;
         if (++g_kinds["replaceNumbers"] <= 5)

@@ -22,7 +22,7 @@
 #include "fight/collisionmesh.h"
 #include "gfx/pipeline.h"
 
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include <glm/gtx/norm.hpp>
 #include <glm/trigonometric.hpp>
 

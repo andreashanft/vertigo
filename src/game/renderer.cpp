@@ -17,7 +17,7 @@
 
 #include "renderer.h"
 #include "gfx/pipeline.h"
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include <glm/vec4.hpp>
 #include <glm/matrix.hpp>
 #include <glm/gtc/matrix_transform.hpp>

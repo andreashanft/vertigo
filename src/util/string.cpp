@@ -937,12 +937,6 @@ std::ostream &operator<<(std::ostream &stream, const String &s)
 }
 
 
-String::String(const QString &s) :
-    m_data(s.toLatin1().toStdString())
-{
-}
-
-
 StringList StringList::withPrefix(const String &prefix) const
 {
     StringList result;
@@ -993,22 +987,6 @@ String StringList::join(const String &separator) const
         result += at(i);
     }
     return result;
-}
-
-
-StringList::StringList(const QStringList &list)
-{
-    for (const QString &s : list)
-        push_back(String(s));
-}
-
-
-StringList::operator QStringList() const
-{
-    QStringList list;
-    for (const String &s : *this)
-        list << QString(s);
-    return list;
 }
 
 

@@ -37,6 +37,30 @@
 
 namespace {
 
+// String and QString, as String converted them while Qt was linked: Latin-1, characters beyond
+// it become '?'
+QString toQt(const String &s)
+{
+    return QString::fromLatin1(s.constData(), s.size());
+}
+
+
+String fromQt(const QString &s)
+{
+    const QByteArray latin1 = s.toLatin1();
+    return String::fromLatin1(latin1.constData(), int(latin1.size()));
+}
+
+
+QStringList toQt(const StringList &list)
+{
+    QStringList result;
+    for (const String &s : list)
+        result << toQt(s);
+    return result;
+}
+
+
 int g_checks = 0;
 int g_failures = 0;
 
@@ -63,8 +87,8 @@ void same(const QString &what, const QString &expected, const String &actual)
 {
     g_checks++;
     const QString latin1 = QString::fromLatin1(expected.toLatin1());
-    if (latin1 != QString(actual))
-        fail(what, describe(latin1), describe(actual));
+    if (latin1 != toQt(actual))
+        fail(what, describe(latin1), describe(toQt(actual)));
 }
 
 
@@ -74,12 +98,12 @@ void same(const QString &what, const QStringList &expected, const StringList &ac
     QStringList latin1;
     for (const QString &s : expected)
         latin1 << QString::fromLatin1(s.toLatin1());
-    if (latin1 != QStringList(actual)) {
+    if (latin1 != toQt(actual)) {
         QStringList a, b;
         for (const QString &s : latin1)
             a << describe(s);
         for (const String &s : actual)
-            b << describe(s);
+            b << describe(toQt(s));
         fail(what, "(" + a.join(", ") + ")", "(" + b.join(", ") + ")");
     }
 }
@@ -98,7 +122,7 @@ void same(const QString &what, T expected, bool expectedOk, T actual, bool actua
 
 void sameNumbers(const QString &text)
 {
-    const String s(text);
+    const String s = fromQt(text);
     const QString what = describe(text);
     bool okQ, ok;
     int i = text.toInt(&okQ);
@@ -120,7 +144,7 @@ void sameNumbers(const QString &text)
 
 void sameText(const QString &text)
 {
-    const String s(text);
+    const String s = fromQt(text);
     const QString what = describe(text);
     same(what + ".trimmed()", text.trimmed(), s.trimmed());
     same(what + ".simplified()", text.simplified(), s.simplified());
@@ -168,7 +192,7 @@ void sameValue(const QVariant &q, const txt::Value &v, const QString &what)
 
 void sameValue(const QString &text)
 {
-    sameValue(QVariant(text), txt::Value(String(text)), "Value(" + describe(text) + ")");
+    sameValue(QVariant(text), txt::Value(fromQt(text)), "Value(" + describe(text) + ")");
 }
 
 
@@ -237,7 +261,7 @@ int main(int argc, char *argv[])
     const QStringList formats = { "%1", "%2 %1", "a%1b%1c", "%1%2", "%10 %1", "%01 %2", "%1 %9 %10 %99", "no escape",
                                   "%", "100%", "%%1", "%0 %1", "%1%" };
     for (const QString &format : formats) {
-        const String f(format);
+        const String f = fromQt(format);
         for (int width : { 0, 3, -3, 6, -6 }) {
             for (QChar fill : { QChar(' '), QChar('0'), QChar('*') }) {
                 const QString what = describe(format) + QString(".arg(…, %1, '%2')").arg(width).arg(fill);
@@ -290,7 +314,7 @@ int main(int argc, char *argv[])
     for (const QStringList &list : { QStringList(), QStringList{ "12" }, QStringList{ "a", "b" }, QStringList{ "" } }) {
         StringList l;
         for (const QString &s : list)
-            l << String(s);
+            l << fromQt(s);
         sameValue(QVariant(list), txt::Value(l), "Value(list " + list.join("|") + ")");
     }
 
@@ -306,7 +330,7 @@ int main(int argc, char *argv[])
     // written as toString(Qt::ISODateWithMs) wrote them
     auto sameTime = [](const QString &text) {
         const QDateTime q = QDateTime::fromString(text, Qt::ISODate);
-        const util::DateTime ours = util::DateTime::fromIso(String(text));
+        const util::DateTime ours = util::DateTime::fromIso(fromQt(text));
         const bool equal = q.isValid() ? ours.isValid() && ours.year == q.date().year() && ours.month == q.date().month() && ours.day == q.date().day()
                 && ours.hour == q.time().hour() && ours.minute == q.time().minute() && ours.second == q.time().second() && ours.millisecond == q.time().msec()
                 : !ours.isValid();

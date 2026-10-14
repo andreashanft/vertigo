@@ -18,7 +18,7 @@
 #include "placeholder.h"
 #include "fight/scenario.h"
 #include "gfx/pipeline.h"
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 
 #include <algorithm>
 #include <limits>

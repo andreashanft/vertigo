@@ -25,10 +25,6 @@
 #include <type_traits>
 #include <vector>
 
-// the bridge to Qt while it is still linked (until step Q5 of the iPad port)
-#include <QString>
-#include <QStringList>
-
 namespace util {
 
 class StringList;
@@ -186,14 +182,6 @@ public:
     // as UTF-8
     friend std::ostream &operator<<(std::ostream &stream, const String &s);
 
-    // while Qt is linked (until step Q5): QString takes any String; the other way round
-    // characters outside Latin-1 become '?'
-    explicit String(const QString &s);
-    operator QString() const { return QString::fromLatin1(m_data.data(), size()); }
-    // all bytes (QByteArray also converts to a pointer, which would end at a zero byte)
-    static String fromLatin1(const QByteArray &data) { return fromLatin1(data.constData(), int(data.size())); }
-    static String fromUtf8(const QByteArray &data) { return fromUtf8(data.constData(), int(data.size())); }
-
 private:
     String argInteger(long long a, bool isUnsigned, int fieldWidth, int base, char fill) const;
     String replaceArg(const String &arg, int fieldWidth, char fill) const;
@@ -236,9 +224,6 @@ public:
     String join(const String &separator) const;
     String join(char separator) const { return join(String(1, separator)); }
 
-    // while Qt is linked
-    explicit StringList(const QStringList &list);
-    operator QStringList() const;
     // those starting with the prefix
     StringList withPrefix(const String &prefix) const;
 };

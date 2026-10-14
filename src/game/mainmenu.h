@@ -47,8 +47,8 @@ private:
     void activate();
     void deactivate();
     void changeState(State state);
-    void mousePressEvent(QMouseEvent *);
-    void keyPressEvent(QKeyEvent *);
+    void mousePressEvent(input::MouseEvent *);
+    void keyPressEvent(input::KeyEvent *);
 
 private:
     State m_state;

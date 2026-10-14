@@ -22,9 +22,7 @@
 #include "txt/stringtable.h"
 #include "sfx/soundsystem.h"
 #include "hud/hud.h"
-#include <QApplication>
-#include <qopengl.h>
-#include <QKeyEvent>
+#include "gfx/gl.hpp"
 
 
 namespace game {
@@ -214,7 +212,7 @@ void Briefing::draw()
     }
 }
 
-void Briefing::keyPressEvent(QKeyEvent *event)
+void Briefing::keyPressEvent(input::KeyEvent *event)
 {
     if (m_state == PressKey) {
         m_eventStart();

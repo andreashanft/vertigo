@@ -18,7 +18,6 @@
 #ifndef FIGHT_SCENARIO_H
 #define FIGHT_SCENARIO_H
 
-#include <QKeyEvent>
 #include <functional>
 #include <map>
 #include <list>
@@ -27,6 +26,7 @@
 #include "util/geometry3d.h"
 #include "util/deferreddeletable.h"
 #include "gfx/texturemanager.h"
+#include "game/input.hpp"
 #include "txt/desfile.h"
 #include "boats/player.h"
 #include "surface/surface.h"
@@ -147,8 +147,8 @@ public:
     void draw();
     // with another projection and camera, e.g. a wider view or the pilot's head moved
     void draw(const Matrix &projection, const Matrix &camera);
-    void keyPressEvent(QKeyEvent *);
-    void keyReleaseEvent(QKeyEvent *);
+    void keyPressEvent(input::KeyEvent *);
+    void keyReleaseEvent(input::KeyEvent *);
 
 private:
     Vector3D getPosition();

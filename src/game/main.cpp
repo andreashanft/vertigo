@@ -27,60 +27,19 @@
 #include "fight/scenario.h"
 #include "hud/hud.h"
 
-// Qt, until SDL takes the platform over (step Q5 of the iPad port)
-#include <QApplication>
-#include <QDataStream>
-#include <QFileDialog>
-#include <QKeySequence>
-#include <QRect>
-#include <QSettings>
+// SDL calls SDL_AppInit(), then SDL_AppIterate() for each frame and SDL_AppEvent() for each
+// event, as iOS wants it
+#define SDL_MAIN_USE_CALLBACKS 1
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
+#include <memory>
 
 
 namespace {
-
-// the settings of the builds before, kept by QSettings; taken over once (only the game's own:
-// on macOS, QSettings also lists the system's)
-std::map<std::string, std::string> qtSettings()
-{
-    QSettings settings;
-    std::map<std::string, std::string> values;
-    auto geometry = [](const QRect &rect) {
-        return QString("%1 %2 %3 %4").arg(rect.x()).arg(rect.y()).arg(rect.width()).arg(rect.height()).toStdString();
-    };
-    for (const char *name : { "datadir", "Window/geometry", "Window/fullScreen", "MainWindow/geometry", "Movie/autopilot", "Movie/approach",
-                              "Movie/harbour", "Game/difficulty", "cockpit/mode", "cockpit/shake", "cockpit/directory" }) {
-        const QString key(name);
-        if (!settings.contains(key))
-            continue;
-        const QVariant value = settings.value(key);
-        if (key == "Window/geometry") {
-            if (value.toRect().isValid())
-                values[key.toStdString()] = geometry(value.toRect());
-        } else if (key == "MainWindow/geometry") {
-            // what QWidget::saveGeometry() stored before (version 3): frame and normal geometry,
-            // screen, maximized, full screen, screen width, geometry
-            QDataStream stream(value.toByteArray());
-            stream.setVersion(QDataStream::Qt_4_0);
-            quint32 magic;
-            quint16 major, minor;
-            QRect frameGeometry, normalGeometry, lastGeometry;
-            qint32 screen, screenWidth;
-            quint8 maximized, wasFullScreen;
-            stream >> magic >> major >> minor >> frameGeometry >> normalGeometry >> screen >> maximized >> wasFullScreen >> screenWidth >> lastGeometry;
-            if (stream.status() == QDataStream::Ok && magic == 0x1D9D0CB && major >= 3 && !settings.contains("Window/geometry")) {
-                values["Window/geometry"] = geometry(wasFullScreen ? normalGeometry : lastGeometry);
-                values["Window/fullScreen"] = wasFullScreen ? "true" : "false";
-            }
-        } else if (value.canConvert<QString>()) {
-            values[key.toStdString()] = value.toString().toStdString();
-        }
-    }
-    return values;
-}
-
 
 String text(const std::string &utf8)
 {
@@ -136,10 +95,39 @@ bool ids(const util::CommandLine &parser, const char *name, const char *expected
     return true;
 }
 
+std::unique_ptr<game::Vertigo> g_vertigo;
+int g_exitCode = game::Vertigo::ExitSuccess;
+
+
+// SDL's folder dialog, waited for; empty if the player cancels it
+std::string chooseDirectory(const std::string &start)
+{
+    struct Choice { bool done = false; std::string directory; } choice;
+    SDL_ShowOpenFolderDialog([](void *userdata, const char * const *files, int) {
+        Choice *choice = static_cast<Choice *>(userdata);
+        if (files && files[0])
+            choice->directory = files[0];
+        choice->done = true;
+    }, &choice, nullptr, start.empty() ? nullptr : start.c_str(), false);
+    while (!choice.done) {
+        SDL_Event event;
+        SDL_WaitEventTimeout(&event, 100);
+    }
+    return choice.directory;
+}
+
+
+// ends before the first frame with this exit code
+SDL_AppResult end(int code)
+{
+    g_exitCode = code;
+    return SDL_APP_SUCCESS;
+}
+
 } // namespace
 
 
-int main(int argc, char *argv[])
+SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
 {
     util::CommandLine parser(
         "Open-source clone of Archimedean Dynasty / Schleichfahrt.\n\n"
@@ -172,30 +160,25 @@ int main(int argc, char *argv[])
 
     if (!parser.parse(util::CommandLine::arguments(argc, argv))) {
         std::cerr << parser.error() << " See --help." << std::endl;
-        return game::Vertigo::ExitUsage;
+        return end(game::Vertigo::ExitUsage);
     }
     if (parser.helpRequested()) {
         std::cout << parser.help();
-        return game::Vertigo::ExitSuccess;
+        return end(game::Vertigo::ExitSuccess);
     }
 
-    // Automated runs with a window (with a time limit) shouldn't take the focus. On macOS, Qt
-    // and AppKit (which takes a mission argument for a file to open) activate the app
-    // when it has finished launching. Unless this is set, Qt makes the process a foreground app
-    // when the QApplication is created, so the arguments are checked before: a background app
-    // can't be activated, but it has no Dock icon and gets no keyboard input other than --keys.
+    // Automated runs with a window (with a time limit) shouldn't take the focus: on macOS, as a
+    // background app (without a Dock icon, and no keyboard input other than --keys), and the
+    // window isn't focusable either
     if (!parser.isSet("check") && !parser.isSet("headless") && text(parser.value("timeout")).toInt() > 0)
-        qputenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1");
-
-    QApplication app(argc, argv);
+        SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "1");
+    SDL_SetAppMetadata("Vertigo", nullptr, "com.vertigo.Vertigo");
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cerr << "Cannot start SDL: " << SDL_GetError() << std::endl;
+        return SDL_APP_FAILURE;
+    }
     const long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     util::seedRandom(unsigned(milliseconds % 60000));
-
-    // where QSettings found the settings of the builds before
-    app.setOrganizationName("Vertigo");
-    app.setApplicationName("Vertigo");
-    if (!util::Settings::exists())
-        util::Settings::import(qtSettings());
 
     game::Vertigo::Options options;
     if (parser.isSet("check")) {
@@ -220,7 +203,7 @@ int main(int argc, char *argv[])
         const String cockpit = text(parser.value("cockpit")).toLower();
         if (cockpit != "2d" && cockpit != "3d") {
             std::cerr << "Invalid --cockpit value " << cockpit << ", expected 2d or 3d" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
         hud::HUD::setCockpitMode(cockpit == "3d" ? hud::HUD::CockpitMode::Model : hud::HUD::CockpitMode::Art, false);
     }
@@ -229,7 +212,7 @@ int main(int argc, char *argv[])
         const float shake = text(parser.value("shake")).toFloat(&ok);
         if (!ok || shake < 0) {
             std::cerr << "Invalid --shake value " << parser.value("shake") << ", expected a factor of 0 or more" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
         hud::HUD::setHeadMotion(shake, false);
     }
@@ -240,7 +223,7 @@ int main(int argc, char *argv[])
         const float pitch = look.value(1).toFloat(&okPitch);
         if (look.size() != 2 || !okYaw || !okPitch) {
             std::cerr << "Invalid --look value " << parser.value("look") << ", expected yaw,pitch in degrees" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
         hud::HUD::setLook(yaw, pitch);
     }
@@ -249,7 +232,7 @@ int main(int argc, char *argv[])
         std::string file;
         if (!timed(value, time, file)) {
             std::cerr << "Invalid --screenshot value " << value << ", expected time=file" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
         options.screenshots.push_back({ time, file });
     }
@@ -259,12 +242,12 @@ int main(int argc, char *argv[])
         const StringList xy = timed(value, time, point) ? text(point).split(',') : StringList();
         if (xy.size() != 2 || !isNumber(xy[0]) || !isNumber(xy[1])) {
             std::cerr << "Invalid --click value " << value << ", expected time=x,y" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
         options.clicks.push_back({ time, PointD(xy[0].toFloat(), xy[1].toFloat()) });
     }
     if (!ids(parser, "destroy", "unit ids", options.destroy))
-        return game::Vertigo::ExitUsage;
+        return end(game::Vertigo::ExitUsage);
     for (const std::string &item : items(parser.values("keys"))) {
         // time=key or time=key/hold
         float time = 0;
@@ -273,23 +256,24 @@ int main(int argc, char *argv[])
         const String keyHold = text(rest);
         const int slash = keyHold.indexOf('/');
         const String hold = slash < 0 ? String() : keyHold.mid(slash + 1);
-        const QKeySequence key(format && (slash < 0 || isNumber(hold)) ? QString(keyHold.left(slash)) : QString());
-        if (key.isEmpty()) {
+        int modifiers = input::NoModifier;
+        const input::Key key = format && (slash < 0 || isNumber(hold)) ? input::parseKey(keyHold.left(slash), modifiers) : input::Key_None;
+        if (key == input::Key_None) {
             std::cerr << "Invalid --keys value " << item << ", expected time=key[/seconds]" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
-        options.keys.push_back({ time, key, hold.toFloat() });
+        options.keys.push_back({ time, key, modifiers, hold.toFloat() });
     }
     if (parser.isSet("near")) {
         bool ok = false;
         options.near = text(parser.value("near")).toInt(&ok);
         if (!ok) {
             std::cerr << "Invalid --near value " << parser.value("near") << ", expected a unit id" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
     }
     if (!ids(parser, "fire", "unit ids", options.fire) || !ids(parser, "trace", "unit ids", options.trace))
-        return game::Vertigo::ExitUsage;
+        return end(game::Vertigo::ExitUsage);
     for (const std::string &item : items(parser.values("drive"))) {
         // id=speed or id=speed:turn
         const StringList parts = text(item).split('=');
@@ -298,7 +282,7 @@ int main(int argc, char *argv[])
         const int id = parts.value(0).toInt(&ok);
         if (parts.size() != 2 || !ok || speedTurn.size() > 2 || !isNumber(speedTurn.value(0), true) || (speedTurn.size() == 2 && !isNumber(speedTurn[1], true))) {
             std::cerr << "Invalid --drive value " << item << ", expected id=speed[:turn]" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
         options.drive.push_back({ id, speedTurn[0].toFloat(), speedTurn.value(1).toFloat() });
     }
@@ -308,27 +292,57 @@ int main(int argc, char *argv[])
         const int model = parts.value(1).toInt(&ok);
         if (parts.size() != 2 || !ok) {
             std::cerr << "Invalid --equip value " << item << ", expected mounting=model" << std::endl;
-            return game::Vertigo::ExitUsage;
+            return end(game::Vertigo::ExitUsage);
         }
         options.equipment.emplace_back(parts[0].toUpper(), model);
     }
 
     util::DataPath::set(parser.isSet("data") ? parser.value("data") : util::Settings::value("datadir"));
+    // the Schleichfahrt / Archimedean Dynasty directory, until one has the game's text
     while (!txt::StringTable::load()) {
-        const QString dir = QFileDialog::getExistingDirectory(NULL, "Select Schleichfahrt / Archimedean Dynasty directory", QString::fromStdString(util::DataPath::directory()));
-        if (dir.isNull())
-            return game::Vertigo::ExitSuccess;
-        util::Settings::setValue("datadir", dir.toStdString());
-        util::DataPath::set(dir.toStdString());
+        const std::string directory = chooseDirectory(util::DataPath::directory());
+        if (directory.empty())
+            return end(game::Vertigo::ExitSuccess);
+        util::Settings::setValue("datadir", directory);
+        util::DataPath::set(directory);
     }
 
     if (parser.isSet("list-items")) {
         static const char *types[] = { "torpedo", "magazine", "gun", "engine", "booster", "silator", "armor", "nrskin", "sensor", "software", "buzzer", "fixer" };
         for (const auto &pair : game::Items::all())
             std::cout << pair.first << "\t" << types[pair.second.type] << "\t" << pair.second.longname << "\n";
-        return game::Vertigo::ExitSuccess;
+        return end(game::Vertigo::ExitSuccess);
     }
 
-    game::Vertigo vertigo;
-    return vertigo.start(options);
+    g_vertigo.reset(new game::Vertigo(options));
+    const int code = g_vertigo->start();
+    if (code >= 0)
+        return end(code);
+    // a frame every 20 ms with a window; without one as fast as it goes
+    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, options.headless && !options.scenario.isEmpty() ? "0" : "50");
+    return SDL_APP_CONTINUE;
+}
+
+
+SDL_AppResult SDL_AppIterate(void *)
+{
+    const int code = g_vertigo->iterate();
+    return code >= 0 ? end(code) : SDL_APP_CONTINUE;
+}
+
+
+SDL_AppResult SDL_AppEvent(void *, SDL_Event *event)
+{
+    if (g_vertigo)
+        g_vertigo->event(*event);
+    return SDL_APP_CONTINUE;
+}
+
+
+void SDL_AppQuit(void *, SDL_AppResult result)
+{
+    g_vertigo.reset();
+    SDL_Quit();
+    // the exit code of test mode (SDL's own would only tell success from failure)
+    std::exit(result == SDL_APP_FAILURE ? EXIT_FAILURE : g_exitCode);
 }

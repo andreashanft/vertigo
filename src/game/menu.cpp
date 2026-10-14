@@ -17,7 +17,6 @@
 
 #include "menu.h"
 #include "sfx/soundsystem.h"
-#include <QMouseEvent>
 #include <cmath>
 
 
@@ -53,14 +52,15 @@ void Menu::setRootWidget(ui::Widget *widget)
 }
 
 
-Point Menu::imagePos(QMouseEvent *event)
+Point Menu::imagePos(input::MouseEvent *event)
 {
-    const PointD pos = screenToImage(PointD(event->pos().x(), event->pos().y()));
+    // (from the nearest point, as Qt gave it)
+    const PointD pos = screenToImage(PointD(event->pos()));
     return Point(int(std::lround(pos.x)), int(std::lround(pos.y)));
 }
 
 
-void Menu::mousePressEvent(QMouseEvent *event)
+void Menu::mousePressEvent(input::MouseEvent *event)
 {
     if (m_rootWidget)
         if (m_rootWidget->doMousePressEvent(imagePos(event), event->button()) && m_click)
@@ -68,14 +68,14 @@ void Menu::mousePressEvent(QMouseEvent *event)
 }
 
 
-void Menu::mouseReleaseEvent(QMouseEvent *event)
+void Menu::mouseReleaseEvent(input::MouseEvent *event)
 {
     if (m_rootWidget)
         m_rootWidget->doMouseReleaseEvent(imagePos(event), event->button());
 }
 
 
-void Menu::mouseMoveEvent(QMouseEvent *event)
+void Menu::mouseMoveEvent(input::MouseEvent *event)
 {
     if (m_rootWidget)
         m_rootWidget->doMouseMoveEvent(imagePos(event));

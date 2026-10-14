@@ -23,7 +23,7 @@
 #include "util/bytereader.hpp"
 #include "util/datapath.h"
 #include "util/path.hpp"
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include <iostream>
 
 #include <glm/geometric.hpp>

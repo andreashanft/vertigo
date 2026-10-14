@@ -150,7 +150,7 @@ void Widget::doDraw()
 }
 
 
-bool Widget::doMousePressEvent(const Point &pos, Qt::MouseButton button)
+bool Widget::doMousePressEvent(const Point &pos, input::MouseButton button)
 {
     if (m_enabled && m_visible) {
         if (mousePressEvent(pos, button))
@@ -167,7 +167,7 @@ bool Widget::doMousePressEvent(const Point &pos, Qt::MouseButton button)
 }
 
 
-void Widget::doMouseReleaseEvent(const Point &pos, Qt::MouseButton button)
+void Widget::doMouseReleaseEvent(const Point &pos, input::MouseButton button)
 {
     if (m_enabled && m_visible) {
         mouseReleaseEvent(pos, button);

@@ -42,7 +42,7 @@ public:
 
 private:
     void draw();
-    bool mousePressEvent(const Point &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
     void updateButtons();
     void scrollLeft();
     void scrollRight();

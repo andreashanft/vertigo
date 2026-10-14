@@ -19,7 +19,7 @@
 #include "hud.h"
 #include "txt/stringtable.h"
 
-#include <Qt>
+#include "game/input.hpp"
 #include "util/ticks.h"
 
 
@@ -70,39 +70,39 @@ MissionMenu::Action MissionMenu::keyPressEvent(int key)
         break;
 
     case Page::Main:
-        if (key == Qt::Key_0 || key == Qt::Key_Escape) {
+        if (key == input::Key_0 || key == input::Key_Escape) {
             m_page = Page::None;
             return Action::Continue;
         }
-        if (key == Qt::Key_1)
+        if (key == input::Key_1)
             m_page = Page::ConfirmAbort;
-        if (key == Qt::Key_2)
+        if (key == input::Key_2)
             m_page = Page::ConfirmRestart;
-        if (key == Qt::Key_3)
+        if (key == input::Key_3)
             m_page = Page::ConfirmLoad;
         break;
 
     case Page::ConfirmAbort:
     case Page::ConfirmRestart:
     case Page::ConfirmLoad:
-        if (key == Qt::Key_1) {
+        if (key == input::Key_1) {
             const Action action = m_page == Page::ConfirmAbort ? Action::Abort :
                                   m_page == Page::ConfirmRestart ? Action::Restart : Action::Load;
             m_page = Page::None;
             return action;
         }
-        if (key == Qt::Key_0 || key == Qt::Key_Escape)
+        if (key == input::Key_0 || key == input::Key_Escape)
             m_page = Page::Main;
         break;
 
     case Page::Turrets:
-        if (key == Qt::Key_0 || key == Qt::Key_Escape || key == Qt::Key_O || m_turretCount == 0)
+        if (key == input::Key_0 || key == input::Key_Escape || key == input::Key_O || m_turretCount == 0)
             m_page = Page::None;
-        else if (key == Qt::Key_1)
+        else if (key == input::Key_1)
             m_page = Page::Turret1;
-        else if (key == Qt::Key_2 && m_turretCount > 1)
+        else if (key == input::Key_2 && m_turretCount > 1)
             m_page = Page::Turret2;
-        else if (key == Qt::Key_3)
+        else if (key == input::Key_3)
         {
             m_turret = -1;
             m_turretOrder = 0;
@@ -113,24 +113,24 @@ MissionMenu::Action MissionMenu::keyPressEvent(int key)
 
     case Page::Turret1:
     case Page::Turret2:
-        if (key >= Qt::Key_1 && key <= Qt::Key_4)
+        if (key >= input::Key_1 && key <= input::Key_4)
         {
             m_turret = m_page == Page::Turret1 ? 0 : 1;
-            m_turretOrder = key - Qt::Key_1;
+            m_turretOrder = key - input::Key_1;
             m_page = Page::None;
             return Action::TurretOrder;
         }
-        if (key == Qt::Key_0 || key == Qt::Key_Escape)
+        if (key == input::Key_0 || key == input::Key_Escape)
             m_page = Page::Turrets;
         break;
 
     case Page::GameOver:
     case Page::Died:
-        if (key == Qt::Key_1)
+        if (key == input::Key_1)
             return Action::Abort;
-        if (key == Qt::Key_2)
+        if (key == input::Key_2)
             return Action::Restart;
-        if (key == Qt::Key_3)
+        if (key == input::Key_3)
             return Action::Load;
         break;
     }

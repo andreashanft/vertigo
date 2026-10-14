@@ -17,7 +17,7 @@
 
 #include "texture.h"
 #include "pipeline.h"
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include <vector>
 
 

@@ -30,7 +30,7 @@
 #include "util/string.hpp"
 
 
-class QOpenGLFramebufferObject;
+namespace gfx { class Framebuffer; }
 
 
 namespace fight { class Scenario; class ActiveObject; }
@@ -115,12 +115,12 @@ public:
     void step(float elapsedTime);
 
 protected:
-    void keyPressEvent(QKeyEvent *);
-    void keyReleaseEvent(QKeyEvent *);
+    void keyPressEvent(input::KeyEvent *);
+    void keyReleaseEvent(input::KeyEvent *);
     // mouse look in the 3D cockpit: dragging with a mouse button turns the pilot's head
-    void mousePressEvent(QMouseEvent *);
-    void mouseReleaseEvent(QMouseEvent *);
-    void mouseMoveEvent(QMouseEvent *);
+    void mousePressEvent(input::MouseEvent *);
+    void mouseReleaseEvent(input::MouseEvent *);
+    void mouseMoveEvent(input::MouseEvent *);
 
 private:
     Rect readRect(const txt::DesFile &file);
@@ -154,7 +154,7 @@ private:
     float m_focal;          // of the cockpit art's camera, in pixels of the 640x480 view
 
     std::shared_ptr<Cockpit3D> m_model;
-    std::unique_ptr<QOpenGLFramebufferObject> m_instruments;   // the instruments, projected onto the model
+    std::unique_ptr<gfx::Framebuffer> m_instruments;   // the instruments, projected onto the model
     Vector2D m_look;        // yaw (left) and pitch (up) of the pilot's head in radians
     bool m_looking;         // a mouse button is held
     Point m_lookStart;      // where the drag started

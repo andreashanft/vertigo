@@ -16,11 +16,9 @@
  ***************************************************************************/
 
 #include "hud.h"
-#include <QKeyEvent>
-#include <QMouseEvent>
-#include <QOpenGLContext>
-#include <QOpenGLFramebufferObject>
-#include <QOpenGLFunctions>
+#include "gfx/framebuffer.hpp"
+#include "gfx/gl.hpp"
+#include <cmath>
 #include "util/settings.hpp"
 #include <algorithm>
 #include <cmath>
@@ -563,24 +561,22 @@ void HUD::draw()
 // window and the menu are drawn on top. False if the model can't be shown.
 bool HUD::drawModel(double pixelRatio)
 {
-    QOpenGLFunctions *gl = QOpenGLContext::currentContext() ? QOpenGLContext::currentContext()->functions() : nullptr;
-    if (!gl || !QOpenGLFramebufferObject::hasOpenGLFramebufferObjects())
+    // the instruments (everything in the art's pixel scale) with premultiplied alpha
+    const int width = int(std::lround(m_rectHUD.width*pixelRatio)), height = int(std::lround(m_rectHUD.height*pixelRatio));
+    if (!m_instruments || m_instruments->width() != width || m_instruments->height() != height)
+        m_instruments.reset(new gfx::Framebuffer(width, height));
+    if (!m_instruments->isValid())
     {
         m_model.reset();
         m_rectGL = Rect();
         return false;
     }
-
-    // the instruments (everything in the art's pixel scale) with premultiplied alpha
-    const QSize size(qRound(m_rectHUD.width*pixelRatio), qRound(m_rectHUD.height*pixelRatio));
-    if (!m_instruments || m_instruments->size() != size)
-        m_instruments.reset(new QOpenGLFramebufferObject(size, QOpenGLFramebufferObject::Depth));
     m_instruments->bind();
-    glViewport(0, 0, size.width(), size.height());
+    glViewport(0, 0, width, height);
     setupGL(false);
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gl->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     m_integerScale = true;
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_integerScaleWidget.doDraw();
@@ -625,14 +621,14 @@ bool HUD::drawModel(double pixelRatio)
 }
 
 
-void HUD::keyPressEvent(QKeyEvent *e)
+void HUD::keyPressEvent(input::KeyEvent *e)
 {
     if (!m_scenario)
         return;
 
     // the turret menu only takes digits, Esc and O; everything else still steers the boat
     const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
-    const bool menuKey = (e->key() >= Qt::Key_0 && e->key() <= Qt::Key_9) || e->key() == Qt::Key_Escape || e->key() == Qt::Key_O;
+    const bool menuKey = (e->key() >= input::Key_0 && e->key() <= input::Key_9) || e->key() == input::Key_Escape || e->key() == input::Key_O;
     if (m_menu->page() != MissionMenu::Page::None && (!turretMenu || menuKey))
     {
         switch (m_menu->keyPressEvent(e->key()))
@@ -662,19 +658,19 @@ void HUD::keyPressEvent(QKeyEvent *e)
         return;
     }
 
-    if (e->key() == Qt::Key_Escape)
+    if (e->key() == input::Key_Escape)
     {
         m_menu->open(MissionMenu::Page::Main);
         return;
     }
-    if (e->key() == Qt::Key_O)
+    if (e->key() == input::Key_O)
     {
         m_menu->setTurrets((m_scenario->player()->turret(0) ? 1 : 0) + (m_scenario->player()->turret(1) ? 1 : 0));
         m_menu->open(MissionMenu::Page::Turrets);
         return;
     }
     // Alt+V switches between the 2D and the 3D cockpit
-    if (e->key() == Qt::Key_V && (e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+    if (e->key() == input::Key_V && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
     {
         setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
         if (cockpitMode() == CockpitMode::Model && !showsModel())
@@ -686,27 +682,27 @@ void HUD::keyPressEvent(QKeyEvent *e)
         return;
     }
     // Ctrl+D, Cmd+D on macOS
-    if (e->key() == Qt::Key_D && (e->modifiers() & Qt::ControlModifier))
+    if (e->key() == input::Key_D && (e->modifiers() & input::ControlModifier))
     {
         setDebugOverlay(!m_debugOverlayVisible);
         return;
     }
     // debug: Ctrl+K (Cmd+K on macOS) skips the mission as if it had been accomplished
-    if (e->key() == Qt::Key_K && (e->modifiers() & Qt::ControlModifier))
+    if (e->key() == input::Key_K && (e->modifiers() & input::ControlModifier))
     {
         leave(m_eventSuccess);
         return;
     }
-    if (e->key() == Qt::Key_P)
+    if (e->key() == input::Key_P)
     {
         m_paused = !m_paused;
         return;
     }
     if (m_paused || m_scenario->playerDestroyed())
         return;
-    if (e->key() == Qt::Key_N)
+    if (e->key() == input::Key_N)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+        if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_navPoint >= 0)
                 m_scenario->target().lockNavPoint(m_scenario->navPoints()[m_navPoint]);
@@ -720,9 +716,9 @@ void HUD::keyPressEvent(QKeyEvent *e)
                 m_navPoint = -1;
         }
     }
-    if (e->key() == Qt::Key_R)
+    if (e->key() == input::Key_R)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+        if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             int scale = m_sonar1->scale();
             if (scale == 90)
@@ -735,11 +731,11 @@ void HUD::keyPressEvent(QKeyEvent *e)
         else
             m_scenario->sonar().toggle();
     }
-    if (e->key() == Qt::Key_L)
+    if (e->key() == input::Key_L)
         m_scenario->target().lockReticle();
-    if (e->key() == Qt::Key_U)
+    if (e->key() == input::Key_U)
         m_scenario->target().lockNearestEnemy();
-    if (e->key() == Qt::Key_I && !m_slaveMonitors.empty())
+    if (e->key() == input::Key_I && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.back();
         switch (monitor->page())
@@ -752,15 +748,15 @@ void HUD::keyPressEvent(QKeyEvent *e)
         }
     }
     // F1-F4: the gun, the magazine or a turret on the weapon page
-    if (e->key() >= Qt::Key_F1 && e->key() <= Qt::Key_F4 && !(e->modifiers() & Qt::AltModifier) && !m_slaveMonitors.empty())
+    if (e->key() >= input::Key_F1 && e->key() <= input::Key_F4 && !(e->modifiers() & input::AltModifier) && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.front();
         monitor->setPage(SlaveMonitor::Page::Weapon);
-        monitor->showWeapon(SlaveMonitor::Weapon(e->key() - Qt::Key_F1));
+        monitor->showWeapon(SlaveMonitor::Weapon(e->key() - input::Key_F1));
     }
-    if (e->key() == Qt::Key_A)
+    if (e->key() == input::Key_A)
     {
-        if ((e->modifiers() & ~Qt::KeypadModifier) == Qt::AltModifier)
+        if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_scenario->conditionManager().autopilot())
             {
@@ -790,34 +786,34 @@ Matrix HUD::lookTransform() const
 }
 
 
-void HUD::mousePressEvent(QMouseEvent *e)
+void HUD::mousePressEvent(input::MouseEvent *e)
 {
     if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
         return;
     m_looking = true;
-    m_lookStart = Point(e->pos().x(), e->pos().y());
+    m_lookStart = e->pos();
     m_lookFrom = m_look;
 }
 
 
-void HUD::mouseMoveEvent(QMouseEvent *e)
+void HUD::mouseMoveEvent(input::MouseEvent *e)
 {
     if (!m_looking)
         return;
     // drag right to look right, up to look up
-    const Point drag = Point(e->pos().x(), e->pos().y()) - m_lookStart;
+    const Point drag = e->pos() - m_lookStart;
     m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag), LookMin, LookMax);
 }
 
 
-void HUD::mouseReleaseEvent(QMouseEvent *e)
+void HUD::mouseReleaseEvent(input::MouseEvent *e)
 {
-    if (e->buttons() == Qt::NoButton)
+    if (e->buttons() == input::NoButton)
         m_looking = false;
 }
 
 
-void HUD::keyReleaseEvent(QKeyEvent *e)
+void HUD::keyReleaseEvent(input::KeyEvent *e)
 {
     if (!m_scenario)
         return;

@@ -96,10 +96,10 @@ Departure::Departure(std::function<void()> &&funcClose) :
 }
 
 
-bool Departure::mousePressEvent(const Point &pos, Qt::MouseButton button)
+bool Departure::mousePressEvent(const Point &pos, input::MouseButton button)
 {
 
-    if (button == Qt::RightButton) {
+    if (button == input::RightButton) {
         m_funcClose();
         return true;
     }

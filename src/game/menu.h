@@ -38,10 +38,10 @@ public:
 protected:
     void setRootWidget(ui::Widget *widget);
     // the point of the 640x480 image under the mouse
-    Point imagePos(QMouseEvent *event);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
+    Point imagePos(input::MouseEvent *event);
+    void mousePressEvent(input::MouseEvent *event);
+    void mouseReleaseEvent(input::MouseEvent *event);
+    void mouseMoveEvent(input::MouseEvent *event);
 
 private:
     ui::Widget *m_rootWidget;

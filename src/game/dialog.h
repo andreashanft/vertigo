@@ -132,7 +132,7 @@ private:
     void draw();
     int drawOption(int y, const Option *option);
     void mouseMoveEvent(const Point &pos);
-    bool mousePressEvent(const Point &pos, Qt::MouseButton button);
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
     void select();
     void loadTree(const String &filename);
     void loadStrings(const String &filename);

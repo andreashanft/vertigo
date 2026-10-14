@@ -675,9 +675,9 @@ void Depot::draw()
 }
 
 
-bool Depot::mousePressEvent(const Point &pos, Qt::MouseButton button)
+bool Depot::mousePressEvent(const Point &pos, input::MouseButton button)
 {
-    if (button == Qt::RightButton) {
+    if (button == input::RightButton) {
         closeFrame();
         return true;
     }

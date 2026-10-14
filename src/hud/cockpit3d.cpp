@@ -22,9 +22,7 @@
 #include "util/path.hpp"
 
 #include "util/timer.hpp"
-#include <qopengl.h>
-#include <QOpenGLContext>
-#include <QOpenGLExtraFunctions>
+#include "gfx/gl.hpp"
 #include "util/settings.hpp"
 #include <algorithm>
 #include <iostream>
@@ -90,7 +88,7 @@ Cockpit3D::Cockpit3D(const std::string &fileName) :
 Cockpit3D::~Cockpit3D()
 {
     // the texture went with the context otherwise
-    if (m_texture != 0 && QOpenGLContext::currentContext())
+    if (m_texture != 0 && gfx::gl::hasContext())
         glDeleteTextures(1, &m_texture);
 }
 
@@ -197,7 +195,7 @@ bool Cockpit3D::create()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (QOpenGLContext::currentContext()->hasExtension("GL_EXT_texture_filter_anisotropic"))
+    if (gfx::gl::hasExtension("GL_EXT_texture_filter_anisotropic") || gfx::gl::hasExtension("GL_ARB_texture_filter_anisotropic"))
     {
         GLfloat anisotropy = 1;
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy);
@@ -207,7 +205,7 @@ bool Cockpit3D::create()
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, texture.width(), texture.height(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture.constBits());
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    QOpenGLContext::currentContext()->extraFunctions()->glGenerateMipmap(GL_TEXTURE_2D);
+    glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     std::cout << "3D cockpit: " << util::fileName(m_fileName) << ", " << m_baseCount/3 << " triangles, "

@@ -52,8 +52,8 @@ private:
     void activate();
     void deactivate();
     void draw();
-    void keyPressEvent(QKeyEvent *);
-    void mousePressEvent(QMouseEvent *);
+    void keyPressEvent(input::KeyEvent *);
+    void mousePressEvent(input::MouseEvent *);
 
 private:
     String m_filename;

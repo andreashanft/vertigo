@@ -163,14 +163,14 @@ void Room::draw()
 }
 
 
-bool Room::mousePressEvent(const Point &pos, Qt::MouseButton button)
+bool Room::mousePressEvent(const Point &pos, input::MouseButton button)
 {
     if (!m_backgroundLabel->isEnabled()) {
         m_miniMovie.stopOneshot();
         return true;
     }
 
-    if (button == Qt::RightButton) {
+    if (button == input::RightButton) {
         closeFrame();
         return true;
     }

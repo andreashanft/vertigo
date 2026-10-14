@@ -25,9 +25,14 @@
 
 #include "gfx/fontmanager.h"
 #include "sfx/soundsystem.h"
-
-#include <QKeySequence>
 #include "util/string.hpp"
+#include "util/timer.hpp"
+
+#include <memory>
+
+union SDL_Event;
+namespace fight { class Scenario; }
+namespace hud { class HUD; }
 
 namespace game {
 
@@ -44,7 +49,7 @@ public:
         bool headless = false;                          // test mode: no window and no sound, simulated time
         bool fixedStep = false;                         // test mode: 20 ms of mission time per frame
         std::vector<int> destroy;                       // test mode: destroy these units after one second
-        struct Key { float time; QKeySequence key; float hold; };
+        struct Key { float time; input::Key key; int modifiers; float hold; };
         std::vector<Key> keys;                          // test mode: press these keys at these times (seconds), holding them
         struct Drive { int id; float speed; float turn; };
         std::vector<Drive> drive;                       // test mode: let these boats move straight or in a circle
@@ -70,13 +75,25 @@ public:
     };
 
 public:
-    Vertigo();
+    explicit Vertigo(const Options &options);
+    ~Vertigo();
 
 public:
-    int start(const Options &options);
+    // Run until 0 or more comes back, the exit code: start() once, then iterate() for each frame
+    // and event() for what the platform reports in between
+    int start();
+    int iterate();
+    void event(const SDL_Event &event);
 
 private:
     int check(const StringList &names);
+    // test mode
+    void startScenario();
+    void finish(int code);
+    // seconds: of the mission in test mode (simulated without a window, by frames with a fixed
+    // step), else since the start
+    float elapsed() const;
+    void testFrame();
 
     void startGame(const String &name);
     void loadGame(const String &name);
@@ -86,6 +103,7 @@ private:
     void createChapter();
 
 private:
+    Options m_options;
     Window m_window;
     sfx::SoundSystem m_soundSystem;
     gfx::FontManager m_fontManager;
@@ -93,6 +111,22 @@ private:
     std::unique_ptr<Movie> m_intro;
     std::unique_ptr<Chapter> m_chapter;
     String m_name;
+
+    // test mode, and the main menu's --keys, --click and --screenshot
+    std::unique_ptr<game::Boat> m_boat;
+    std::unique_ptr<hud::HUD> m_hud;
+    std::unique_ptr<fight::Scenario> m_scenario;
+    int m_result = ExitSuccess;
+    bool m_running = true;
+    bool m_headless = false;
+    std::vector<int> m_destroy;
+    std::vector<Options::Screenshot> m_screenshots;
+    std::vector<Options::Key> m_keys;
+    std::vector<Options::Click> m_clicks;
+    util::ElapsedTimer m_timer;
+    float m_simulatedTime = 0;
+    float m_fixedStep = 0;
+    float m_nextTrace = 0;
 };
 
 } // namespace game

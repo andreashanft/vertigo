@@ -25,7 +25,7 @@
 #include "fight/orders.h"
 #include "txt/stringtable.h"
 #include "gfx/pipeline.h"
-#include <qopengl.h>
+#include "gfx/gl.hpp"
 #include <glm/geometric.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
