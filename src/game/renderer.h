@@ -41,6 +41,9 @@ public:
 public:
     void setWindow(Window *window);
     virtual bool isCursorVisible() const { return m_cursorVisible; }
+    // typing text, e.g. a new game's name: only then do keys go through the system's text input
+    // (which on macOS takes held letters for its accent menu, on iOS shows the keyboard)
+    virtual bool wantsTextInput() const { return false; }
     virtual void setRect(const Rect &rect);
     Rect rect() const { return m_rect; }
     int width() const { return m_rect.width; }

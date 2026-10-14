@@ -40,8 +40,9 @@ only contains part of it; the rest is in the CD image (`game.gog`, a raw
 `MODE1/2352` track). Point Vertigo to a directory containing `DAT`, `GFX`,
 `SFX`, `TXT` and `VFX` from the CD's `SF` directory, with the installed files
 copied on top. The case of the file names doesn't matter, also on file systems
-that tell upper and lower case apart. `--data <directory>` uses another
-directory for one run, without remembering it.
+that tell upper and lower case apart. Vertigo asks for the directory at the
+first start, and again whenever the remembered one lacks part of the data.
+`--data <directory>` uses another directory for one run, without remembering it.
 
 ## Saved games and settings
 

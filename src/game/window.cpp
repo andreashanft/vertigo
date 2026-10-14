@@ -155,8 +155,6 @@ Window::~Window()
 void Window::show()
 {
     SDL_ShowWindow(m_window);
-    // typing, e.g. the name of a new game
-    SDL_StartTextInput(m_window);
     m_shown = true;
 }
 
@@ -224,6 +222,13 @@ void Window::render()
                 SDL_ShowCursor();
             else
                 SDL_HideCursor();
+        }
+        const bool textInput = m_renderer->wantsTextInput();
+        if (textInput != SDL_TextInputActive(m_window)) {
+            if (textInput)
+                SDL_StartTextInput(m_window);
+            else
+                SDL_StopTextInput(m_window);
         }
 
         m_renderer->setRect(Rect(0, 0, width(), height()));

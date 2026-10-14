@@ -20,6 +20,7 @@
 #include "txt/stringtable.h"
 #include "util/commandline.hpp"
 #include "util/datapath.h"
+#include "util/path.hpp"
 #include "util/random.h"
 #include "util/settings.hpp"
 
@@ -99,21 +100,57 @@ std::unique_ptr<game::Vertigo> g_vertigo;
 int g_exitCode = game::Vertigo::ExitSuccess;
 
 
+// The first of these the data directory lacks, empty if it has them all: files the game reads
+// at the start, from both the installed part of the game data and the CD's (a GOG installation
+// lacks the latter)
+std::string missingGameData()
+{
+    static const char *const files[] = { "txt:deeptext.des", "txt:fightext.des", "dat:story/ch1.des", "vfx:scenario",
+                                         "gfx:pal/gui/cursor.pal", "gfx:img/desktop/gui/cur_norm.img", "gfx:mvi/film/d02.mvi",
+                                         "gfx:pic/title/title.pcx", "sfx:snd/bground/b02.pcl" };
+    for (const char *file : files)
+        if (!util::exists(util::DataPath::resolve(file)))
+            return std::string(file).replace(3, 1, "/");
+    return std::string();
+}
+
+
 // SDL's folder dialog, waited for; empty if the player cancels it
 std::string chooseDirectory(const std::string &start)
 {
     struct Choice { bool done = false; std::string directory; } choice;
-    SDL_ShowOpenFolderDialog([](void *userdata, const char * const *files, int) {
+    const SDL_PropertiesID properties = SDL_CreateProperties();
+    SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_TITLE_STRING, "Choose the folder of the game data");
+    if (!start.empty())
+        SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_LOCATION_STRING, start.c_str());
+    SDL_ShowFileDialogWithProperties(SDL_FILEDIALOG_OPENFOLDER, [](void *userdata, const char * const *files, int) {
         Choice *choice = static_cast<Choice *>(userdata);
         if (files && files[0])
             choice->directory = files[0];
         choice->done = true;
-    }, &choice, nullptr, start.empty() ? nullptr : start.c_str(), false);
+    }, &choice, properties);
+    SDL_DestroyProperties(properties);
     while (!choice.done) {
         SDL_Event event;
         SDL_WaitEventTimeout(&event, 100);
     }
     return choice.directory;
+}
+
+
+// tells what the directory lacks; false if the player would rather quit than choose another
+bool chooseAgain(const std::string &directory, const std::string &missing)
+{
+    const std::string message = directory + " doesn't have the complete game data, " + missing + " is missing.\n\n"
+        "Vertigo needs DAT, GFX, SFX, TXT and VFX from the CD's SF directory, with the installed files "
+        "on top. A GOG installation only has part of them, the rest is in its CD image (game.gog).";
+    const SDL_MessageBoxButtonData buttons[] = {
+        { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Quit" },
+        { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Choose Another Folder" },
+    };
+    const SDL_MessageBoxData data = { SDL_MESSAGEBOX_WARNING, nullptr, "Game data incomplete", message.c_str(), 2, buttons, nullptr };
+    int button = 0;
+    return SDL_ShowMessageBox(&data, &button) && button == 1;
 }
 
 
@@ -298,14 +335,20 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     }
 
     util::DataPath::set(parser.isSet("data") ? parser.value("data") : util::Settings::value("datadir"));
-    // the Schleichfahrt / Archimedean Dynasty directory, until one has the game's text
-    while (!txt::StringTable::load()) {
+    // the Schleichfahrt / Archimedean Dynasty directory, asked for until one has the game data;
+    // remembered once it has
+    bool chosen = false;
+    for (std::string missing = missingGameData(); !missing.empty() || !txt::StringTable::load(); missing = missingGameData()) {
+        if (!util::DataPath::directory().empty() && !chooseAgain(util::DataPath::directory(), missing.empty() ? "the text of txt/deeptext.des" : missing))
+            return end(game::Vertigo::ExitSuccess);
         const std::string directory = chooseDirectory(util::DataPath::directory());
         if (directory.empty())
             return end(game::Vertigo::ExitSuccess);
-        util::Settings::setValue("datadir", directory);
         util::DataPath::set(directory);
+        chosen = true;
     }
+    if (chosen)
+        util::Settings::setValue("datadir", util::DataPath::directory());
 
     if (parser.isSet("list-items")) {
         static const char *types[] = { "torpedo", "magazine", "gun", "engine", "booster", "silator", "armor", "nrskin", "sensor", "software", "buzzer", "fixer" };
