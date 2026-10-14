@@ -32,6 +32,36 @@ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
 
+## iPad
+
+The iPad version needs Xcode, CMake 3.24 or newer and GLM's headers
+(`brew install cmake glm`), and runs on iPadOS 18.6 or later. CMake downloads
+SDL's source release (checked against its SHA-256) and builds it for iOS;
+OpenAL and OpenGL ES are the system's.
+
+```
+cmake -S . -B build-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS
+cmake --build build-ios --config Release -- -sdk iphonesimulator
+xcrun simctl install booted build-ios/Release/Vertigo.app
+```
+
+builds the app for the simulator and installs it there. For an iPad, open
+`build-ios/vertigo.xcodeproj` in Xcode and choose a team for signing, or pass
+`-DVERTIGO_DEVELOPMENT_TEAM=<team ID>` (and if needed
+`-DVERTIGO_BUNDLE_ID=<identifier>`) to the first command and build with
+`-sdk iphoneos -allowProvisioningUpdates`.
+
+The game data goes into the app's Documents folder. In the simulator:
+
+```
+cp -R <game data>/ "$(xcrun simctl get_app_container booted com.vertigo.Vertigo data)/Documents/"
+```
+
+Test mode takes its options there too, e.g.
+`xcrun simctl launch booted com.vertigo.Vertigo s00101 --timeout 60`. The
+simulator renders OpenGL ES in software: the 3D cockpit is too slow there, and
+now and then a triangle close to the camera goes missing.
+
 ## Game data
 
 Vertigo needs the complete game data, including the movies. A GOG installation
@@ -48,8 +78,8 @@ first start, and again whenever the remembered one lacks part of the data.
 Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
 `~/Library/Application Support/Vertigo/Vertigo` on macOS,
 `%LOCALAPPDATA%\Vertigo\Vertigo` on Windows and
-`~/.local/share/Vertigo/Vertigo` on Linux. The first start of a version with
-`settings.ini` takes over the settings of the versions before.
+`~/.local/share/Vertigo/Vertigo` on Linux, and in the app's own folder on the
+iPad.
 
 ## Testing
 

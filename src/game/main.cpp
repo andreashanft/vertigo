@@ -115,6 +115,7 @@ std::string missingGameData()
 }
 
 
+#if !defined(SDL_PLATFORM_IOS)
 // SDL's folder dialog, waited for; empty if the player cancels it
 std::string chooseDirectory(const std::string &start)
 {
@@ -152,6 +153,7 @@ bool chooseAgain(const std::string &directory, const std::string &missing)
     int button = 0;
     return SDL_ShowMessageBox(&data, &button) && button == 1;
 }
+#endif
 
 
 // ends before the first frame with this exit code
@@ -334,6 +336,18 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         options.equipment.emplace_back(parts[0].toUpper(), model);
     }
 
+#if defined(SDL_PLATFORM_IOS)
+    // the game data is in the app's Documents folder; without it there is nothing to do but say so
+    const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+    util::DataPath::set(parser.isSet("data") ? parser.value("data") : documents ? documents : "");
+    const std::string missing = missingGameData();
+    if (!missing.empty() || !txt::StringTable::load()) {
+        const std::string message = "Vertigo needs the game data in its Documents folder: DAT, GFX, SFX, TXT and VFX from the CD's SF "
+            "directory, with the installed files on top. " + (missing.empty() ? std::string("The text of txt/deeptext.des") : missing) + " is missing.";
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Game data missing", message.c_str(), nullptr);
+        return end(game::Vertigo::ExitSuccess);
+    }
+#else
     util::DataPath::set(parser.isSet("data") ? parser.value("data") : util::Settings::value("datadir"));
     // the Schleichfahrt / Archimedean Dynasty directory, asked for until one has the game data;
     // remembered once it has
@@ -349,6 +363,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     }
     if (chosen)
         util::Settings::setValue("datadir", util::DataPath::directory());
+#endif
 
     if (parser.isSet("list-items")) {
         static const char *types[] = { "torpedo", "magazine", "gun", "engine", "booster", "silator", "armor", "nrskin", "sensor", "software", "buzzer", "fixer" };

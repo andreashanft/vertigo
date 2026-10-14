@@ -18,7 +18,7 @@
 #include "stream.h"
 #include "soundsystem.h"
 
-#include <al.h>
+#include "openal.hpp"
 
 namespace sfx {
 

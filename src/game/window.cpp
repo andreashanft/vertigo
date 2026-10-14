@@ -117,9 +117,17 @@ Window::Window(bool focusable)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 #endif
+#if defined(SDL_PLATFORM_IOS)
+    // the screen, in landscape either way round
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+#endif
     SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN;
     if (!focusable)
         flags |= SDL_WINDOW_NOT_FOCUSABLE;
+#if defined(SDL_PLATFORM_IOS)
+    // (without the status bar)
+    flags |= SDL_WINDOW_FULLSCREEN;
+#endif
     m_window = SDL_CreateWindow("Vertigo", 1280, 960, flags);
     if (!m_window)
         util::fatal((std::string("Cannot create the window: ") + SDL_GetError()).c_str());
@@ -139,7 +147,10 @@ Window::Window(bool focusable)
     }
     if (m_cursor)
         SDL_SetCursor(m_cursor);
+#if !defined(SDL_PLATFORM_IOS)
+    // (on iOS the window is the screen)
     loadSettings();
+#endif
 }
 
 Window::~Window()
@@ -162,7 +173,9 @@ void Window::close()
 {
     if (m_closed)
         return;
+#if !defined(SDL_PLATFORM_IOS)
     saveSettings();
+#endif
     m_closed = true;
     SDL_HideWindow(m_window);
 }

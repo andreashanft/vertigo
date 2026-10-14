@@ -18,7 +18,7 @@
 #include "sound.h"
 #include "soundsystem.h"
 #include "util/datapath.h"
-#include <al.h>
+#include "openal.hpp"
 #include "util/path.hpp"
 #include <random>
 

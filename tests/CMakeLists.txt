@@ -40,6 +40,7 @@ add_test(NAME parse COMMAND parsetest)
 add_executable(jsontest
     jsontest.cpp
     ${PROJECT_SOURCE_DIR}/src/util/json.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/string.cpp
 )
 target_include_directories(jsontest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME json COMMAND jsontest)

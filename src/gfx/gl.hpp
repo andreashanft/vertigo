@@ -18,13 +18,25 @@
 #ifndef GFX_GL_HPP
 #define GFX_GL_HPP
 
-// The OpenGL functions the game uses, fetched from the context with SDL_GL_GetProcAddress()
-// (Windows only exports OpenGL 1.1, and the others aren't there before a context is). The
-// types and constants are SDL's copy of gl.h and glext.h; the gl* names below are pointers.
-// TODO(P5): iOS takes OpenGL ES 3's headers instead.
-#include <SDL3/SDL_opengl.h>
+// The OpenGL functions the game uses. On iOS they are OpenGL ES 3's, linked from the system.
+// Elsewhere they are fetched from the context with SDL_GL_GetProcAddress() (Windows only
+// exports OpenGL 1.1, and the others aren't there before a context is): the types and
+// constants are SDL's copy of gl.h and glext.h, and the gl* names below are pointers.
+#include <SDL3/SDL_platform_defines.h>
 
 #include <string>
+
+#if defined(SDL_PLATFORM_IOS)
+
+#include <OpenGLES/ES3/gl.h>
+#include <OpenGLES/ES3/glext.h>
+
+// (desktop OpenGL 3.0 only)
+constexpr void (*glBindFragDataLocation)(GLuint, GLuint, const GLchar *) = nullptr;
+
+#else
+
+#include <SDL3/SDL_opengl.h>
 
 // OpenGL 1.1, with the types of SDL's declarations
 #define GFX_GL_FUNCTIONS_1_1(X) \
@@ -144,9 +156,12 @@ GFX_GL_OPTIONAL_FUNCTIONS(GFX_GL_DECLARE)
 #define glVertexAttribPointer gfx_glVertexAttribPointer
 #define glViewport gfx_glViewport
 
+#endif
+
 namespace gfx::gl {
 
 // fetches the functions from the current context; false (with the missing one) if one isn't there
+// (on iOS they are always there)
 bool load(std::string *missing = nullptr);
 // OpenGL ES rather than OpenGL
 bool isES();

@@ -21,6 +21,7 @@
 
 #include <charconv>
 #include <iostream>
+#include <map>
 
 namespace util {
 
@@ -98,12 +99,6 @@ std::string Settings::fileName()
 }
 
 
-bool Settings::exists()
-{
-    return util::exists(fileName());
-}
-
-
 bool Settings::contains(const std::string &key)
 {
     load();
@@ -170,15 +165,6 @@ void Settings::setValue(const std::string &key, float value)
     char text[32];
     const std::to_chars_result result = std::to_chars(text, text + sizeof(text), value);
     setValue(key, std::string(text, result.ptr));
-}
-
-
-void Settings::import(const std::map<std::string, std::string> &values)
-{
-    load();
-    for (const auto &value : values)
-        s_values[value.first] = value.second;
-    save();
 }
 
 

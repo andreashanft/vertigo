@@ -18,8 +18,7 @@
 #include "soundsystem.h"
 #include "samplemap.h"
 #include "util/containers.hpp"
-#include <al.h>
-#include <alc.h>
+#include "openal.hpp"
 #include <cassert>
 
 
