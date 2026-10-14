@@ -21,9 +21,9 @@
 
 #include "image.h"
 #include "util/geometry3d.h"
+#include "util/json.hpp"
 
-#include <QString>
-#include <QVariantMap>
+#include <string>
 #include <vector>
 
 
@@ -38,9 +38,9 @@ class GlbModel
 public:
     struct Mesh
     {
-        QString name;               // of the node
-        QVariantMap extras;         // the node's glTF extras, e.g. "role" and "des_section"
-        QString material;
+        std::string name;           // of the node
+        util::Json extras;          // the node's glTF extras, e.g. "role" and "des_section"
+        std::string material;
         int image = -1;             // base colour image, -1 for none
         Vector4D color = Vector4D(1);
         bool blend = false;         // alphaMode BLEND
@@ -50,17 +50,18 @@ public:
     };
 
 public:
-    bool load(const QString &fileName);
-    const QString& error() const { return m_error; }
+    // a path in UTF-8
+    bool load(const std::string &fileName);
+    const std::string& error() const { return m_error; }
 
     const std::vector<Mesh>& meshes() const { return m_meshes; }
     const std::vector<Image>& images() const { return m_images; }
 
 private:
-    bool fail(const QString &error);
+    bool fail(const std::string &error);
 
 private:
-    QString m_error;
+    std::string m_error;
     std::vector<Mesh> m_meshes;
     std::vector<Image> m_images;
 };

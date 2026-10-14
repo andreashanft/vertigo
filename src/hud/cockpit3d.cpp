@@ -124,9 +124,9 @@ bool Cockpit3D::create()
     QElapsedTimer timer;
     timer.start();
     gfx::GlbModel model;
-    if (!model.load(QString::fromStdString(m_fileName)))
+    if (!model.load(m_fileName))
     {
-        std::cerr << "3D cockpit: " << model.error().toUtf8().constData() << std::endl;
+        std::cerr << "3D cockpit: " << model.error() << std::endl;
         return false;
     }
 
@@ -145,13 +145,13 @@ bool Cockpit3D::create()
     for (const gfx::GlbModel::Mesh &mesh : model.meshes())
     {
         const bool textured = mesh.image >= 0 && !mesh.blend;
-        const bool glass = mesh.blend && mesh.extras.value("role").toString() != "hud";
+        const bool glass = mesh.blend && mesh.extras["role"].toString() != "hud";
         if (!textured && !glass)
             continue;
         if (textured)
         {
             if (image >= 0 && mesh.image != image)
-                std::cerr << "3D cockpit: " << mesh.name.toUtf8().constData() << " uses a second texture, which isn't supported" << std::endl;
+                std::cerr << "3D cockpit: " << mesh.name << " uses a second texture, which isn't supported" << std::endl;
             image = image < 0 ? mesh.image : image;
         }
         const std::uint32_t first = std::uint32_t(positions.size());

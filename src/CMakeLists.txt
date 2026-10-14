@@ -258,6 +258,8 @@ set(SOURCES
     util/event.hpp
     util/file.cpp
     util/file.h
+    util/json.cpp
+    util/json.hpp
     util/path.cpp
     util/path.hpp
     util/random.cpp

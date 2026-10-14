@@ -37,3 +37,13 @@ add_executable(parsetest
 target_include_directories(parsetest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(parsetest Qt${QT_VERSION_MAJOR}::Core)
 add_test(NAME parse COMMAND parsetest)
+
+# util::Json, compared with QJsonDocument while Qt is linked; with a directory as the argument
+# also on the JSON of every .glb file in it
+add_executable(jsontest
+    jsontest.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/json.cpp
+)
+target_include_directories(jsontest PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(jsontest Qt${QT_VERSION_MAJOR}::Core)
+add_test(NAME json COMMAND jsontest)
