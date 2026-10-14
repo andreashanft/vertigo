@@ -120,9 +120,10 @@ int Vertigo::start()
     m_fixedStep = m_options.fixedStep && !m_headless && m_hud ? 0.02f : 0;
     hud::HUD::setFixedStep(m_fixedStep);
 
-    if (m_headless)
+    // automated runs (headless or with a time limit) are silent
+    if (m_headless || m_options.timeout > 0)
         sfx::SoundSystem::get()->setVolume(0);
-    else
+    if (!m_headless)
         m_window.show();
     return -1;
 }
