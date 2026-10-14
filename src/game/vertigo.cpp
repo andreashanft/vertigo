@@ -210,8 +210,13 @@ int Vertigo::start(const Options &options)
                 ++it;
                 continue;
             }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            const int key = it->key[0].key();
+            const Qt::KeyboardModifiers modifiers = it->key[0].keyboardModifiers();
+#else
             const int key = it->key[0] & ~Qt::KeyboardModifierMask;
             const Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(it->key[0] & Qt::KeyboardModifierMask);
+#endif
             const QString text = key < 0x80 ? QString(QChar(key)).toLower() : QString();
             if (!pressed)
                 QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyPress, key, modifiers, text));

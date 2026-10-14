@@ -24,6 +24,8 @@
 #include "ui/arrow.h"
 #include "ui/frame.h"
 
+#include <list>
+
 
 namespace game {
 

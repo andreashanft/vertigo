@@ -23,6 +23,7 @@
 #include "sfx/sound.h"
 #include "ui/button.h"
 #include <QElapsedTimer>
+#include <list>
 
 namespace game {
 

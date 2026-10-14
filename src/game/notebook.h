@@ -23,6 +23,8 @@
 #include "ui/button.h"
 #include "ui/list.h"
 
+#include <list>
+
 namespace game {
 
 class Notebook : public ui::Label

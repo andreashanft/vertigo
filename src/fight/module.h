@@ -23,6 +23,8 @@
 #include "boundingbox.h"
 #include "collisionmesh.h"
 
+#include <list>
+
 
 namespace gfx { class TextureManager; }
 

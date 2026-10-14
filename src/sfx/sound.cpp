@@ -218,7 +218,8 @@ void Sound::load(const QString &leftFile, const QString &rightFile)
 QByteArray Sound::loadFile(const QString &filename)
 {
     QFile file(util::DataPath::resolve(filename));
-    file.open(QFile::ReadOnly);
+    if (!file.open(QFile::ReadOnly))
+        return QByteArray();
     file.seek(31);
     return file.readAll();
 }

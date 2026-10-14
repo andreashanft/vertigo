@@ -334,7 +334,8 @@ bool Dialog::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
 void Dialog::loadTree(const QString &filename)
 {
     QFile file(util::DataPath::resolve(filename));
-    file.open(QFile::ReadOnly);
+    if (!file.open(QFile::ReadOnly))
+        return;
 
     QDataStream stream(&file);
     stream.setByteOrder(QDataStream::LittleEndian);
@@ -387,7 +388,8 @@ void Dialog::loadTree(const QString &filename)
 void Dialog::loadStrings(const QString &filename)
 {
     QFile file(util::DataPath::resolve(filename));
-    file.open(QFile::ReadOnly);
+    if (!file.open(QFile::ReadOnly))
+        return;
 
     const QRegularExpression regexp("#(\\d*).*\\{(.*)\\}");
     while (!file.atEnd())  {

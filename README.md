@@ -11,8 +11,8 @@ nix run github:pnordhus/vertigo
 
 # Compiling
 
-Vertigo needs Qt 5.15 or Qt 6, OpenAL and GLM. The Qt 6 build hasn't been
-tested yet.
+Vertigo needs Qt 6 or Qt 5.15, OpenAL and GLM. CMake takes whichever Qt
+comes first in `CMAKE_PREFIX_PATH`.
 
 ```
 mkdir build
@@ -24,15 +24,17 @@ make
 ## macOS (Homebrew)
 
 ```
-brew install cmake qt@5 glm
+brew install cmake qt glm
 mkdir build
 cd build
-cmake -DCMAKE_PREFIX_PATH="$(brew --prefix qt@5)" ..
+cmake -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" ..
 make
 ```
 
-Qt has to be found through its real prefix; the symlinks Homebrew creates in
-`/opt/homebrew/lib/cmake` make Qt's CMake files look for `mkspecs` in the wrong place.
+For Qt 5, install `qt@5` and use `$(brew --prefix qt@5)`. Homebrew links only
+one of the two; `brew unlink qt@5` before installing `qt`. Qt has to be found
+through its real prefix; the symlinks Homebrew creates in `/opt/homebrew/lib/cmake`
+make Qt 5's CMake files look for `mkspecs` in the wrong place.
 
 ## Game data
 
@@ -81,6 +83,9 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   instead of following their orders.
 - `--screenshot 3=front.png` saves the window at the given mission seconds
   (not with `--headless`).
+- `--seed 5` picks the random numbers (default 1), so a run repeats exactly.
+  Compare runs only between builds of the same build type: an optimized
+  build rounds floating point differently, and missions can end differently.
 - The mission ends as soon as it is accomplished (no need to press Alt+A), 10
   seconds after it failed, or 3 seconds after the player was destroyed. The
   exit code tells how it ended: 0 success, 1 failed, 2 aborted (Esc menu or

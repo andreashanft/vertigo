@@ -21,6 +21,7 @@
 #include "util/datapath.h"
 
 #include <QFile>
+#include <iostream>
 #include <qopengl.h>
 #include <QVector3D>
 #include <glm/geometric.hpp>
@@ -32,7 +33,8 @@ namespace fight {
 Module::Module(gfx::TextureManager &texMan, const QString &name)
 {
     QFile file(util::DataPath::resolve(name));
-    file.open(QFile::ReadOnly);
+    if (!file.open(QFile::ReadOnly))
+        std::cerr << "Cannot open " << file.fileName().toUtf8().constData() << std::endl;
 
     QDataStream stream(&file);
     stream.setByteOrder(QDataStream::LittleEndian);

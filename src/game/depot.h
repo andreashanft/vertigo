@@ -29,6 +29,7 @@
 #include <QElapsedTimer>
 #include <map>
 #include <deque>
+#include <list>
 
 namespace game {
 

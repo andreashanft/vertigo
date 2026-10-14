@@ -23,6 +23,7 @@
 #include "util/datapath.h"
 #include <qopengl.h>
 #include <QFile>
+#include <iostream>
 
 #include <glm/geometric.hpp>
 
@@ -47,7 +48,8 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     {
         file.setSection("map");
         QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/"))));
-        scaleFile.open(QFile::ReadOnly);
+        if (!scaleFile.open(QFile::ReadOnly))
+            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
 
         QDataStream stream(&scaleFile);
         stream.setByteOrder(QDataStream::LittleEndian);
@@ -61,7 +63,8 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     {
         file.setSection("texture");
         QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/"))));
-        scaleFile.open(QFile::ReadOnly);
+        if (!scaleFile.open(QFile::ReadOnly))
+            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
         scaleFile.seek(12);
 
         m_textureMap = scaleFile.read(65536);
@@ -71,7 +74,8 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     {
         file.setSection("texture");
         QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/"))));
-        scaleFile.open(QFile::ReadOnly);
+        if (!scaleFile.open(QFile::ReadOnly))
+            std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
         scaleFile.seek(12);
 
         m_textureDir = scaleFile.read(65536);

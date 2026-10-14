@@ -98,7 +98,11 @@ void Window::render()
         // the frame is still in the back buffer
         QImage image(viewport, QImage::Format_RGBA8888);
         glReadPixels(0, 0, viewport.width(), viewport.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+        image = image.flipped(Qt::Vertical).convertToFormat(QImage::Format_RGB888);
+#else
         image = image.mirrored().convertToFormat(QImage::Format_RGB888);
+#endif
         foreach (const QString &file, m_screenshots) {
             if (!image.save(file))
                 std::cerr << "Cannot save the screenshot " << file.toUtf8().constData() << std::endl;

@@ -19,6 +19,7 @@
 #define GAME_CHAPTER_H
 
 
+#include <list>
 #include <memory>
 #include <queue>
 #include "area.h"
