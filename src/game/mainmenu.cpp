@@ -155,11 +155,13 @@ void MainMenu::draw()
     }
     if (m_state == Loading)
     {
-        // show the loading screen during the load
-        window()->swapBuffers();
+        // show the loading screen during the load; the game takes over the window, so the menu
+        // has none afterwards
+        Window *win = window();
+        win->swapBuffers();
         m_funcLoadGame(m_loadingGame);
         changeState(Title);
-        window()->swapBuffers();
+        win->swapBuffers();
     }
 }
 
