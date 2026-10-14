@@ -79,6 +79,9 @@ private:
     int m_baseCount = 0;
     int m_decalCount = 0;
     unsigned int m_texture = 0;
+    // after the first frame, which reports OpenGL errors (on an iPad the cockpit froze the screen
+    // once without any)
+    bool m_drawn = false;
 };
 
 
