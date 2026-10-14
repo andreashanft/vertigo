@@ -58,6 +58,7 @@ private:
     void setRect(const Rect &rect);
     void draw();
     void keyPressEvent(input::KeyEvent *);
+    void mousePressEvent(input::MouseEvent *);
 
 private:
     const Mission &m_mission;

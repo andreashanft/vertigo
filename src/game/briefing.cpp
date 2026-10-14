@@ -222,4 +222,12 @@ void Briefing::keyPressEvent(input::KeyEvent *event)
 }
 
 
+// (a tap on the iPad, without a keyboard)
+void Briefing::mousePressEvent(input::MouseEvent *)
+{
+    if (m_state == PressKey)
+        m_eventStart();
+}
+
+
 } // namespace game

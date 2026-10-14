@@ -45,7 +45,7 @@ Key parseKey(const String &text, int &modifiers)
     const String name = parts.isEmpty() ? String() : parts.last().trimmed();
     if (name.size() == 1) {
         const char c = name.toUpper()[0];
-        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == ' ' || c == '`')
+        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == ' ' || c == '`' || c == '-' || c == '=' || c == '.')
             return Key(c);
         return Key_None;
     }
@@ -65,6 +65,26 @@ Key parseKey(const String &text, int &modifiers)
         if (lower == entry.name)
             return entry.key;
     return Key_None;
+}
+
+
+KeyEvent alternative(const KeyEvent &event)
+{
+    if (!(event.modifiers() & ControlModifier) || (event.modifiers() & KeypadModifier))
+        return event;
+    const int modifiers = event.modifiers() & ~ControlModifier;
+    const Key key = event.key();
+    if (key == Key_Period)
+        return KeyEvent(Key_Escape, modifiers);
+    if (key >= Key_1 && key <= Key_9)
+        return KeyEvent(Key(Key_F1 + (key - Key_1)), modifiers);
+    if (key == Key_0)
+        return KeyEvent(Key_F10, modifiers);
+    if (key == Key_Minus)
+        return KeyEvent(Key_F11, modifiers);
+    if (key == Key_Equal)
+        return KeyEvent(Key_F12, modifiers);
+    return event;
 }
 
 

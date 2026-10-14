@@ -198,6 +198,12 @@ void MainMenu::draw()
     }
 }
 
+Rect MainMenu::textInputArea() const
+{
+    // the name, as draw() shows it, with some room around it
+    return Rect(0, 322, 640, gfx::Font(gfx::Font::Large).height() + 12);
+}
+
 void MainMenu::activate()
 {
     m_backgroundSound.playLoop();

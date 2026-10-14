@@ -52,6 +52,7 @@ private:
     void mousePressEvent(input::MouseEvent *);
     void keyPressEvent(input::KeyEvent *);
     bool wantsTextInput() const { return m_lblNew.isVisible(); }
+    Rect textInputArea() const;
 
 private:
     State m_state;

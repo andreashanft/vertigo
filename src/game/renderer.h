@@ -46,6 +46,9 @@ public:
     // typing text, e.g. a new game's name: only then do keys go through the system's text input
     // (which on macOS takes held letters for its accent menu, on iOS shows the keyboard)
     virtual bool wantsTextInput() const { return false; }
+    // where the typed text shows, in the 640x480 image (on iOS the window moves it above the
+    // on-screen keyboard)
+    virtual Rect textInputArea() const { return Rect(); }
     virtual void setRect(const Rect &rect);
     Rect rect() const { return m_rect; }
     int width() const { return m_rect.width; }

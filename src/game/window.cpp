@@ -33,9 +33,15 @@ namespace game {
 namespace {
 
 // SDL's keys as ours: by the character the layout gives them, the number pad's digits as
-// digits (with KeypadModifier)
-input::Key key(SDL_Keycode code, int &modifiers)
+// digits (with KeypadModifier); minus, equal and period by their place
+input::Key key(SDL_Keycode code, SDL_Scancode place, int &modifiers)
 {
+    switch (place) {
+    case SDL_SCANCODE_MINUS: return input::Key_Minus;
+    case SDL_SCANCODE_EQUALS: return input::Key_Equal;
+    case SDL_SCANCODE_PERIOD: return input::Key_Period;
+    default: break;
+    }
     if (code >= SDLK_0 && code <= SDLK_9)
         return input::Key(input::Key_0 + int(code - SDLK_0));
     if (code >= SDLK_A && code <= SDLK_Z)
@@ -238,10 +244,16 @@ void Window::render()
         }
         const bool textInput = m_renderer->wantsTextInput();
         if (textInput != SDL_TextInputActive(m_window)) {
-            if (textInput)
+            if (textInput) {
+                const Rect area = m_renderer->textInputArea();
+                const PointD topLeft = m_renderer->imageToScreen(PointD(area.x, area.y));
+                const PointD bottomRight = m_renderer->imageToScreen(PointD(area.x + area.width, area.y + area.height));
+                const SDL_Rect rect = { int(topLeft.x), int(topLeft.y), int(bottomRight.x - topLeft.x), int(bottomRight.y - topLeft.y) };
+                SDL_SetTextInputArea(m_window, &rect, 0);
                 SDL_StartTextInput(m_window);
-            else
+            } else {
                 SDL_StopTextInput(m_window);
+            }
         }
 
         m_renderer->setRect(Rect(0, 0, width(), height()));
@@ -304,10 +316,10 @@ void Window::handle(const SDL_Event &event)
     case SDL_EVENT_KEY_DOWN:
     case SDL_EVENT_KEY_UP: {
         int mods = modifiers(event.key.mod);
-        const input::Key k = key(event.key.key, mods);
+        const input::Key k = key(event.key.key, event.key.scancode, mods);
         if (k == input::Key_None)
             break;
-        input::KeyEvent keyEvent(k, mods);
+        input::KeyEvent keyEvent = input::alternative(input::KeyEvent(k, mods));
         if (event.type == SDL_EVENT_KEY_DOWN)
             keyPressEvent(&keyEvent);
         else if (m_renderer)
@@ -364,9 +376,11 @@ void Window::deliverPosted()
         m_posted.pop_front();
         switch (posted.type) {
         case EventType::KeyPress:
+            posted.key = input::alternative(posted.key);
             keyPressEvent(&posted.key);
             break;
         case EventType::KeyRelease:
+            posted.key = input::alternative(posted.key);
             if (m_renderer)
                 m_renderer->keyReleaseEvent(&posted.key);
             break;

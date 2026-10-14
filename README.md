@@ -68,6 +68,12 @@ Test mode takes its options there too, e.g.
 simulator renders OpenGL ES in software: the 3D cockpit is too slow there, and
 now and then a triangle close to the camera goes missing.
 
+Missions need a hardware keyboard. On keyboards without Esc and function keys,
+Cmd+. is Esc and Cmd with the number row's 1 to 0, - and = is F1 to F12 (on
+every system; Ctrl on Windows and Linux); iPadOS can also make Caps Lock an
+Esc key (Settings › General › Keyboard › Hardware Keyboard › Modifier Keys).
+The on-screen keyboard comes up for a new game's name, which moves above it.
+
 When the app is interrupted (a call, Siri, the app switcher) or goes to the
 background, a mission pauses; P on the keyboard goes on. The game's sound
 mixes with other apps' audio, such as music, and is silent with the silent

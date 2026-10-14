@@ -25,7 +25,9 @@
 namespace input {
 
 // the key that produces the character, as the keyboard layout has it (so Z is where the layout
-// has its Z); the digits, letters and function keys in order
+// has its Z); the digits, letters and function keys in order. Minus, Equal and Period are
+// places, the two keys after 0 in the number row and the period's key of a US layout, for
+// alternative()
 enum Key
 {
     Key_None = 0,
@@ -34,6 +36,7 @@ enum Key
     Key_N, Key_O, Key_P, Key_Q, Key_R, Key_S, Key_T, Key_U, Key_V, Key_W, Key_X, Key_Y, Key_Z,
     Key_Space = ' ',
     Key_QuoteLeft = '`',
+    Key_Minus = '-', Key_Equal = '=', Key_Period = '.',
     Key_F1 = 0x100, Key_F2, Key_F3, Key_F4, Key_F5, Key_F6, Key_F7, Key_F8, Key_F9, Key_F10, Key_F11, Key_F12,
     Key_Escape = 0x200, Key_Tab, Key_Backspace, Key_Return, Key_Enter, Key_Up, Key_Down, Key_Left, Key_Right,
 };
@@ -94,6 +97,11 @@ private:
 
 // "Esc", "Alt+A", "Down", "F5", "2" (as --keys takes them; any case); Key_None if it isn't one
 Key parseKey(const String &text, int &modifiers);
+
+// The key a second binding stands for, for keyboards without Esc and function keys (an iPad's):
+// Cmd+. (Ctrl+. on Windows and Linux) is Esc, as in iPadOS, and Cmd with the number row's keys
+// 1 to 0, - and = is F1 to F12. Other keys are themselves.
+KeyEvent alternative(const KeyEvent &event);
 
 } // namespace input
 
