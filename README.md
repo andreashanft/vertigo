@@ -11,8 +11,8 @@ nix run github:pnordhus/vertigo
 
 # Compiling
 
-Vertigo needs Qt 6 or Qt 5.15, OpenAL and GLM. CMake takes whichever Qt
-comes first in `CMAKE_PREFIX_PATH`.
+Vertigo needs Qt 6, OpenAL and GLM. Qt 5.15 still works as a fallback, but
+isn't tested any more.
 
 ```
 mkdir build
@@ -27,14 +27,9 @@ make
 brew install cmake qt glm
 mkdir build
 cd build
-cmake -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" ..
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
-
-For Qt 5, install `qt@5` and use `$(brew --prefix qt@5)`. Homebrew links only
-one of the two; `brew unlink qt@5` before installing `qt`. Qt has to be found
-through its real prefix; the symlinks Homebrew creates in `/opt/homebrew/lib/cmake`
-make Qt 5's CMake files look for `mkspecs` in the wrong place.
 
 ## Game data
 

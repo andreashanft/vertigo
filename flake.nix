@@ -20,11 +20,11 @@
           cmake
           glm
           openal
-          qt5.wrapQtAppsHook
+          qt6.wrapQtAppsHook
         ];
 
         buildInputs = [
-          qt5.qtbase
+          qt6.qtbase
         ];
       };
     };

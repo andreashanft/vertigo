@@ -426,8 +426,8 @@ themselves:
 - How cargo-ship blocks fit together is unverified.
 - Keep renderer changes self-contained so the later modern renderer and VR
   work stays easy.
-- Qt 5 support ends in Homebrew in May 2027 (settled: Vertigo builds with
-  Qt 6, step P2 of the iPad port).
+- Qt 5 support ends in Homebrew in May 2027 (settled: Qt 6 is the default
+  since step P2 of the iPad port; Qt 5.15 still builds, untested).
 
 Effort: S is up to a day, M a few days, L one to three weeks, all rough and
 for one developer.

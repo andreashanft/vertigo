@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 project(vertigo)
 
-# Qt 6, or Qt 5.15; whichever comes first in CMAKE_PREFIX_PATH
+# Qt 6; Qt 5.15 still works as a fallback, but isn't tested any more
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 if(QT_VERSION_MAJOR EQUAL 6)
