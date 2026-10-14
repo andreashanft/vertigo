@@ -17,12 +17,11 @@
 
 #include "module.h"
 #include "gfx/texturemanager.h"
-#include <QDataStream>
+#include "util/bytereader.hpp"
 #include "util/datapath.h"
+#include "util/path.hpp"
 
-#include <QFile>
 #include <iostream>
-#include <QVector3D>
 #include <glm/geometric.hpp>
 
 
@@ -31,33 +30,30 @@ namespace fight {
 
 Module::Module(gfx::TextureManager &texMan, const String &name)
 {
-    QFile file(util::DataPath::resolve(name));
-    if (!file.open(QFile::ReadOnly))
-        std::cerr << "Cannot open " << file.fileName().toUtf8().constData() << std::endl;
-
-    QDataStream stream(&file);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    const std::string path = util::DataPath::resolve(name);
+    std::vector<char> data;
+    if (!util::readFile(path, data))
+        std::cerr << "Cannot open " << path << std::endl;
+    util::ByteReader stream(data);
 
     unsigned int i, j, k;
     std::uint32_t numFaces;
     std::uint32_t numVertices;
     std::map<String, Mesh*> meshes;
 
-    stream.skipRawData(2);
+    stream.skip(2);
     stream >> numFaces;
-    stream.skipRawData(4);
+    stream.skip(4);
     stream >> numVertices;
-    stream.skipRawData(4);
+    stream.skip(4);
 
     std::vector<Vector3D> vertices;
     vertices.reserve(numVertices);
 
     for (i = 0; i < numVertices; i++) {
         std::uint32_t index;
-        QVector3D qv;
-        stream >> index >> qv;
-        Vector3D v = Vector3D(qv.x(), qv.y(), qv.z());
+        Vector3D v;
+        stream >> index >> v.x >> v.y >> v.z;
         vertices.push_back(v);
         m_box.add(v);
     }
@@ -70,17 +66,17 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
 
         stream >> faceNumber;
         stream >> type;
-        stream.skipRawData(2);
+        stream.skip(2);
         stream >> numVertices;
 
         if (type == 0) {
-            stream.skipRawData(8);
-            stream.skipRawData(numVertices * 12);
-            stream.skipRawData(4);
+            stream.skip(8);
+            stream.skip(numVertices * 12);
+            stream.skip(4);
         } else if (type == 1) {
-            stream.skipRawData(32);
+            stream.skip(32);
             stream >> numVertices2;
-            stream.skipRawData(4);
+            stream.skip(4);
 
             std::vector<Vector2D> texCoords;
             texCoords.reserve(numVertices2 * 2);
@@ -89,18 +85,19 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
                 std::uint16_t s;
                 std::uint16_t t;
 
-                stream.skipRawData(2);
+                stream.skip(2);
                 stream >> s;
-                stream.skipRawData(2);
+                stream.skip(2);
                 stream >> t;
 
                 texCoords.emplace_back(s / 255.0f, t / 255.0f);
             }
             std::uint32_t nameLength;
             stream >> nameLength;
-            stream.skipRawData(4);
+            stream.skip(4);
 
-            const String textureName = String::fromLatin1(file.read(nameLength));
+            const std::string textureBytes = stream.read(nameLength);
+            const String textureName = String::fromLatin1(textureBytes.data(), int(textureBytes.size()));
 
             std::vector<std::uint32_t> indices;
             indices.reserve(3 * numVertices2);

@@ -100,7 +100,7 @@ public:
     hud::HUD* hud() const { return m_HUD.get(); }
 
 private:
-    void load(const QString &filename, bool load);
+    void load(const std::string &filename, bool load);
     void playApproach(bool autopilot);
     void playMovies();
     void startMission();

@@ -19,10 +19,9 @@
 #include "gfx/glbmodel.h"
 #include "gfx/pipeline.h"
 #include "util/datapath.h"
+#include "util/path.hpp"
 
-#include <QDir>
 #include <QElapsedTimer>
-#include <QFileInfo>
 #include <qopengl.h>
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
@@ -52,26 +51,27 @@ const float DecalNear = 0.03f;
 }
 
 
-QString Cockpit3D::directory()
+std::string Cockpit3D::directory()
 {
     QSettings settings;
-    const QString directory = settings.value("cockpit/directory").toString();
-    if (!directory.isEmpty())
+    const std::string directory = settings.value("cockpit/directory").toString().toStdString();
+    if (!directory.empty())
         return directory;
-    return QDir(util::DataPath::directory()).filePath("3d-cockpits");
+    return util::joinPath(util::DataPath::directory(), "3d-cockpits");
 }
 
 
-QString Cockpit3D::find(const QString &cockpit)
+std::string Cockpit3D::find(const String &cockpit)
 {
-    const QFileInfo file(QDir(directory()).filePath(QString("cockpit_%1.glb").arg(cockpit)));
-    return file.isFile() ? file.absoluteFilePath() : QString();
+    const std::filesystem::path file = util::toPath(util::joinPath(directory(), String("cockpit_%1.glb").arg(cockpit).toUtf8()));
+    std::error_code error;
+    return std::filesystem::is_regular_file(file, error) ? util::fromPath(std::filesystem::absolute(file, error).lexically_normal()) : std::string();
 }
 
 
-std::shared_ptr<Cockpit3D> Cockpit3D::get(const QString &fileName)
+std::shared_ptr<Cockpit3D> Cockpit3D::get(const std::string &fileName)
 {
-    static std::map<QString, std::weak_ptr<Cockpit3D>> cache;
+    static std::map<std::string, std::weak_ptr<Cockpit3D>> cache;
     std::shared_ptr<Cockpit3D> cockpit = cache[fileName].lock();
     if (!cockpit)
     {
@@ -82,7 +82,7 @@ std::shared_ptr<Cockpit3D> Cockpit3D::get(const QString &fileName)
 }
 
 
-Cockpit3D::Cockpit3D(const QString &fileName) :
+Cockpit3D::Cockpit3D(const std::string &fileName) :
     m_fileName(fileName)
 {
 }
@@ -124,7 +124,7 @@ bool Cockpit3D::create()
     QElapsedTimer timer;
     timer.start();
     gfx::GlbModel model;
-    if (!model.load(m_fileName))
+    if (!model.load(QString::fromStdString(m_fileName)))
     {
         std::cerr << "3D cockpit: " << model.error().toUtf8().constData() << std::endl;
         return false;
@@ -177,7 +177,7 @@ bool Cockpit3D::create()
     }
     if (base.empty() || image < 0)
     {
-        std::cerr << "3D cockpit: " << m_fileName.toUtf8().constData() << " has no textured meshes" << std::endl;
+        std::cerr << "3D cockpit: " << m_fileName << " has no textured meshes" << std::endl;
         return false;
     }
 
@@ -211,7 +211,7 @@ bool Cockpit3D::create()
     QOpenGLContext::currentContext()->extraFunctions()->glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    std::cout << "3D cockpit: " << QFileInfo(m_fileName).fileName().toUtf8().constData() << ", " << m_baseCount/3 << " triangles, "
+    std::cout << "3D cockpit: " << util::fileName(m_fileName) << ", " << m_baseCount/3 << " triangles, "
               << texture.width() << "x" << texture.height() << " texture, loaded in " << timer.elapsed() << " ms" << std::endl;
     m_state = State::Ready;
     return true;

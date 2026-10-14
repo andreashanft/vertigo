@@ -18,6 +18,7 @@
 #include "file.h"
 
 #include "datapath.h"
+#include "path.hpp"
 #include "error.h"
 
 #include <iostream>
@@ -36,17 +37,11 @@ File::File(const std::string &name)
 
 void File::open(const std::string &name)
 {
-    const QString path = DataPath::resolve(QString::fromStdString(name));
-    m_name = path.toStdString();
+    m_name = DataPath::resolve(name);
 
     m_stream.close();
-#ifdef _MSC_VER
-    // the narrow names of MSVC's streams are in the ANSI code page, not UTF-8
-    const std::wstring nameUTF16 = path.toStdWString();
-    m_stream.open(nameUTF16.c_str(), std::ios_base::in | std::ios_base::binary);
-#else
-	m_stream.open(m_name, std::ios_base::in | std::ios_base::binary);
-#endif
+    // (a narrow name would be in the ANSI code page on Windows, not UTF-8)
+    m_stream.open(toPath(m_name), std::ios_base::in | std::ios_base::binary);
     if (!m_stream.good())
         std::cerr << "Failed to open " << m_name << std::endl;
     ASSERT(m_stream.good());

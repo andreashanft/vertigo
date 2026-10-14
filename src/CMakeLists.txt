@@ -244,6 +244,8 @@ set(SOURCES
     ui/widget.cpp
     ui/widget.h
 
+    util/bytereader.hpp
+    util/containers.hpp
     util/core.h
     util/datapath.cpp
     util/datapath.h
@@ -254,6 +256,8 @@ set(SOURCES
     util/event.hpp
     util/file.cpp
     util/file.h
+    util/path.cpp
+    util/path.hpp
     util/random.cpp
     util/random.h
     util/rect.hpp

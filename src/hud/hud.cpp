@@ -231,13 +231,13 @@ void HUD::load(game::Boat *boat)
     file.setSection("camera");
     const float viewAngle = file.contains("ViewAngle") ? file.value("ViewAngle").toFloat() : 105.0f;
     m_focal = 320/std::tan(glm::radians(viewAngle)/2);
-    const QString model = Cockpit3D::find(boat->cockpit());
-    m_model = model.isEmpty() ? nullptr : Cockpit3D::get(model);
+    const std::string model = Cockpit3D::find(boat->cockpit());
+    m_model = model.empty() ? nullptr : Cockpit3D::get(model);
     if (m_model)
         m_model->setCamera(m_focal, m_center);
     else if (cockpitMode() == CockpitMode::Model)
         std::cerr << "No 3D cockpit cockpit_" << boat->cockpit() << ".glb in "
-                  << Cockpit3D::directory().toUtf8().constData() << ", showing the 2D cockpit" << std::endl;
+                  << Cockpit3D::directory() << ", showing the 2D cockpit" << std::endl;
     m_rectGL = Rect();
 
     m_integerScale = true;
@@ -680,7 +680,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
         setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
         if (cockpitMode() == CockpitMode::Model && !showsModel())
             std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit() << " in "
-                      << Cockpit3D::directory().toUtf8().constData() << std::endl;
+                      << Cockpit3D::directory() << std::endl;
         m_menu->notice({ showsModel() ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
         // the view angle changes with it
         m_rectGL = Rect();

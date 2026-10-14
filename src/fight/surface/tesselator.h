@@ -20,7 +20,7 @@
 
 #include "betaspline.h"
 
-#include <QByteArray>
+#include <vector>
 #include "util/geometry3d.h"
 
 namespace fight {
@@ -36,7 +36,7 @@ public:
 public:
 	float heightAt(const Vector2D &pos);
     float heightAt(const Vector2D &pos, Vector3D &normal);
-    void tesselate(Element &element, int level, const Vector3D &scale, QByteArray &textureMap, QByteArray &textureDir, int mapping);
+    void tesselate(Element &element, int level, const Vector3D &scale, const std::vector<char> &textureMap, const std::vector<char> &textureDir, int mapping);
     bool intersect(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal);
 
 private:

@@ -20,6 +20,7 @@
 
 
 #include "util/string.hpp"
+#include <vector>
 
 
 namespace sfx {
@@ -53,7 +54,7 @@ public:
 private:
     friend class SampleMap;
     Sound(const Sound &o);
-    QByteArray loadFile(const String &filename);
+    std::vector<char> loadFile(const String &filename);
     bool acquire();
 
 private:

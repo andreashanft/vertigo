@@ -54,8 +54,8 @@ private:
     std::vector<gfx::Texture> m_textures;
     std::map<int, Element> m_elements;
     gfx::Image m_heightMap;
-    QByteArray m_textureMap;
-    QByteArray m_textureDir;
+    std::vector<char> m_textureMap;
+    std::vector<char> m_textureDir;
     Vector3D m_scale;
     int m_mapping;
 

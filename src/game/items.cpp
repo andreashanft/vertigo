@@ -21,7 +21,7 @@
 #include "gfx/colortable.h"
 #include "util/containers.hpp"
 #include "util/datapath.h"
-#include <QFile>
+#include "util/path.hpp"
 
 String trimEnd(const String& str);
 
@@ -128,12 +128,8 @@ void Items::addItem(int model, Type type, const String &name, const String &imgn
         colorTable.loadFromFile("gfx:pal/depot/specs.pal");
     item.icon = gfx::Image::load(String("gfx:img/icon/%1.img").arg(imgname), colorTable);
 
-    QFile file(util::DataPath::resolve("txt:thing/" + txtname));
-    if (file.open(QFile::ReadOnly))
-    {
-        while (!file.atEnd())
-            item.text.append(trimEnd(String::fromLatin1(file.readLine())));
-    }
+    for (const std::string &line : util::lines(util::readFile(util::DataPath::resolve("txt:thing/" + txtname))))
+        item.text.append(trimEnd(String::fromLatin1(line)));
 
 }
 

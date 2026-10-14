@@ -31,15 +31,12 @@
 #include <algorithm>
 #include "txt/desfile.h"
 #include "util/datapath.h"
+#include "util/path.hpp"
 
 #include <QCoreApplication>
-#include <QDir>
 #include <QElapsedTimer>
-#include <QFileInfo>
 #include <QKeyEvent>
 #include <QMouseEvent>
-#include <QMap>
-#include <QTextStream>
 #include <QRegularExpression>
 #include <iostream>
 
@@ -341,12 +338,15 @@ int Vertigo::check(const StringList &names)
 {
     StringList scenarios = names;
     if (scenarios.isEmpty()) {
-        const QDir dir(util::DataPath::resolve("vfx:scenario"));
-        foreach (const QString &file, dir.entryList(QStringList() << "*.des", QDir::Files, QDir::Name))
-            scenarios << String(QFileInfo(file).completeBaseName()).toLower();
+        // *.des, in any case
+        for (const std::string &file : util::files(util::DataPath::resolve("vfx:scenario"))) {
+            const String name = String::fromUtf8(file);
+            if (name.toLower().endsWith(".des"))
+                scenarios << name.left(name.lastIndexOf('.')).toLower();
+        }
     }
 
-    QTextStream out(stdout);
+    std::ostream &out = std::cout;
     std::map<String, int> totals;
     int objects = 0;
     for (const String &name : scenarios) {

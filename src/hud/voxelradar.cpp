@@ -27,7 +27,7 @@
 #include "util/datapath.h"
 #include "gfx/pipeline.h"
 
-#include <QFile>
+#include "util/path.hpp"
 #include <glm/geometric.hpp>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
@@ -68,12 +68,11 @@ VoxelRadar::VoxelRadar(txt::DesFile &file)
     m_elevation = glm::radians(file.value("Projection", 30).toFloat());
     m_extent = file.value("WorldMaxY", 20).toFloat();
 
-    QFile table(util::DataPath::resolve(String("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString())));
-    const QByteArray data = table.open(QIODevice::ReadOnly) ? table.readAll() : QByteArray();
-    if (m_rect.width <= 0 || m_rect.height <= 0 || data.size() < TableOffset + FogRows*Entries*2)
+    const std::vector<char> data = util::readFile(util::DataPath::resolve(String("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString())));
+    if (m_rect.width <= 0 || m_rect.height <= 0 || int(data.size()) < TableOffset + FogRows*Entries*2)
         return;
     m_table.resize(FogRows*Entries);
-    const uchar *colors = reinterpret_cast<const uchar *>(data.constData()) + TableOffset;
+    const std::uint8_t *colors = reinterpret_cast<const std::uint8_t *>(data.data()) + TableOffset;
     for (int i = 0; i < FogRows*Entries; i++)
     {
         const int c = colors[2*i] | (colors[2*i + 1] << 8);

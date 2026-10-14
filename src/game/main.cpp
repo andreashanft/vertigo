@@ -223,13 +223,13 @@ int main(int argc, char *argv[])
     }
 
     QSettings s;
-    util::DataPath::set(parser.isSet(dataOption) ? parser.value(dataOption) : s.value("datadir").toString());
+    util::DataPath::set((parser.isSet(dataOption) ? parser.value(dataOption) : s.value("datadir").toString()).toStdString());
     while (!txt::StringTable::load()) {
-        const QString dir = QFileDialog::getExistingDirectory(NULL, "Select Schleichfahrt / Archimedean Dynasty directory", util::DataPath::directory());
+        const QString dir = QFileDialog::getExistingDirectory(NULL, "Select Schleichfahrt / Archimedean Dynasty directory", QString::fromStdString(util::DataPath::directory()));
         if (dir.isNull())
             return false;
         s.setValue("datadir", dir);
-        util::DataPath::set(dir);
+        util::DataPath::set(dir.toStdString());
     }
 
     if (parser.isSet(itemsOption)) {

@@ -19,6 +19,7 @@ add_executable(imagetest
     ${PROJECT_SOURCE_DIR}/src/util/datapath.cpp
     ${PROJECT_SOURCE_DIR}/src/util/error.cpp
     ${PROJECT_SOURCE_DIR}/src/util/file.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/path.cpp
     ${PROJECT_SOURCE_DIR}/src/util/string.cpp
 )
 target_include_directories(imagetest PRIVATE ${PROJECT_SOURCE_DIR}/src)

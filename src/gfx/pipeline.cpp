@@ -175,10 +175,10 @@ struct Gpu
 Gpu g_gpu;
 
 
-GLuint compile(QOpenGLExtraFunctions *gl, GLenum type, const QByteArray &source)
+GLuint compile(QOpenGLExtraFunctions *gl, GLenum type, const std::string &source)
 {
     const GLuint shader = gl->glCreateShader(type);
-    const char *text = source.constData();
+    const char *text = source.c_str();
     gl->glShaderSource(shader, 1, &text, nullptr);
     gl->glCompileShader(shader);
     GLint ok = 0;
@@ -204,7 +204,7 @@ Gpu& gpu()
     QOpenGLExtraFunctions *gl = g_gpu.gl = context->extraFunctions();
 
     // GLSL 1.50 is OpenGL 3.2's
-    const QByteArray header = context->isOpenGLES() ? "#version 300 es\nprecision highp float;\n" : "#version 150\n";
+    const std::string header = context->isOpenGLES() ? "#version 300 es\nprecision highp float;\n" : "#version 150\n";
     const GLuint vertexShader = compile(gl, GL_VERTEX_SHADER, header + VertexShader);
     const GLuint fragmentShader = compile(gl, GL_FRAGMENT_SHADER, header + FragmentShader);
     const GLuint program = g_gpu.program = gl->glCreateProgram();

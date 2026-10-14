@@ -22,9 +22,8 @@
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
 #include "util/containers.hpp"
+#include "util/path.hpp"
 #include <QStandardPaths>
-#include <QDir>
-#include <QFile>
 #include <QSettings>
 #include <QRegularExpression>
 
@@ -34,10 +33,16 @@ namespace game {
 
 Chapter *Chapter::m_singleton = NULL;
 
-// a path, which can hold any character
-static QString dataLocation()
+// a path in UTF-8, which can hold any character
+static std::string dataLocation()
 {
-    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation).toStdString();
+}
+
+// of a saved game
+static std::string savePath(const String &name)
+{
+    return dataLocation() + "/save/" + name.toUtf8() + ".des";
 }
 
 Chapter::Chapter(const String &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame) :
@@ -107,11 +112,11 @@ void Chapter::loadChapter(int chapter)
             util::removeAll(m_runningTasks, m_tasksFile.value(key).toInt());
     }
 
-    load(String("dat:story/ch%1.des").arg(chapter), false);
+    load(String("dat:story/ch%1.des").arg(chapter).toUtf8(), false);
 }
 
 
-void Chapter::load(const QString &filename, bool load)
+void Chapter::load(const std::string &filename, bool load)
 {
     m_movies = std::queue<Movie, std::list<Movie>>();
     delete m_area;
@@ -330,14 +335,14 @@ void Chapter::save() const
     file.setValue("Tur1", m_boat->defects()[Boat::DefectTur1]);
     file.setValue("Tur2", m_boat->defects()[Boat::DefectTur2]);
 
-    file.save(QString("%1/save/%2.des").arg(dataLocation(), QString(m_name)));
+    file.save(savePath(m_name));
 }
 
 
 void Chapter::load(const String &name)
 {
     m_name = name;
-    load(QString("%1/save/%2.des").arg(dataLocation(), QString(name)), true);
+    load(savePath(name), true);
 }
 
 
@@ -477,7 +482,7 @@ void Chapter::restartMission()
 void Chapter::loadLastSave()
 {
     assert(m_scenario);
-    if (!QFile::exists(QString("%1/save/%2.des").arg(dataLocation(), QString(m_name)))) {
+    if (!util::exists(savePath(m_name))) {
         restartMission();
         return;
     }
@@ -743,15 +748,15 @@ std::vector<Chapter::SavedGame> Chapter::savedGames()
 {
     std::vector<SavedGame> saves;
 
-    QDir dir(dataLocation() + "/save");
-    const QRegularExpression reg("(.*)\\.des");
-    foreach (const QString &save, dir.entryList()) {
-        const QRegularExpressionMatch match = reg.match(save);
-        if (match.hasMatch()) {
-            txt::DesFile file(dir.filePath(save));
+    // the files ending in .des, but not hidden ones
+    const std::string directory = dataLocation() + "/save";
+    for (const std::string &save : util::files(directory)) {
+        const std::string suffix = ".des";
+        if (save.size() > suffix.size() && save[0] != '.' && save.compare(save.size() - suffix.size(), suffix.size(), suffix) == 0) {
+            txt::DesFile file(util::joinPath(directory, save));
 
             SavedGame game;
-            game.name = String(match.captured(1));
+            game.name = String::fromUtf8(save.substr(0, save.size() - suffix.size()));
             game.station = file.value("name").toString();
             game.time = QDateTime::fromString(file.value("time").toString(), Qt::ISODate);
             saves.push_back(game);

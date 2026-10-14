@@ -18,9 +18,8 @@
 #include "desfile.h"
 #include "stringtable.h"
 #include "util/datapath.h"
+#include "util/path.hpp"
 
-#include <QDir>
-#include <QFile>
 #include <QRegularExpression>
 
 
@@ -43,29 +42,31 @@ DesFile::DesFile()
 }
 
 
-DesFile::DesFile(const QString &filename)
+DesFile::DesFile(const std::string &filename)
 {
     load(filename);
 }
 
 
-bool DesFile::load(const QString &filename)
+bool DesFile::load(const std::string &filename)
 {
     m_sections.clear();
     setSection("Global");
 
-    QFile file(util::DataPath::resolve(filename));
-    if (!file.open(QFile::ReadOnly))
+    std::vector<char> data;
+    if (!util::readFile(util::DataPath::resolve(filename), data))
         return false;
+    const std::vector<std::string> lines = util::lines(data);
+    std::size_t next = 0;
 
     const QRegularExpression regSection("^\\s*\\[(.*)\\]");
     // values may be followed by a ';' comment, which can contain '=' itself
     const QRegularExpression regKey("([^=]*)=([^;]*)");
 
-    while (!file.atEnd()) {
+    while (next < lines.size()) {
         // the game data is 8-bit (DOS codepage 437) text; keep the raw bytes, the fonts are indexed by them
-        const QByteArray bytes = file.readLine();
-        const QString line = QString::fromLatin1(bytes);
+        const std::string &bytes = lines[next++];
+        const QString line = QString::fromLatin1(bytes.data(), int(bytes.size()));
 
         const QRegularExpressionMatch section = regSection.match(line);
         if (section.hasMatch())
@@ -78,16 +79,15 @@ bool DesFile::load(const QString &filename)
                 setValue(key, String(keyValue.captured(2)).trimmed());
         }
 
-        if (String::fromLatin1(bytes.constData(), int(bytes.size())).trimmed() == "{")
+        if (String::fromLatin1(bytes).trimmed() == "{")
         {
+            // up to "}"; at the end of the file, without the last line
             StringList text;
-            QByteArray next = file.readLine();
-            String textLine = trimEnd(String::fromLatin1(next.constData(), int(next.size())));
-            while (!file.atEnd() && textLine != "}")
+            String textLine = next < lines.size() ? trimEnd(String::fromLatin1(lines[next++])) : String();
+            while (next < lines.size() && textLine != "}")
             {
                 text.append(textLine);
-                next = file.readLine();
-                textLine = trimEnd(String::fromLatin1(next.constData(), int(next.size())));
+                textLine = trimEnd(String::fromLatin1(lines[next++]));
             }
             setValue("{text}", text);
         }
@@ -99,14 +99,9 @@ bool DesFile::load(const QString &filename)
     return true;
 }
 
-bool DesFile::save(const QString &filename) const
+bool DesFile::save(const std::string &filename) const
 {
-    QDir dir;
-    dir.mkpath(QFileInfo(filename).path());
-
-    QFile file(filename);
-    if (!file.open(QFile::WriteOnly))
-        return false;
+    util::makeDirectory(util::fromPath(util::toPath(filename).parent_path()));
 
     // 8-bit text like the game data (see load())
     String text;
@@ -120,7 +115,7 @@ bool DesFile::save(const QString &filename) const
         text += "\n";
     }
 
-    return file.write(text.constData(), text.size()) == text.size();
+    return util::writeFile(filename, text.toLatin1());
 }
 
 

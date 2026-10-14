@@ -16,10 +16,9 @@
  ***************************************************************************/
 
 #include "datapath.h"
+#include "path.hpp"
 
-#include <QDir>
-#include <QDirIterator>
-#include <QHash>
+#include <unordered_map>
 
 namespace util {
 
@@ -27,44 +26,84 @@ namespace {
 
 // lower-case relative path -> relative path as on disk, for every file and
 // directory in the data directory (about 4,300 entries)
-QHash<QString, QString> s_entries;
+std::unordered_map<std::string, std::string> s_entries;
 
 const char *const s_parts[] = { "dat", "gfx", "sfx", "txt", "vfx" };
 
+// the data's names are ASCII
+std::string toLower(std::string name)
+{
+    for (char &c : name)
+        if (c >= 'A' && c <= 'Z')
+            c = char(c - 'A' + 'a');
+    return name;
+}
+
 } // namespace
 
-QString DataPath::m_directory;
+std::string DataPath::m_directory;
 
-void DataPath::set(const QString &directory)
+void DataPath::set(const std::string &directory)
 {
-    m_directory = QDir::cleanPath(directory);
+    m_directory = directory.empty() ? std::string() : cleanPath(directory);
     s_entries.clear();
-    if (m_directory.isEmpty())
+    if (m_directory.empty())
         return;
 
-    const QDir root(m_directory);
-    QDirIterator it(m_directory, QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-        const QString relative = root.relativeFilePath(it.next());
-        s_entries.insert(relative.toLower(), relative);
+    const std::filesystem::path root = toPath(m_directory);
+    std::error_code error;
+    for (std::filesystem::recursive_directory_iterator it(root, error), end; !error && it != end; it.increment(error)) {
+        const std::string relative = it->path().lexically_relative(root).generic_u8string();
+        s_entries.emplace(toLower(relative), relative);
     }
 }
 
-QString DataPath::resolve(const QString &name)
+std::string DataPath::resolve(const std::string &name)
 {
-    QString relative;
+    std::string relative;
     for (const char *part : s_parts) {
-        const QString prefix = QString(part);
-        if (name.startsWith(prefix) && name.length() > prefix.length() && (name[prefix.length()] == ':' || name[prefix.length()] == '/')) {
-            relative = prefix + '/' + name.mid(prefix.length() + 1);
+        const std::string prefix(part);
+        if (name.compare(0, prefix.size(), prefix) == 0 && name.size() > prefix.size() && (name[prefix.size()] == ':' || name[prefix.size()] == '/')) {
+            relative = prefix + '/' + name.substr(prefix.size() + 1);
             break;
         }
     }
-    if (relative.isEmpty())
+    if (relative.empty())
         return name;
 
-    relative = QDir::cleanPath(relative.replace('\\', '/'));
-    return m_directory + '/' + s_entries.value(relative.toLower(), relative);
+    relative = cleanPath(relative);
+    const auto it = s_entries.find(toLower(relative));
+    return m_directory + '/' + (it != s_entries.end() ? it->second : relative);
+}
+
+std::string DataPath::cleanPath(const std::string &path)
+{
+    std::string normal = path;
+    for (char &c : normal)
+        if (c == '\\')
+            c = '/';
+    const bool absolute = !normal.empty() && normal[0] == '/';
+    std::vector<std::string> parts;
+    std::size_t start = 0;
+    while (start <= normal.size()) {
+        std::size_t end = normal.find('/', start);
+        if (end == std::string::npos)
+            end = normal.size();
+        const std::string part = normal.substr(start, end - start);
+        if (part == "..") {
+            if (!parts.empty() && parts.back() != "..")
+                parts.pop_back();
+            else if (!absolute)
+                parts.push_back(part);
+        } else if (!part.empty() && part != ".") {
+            parts.push_back(part);
+        }
+        start = end + 1;
+    }
+    std::string result = absolute ? "/" : "";
+    for (std::size_t i = 0; i < parts.size(); i++)
+        result += (i > 0 ? "/" : "") + parts[i];
+    return result.empty() ? "." : result;
 }
 
 } // namespace util

@@ -18,7 +18,7 @@
 #include "desfile.h"
 #include "stringtable.h"
 #include "util/datapath.h"
-#include <QFile>
+#include "util/path.hpp"
 
 
 namespace txt {
@@ -31,9 +31,9 @@ StringList StringTable::m_tableFight;
 
 bool StringTable::load()
 {
-    if (QFile::exists(util::DataPath::resolve("txt:german.lan")))
+    if (util::exists(util::DataPath::resolve("txt:german.lan")))
         m_language = "German";
-    if (QFile::exists(util::DataPath::resolve("txt:english.lan")))
+    if (util::exists(util::DataPath::resolve("txt:english.lan")))
         m_language = "English";
 
     DesFile fileDes("txt:deeptext.des");

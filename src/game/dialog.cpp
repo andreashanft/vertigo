@@ -21,8 +21,9 @@
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
 #include "txt/stringtable.h"
+#include "util/bytereader.hpp"
 #include "util/datapath.h"
-#include <QFile>
+#include "util/path.hpp"
 #include <QRegularExpression>
 #include <algorithm>
 
@@ -341,12 +342,11 @@ bool Dialog::mousePressEvent(const Point &pos, Qt::MouseButton button)
 
 void Dialog::loadTree(const String &filename)
 {
-    QFile file(util::DataPath::resolve(filename));
-    if (!file.open(QFile::ReadOnly))
+    std::vector<char> data;
+    if (!util::readFile(util::DataPath::resolve(filename), data))
         return;
 
-    QDataStream stream(&file);
-    stream.setByteOrder(QDataStream::LittleEndian);
+    util::ByteReader stream(data);
 
     std::uint32_t numEntries;
     stream >> numEntries;
@@ -395,15 +395,13 @@ void Dialog::loadTree(const String &filename)
 
 void Dialog::loadStrings(const String &filename)
 {
-    QFile file(util::DataPath::resolve(filename));
-    if (!file.open(QFile::ReadOnly))
+    std::vector<char> data;
+    if (!util::readFile(util::DataPath::resolve(filename), data))
         return;
 
     const QRegularExpression regexp("#(\\d*).*\\{(.*)\\}");
-    while (!file.atEnd())  {
-        String line = String::fromLatin1(file.readLine());
-        if (file.error() != QFile::NoError)
-            break;
+    for (const std::string &bytes : util::lines(data)) {
+        String line = String::fromLatin1(bytes);
 
         const QRegularExpressionMatch match = regexp.match(line);
         if (match.hasMatch()) {

@@ -21,9 +21,9 @@
 
 #include "value.h"
 #include "util/string.hpp"
-#include <QString>
 #include <map>
 #include <set>
+#include <string>
 
 
 namespace txt {
@@ -33,12 +33,16 @@ class DesFile
 {
 public:
     DesFile();
-    // a data file ("vfx:scenario/s00101.des") or a path, e.g. of a saved game
-    DesFile(const QString &filename);
+    // a data file ("vfx:scenario/s00101.des") or a path in UTF-8, e.g. of a saved game
+    DesFile(const std::string &filename);
+    DesFile(const String &filename) : DesFile(filename.toUtf8()) {}
+    DesFile(const char *filename) : DesFile(std::string(filename)) {}
 
 public:
-    bool load(const QString &filename);
-    bool save(const QString &filename) const;
+    bool load(const std::string &filename);
+    bool load(const String &filename) { return load(filename.toUtf8()); }
+    bool load(const char *filename) { return load(std::string(filename)); }
+    bool save(const std::string &filename) const;
     void setSection(const String &section);
     bool contains(const String &key) const;
     Value value(const String &key, const Value &defaultValue = Value()) const;

@@ -3,7 +3,7 @@
 #include "gfx/image.h"
 #include "util/datapath.h"
 
-#include <QFile>
+#include "util/path.hpp"
 #include <cassert>
 
 
@@ -22,7 +22,7 @@ DialogFrame::DialogFrame(Dialog* dialog, const String &roomName, std::function<v
 
     // not every room has its own dialog background, and loading a missing image aborts
     String background = String("gfx:img/desktop/bground/d_%1.img").arg(roomName);
-    if (!QFile::exists(util::DataPath::resolve(background)))
+    if (!util::exists(util::DataPath::resolve(background)))
         background = "gfx:img/desktop/bground/d_ew1.img";
     const gfx::Image image = gfx::Image::load(background, colorTable);
 
