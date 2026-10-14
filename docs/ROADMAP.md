@@ -1,13 +1,18 @@
-# Roadmap: implementing todo.txt
+# Roadmap
 
-This plan covers the items in [todo.txt](../todo.txt). It is based on a code
-review of this repository and on an analysis of the original German game data
-(CD release) and of strings and tables in the original `FIGHT.EXE`
-(October 2026). Reference data gathered during that analysis is collected in
-the [appendix](#appendix-reference-data).
+This plan started out covering the items of the former `todo.txt`: currents,
+the 11 AI orders, the HUD items, effects and engine sounds. All of them are
+done (phases 1–6) except the radiation icon, which waits for the comparison
+with the original. What is still open is collected in
+[gaps found after milestone 6](#gaps-found-after-milestone-6) and the
+[iPad port](#ipad-port). The plan is based on a code review of this
+repository and on an analysis of the original German game data (CD release)
+and of strings and tables in the original `FIGHT.EXE` (October 2026).
+Reference data gathered during that analysis is collected in the
+[appendix](#appendix-reference-data).
 
-Most todo items need groundwork that doesn't exist yet; without it they
-couldn't be built or tested in a real mission. Right now:
+Most of those items needed groundwork that didn't exist yet; without it they
+couldn't be built or tested in a real mission. When the plan was written:
 
 - About half of all units with orders (1,110 of 2,345) never appear in
   missions, because their `dtyp` has no object file mapping.
@@ -228,6 +233,11 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    the original, which comes near the end. (**Done**; what the voxel radar's
    settings, the lamps and the dust sprite mean in the original is to be
    compared then. Test mode gained `--near` to start next to a unit.)
+7. **Mission completeness:** G1–G6 from the
+   [gaps found after milestone 6](#gaps-found-after-milestone-6): mission
+   music, complete minefields, the unit keys nobody reads yet, the five
+   missions with unresolved conditions, s00705, and the choice of station
+   after a mission.
 
 ## Differences to the original's cockpit (screenshots, October 2026)
 
@@ -259,6 +269,22 @@ cargo-ship blocks, `u` and the armor symbol now follow the screenshots.
 Already alike: lock ring with name, distance, shield bars and sensor icon;
 turret brackets; heading tape; THREAT; the lamps beside the sonar monitors lit;
 the master monitor's target picture, D/H/V/N and R.
+
+## Gaps found after milestone 6
+
+A review in October 2026, after milestone 6, found these gaps outside the
+former todo list. At that point `--check` matched
+[mission-check.txt](mission-check.txt), and running each of the 71 scenarios
+headless for 60 s with the idle chapter-1 boat crashed none of them.
+
+| # | Gap | Effort | Notes |
+|---|---|---|---|
+| G1 | Mission music | S–M | Each scenario's `[CD] Track` (1–4; 0 only in s02005) presumably picks one of the CD's audio tracks 2–5 (`game.ins`: track 1 is data). Vertigo plays no music in missions, and the data directory doesn't contain these tracks. They are plain 44.1 kHz 16-bit stereo PCM in `game.gog` (2,352-byte sectors), so they can be copied out once (or on import, see the [iPad port](#ipad-port)) and streamed like the other sounds. Whether 0 means silence, and whether the stations use CD music too, is to be checked |
+| G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 20 missions are missing. How the original lays them out is to be compared |
+| G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing |
+| G4 | Unresolved conditions | S each | `--check` reports an empty faction in s00402 and objectives that don't exist in s00404 (objective 14, 8 times), s01802 (24), s02003 (32, 36) and s02006 (21). Check whether these missions can still be won, and what the original makes of such references |
+| G5 | s00705 | S | Ends with success after 33 s while the player does nothing. Find out which units fulfil the objectives and whether that is right |
+| G6 | Station after a mission | S | When several stations are enabled after a mission, the first one is taken (`TODO` in `Chapter`); the player should choose |
 
 ## Open questions and how to settle them
 
@@ -396,7 +422,6 @@ themselves:
 
 - Turning on enemy fire before the AI is tuned will make early missions
   unfair, so keep it behind an option until then.
-- Collision cost in large missions (`s0220x`) will need a spatial grid.
 - How cargo-ship blocks fit together is unverified.
 - Keep renderer changes self-contained so the later modern renderer and VR
   work stays easy.
