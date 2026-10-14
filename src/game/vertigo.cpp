@@ -162,7 +162,7 @@ int Vertigo::start(const Options &options)
     if (headless) {
         sfx::SoundSystem::get()->setVolume(0);
     } else {
-        // automated runs (with a time limit) shouldn't take the focus
+        // automated runs (with a time limit) shouldn't take the focus (on macOS see also main())
         if (!options.scenario.isEmpty() && options.timeout > 0)
             // what Qt::WA_ShowWithoutActivating sets for a widget
             m_window.setProperty("_q_showWithoutActivating", true);

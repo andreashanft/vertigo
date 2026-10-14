@@ -35,12 +35,6 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
-    util::seedRandom(QTime::currentTime().second() * 1000 + QTime::currentTime().msec());
-
-    app.setOrganizationName("Vertigo");
-    app.setApplicationName("Vertigo");
-
     QCommandLineParser parser;
     parser.setApplicationDescription(
         "Open-source clone of Archimedean Dynasty / Schleichfahrt.\n\n"
@@ -70,6 +64,25 @@ int main(int argc, char *argv[])
     const QCommandLineOption dataOption("data", "Use the game data in this directory for this run, instead of the remembered one.", "directory");
     const QCommandLineOption lookOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
     parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, nearOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, lookOption, dataOption });
+
+    // Automated runs with a window (a mission with a time limit) shouldn't take the focus. On
+    // macOS, Qt and AppKit (which takes the mission argument for a file to open) activate the app
+    // when it has finished launching. Unless this is set, Qt makes the process a foreground app
+    // when the QApplication is created, so the arguments are checked before: a background app
+    // can't be activated, but it has no Dock icon and gets no keyboard input other than --keys.
+    QStringList arguments;
+    for (int i = 0; i < argc; i++)
+        arguments << QString::fromLocal8Bit(argv[i]);
+    if (parser.parse(arguments) && !parser.isSet(checkOption) && !parser.isSet(headlessOption)
+            && !parser.positionalArguments().isEmpty() && parser.value(timeoutOption).toInt() > 0)
+        qputenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1");
+
+    QApplication app(argc, argv);
+    util::seedRandom(QTime::currentTime().second() * 1000 + QTime::currentTime().msec());
+
+    app.setOrganizationName("Vertigo");
+    app.setApplicationName("Vertigo");
+
     parser.process(app);
 
     game::Vertigo::Options options;
