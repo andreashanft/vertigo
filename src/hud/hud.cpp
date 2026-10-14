@@ -393,6 +393,15 @@ void HUD::step(float elapsedTime)
 }
 
 
+void HUD::pause()
+{
+    if (!m_scenario)
+        return;
+    m_paused = true;
+    setFrozen(true);
+}
+
+
 void HUD::setFrozen(bool frozen)
 {
     if (frozen == m_frozen)

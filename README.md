@@ -68,6 +68,11 @@ Test mode takes its options there too, e.g.
 simulator renders OpenGL ES in software: the 3D cockpit is too slow there, and
 now and then a triangle close to the camera goes missing.
 
+When the app is interrupted (a call, Siri, the app switcher) or goes to the
+background, a mission pauses; P on the keyboard goes on. The game's sound
+mixes with other apps' audio, such as music, and is silent with the silent
+switch.
+
 ## Game data
 
 Vertigo needs the complete game data, including the movies. A GOG installation

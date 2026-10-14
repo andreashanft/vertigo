@@ -91,6 +91,9 @@ private:
     SDL_Cursor *m_cursor = nullptr;
     bool m_shown = false;
     bool m_closed = false;
+    // the app in the background (on the iPad), where nothing may draw: iOS ends apps that use
+    // OpenGL there
+    bool m_background = false;
     bool m_cursorVisible = true;
     int m_viewportWidth = 0;
     int m_viewportHeight = 0;

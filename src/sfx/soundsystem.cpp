@@ -19,6 +19,10 @@
 #include "samplemap.h"
 #include "util/containers.hpp"
 #include "openal.hpp"
+#include <SDL3/SDL_platform_defines.h>
+#if defined(SDL_PLATFORM_IOS)
+#include "audiosession.hpp"
+#endif
 #include <cassert>
 
 
@@ -42,6 +46,9 @@ SoundSystem::SoundSystem(bool silent) :
     m_singleton = this;
 
     d = new SoundSystemPrivate;
+#if defined(SDL_PLATFORM_IOS)
+    setUpAudioSession();
+#endif
     d->device = alcOpenDevice(NULL);
     d->context = alcCreateContext(d->device, NULL);
     alcMakeContextCurrent(d->context);
@@ -75,8 +82,12 @@ SoundSystem::~SoundSystem()
 
     assert(m_sources.empty());
 
+    alcMakeContextCurrent(NULL);
     alcDestroyContext(d->context);
     alcCloseDevice(d->device);
+#if defined(SDL_PLATFORM_IOS)
+    tearDownAudioSession();
+#endif
     delete d;
     m_singleton = NULL;
 }
@@ -110,8 +121,10 @@ std::uint32_t SoundSystem::acquire(Sound *sound)
     if (m_sources.size() == 32)
         return 0;
 
-    std::uint32_t source;
+    std::uint32_t source = 0;
     alGenSources(1, &source);
+    if (source == 0)
+        return 0;
     // attached to the listener unless the sound is given a position
     alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
     alSource3f(source, AL_POSITION, 0, 0, 0);
@@ -153,6 +166,28 @@ void SoundSystem::setBufferData(std::uint32_t buffer, bool stereo, const std::ve
     const std::vector<char> silence(m_silent ? data.size() : 0, char(0x80));
     const std::vector<char> &samples = m_silent ? silence : data;
     alBufferData(buffer, stereo ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8, samples.empty() ? "" : samples.data(), ALsizei(samples.size()), rate);
+}
+
+
+void SoundSystem::interrupt(Interruption reason, bool interrupted)
+{
+    const bool wasInterrupted = m_interruptions != 0;
+    // (iOS doesn't always tell when an interruption ends, but back from the background it has)
+    m_interruptions = interrupted ? m_interruptions | reason : reason == Background ? 0 : m_interruptions & ~reason;
+    if (wasInterrupted == (m_interruptions != 0))
+        return;
+    // the context stays current, so that sounds can still be loaded meanwhile; made current
+    // anew, it plays again after an interruption
+    if (m_interruptions != 0) {
+        alcSuspendContext(d->context);
+        return;
+    }
+#if defined(SDL_PLATFORM_IOS)
+    activateAudioSession();
+#endif
+    alcMakeContextCurrent(NULL);
+    alcMakeContextCurrent(d->context);
+    alcProcessContext(d->context);
 }
 
 

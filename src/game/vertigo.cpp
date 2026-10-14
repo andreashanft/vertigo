@@ -35,6 +35,7 @@
 #include "util/path.hpp"
 
 #include "util/timer.hpp"
+#include <SDL3/SDL_events.h>
 #include <iostream>
 
 namespace game {
@@ -180,6 +181,9 @@ float Vertigo::elapsed() const
 void Vertigo::event(const SDL_Event &event)
 {
     m_window.handle(event);
+    // the sound rests in the background (on the iPad)
+    if (event.type == SDL_EVENT_DID_ENTER_BACKGROUND || event.type == SDL_EVENT_WILL_ENTER_FOREGROUND)
+        m_soundSystem.interrupt(sfx::SoundSystem::Background, event.type == SDL_EVENT_DID_ENTER_BACKGROUND);
 }
 
 int Vertigo::iterate()

@@ -91,6 +91,7 @@ public:
     fight::Scenario* scenario() const { return m_scenario; }
     int navPoint() const { return m_navPoint; }
     bool isPaused() const { return m_paused; }
+    void pause();
 
     bool wide() const { return m_wide; }
     const RectF& rectHUD() const { return m_rectHUD; }

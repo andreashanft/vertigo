@@ -37,6 +37,8 @@ public:
     virtual void draw() = 0;
     virtual void activate() {}
     virtual void deactivate() {}
+    // the app is interrupted or goes to the background (on the iPad): a mission pauses
+    virtual void pause() {}
 
 public:
     void setWindow(Window *window);

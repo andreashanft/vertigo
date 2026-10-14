@@ -41,7 +41,7 @@ constexpr void (*glBindFragDataLocation)(GLuint, GLuint, const GLchar *) = nullp
 // OpenGL 1.1, with the types of SDL's declarations
 #define GFX_GL_FUNCTIONS_1_1(X) \
     X(glBindTexture) X(glBlendFunc) X(glClear) X(glClearColor) X(glDeleteTextures) X(glDepthFunc) X(glDepthMask) \
-    X(glDisable) X(glDrawArrays) X(glDrawElements) X(glEnable) X(glFrontFace) X(glGenTextures) X(glGetError) \
+    X(glDisable) X(glDrawArrays) X(glDrawElements) X(glEnable) X(glFinish) X(glFrontFace) X(glGenTextures) X(glGetError) \
     X(glGetFloatv) X(glGetIntegerv) X(glGetString) X(glIsEnabled) X(glPixelStorei) X(glReadPixels) X(glTexImage2D) \
     X(glTexParameterf) X(glTexParameteri) X(glTexSubImage2D) X(glViewport)
 
@@ -117,6 +117,7 @@ GFX_GL_OPTIONAL_FUNCTIONS(GFX_GL_DECLARE)
 #define glEnableVertexAttribArray gfx_glEnableVertexAttribArray
 #define glFramebufferRenderbuffer gfx_glFramebufferRenderbuffer
 #define glFramebufferTexture2D gfx_glFramebufferTexture2D
+#define glFinish gfx_glFinish
 #define glFrontFace gfx_glFrontFace
 #define glGenBuffers gfx_glGenBuffers
 #define glGenerateMipmap gfx_glGenerateMipmap

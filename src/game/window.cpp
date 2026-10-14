@@ -216,7 +216,7 @@ void Window::setRenderer(Renderer *renderer)
 
 void Window::render()
 {
-    if (!isVisible())
+    if (!isVisible() || m_background)
         return;
 
     int viewportWidth = 0, viewportHeight = 0;
@@ -265,7 +265,7 @@ void Window::render()
 
 void Window::swapBuffers()
 {
-    if (isVisible())
+    if (isVisible() && !m_background)
         SDL_GL_SwapWindow(m_window);
 }
 
@@ -280,6 +280,19 @@ void Window::handle(const SDL_Event &event)
     case SDL_EVENT_QUIT:
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
         close();
+        break;
+    // on the iPad: interrupted (a call, Siri, the app switcher), a mission pauses; in the
+    // background nothing draws until the app comes back
+    case SDL_EVENT_WILL_ENTER_BACKGROUND:
+        if (m_renderer)
+            m_renderer->pause();
+        break;
+    case SDL_EVENT_DID_ENTER_BACKGROUND:
+        glFinish();
+        m_background = true;
+        break;
+    case SDL_EVENT_WILL_ENTER_FOREGROUND:
+        m_background = false;
         break;
     case SDL_EVENT_WINDOW_MOVED:
     case SDL_EVENT_WINDOW_RESIZED:

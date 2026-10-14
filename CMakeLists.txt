@@ -9,6 +9,7 @@ endif()
 project(vertigo)
 
 if(IOS)
+    enable_language(OBJCXX)
     # No package manager there: SDL is built from its source release, pinned by its SHA-256
     # (-DFETCHCONTENT_SOURCE_DIR_SDL3=<directory> takes an unpacked copy instead). OpenAL and
     # OpenGL ES are the system's, found by Xcode in the SDK it builds for (device or simulator).
