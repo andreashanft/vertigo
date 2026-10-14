@@ -20,7 +20,7 @@
 
 
 #include "util/geometry3d.h"
-#include <QString>
+#include "util/string.hpp"
 #include "txt/stringtable.h"
 #include <vector>
 
@@ -59,7 +59,7 @@ struct OrderSlot
     int cond1 = 0, dep1 = 0, ref1 = -1, op = 0, cond2 = 0, dep2 = 0, ref2 = -1, del = 0;
     Condition *breakCondition = nullptr;
 
-    static QString name(int type);
+    static String name(int type);
     static bool isImplemented(int type);
 };
 
@@ -75,7 +75,7 @@ public:
     int current() const { return m_current; }
     const OrderSlot* currentSlot() const { return m_current >= 0 ? &m_slots[m_current] : nullptr; }
     // a short description of what the unit does, for the debug overlay
-    QString state() const;
+    String state() const;
     // what the unit does, as the master monitor shows it (FIGHTEXT 72-84: attacking, waiting,
     // guarding, on its way, escorting, infiltrating, exploding)
     txt::StringFight activity() const;

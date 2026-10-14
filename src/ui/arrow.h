@@ -19,20 +19,21 @@
 #define UI_ARROW_H
 
 #include "button.h"
+#include "util/string.hpp"
 
 namespace ui {
 
 class Arrow
 {
 public:
-    Arrow(const QString &dir, const QPoint &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent);
+    Arrow(const String &dir, const QPoint &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent);
 
 public:
     void hide();
     void show();
     bool isVisible();
     void setValue(int value);
-    void setText(const QString &text);
+    void setText(const String &text);
 
 private:
     bool m_left;

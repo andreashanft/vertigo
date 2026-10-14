@@ -24,6 +24,7 @@
 #include "gfx/texture.h"
 
 #include <functional>
+#include "util/string.hpp"
 
 namespace ui {
 
@@ -33,7 +34,7 @@ public:
     Frame(std::function<void()> &&funcClose, ui::Widget *parent = NULL);
 
 public:
-    void setupFrame(const QSize &size, const QString &title, bool closable);
+    void setupFrame(const QSize &size, const String &title, bool closable);
 
 protected:
     void closeFrame();

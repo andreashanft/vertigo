@@ -21,8 +21,7 @@
 
 #include "station.h"
 #include "gfx/image.h"
-#include <QString>
-#include <QStringList>
+#include "util/string.hpp"
 
 
 namespace game {
@@ -42,9 +41,9 @@ public:
         int model;
         Type type;
         int cost;
-        QString longname;
-        QString imgname;
-        QStringList text;
+        String longname;
+        String imgname;
+        StringList text;
         gfx::Image icon;
     };
 
@@ -52,11 +51,11 @@ public:
 public:
     static Item* get(int model);  // nullptr for no item (0) or an unknown one
     static const std::map<int, Item>& all();
-    static std::vector<int> getDepotItems(const QString &mounting);
+    static std::vector<int> getDepotItems(const String &mounting);
     static int getDepotPrice(int model);
 
 private:
-    void addItem(int model, Type type, const QString &name, const QString &imgname, const QString &txtname);
+    void addItem(int model, Type type, const String &name, const String &imgname, const String &txtname);
     static void insertType(Type type, std::vector<int> &list);
 
 private:

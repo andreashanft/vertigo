@@ -90,9 +90,9 @@ int main(int argc, char *argv[])
     game::Vertigo::Options options;
     if (parser.isSet(checkOption)) {
         options.check = true;
-        options.checkScenarios = parser.positionalArguments();
+        options.checkScenarios = StringList(parser.positionalArguments());
     } else {
-        options.scenario = parser.positionalArguments().value(0);
+        options.scenario = String(parser.positionalArguments().value(0));
     }
     options.boat = parser.value(boatOption).toInt();
     options.timeout = parser.value(timeoutOption).toInt();
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
                 QTextStream(stderr) << "Invalid --equip value " << item << ", expected mounting=model\n";
                 return game::Vertigo::ExitUsage;
             }
-            options.equipment.emplace_back(parts[0].toUpper(), model);
+            options.equipment.emplace_back(String(parts[0].toUpper()), model);
         }
     }
 

@@ -57,32 +57,32 @@ const std::vector<TorpedoType>& TorpedoType::all()
     for (int i = 0; i < 22; i++)
     {
         TorpedoType type;
-        weapons.setSection(QString("torpedo%1").arg(i));
+        weapons.setSection(String("torpedo%1").arg(i));
         type.name = weapons.value("longname").toString();
         type.shortName = weapons.value("shortname").toString();
         type.image = weapons.value("imagename").toString().section('\\', -1).section('.', 0, 0).toLower();
         type.lockType = weapons.value("locktype", 0).toInt();
         type.lockDelay = weapons.value("lockdelay", 0).toFloat();
 
-        bodies.setSection(QString("cluster%1").arg(i));
+        bodies.setSection(String("cluster%1").arg(i));
         type.model = bodies.value("name").toString().toLower();
-        bodies.setSection(QString("size%1").arg(i));
+        bodies.setSection(String("size%1").arg(i));
         type.scale = bodies.value("scale").toFloat()/32.0f;
-        bodies.setSection(QString("noise%1").arg(i));
+        bodies.setSection(String("noise%1").arg(i));
         type.noise = bodies.value("level").toFloat();
-        bodies.setSection(QString("sensor%1").arg(i));
+        bodies.setSection(String("sensor%1").arg(i));
         type.sensorRange = bodies.value("senr", 80).toFloat();
-        bodies.setSection(QString("kinematics%1").arg(i));
+        bodies.setSection(String("kinematics%1").arg(i));
         type.maxVelocity = bodies.value("maxvelocity").toFloat()/32.0f;
         if (type.maxVelocity <= 0)
             type.maxVelocity = 1500/32.0f; // one entry has no readable value
         type.acceleration = bodies.value("maxorientationacceleration", 600).toFloat()/32.0f;
         type.turnRate = std::min(bodies.value("maxanglevelocitya", 3).toFloat(), 6.0f);
         type.lifeTime = bodies.value("lifetime", 6).toFloat();
-        bodies.setSection(QString("offense%1").arg(i));
+        bodies.setSection(String("offense%1").arg(i));
         type.kineticStrength = bodies.value("kineticstrength").toInt();
         type.shockStrength = bodies.value("shockstrength").toInt();
-        bodies.setSection(QString("defense%1").arg(i));
+        bodies.setSection(String("defense%1").arg(i));
         type.kineticShield = bodies.value("kineticshield0", 1).toInt();
         types.push_back(type);
     }

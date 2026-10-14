@@ -30,7 +30,7 @@ List::List(Widget *parent) :
 }
 
 
-void List::setText(const QStringList &text)
+void List::setText(const StringList &text)
 {
     m_text = text;
 }
@@ -51,7 +51,7 @@ void List::setAlignCenter(bool alignCenter)
 void List::draw()
 {
     int y = 0;
-    foreach (const QString &line, m_text) {
+    for (const String &line : m_text) {
         Rect rect = m_font.draw(line, Rect(0, y, width(), -1), m_alignCenter, false);
         y += rect.height;
     }

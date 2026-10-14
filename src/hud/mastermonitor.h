@@ -24,7 +24,7 @@
 #include "voxelradar.h"
 #include "lamp.h"
 #include "gfx/texture.h"
-#include <QString>
+#include "util/string.hpp"
 #include <map>
 
 
@@ -50,7 +50,7 @@ private:
     Rect m_observationRect;
     Lamp m_lamp;                // upper slot while a target is locked (read before the voxel radar)
     VoxelRadar m_voxelRadar;
-    std::map<QString, gfx::Texture> m_pictures;  // of big ships, loaded once
+    std::map<String, gfx::Texture> m_pictures;  // of big ships, loaded once
 };
 
 

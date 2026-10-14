@@ -29,9 +29,9 @@ TextureManager::TextureManager()
 }
 
 
-Texture TextureManager::getModule(const QString &filename, bool colorKey)
+Texture TextureManager::getModule(const String &filename, bool colorKey)
 {
-    QString basename = QString("vfx:texture/%1").arg(filename);
+    String basename = String("vfx:texture/%1").arg(filename);
     if (m_textures.contains(basename))
         return m_textures.value(basename);
 

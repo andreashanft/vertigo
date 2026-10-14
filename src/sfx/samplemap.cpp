@@ -36,12 +36,12 @@ void SampleMap::load()
     for (int i = 0; i <= 83; i++)
     {
         m_samples.emplace_back();
-        QString nam = fileDes.value(QString("nam%1").arg(i)).toString().replace("\\", "/");
+        String nam = fileDes.value(String("nam%1").arg(i)).toString().replace("\\", "/");
         if (nam == "")
             continue;
-        m_samples.back().load(QString("sfx:snd/%1.pcm").arg(nam), fileDes.value(QString("per%1").arg(i)).toInt());
-        m_samples.back().setVolume(fileDes.value(QString("vol%1").arg(i)).toInt()/255.0f);
-        m_samples.back().setRandomPitch(fileDes.value(QString("ran%1").arg(i)).toFloat());
+        m_samples.back().load(String("sfx:snd/%1.pcm").arg(nam), fileDes.value(String("per%1").arg(i)).toInt());
+        m_samples.back().setVolume(fileDes.value(String("vol%1").arg(i)).toInt()/255.0f);
+        m_samples.back().setRandomPitch(fileDes.value(String("ran%1").arg(i)).toFloat());
     }
 }
 

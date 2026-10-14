@@ -31,7 +31,7 @@
 
 namespace game {
 
-MainMenu::MainMenu(std::function<void(QString)> funcStartGame, std::function<void(QString)> funcLoadGame, std::function<void()> funcQuit) :
+MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void()> funcQuit) :
     m_state(Invalid),
     m_lblVersion(&m_title),
     m_lblBar1(&m_title),
@@ -231,7 +231,7 @@ void MainMenu::keyPressEvent(QKeyEvent *event)
         if (event->key() == Qt::Key_Backspace)
             m_name.chop(1);
 
-        QString text = event->text().toLower().toLatin1();
+        String text = String(event->text()).toLower();
         text.remove(QRegularExpression("[^a-z\\-0-9 ]*"));
         if (!text.isEmpty())
             m_name += text;
@@ -269,7 +269,7 @@ void MainMenu::showLoad()
     QList<Chapter::SavedGame> games = Chapter::savedGames();
     std::sort(games.begin(), games.end());
     foreach (const Chapter::SavedGame &game, games) {
-        QString name = game.name;
+        String name = game.name;
 
         m_btnLoadSave.emplace_back([this, name]() { changeState(Loading); m_loadingGame = name; }, &m_lblLoad);
         ui::Button &button = m_btnLoadSave.back();
@@ -277,7 +277,7 @@ void MainMenu::showLoad()
         button.setWidth(640);
         button.setAlignment(ui::Button::AlignHCenter);
         button.setFont(gfx::Font::Large);
-        button.setText(QString("%1: %2").arg(game.name, game.station));
+        button.setText(String("%1: %2").arg(game.name, game.station));
 
         y += 13;
 
@@ -287,7 +287,7 @@ void MainMenu::showLoad()
         label.setWidth(640);
         label.setAlignment(ui::Button::AlignHCenter);
         label.setFont(gfx::Font::Small);
-        label.setText(QLocale().toString(game.time, QLocale::ShortFormat));
+        label.setText(String(QLocale().toString(game.time, QLocale::ShortFormat)));
 
         y += 20;
     }

@@ -41,11 +41,11 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
     m_spacingY(file.value("WS_SpacingY").toInt())
 {
     // e.g. GATO1F: Gator, damage level 1 (intact) to 4, front
-    const QString prefix = file.value("ArmorImagePrefix").toString();
+    const String prefix = file.value("ArmorImagePrefix").toString();
     static const char sides[4] = { 'f', 'l', 'r', 'b' };
     for (int level = 0; level < 4; level++)
         for (int side = 0; side < 4; side++)
-            m_armor[level][side] = gfx::Texture(hud->getImage(QString("%1%2%3").arg(prefix).arg(level + 1).arg(sides[side])), true);
+            m_armor[level][side] = gfx::Texture(hud->getImage(String("%1%2%3").arg(prefix).arg(level + 1).arg(sides[side])), true);
 }
 
 
@@ -62,7 +62,7 @@ void SlaveMonitor::draw()
 }
 
 
-gfx::Texture* SlaveMonitor::picture(const QString &name)
+gfx::Texture* SlaveMonitor::picture(const String &name)
 {
     if (name.isEmpty())
         return nullptr;
@@ -79,21 +79,21 @@ void SlaveMonitor::drawWeapon(const Rect &rect)
 {
     const fight::Player *player = m_hud->scenario()->player();
     const game::Boat *boat = m_hud->boat();
-    QStringList lines;
-    QString image;
+    StringList lines;
+    String image;
     auto itemName = [](int item) {
         const game::Items::Item *info = game::Items::get(item);
-        return info ? info->longname : QString("---");
+        return info ? info->longname : String("---");
     };
     auto itemImage = [](int item) {
         const game::Items::Item *info = game::Items::get(item);
-        return info ? info->imgname : QString();
+        return info ? info->imgname : String();
     };
     switch (m_weapon)
     {
     case Weapon::Gun:
         lines << itemName(boat->gun()) << player->playerGun().stateText()
-              << (player->playerGun().usesAmmo() ? QString::number(player->playerGun().ammo()) : QString());
+              << (player->playerGun().usesAmmo() ? String::number(player->playerGun().ammo()) : String());
         image = itemImage(boat->gun());
         break;
     case Weapon::Magazine:
@@ -115,7 +115,7 @@ void SlaveMonitor::drawWeapon(const Rect &rect)
             const int index = m_weapon == Weapon::Turret1 ? 0 : 1;
             const int item = index == 0 ? boat->tur1() : boat->tur2();
             const fight::PlayerTurret *turret = player->turret(index);
-            lines << (turret ? itemName(item) : QString("TUR%1").arg(index + 1));
+            lines << (turret ? itemName(item) : String("TUR%1").arg(index + 1));
             if (turret)
             {
                 lines << turret->stateText();
@@ -132,7 +132,7 @@ void SlaveMonitor::drawWeapon(const Rect &rect)
 
     gfx::Font &font = m_hud->fontGreen();
     int y = rect.y + m_tableTopLeft.y;
-    for (const QString &line : lines)
+    for (const String &line : lines)
     {
         font.draw(line.toUpper(), Rect(rect.x, y, rect.width, -1), true, false);
         y += m_spacingY - 1;
@@ -185,7 +185,7 @@ void SlaveMonitor::drawArmor(const Rect &rect)
 
     // the title, and what is left of each side around the silhouette: front above, back below
     auto percent = [player](int side) {
-        return QString("%1%").arg(player->shieldMax(side) > 0 ? std::max(0, 100*player->shield(side)/player->shieldMax(side)) : 0);
+        return String("%1%").arg(player->shieldMax(side) > 0 ? std::max(0, 100*player->shield(side)/player->shieldMax(side)) : 0);
     };
     font.draw("ARMOR STATE", Rect(rect.x, rect.y + 2, rect.width, -1), true, false);
     font.draw(percent(0), Rect(rect.x, rect.y + 12, rect.width, -1), true, false);
@@ -200,15 +200,15 @@ void SlaveMonitor::drawSystems(const Rect &rect)
     const fight::Player *player = m_hud->scenario()->player();
     gfx::Font &font = m_hud->fontGreen();
     int y = rect.y + m_tableTopLeft.y;
-    auto row = [&](const QString &name, const QString &ammo, const QString &status) {
+    auto row = [&](const String &name, const String &ammo, const String &status) {
         font.draw(name, rect.x + m_nameX, y);
         font.draw(ammo, rect.x + m_ammoX, y);
         font.draw(status, rect.x + m_statusX, y);
         y += m_spacingY;
     };
-    auto gunRow = [&](const QString &name, const fight::Gun *gun) {
+    auto gunRow = [&](const String &name, const fight::Gun *gun) {
         if (gun)
-            row(name, gun->usesAmmo() ? QString::number(gun->ammo()) : QString("--"), gun->stateName());
+            row(name, gun->usesAmmo() ? String::number(gun->ammo()) : String("--"), gun->stateName());
         else
             row(name, "--", "---");
     };
@@ -216,21 +216,21 @@ void SlaveMonitor::drawSystems(const Rect &rect)
     int armor = 0;
     for (int side = 0; side < 4; side++)
         armor += player->shieldMax(side) > 0 ? std::max(0, 100*player->shield(side)/player->shieldMax(side)) : 0;
-    row("ARMO", "--", QString("%1%").arg(armor/4));
+    row("ARMO", "--", String("%1%").arg(armor/4));
     gunRow("GUN", &player->playerGun());
     // the selected torpedo, how many are left, ready or rearming
     const fight::TorpedoType *torpedo = player->selectedTorpedo() >= 0 ? fight::TorpedoType::get(player->torpedoes()[player->selectedTorpedo()] - 1) : nullptr;
     if (torpedo)
-        row(torpedo->shortName, QString::number(player->torpedoes().size()), player->torpedoReady() ? "RDY" : "ARM");
+        row(torpedo->shortName, String::number(player->torpedoes().size()), player->torpedoReady() ? "RDY" : "ARM");
     else
         row("TORP", "--", "EMP");
     // turrets: their state (SYN, SCA, LOC, FIR, VOL, STP, ...)
     for (int i = 0; i < 2; i++)
     {
         const fight::PlayerTurret *turret = player->turret(i);
-        const QString name = QString("TUR%1").arg(i + 1);
+        const String name = String("TUR%1").arg(i + 1);
         if (turret)
-            row(name, turret->gun().usesAmmo() ? QString::number(turret->gun().ammo()) : QString("--"), turret->stateName());
+            row(name, turret->gun().usesAmmo() ? String::number(turret->gun().ammo()) : String("--"), turret->stateName());
         else
             row(name, "--", "---");
     }

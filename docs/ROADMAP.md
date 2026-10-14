@@ -408,7 +408,7 @@ use Qt types).
 
 | # | Step | Effort | Notes |
 |---|---|---|---|
-| Q1 | Strings and data values | L | `util::String` (UTF-8 in a `std::string`) with the about 40 `QString` methods in use (`arg` 289 times, `toInt`/`toFloat` about 370, `QString("…")` 232) and a string list; `DesFile` returns its own value type instead of `QVariant` (466 `value()` calls). The data's Latin-1 text (German umlauts) is converted on load and save, the fonts take Latin-1 when drawing. Conversions must behave exactly like Qt's (e.g. `toInt("10.5")` is 0 and not ok), so this step brings a small unit test target |
+| Q1 | Strings and data values | L | `util::String` (UTF-8 in a `std::string`) with the about 40 `QString` methods in use (`arg` 289 times, `toInt`/`toFloat` about 370, `QString("…")` 232) and a string list; `DesFile` returns its own value type instead of `QVariant` (466 `value()` calls). The data's Latin-1 text (German umlauts) is converted on load and save, the fonts take Latin-1 when drawing. Conversions must behave exactly like Qt's (e.g. `toInt("10.5")` is 0 and not ok), so this step brings a small unit test target (**done**: `util::String` keeps one byte per character, as the game's text is 8-bit; `txt::Value`; `foreach` over string lists became range-for. `tests/stringtest` compares both with `QString` and `QVariant`: 1.15 million fixed and random cases, and with the data directory as the argument every line and value of its 1,029 text files, 237 million checks in all, no difference. File paths can hold any character, so they stay `QString` until Q3 (`DataPath`, `util::File`, the save folder, the 3D cockpit, screenshot names), as do the command-line values until Q4. The `--check` report, seeded traces of all 71 missions and 23 `--fixed-step` screenshots are unchanged, and a saved game is read and written byte for byte as before) |
 | Q2 | Images | M | `gfx::Image` with the formats in use (indexed with a colour table, ARGB, RGB, RGBA) and `setPixel`, `scanLine`, `copy`, `fill`, `scaled`, format conversion; PNG/JPEG decoding (glTF cockpits) with stb_image and PNG screenshots with stb_image_write (public domain). Also `QRgb` and implicit sharing (`std::shared_ptr`) |
 | Q3 | Containers, files, the rest | M | `QMap`, `QList`, `QVector`, `QSet`, `QHash` (about 150 uses) to the standard library; `QFile`, `QDir`, `QDataStream`, `QTextStream` (about 90) to `std::filesystem`, `util::File` and a small binary reader; `QRegularExpression` (48) to `std::regex` or plain parsing; `QJson` (glTF only) to a single-header JSON library (MIT); `QPoint`/`QRect`/`QSize` (about 120) to our glm-based types; `QLocale`/`QDateTime` for the save-game list |
 | Q4 | Settings, paths, command line | S | `QSettings` (17 uses) to a small settings file, the save folder unchanged; `QCommandLineParser` (22 options) to our own parser; `QElapsedTimer` to `util::ticks()` |
@@ -421,7 +421,7 @@ unchanged.
 
 Order of work: P1 → P2 → P3 → P4 on the desktop, then Q1–Q5, then P5–P8
 (playable with a hardware keyboard), then P9 and P10. P1 to P4 are done
-(October 2026); next is Q1.
+(October 2026); Q1 is done, next is Q2.
 
 Platform notes:
 

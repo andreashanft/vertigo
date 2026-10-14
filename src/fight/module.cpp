@@ -29,7 +29,7 @@
 namespace fight {
 
 
-Module::Module(gfx::TextureManager &texMan, const QString &name)
+Module::Module(gfx::TextureManager &texMan, const String &name)
 {
     QFile file(util::DataPath::resolve(name));
     if (!file.open(QFile::ReadOnly))
@@ -42,7 +42,7 @@ Module::Module(gfx::TextureManager &texMan, const QString &name)
     unsigned int i, j, k;
     quint32 numFaces;
     quint32 numVertices;
-    std::map<QString, Mesh*> meshes;
+    std::map<String, Mesh*> meshes;
 
     stream.skipRawData(2);
     stream >> numFaces;
@@ -100,7 +100,7 @@ Module::Module(gfx::TextureManager &texMan, const QString &name)
             stream >> nameLength;
             stream.skipRawData(4);
 
-            const QString textureName = QString::fromLatin1(file.read(nameLength));
+            const String textureName = String::fromLatin1(file.read(nameLength));
 
             std::vector<quint32> indices;
             indices.reserve(3 * numVertices2);

@@ -40,8 +40,8 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
     std::function<void(int)> funcAddCredit,
     std::function<void(int)> funcEnableStation,
     std::function<void(int)> funcDisableStation,
-    std::function<void(QString, int)> funcAddMission,
-    std::function<void(int, QString)> funcReplaceApproachMovie,
+    std::function<void(String, int)> funcAddMission,
+    std::function<void(int, String)> funcReplaceApproachMovie,
     std::function<void(int)> funcUpgradeBoat,
     std::function<void()> funcGameOver
 ) :
@@ -67,7 +67,7 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
     m_funcUpgradeBoat(std::move(funcUpgradeBoat)),
     m_funcGameOver(std::move(funcGameOver))
 {
-    const QString baseName = QString("txt:dia/%1/%2").arg(chapter, 3, 10, QChar('0')).arg(id, 6, 10, QChar('0'));
+    const String baseName = String("txt:dia/%1/%2").arg(chapter, 3, 10, '0').arg(id, 6, 10, '0');
 
     txt::DesFile file(baseName + ".des");
 
@@ -86,10 +86,10 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
     m_female = file.value("Sex").toString() == "f";
     m_isSmallTalk = file.value("Type").toString() == "smalltalk";
 
-    foreach (const QString &section, file.sections().filter(QRegularExpression("^message"))) {
+    for (const String &section : file.sections().filter(QRegularExpression("^message"))) {
         file.setSection(section);
         const int id = file.value("Id").toInt();
-        const QString type = file.value("Type").toString();
+        const String type = file.value("Type").toString();
 
         Message message;
         if (type == "addtask") {
@@ -137,10 +137,10 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
         m_messages.insert(id, message);
     }
 
-    foreach (const QString &section, file.sections().filter(QRegularExpression("^precondition"))) {
+    for (const String &section : file.sections().filter(QRegularExpression("^precondition"))) {
         file.setSection(section);
 
-        const QString type = file.value("Type").toString().toLower();
+        const String type = file.value("Type").toString().toLower();
 
         Precondition precondition;
         if (type == "numofsmalltalk") {
@@ -293,7 +293,7 @@ void Dialog::draw()
 
 int Dialog::drawOption(int y, const Option* option)
 {
-    QString text;
+    String text;
     if (option && option->text >= 0)
         text = m_strings[option->text];
     else {
@@ -331,7 +331,7 @@ bool Dialog::mousePressEvent(const QPoint &pos, Qt::MouseButton button)
 }
 
 
-void Dialog::loadTree(const QString &filename)
+void Dialog::loadTree(const String &filename)
 {
     QFile file(util::DataPath::resolve(filename));
     if (!file.open(QFile::ReadOnly))
@@ -385,7 +385,7 @@ void Dialog::loadTree(const QString &filename)
 }
 
 
-void Dialog::loadStrings(const QString &filename)
+void Dialog::loadStrings(const String &filename)
 {
     QFile file(util::DataPath::resolve(filename));
     if (!file.open(QFile::ReadOnly))
@@ -393,14 +393,14 @@ void Dialog::loadStrings(const QString &filename)
 
     const QRegularExpression regexp("#(\\d*).*\\{(.*)\\}");
     while (!file.atEnd())  {
-        QString line = QString::fromLatin1(file.readLine());
+        String line = String::fromLatin1(file.readLine());
         if (file.error() != QFile::NoError)
             break;
 
         const QRegularExpressionMatch match = regexp.match(line);
         if (match.hasMatch()) {
             const int index = match.captured(1).toInt();
-            const QString text = match.captured(2);
+            const String text(match.captured(2));
             m_strings.insert(index, text);
         }
     }

@@ -21,6 +21,7 @@
 #include "util/file.h"
 
 #include <QImage>
+#include "util/string.hpp"
 
 namespace gfx {
 
@@ -37,11 +38,11 @@ public:
     Image& toRgb565();
 
 public:
-    static Image load(const QString &filename, const QVector<QRgb> &colorTable = QVector<QRgb>());
-    static Image load(const QString &filename, int w, int h, bool colorKey = false);
+    static Image load(const String &filename, const QVector<QRgb> &colorTable = QVector<QRgb>());
+    static Image load(const String &filename, int w, int h, bool colorKey = false);
     static Image load(util::File& file, Type type, const QVector<QRgb> &colorTable);
-    static Image loadPCX(const QString &filename);
-    static QCursor loadCursor(const QString &filename, const QVector<QRgb> &colorTable);
+    static Image loadPCX(const String &filename);
+    static QCursor loadCursor(const String &filename, const QVector<QRgb> &colorTable);
 
 private:
     static QImage decodeImage(util::File& file, int width, int height, const QRgb& color);

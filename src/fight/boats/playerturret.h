@@ -20,7 +20,7 @@
 
 
 #include "fight/weapons/gun.h"
-#include <QString>
+#include "util/string.hpp"
 
 
 namespace fight {
@@ -49,9 +49,9 @@ public:
     Order order() const { return m_order; }
     void setOrder(Order order);
     State state() const { return m_state; }
-    QString stateName() const;
-    QString stateText() const;  // the state written out (GLOBWEAP verbose)
-    QString softwareName() const { return m_software.shortName; }
+    String stateName() const;
+    String stateText() const;  // the state written out (GLOBWEAP verbose)
+    String softwareName() const { return m_software.shortName; }
     const Gun& gun() const { return m_gun; }
     // nullptr once the target is gone (a torpedo is deleted when it explodes)
     ActiveObject* target() const { return isValid(m_target) ? m_target : nullptr; }
@@ -61,7 +61,7 @@ public:
 private:
     struct Software
     {
-        QString shortName;
+        String shortName;
         bool torpedoes = false;
         bool vessels = true;
         float hit = 0.8f;

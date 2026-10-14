@@ -42,13 +42,13 @@ Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
         GunStates = new Gun::GunState[6];
         for (int i = 0; i < 6; i++)
         {
-            file.setSection(QString("gunstate%1").arg(i));
+            file.setSection(String("gunstate%1").arg(i));
             GunStates[i].longName = file.value("verbose").toString();
             GunStates[i].shortName = file.value("short").toString();
         }
     }
 
-    file.setSection(QString("gun%1").arg(model));
+    file.setSection(String("gun%1").arg(model));
     m_longName = file.value("longname").toString();
     m_shortName = file.value("shortname").toString();
     m_imageName = file.value("imagename").toString();

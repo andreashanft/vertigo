@@ -64,9 +64,9 @@ Master::Master(HUD *hud, Rect rect) :
 {
     int i;
     for (i = 9; i >= 0; i--)
-        m_kineticShield.emplace_back(hud->getImage(QString("hudinte%1").arg(i)), false);
+        m_kineticShield.emplace_back(hud->getImage(String("hudinte%1").arg(i)), false);
     for (i = 9; i >= 0; i--)
-        m_shockShield.emplace_back(hud->getImage(QString("hudeemp%1").arg(i)), false);
+        m_shockShield.emplace_back(hud->getImage(String("hudeemp%1").arg(i)), false);
 }
 
 
@@ -121,7 +121,7 @@ void Master::draw()
         Point point = glm::round(Vector2D(point4)/point4.w);
         m_way.draw(point.x - (m_way.width() + 1)/2, point.y - (m_way.height() + 1)/2, &m_clipRect);
 
-        m_hud->fontYellow().draw(QString("NAV %1").arg(static_cast<char>('A' + m_hud->scenario()->navPoints()[m_hud->navPoint()]->num())), point.x - 16, point.y - 17, &m_clipRect);
+        m_hud->fontYellow().draw(String("NAV %1").arg(static_cast<char>('A' + m_hud->scenario()->navPoints()[m_hud->navPoint()]->num())), point.x - 16, point.y - 17, &m_clipRect);
     }
 }
 
@@ -188,10 +188,10 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
         tex->draw(point.x - tex->width()/2, point.y - tex->height()/2, &m_clipRect);
 
         if (torpedoLock && player->lockProgress() < 1)
-            m_hud->fontYellow().draw(QString::number(int(std::ceil(player->lockRemaining()))), Rect(point.x - 100, point.y + 38, 200, -1), true, false, &m_clipRect);
+            m_hud->fontYellow().draw(String::number(int(std::ceil(player->lockRemaining()))), Rect(point.x - 100, point.y + 38, 200, -1), true, false, &m_clipRect);
 
         if (!isPassive)
-            m_hud->fontGreen().draw(QString("%1M").arg(static_cast<int>(glm::round(target.distance()))), Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);
+            m_hud->fontGreen().draw(String("%1M").arg(static_cast<int>(glm::round(target.distance()))), Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);
 
         if (target.locked() == nullptr)
             return;

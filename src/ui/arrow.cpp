@@ -21,7 +21,7 @@
 
 namespace ui {
 
-Arrow::Arrow(const QString &dir, const QPoint &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent) :
+Arrow::Arrow(const String &dir, const QPoint &pos, bool large, std::function<void(int)> &&funcClicked, Widget *parent) :
     m_position(pos),
     m_value(0),
     m_large(large),
@@ -41,7 +41,7 @@ Arrow::Arrow(const QString &dir, const QPoint &pos, bool large, std::function<vo
     if (m_top)
         arrowY = 'b';
 
-    m_label.setTexture(gfx::Image::load(QString("gfx:img/desktop/gui/arr%1%2%3.img").arg(arrowY).arg(arrowX).arg(large ? "med" : "sma"), colorTable));
+    m_label.setTexture(gfx::Image::load(String("gfx:img/desktop/gui/arr%1%2%3.img").arg(arrowY).arg(arrowX).arg(large ? "med" : "sma"), colorTable));
     m_label.setPosition(pos);
 
     m_button.setFont(m_large ? gfx::Font::Medium : gfx::Font::Small);
@@ -70,7 +70,7 @@ void Arrow::setValue(int value)
     m_value = value;
 }
 
-void Arrow::setText(const QString &text)
+void Arrow::setText(const String &text)
 {
     QPoint offset(9, 2);
     if (m_large)

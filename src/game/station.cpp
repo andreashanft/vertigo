@@ -30,7 +30,7 @@ Station::Station() :
 }
 
 
-Station::Station(int index, const QString &name) :
+Station::Station(int index, const String &name) :
     m_index(index),
     m_shortName(name),
     m_enabled(true)
@@ -41,12 +41,12 @@ Station::Station(int index, const QString &name) :
     m_name = file.value("Name").toString();
 
     file.setSection("Depot");
-    for (int entry = 0; file.contains(QString("Entry%1").arg(entry)); entry++)
+    for (int entry = 0; file.contains(String("Entry%1").arg(entry)); entry++)
     {
-        const QString str = file.value(QString("Entry%1").arg(entry)).toString();
-        int model = str.section(' ', 0, 0, QString::SectionSkipEmpty).toInt();
+        const String str = file.value(String("Entry%1").arg(entry)).toString();
+        int model = str.section(' ', 0, 0, String::SectionSkipEmpty).toInt();
         if (model != 99999)
-            m_depotPrices[model] = file.value(QString("Entry%1Cost").arg(entry)).toFloat();
+            m_depotPrices[model] = file.value(String("Entry%1Cost").arg(entry)).toFloat();
     }
 
 }

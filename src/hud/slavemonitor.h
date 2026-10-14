@@ -24,6 +24,7 @@
 #include "gfx/texture.h"
 #include "lamp.h"
 #include <map>
+#include "util/string.hpp"
 
 
 namespace txt { class DesFile; }
@@ -62,7 +63,7 @@ private:
     void drawSystems(const Rect &rect);
     void drawWeapon(const Rect &rect);
     // a picture from GFX/IMG/COCKPIT, loaded once
-    gfx::Texture* picture(const QString &name);
+    gfx::Texture* picture(const String &name);
 
 private:
     HUD *m_hud;
@@ -70,7 +71,7 @@ private:
     Page m_page;
     Weapon m_weapon = Weapon::Magazine;
     Lamp m_lamp;
-    std::map<QString, gfx::Texture> m_pictures;
+    std::map<String, gfx::Texture> m_pictures;
     gfx::Texture m_armor[4][4]; // damage level 1-4, side front/left/right/back
     Point m_tableTopLeft;
     int m_nameX;

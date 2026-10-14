@@ -28,7 +28,7 @@ ModuleManager::ModuleManager(gfx::TextureManager &texMan) :
 }
 
 
-Module* ModuleManager::get(const QString &name)
+Module* ModuleManager::get(const String &name)
 {
     auto it = m_modules.find(name);
     if (it != m_modules.end())

@@ -21,6 +21,7 @@
 
 #include "gun.h"
 #include <vector>
+#include "util/string.hpp"
 
 
 namespace txt { class DesFile; }
@@ -55,7 +56,7 @@ public:
 public:
     float range() const { return m_gun.range(); }
     float projectileSpeed() const { return m_gun.projectileSpeed(); }
-    const QString& shortName() const { return m_gun.shortName(); }
+    const String& shortName() const { return m_gun.shortName(); }
     void setAmmunition(int ammunition) { m_gun.setAmmo(ammunition); }
     void update(float elapsedTime, bool trigger, const Vector3D &position, const Vector3D &dir, const Vector3D &up, const Vector3D &right);
 

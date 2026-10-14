@@ -35,23 +35,23 @@ Vector3D square[4] = { Vector3D(-1, 1, 0), Vector3D(1, 1, 0), Vector3D(1, -1, 0)
 Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index, bool blendColor) :
     m_blendColor(blendColor)
 {
-    file.setSection(QString("size%1").arg(index));
+    file.setSection(String("size%1").arg(index));
     m_scale = file.value("scale").toFloat();
 
-    file.setSection(QString("collision%1").arg(index));
+    file.setSection(String("collision%1").arg(index));
     m_collisionRadius = file.value("radiusscale").toFloat();
 
-    file.setSection(QString("noise%1").arg(index));
+    file.setSection(String("noise%1").arg(index));
     m_noiseLevel = file.value("level").toFloat();
 
-    file.setSection(QString("defense%1").arg(index));
+    file.setSection(String("defense%1").arg(index));
     m_kineticShield = file.value("kineticshield0").toInt();
 
-    file.setSection(QString("offense%1").arg(index));
+    file.setSection(String("offense%1").arg(index));
     m_kineticStrength = file.value("kineticstrength").toInt();
     m_shockStrength = file.value("shockstrength").toInt();
 
-    file.setSection(QString("kinematics%1").arg(index));
+    file.setSection(String("kinematics%1").arg(index));
     if (file.contains("range"))
     {
         m_range = file.value("range").toInt() / 32.0f;
@@ -64,7 +64,7 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
     m_maxVelocity = file.value("maxvelocity", 0).toFloat() / 32.0f;
 
 
-    file.setSection(QString("anim%1").arg(index));
+    file.setSection(String("anim%1").arg(index));
     float scale = file.value("scale").toFloat();
 
     m_displayTime = file.value("displaytime").toFloat() + 0.02f;
@@ -78,13 +78,13 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
     {
         if (i < 0)
         {
-            file.setSection(QString("anim%1raster").arg(index));
+            file.setSection(String("anim%1raster").arg(index));
             if (!file.contains("imgblockname"))
                 i++;
         }
         if (i >= 0)
         {
-            file.setSection(QString("anim%1stage%2").arg(index).arg(i));
+            file.setSection(String("anim%1stage%2").arg(index).arg(i));
             if (!file.contains("imgblockname"))
                 break;
         }

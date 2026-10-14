@@ -22,7 +22,7 @@
 #include "util/geometry2d.h"
 #include "ui/widget.h"
 #include "ui/label.h"
-#include <QString>
+#include "util/string.hpp"
 
 
 namespace hud {

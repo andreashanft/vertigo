@@ -36,18 +36,18 @@ Surface::Surface() :
 }
 
 
-void Surface::load(const QString &name, int maxheightscale, int mapping)
+void Surface::load(const String &name, int maxheightscale, int mapping)
 {
     m_mapping = mapping;
 
-    txt::DesFile file(QString("vfx:surface/%1.des").arg(name));
+    txt::DesFile file(String("vfx:surface/%1.des").arg(name));
     file.setSection("height");
-    m_heightMap = gfx::Image::loadPCX(QString("vfx:surface/%2").arg(file.value("name").toString().replace("\\", "/")));
+    m_heightMap = gfx::Image::loadPCX(String("vfx:surface/%2").arg(file.value("name").toString().replace("\\", "/")));
 
     qreal sx, sy, sz;
     {
         file.setSection("map");
-        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/"))));
+        QFile scaleFile(util::DataPath::resolve(String("vfx:surface/%1").arg(file.value("scale").toString().replace("\\", "/"))));
         if (!scaleFile.open(QFile::ReadOnly))
             std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
 
@@ -62,7 +62,7 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
 
     {
         file.setSection("texture");
-        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/"))));
+        QFile scaleFile(util::DataPath::resolve(String("vfx:surface/%1").arg(file.value("mapping").toString().replace("\\", "/"))));
         if (!scaleFile.open(QFile::ReadOnly))
             std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
         scaleFile.seek(12);
@@ -73,7 +73,7 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
     QByteArray dir;
     {
         file.setSection("texture");
-        QFile scaleFile(util::DataPath::resolve(QString("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/"))));
+        QFile scaleFile(util::DataPath::resolve(String("vfx:surface/%1").arg(file.value("direction").toString().replace("\\", "/"))));
         if (!scaleFile.open(QFile::ReadOnly))
             std::cerr << "Cannot open " << scaleFile.fileName().toUtf8().constData() << std::endl;
         scaleFile.seek(12);
@@ -81,11 +81,11 @@ void Surface::load(const QString &name, int maxheightscale, int mapping)
         m_textureDir = scaleFile.read(65536);
     }
 
-    const QString sName = file.value("sname").toString();
-    const QString tName = file.value("tname").toString();
+    const String sName = file.value("sname").toString();
+    const String tName = file.value("tname").toString();
     for (int i = 0; i <= 16; i++) {
-        gfx::ColorTable colorTable(QString("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, QChar('0')));
-        m_textures.push_back(gfx::Image::load(QString("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, QChar('0')), colorTable));
+        gfx::ColorTable colorTable(String("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, '0'));
+        m_textures.push_back(gfx::Image::load(String("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, '0'), colorTable));
     }
 }
 

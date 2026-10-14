@@ -30,14 +30,14 @@ ColorTable::ColorTable(const QVector<QRgb> &colorTable) :
 
 }
 
-ColorTable::ColorTable(const QString &filename)
+ColorTable::ColorTable(const String &filename)
 {
     loadFromFile(filename);
 }
 
-bool ColorTable::loadFromFile(const QString &filename)
+bool ColorTable::loadFromFile(const String &filename)
 {
-    util::File file(QString(filename).replace(":", "/").toUtf8().data());
+    util::File file(String(filename).replace(":", "/").toUtf8().data());
 
     quint16 type;
     file >> type;

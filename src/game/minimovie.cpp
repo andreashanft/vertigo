@@ -18,14 +18,14 @@
 #include "minimovie.h"
 #include "gfx/image.h"
 #include "util/random.h"
-#include <QStringList>
+#include "util/string.hpp"
 #include <QRegularExpression>
 
 
 namespace game {
 
 
-MiniMovie::MiniMovie(const QString &path, std::function<void()> &&funcFinished) :
+MiniMovie::MiniMovie(const String &path, std::function<void()> &&funcFinished) :
     m_path(path),
     m_funcFinished(std::move(funcFinished))
 {
@@ -41,14 +41,14 @@ MiniMovie::~MiniMovie()
 
 void MiniMovie::load(txt::DesFile &file)
 {
-    foreach (const QString &section, file.sections().filter(QRegularExpression("^minimovie"))) {
+    for (const String &section : file.sections().filter(QRegularExpression("^minimovie"))) {
         file.setSection(section);
 
-        const QString name = file.value("Name").toString();
-        const QString type = file.value("Type").toString().toLower();
+        const String name = file.value("Name").toString();
+        const String type = file.value("Type").toString().toLower();
 
         Video *video = new Video;
-        video->video.open(QString("%1/%2.mvi").arg(m_path, name));
+        video->video.open(String("%1/%2.mvi").arg(m_path, name));
         video->x = file.value("X1").toInt();
         video->y = file.value("Y1").toInt();
         video->rndMax = 0;

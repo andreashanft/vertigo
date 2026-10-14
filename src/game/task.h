@@ -19,7 +19,7 @@
 #define GAME_TASK_H
 
 
-#include <QString>
+#include "util/string.hpp"
 
 
 namespace game {
@@ -31,15 +31,15 @@ public:
     enum Type { Tip, Job, Mission };
 
 public:
-    Task(const QString &text);
+    Task(const String &text);
 
 public:
     Type type() const { return m_type; }
-    const QString& text() const { return m_text; }
+    const String& text() const { return m_text; }
 
 private:
     Type m_type;
-    QString m_text;
+    String m_text;
 };
 
 

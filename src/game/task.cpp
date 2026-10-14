@@ -22,7 +22,7 @@
 namespace game {
 
 
-Task::Task(const QString &text)
+Task::Task(const String &text)
 {
     const QRegularExpressionMatch match = QRegularExpression("(\\w): (.*)").match(text);
     if (match.captured(1) == "T")
@@ -31,7 +31,7 @@ Task::Task(const QString &text)
         m_type = Job;
     else if (match.captured(1) == "M")
         m_type = Mission;
-    m_text = match.captured(2);
+    m_text = String(match.captured(2));
 }
 
 

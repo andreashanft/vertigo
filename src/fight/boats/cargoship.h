@@ -22,6 +22,7 @@
 #include "simpleboat.h"
 #include <memory>
 #include <vector>
+#include "util/string.hpp"
 
 
 namespace fight {
@@ -51,7 +52,7 @@ public:
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr) {}
     void destroy() {}
     void identify();
-    QString observationImage() const;
+    String observationImage() const;
 
 private:
     CargoShip *m_ship;
@@ -84,10 +85,10 @@ public:
     void arm(int model, txt::DesFile &file) {}
     bool engagesHostiles() const { return false; }
     bool isContact() const { return false; }
-    QString observationImage() const { return m_picture; }
+    String observationImage() const { return m_picture; }
     // the master monitor's picture for a ship file (cship*, bship*)
-    static QString pictureFor(const QString &desName);
-    void setPicture(const QString &picture) { m_picture = picture; }
+    static String pictureFor(const String &desName);
+    void setPicture(const String &picture) { m_picture = picture; }
     // the blocks as sonar contacts; the scenario owns them
     std::vector<CargoSegment *> createSegments();
     void drawBlock(int index);
@@ -141,7 +142,7 @@ private:
 private:
     std::vector<Block> m_blocks;
     std::vector<ShipTurret> m_turrets;
-    QString m_picture;
+    String m_picture;
     bool m_exploding = false;
     std::vector<int> m_explosionOrder;  // the blocks still to blow up, the next one last
     float m_nextExplosion = 0;

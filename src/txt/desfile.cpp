@@ -21,17 +21,16 @@
 
 #include <QDir>
 #include <QFile>
-#include <QStringList>
 #include <QRegularExpression>
 
 
-QString trimEnd(const QString& str)
+// also used by Items
+String trimEnd(const String &str)
 {
-    int i;
-    for (i = str.length() - 1; i >= 0 && str[i].isSpace(); i--);
-    QString res = str;
-    res.truncate(i + 1);
-    return res;
+    int i = str.size();
+    while (i > 0 && String::isSpace(str[i - 1]))
+        i--;
+    return str.left(i);
 }
 
 
@@ -65,27 +64,30 @@ bool DesFile::load(const QString &filename)
 
     while (!file.atEnd()) {
         // the game data is 8-bit (DOS codepage 437) text; keep the raw bytes, the fonts are indexed by them
-        const QString line = QString::fromLatin1(file.readLine());
+        const QByteArray bytes = file.readLine();
+        const QString line = QString::fromLatin1(bytes);
 
         const QRegularExpressionMatch section = regSection.match(line);
         if (section.hasMatch())
-            setSection(section.captured(1).trimmed().toLower());
+            setSection(String(section.captured(1)).trimmed().toLower());
 
         const QRegularExpressionMatch keyValue = regKey.match(line);
         if (keyValue.hasMatch()) {
-            const QString key = keyValue.captured(1).trimmed().toLower();
+            const String key = String(keyValue.captured(1)).trimmed().toLower();
             if (!key.startsWith(";") && !key.startsWith("/"))
-                setValue(key, keyValue.captured(2).trimmed());
+                setValue(key, String(keyValue.captured(2)).trimmed());
         }
 
-        if (line.trimmed() == "{")
+        if (String::fromLatin1(bytes.constData(), int(bytes.size())).trimmed() == "{")
         {
-            QStringList text;
-            QString textLine = trimEnd(QString::fromLatin1(file.readLine()));
+            StringList text;
+            QByteArray next = file.readLine();
+            String textLine = trimEnd(String::fromLatin1(next.constData(), int(next.size())));
             while (!file.atEnd() && textLine != "}")
             {
                 text.append(textLine);
-                textLine = trimEnd(QString::fromLatin1(file.readLine()));
+                next = file.readLine();
+                textLine = trimEnd(String::fromLatin1(next.constData(), int(next.size())));
             }
             setValue("{text}", text);
         }
@@ -107,31 +109,22 @@ bool DesFile::save(const QString &filename) const
         return false;
 
     // 8-bit text like the game data (see load())
-    QString text;
-    QMapIterator<QString, QVariantMap> itSections(m_sections);
-    while (itSections.hasNext()) {
-        itSections.next();
-        if (itSections.value().isEmpty())
+    String text;
+    for (const auto &section : m_sections) {
+        if (section.second.empty())
             continue;
 
-        text += "[" + itSections.key() + "]\n";
-
-        QMapIterator<QString, QVariant> itValues(itSections.value());
-        while (itValues.hasNext()) {
-            itValues.next();
-
-            text += itValues.key() + " = " + itValues.value().toString() + "\n";
-        }
-
+        text += "[" + section.first + "]\n";
+        for (const auto &value : section.second)
+            text += value.first + " = " + value.second.toString() + "\n";
         text += "\n";
     }
 
-    const QByteArray bytes = text.toLatin1();
-    return file.write(bytes) == bytes.size();
+    return file.write(text.constData(), text.size()) == text.size();
 }
 
 
-void DesFile::setSection(const QString &section)
+void DesFile::setSection(const String &section)
 {
     m_sectionName = section.toLower();
     m_section = &m_sections[m_sectionName];
@@ -139,61 +132,74 @@ void DesFile::setSection(const QString &section)
 }
 
 
-bool DesFile::contains(const QString &key) const
+bool DesFile::contains(const String &key) const
 {
     m_read[m_sectionName].insert(key.toLower());
-    return m_section->contains(key.toLower());
+    return m_section->count(key.toLower()) > 0;
 }
 
 
-QVariant DesFile::value(const QString &key, const QVariant &defaultValue) const
+Value DesFile::value(const String &key, const Value &defaultValue) const
 {
     m_read[m_sectionName].insert(key.toLower());
-    return m_section->value(key.toLower(), defaultValue);
+    const auto it = m_section->find(key.toLower());
+    return it != m_section->end() ? it->second : defaultValue;
 }
 
 
-void DesFile::setValue(const QString &key, const QVariant &value)
+void DesFile::setValue(const String &key, const Value &value)
 {
-    m_section->insert(key.toLower(), value);
+    (*m_section)[key.toLower()] = value;
 }
 
 
-QString DesFile::valueText(const QString &key) const
+String DesFile::valueText(const String &key) const
 {
     // the other languages' variants of a text count as read, too
-    m_read[m_sectionName] << key.toLower() << key.toLower() + "e" << key.toLower() + "f";
+    std::set<String> &read = m_read[m_sectionName];
+    read.insert(key.toLower());
+    read.insert(key.toLower() + "e");
+    read.insert(key.toLower() + "f");
     if (StringTable::language() == "English")
         return value(key + "e").toString();
     return value(key).toString();
 }
 
 
-QStringList DesFile::sections() const
+StringList DesFile::sections() const
 {
-    return m_sections.keys();
+    StringList sections;
+    for (const auto &section : m_sections)
+        sections << section.first;
+    return sections;
 }
 
 
-QStringList DesFile::keys() const
+StringList DesFile::keys() const
 {
-    return m_section->keys();
+    StringList keys;
+    for (const auto &value : *m_section)
+        keys << value.first;
+    return keys;
 }
 
 
-bool DesFile::wasSectionRead(const QString &section) const
+bool DesFile::wasSectionRead(const String &section) const
 {
-    return m_read.contains(section.toLower());
+    return m_read.count(section.toLower()) > 0;
 }
 
 
-QStringList DesFile::unreadKeys(const QString &section) const
+StringList DesFile::unreadKeys(const String &section) const
 {
-    const QSet<QString> read = m_read.value(section.toLower());
-    QStringList keys;
-    foreach (const QString &key, m_sections.value(section.toLower()).keys()) {
-        if (!read.contains(key))
-            keys << key;
+    const auto read = m_read.find(section.toLower());
+    const auto values = m_sections.find(section.toLower());
+    StringList keys;
+    if (values == m_sections.end())
+        return keys;
+    for (const auto &value : values->second) {
+        if (read == m_read.end() || read->second.count(value.first) == 0)
+            keys << value.first;
     }
     return keys;
 }

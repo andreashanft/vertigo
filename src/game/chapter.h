@@ -32,6 +32,7 @@
 #include "boat.h"
 
 #include <QDateTime>
+#include "util/string.hpp"
 
 
 namespace fight { class Scenario; }
@@ -51,13 +52,13 @@ public:
             return time > rho.time;
         }
 
-        QString name;
-        QString station;
+        String name;
+        String station;
         QDateTime time;
     };
 
 public:
-    Chapter(const QString &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame);
+    Chapter(const String &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame);
     ~Chapter();
 
 public:
@@ -68,7 +69,7 @@ public:
     void addCredit(int credit);
 
     void save() const;
-    void load(const QString &name);
+    void load(const String &name);
     void loadChapter(int chapter);
     void setStation(int station, bool load = false);
     Area* area() const { return m_area; }
@@ -86,8 +87,8 @@ public:
     const QSet<int>& playedMovies() const { return m_playedMovies; }
     void playMovie(int movie);
     const QList<Mission*>& missions() const { return m_missions; }
-    const QStringList& successfulMissions() const { return m_successfulMissions; }
-    void startMission(const QString &name);
+    const StringList& successfulMissions() const { return m_successfulMissions; }
+    void startMission(const String &name);
     const Mission* mission() const { return m_mission; }
     QList<Task> tasks();
     Boat* boat() const { return m_boat; }
@@ -111,8 +112,8 @@ private:
     void removeDialog(int dialogId);
     void enableStation(int station);
     void disableStation(int station);
-    void addMission(const QString &mission, int station);
-    void replaceApproachMovie(int station, const QString &movie);
+    void addMission(const String &mission, int station);
+    void replaceApproachMovie(int station, const String &movie);
     void upgradeBoat(int type);
     void gameOver();
     void startScenario();
@@ -132,17 +133,17 @@ private:
     Briefing *m_briefing;
     Movie *m_movie;
     std::queue<Movie, std::list<Movie>> m_movies;
-    QMap<int, QString> m_approachMovieReplacement;
+    QMap<int, String> m_approachMovieReplacement;
     QMap<int, Station> m_stations;
     int m_currentStation;
-    QString m_currentStationName;
+    String m_currentStationName;
     QSet<int> m_playedMovies;
     QMap<int, Dialog*> m_pendingDialogues;
     static Chapter *m_singleton;
     QSet<int> m_messages;
     QList<int> m_runningTasks;
     QList<Mission*> m_missions;
-    QStringList m_successfulMissions;
+    StringList m_successfulMissions;
     int m_credits;
     int m_numSmallTalks;
     bool m_movieAutopilot;
@@ -155,7 +156,7 @@ private:
     bool m_save;
     Boat *m_boat;
     bool m_end;
-    QString m_name;
+    String m_name;
     std::function<void(Renderer*)> m_funcSetRenderer;
     std::function<void()> m_funcEndGame;
 };

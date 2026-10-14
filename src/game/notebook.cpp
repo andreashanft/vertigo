@@ -101,7 +101,7 @@ Notebook::Notebook(std::function<void()> funcClose) :
 
     {
         m_lblMap.setPosition(164, 75);
-        m_lblMap.setTexture(gfx::Image::load(QString("gfx:pic/notebook/%1.r16").arg(Chapter::get()->area()->map()), 304, 284));
+        m_lblMap.setTexture(gfx::Image::load(String("gfx:pic/notebook/%1.r16").arg(Chapter::get()->area()->map()), 304, 284));
     }
 
     {
@@ -163,7 +163,7 @@ void Notebook::showMissions()
     m_lblMain.hide();
     m_lblMissions.show();
 
-    QStringList tasks;
+    StringList tasks;
     foreach (const Task &task, Chapter::get()->tasks()) {
         switch (task.type()) {
         case Task::Tip:

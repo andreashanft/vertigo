@@ -73,7 +73,7 @@ void SonarMonitor::draw()
     m = glm::translate(m, -m_hud->scenario()->position());
 
     m_hud->fontGreen().draw("T", point + Point(-2, -radius));
-    m_hud->fontGreen().draw(QString("%1M").arg(m_scale), Rect(point + Point(-100, radius - 8), SizeF(200, -1)), true, false);
+    m_hud->fontGreen().draw(String("%1M").arg(m_scale), Rect(point + Point(-100, radius - 8), SizeF(200, -1)), true, false);
     m_center.draw(rect);
 
     for (fight::NavPoint *navPoint : m_hud->scenario()->navPoints())

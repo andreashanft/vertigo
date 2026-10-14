@@ -19,8 +19,11 @@
 #define TXT_DESFILE_H
 
 
-#include <QSet>
-#include <QVariant>
+#include "value.h"
+#include "util/string.hpp"
+#include <QString>
+#include <map>
+#include <set>
 
 
 namespace txt {
@@ -30,28 +33,29 @@ class DesFile
 {
 public:
     DesFile();
+    // a data file ("vfx:scenario/s00101.des") or a path, e.g. of a saved game
     DesFile(const QString &filename);
 
 public:
     bool load(const QString &filename);
     bool save(const QString &filename) const;
-    void setSection(const QString &section);
-    bool contains(const QString &key) const;
-    QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
-    void setValue(const QString &key, const QVariant &value);
-    QString valueText(const QString &key) const;
-    QStringList sections() const;
-    QStringList keys() const;
+    void setSection(const String &section);
+    bool contains(const String &key) const;
+    Value value(const String &key, const Value &defaultValue = Value()) const;
+    void setValue(const String &key, const Value &value);
+    String valueText(const String &key) const;
+    StringList sections() const;
+    StringList keys() const;
 
     // for load reports: sections never selected and keys never queried
-    bool wasSectionRead(const QString &section) const;
-    QStringList unreadKeys(const QString &section) const;
+    bool wasSectionRead(const String &section) const;
+    StringList unreadKeys(const String &section) const;
 
 private:
-    QMap<QString, QVariantMap> m_sections;
-    QVariantMap *m_section;
-    QString m_sectionName;
-    mutable QMap<QString, QSet<QString>> m_read;
+    std::map<String, std::map<String, Value>> m_sections;
+    std::map<String, Value> *m_section;
+    String m_sectionName;
+    mutable std::map<String, std::set<String>> m_read;
 };
 
 

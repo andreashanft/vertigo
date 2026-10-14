@@ -47,8 +47,8 @@ namespace game {
 
 Vertigo::Vertigo() :
     m_mainMenu(
-       [this](QString name) { startGame(name); },
-       [this](QString name) { loadGame(name); },
+       [this](String name) { startGame(name); },
+       [this](String name) { loadGame(name); },
        [this]() { m_window.close(); }
     )
 {
@@ -91,7 +91,7 @@ int Vertigo::start(const Options &options)
                 return ExitUsage;
             }
             if (!boat->getMounting(item.first)) {
-                std::cerr << "The boat has no mounting " << item.first.toUtf8().constData() << std::endl;
+                std::cerr << "The boat has no mounting " << item.first << std::endl;
                 return ExitUsage;
             }
             boat->buy(item.second, item.first);
@@ -224,7 +224,7 @@ int Vertigo::start(const Options &options)
             const int key = it->key[0] & ~Qt::KeyboardModifierMask;
             const Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(it->key[0] & Qt::KeyboardModifierMask);
 #endif
-            const QString text = key < 0x80 ? QString(QChar(key)).toLower() : QString();
+            const String text = key < 0x80 ? String(QChar(key)).toLower() : String();
             if (!pressed)
                 QCoreApplication::postEvent(&m_window, new QKeyEvent(QEvent::KeyPress, key, modifiers, text));
             if (pressed || it->hold == 0) {
@@ -255,27 +255,27 @@ int Vertigo::start(const Options &options)
                     const Vector3D current = scenario->current(pos);
                     const fight::Player *player = scenario->player();
                     const fight::HeadMotion &head = scenario->headMotion();
-                    std::cout << QString("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg%14")
+                    std::cout << String("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg%14")
                         .arg(options.scenario).arg(int(scenario->time()))
                         .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
                         .arg(int(scenario->height())).arg(int(scenario->player()->speed()))
                         .arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1)
                         .arg(player->shield(0)).arg(player->shield(1)).arg(player->shield(2)).arg(player->shield(3))
                         .arg(scenario->playerDestroyed() ? " destroyed" : "")
-                        .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1).toUtf8().constData() << std::endl;
+                        .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1) << std::endl;
                 }
                 for (const auto &record : scenario->objectRecords()) {
                     if (record.id != id)
                         continue;
                     const Vector3D pos = record.object->position();
-                    QString line = QString("%1 t%2 %3: cell %4 %5 h%6")
+                    String line = String("%1 t%2 %3: cell %4 %5 h%6")
                         .arg(options.scenario).arg(int(scenario->time())).arg(id)
                         .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
                         .arg(int(pos.z - scenario->surface().heightAt(pos.x, pos.y)));
                     if (!record.object->isEnabled())
                         line += " disabled";
                     if (fight::ActiveObject *unit = dynamic_cast<fight::ActiveObject *>(record.object)) {
-                        line += QString(" %1 km/h shield %2").arg(int(glm::length(unit->velocity())*3.6f)).arg(unit->kineticShield());
+                        line += String(" %1 km/h shield %2").arg(int(glm::length(unit->velocity())*3.6f)).arg(unit->kineticShield());
                         if (unit->eventAttack()->isCompleted())
                             line += " attacked";
                         if (unit->eventDestroy()->isCompleted())
@@ -283,11 +283,11 @@ int Vertigo::start(const Options &options)
                     }
                     if (const fight::ActiveObject *unit = dynamic_cast<const fight::ActiveObject *>(record.object)) {
                         if (unit->orders() && unit->orders()->currentSlot())
-                            line += QString(" order %1 %2").arg(unit->orders()->current()).arg(unit->orders()->state());
+                            line += String(" order %1 %2").arg(unit->orders()->current()).arg(unit->orders()->state());
                         else if (unit->orders())
                             line += " orders done";
                     }
-                    std::cout << line.toUtf8().constData() << std::endl;
+                    std::cout << line << std::endl;
                 }
             }
         }
@@ -327,7 +327,7 @@ int Vertigo::start(const Options &options)
             if (record.object->isEnabled())
                 enabled++;
         static const char *results[] = { "success", "failed", "aborted", "timeout", "died" };
-        std::cout << options.scenario.toUtf8().constData() << ": " << results[result]
+        std::cout << options.scenario << ": " << results[result]
                   << " after " << elapsed() << " s, " << enabled << "/" << scenario->objectRecords().size()
                   << " units enabled, " << scenario->radio().size() << " radio messages, "
                   << scenario->torpedoesLaunched() << " torpedoes" << std::endl;
@@ -336,29 +336,29 @@ int Vertigo::start(const Options &options)
     return result;
 }
 
-int Vertigo::check(const QStringList &names)
+int Vertigo::check(const StringList &names)
 {
-    QStringList scenarios = names;
+    StringList scenarios = names;
     if (scenarios.isEmpty()) {
         const QDir dir(util::DataPath::resolve("vfx:scenario"));
         foreach (const QString &file, dir.entryList(QStringList() << "*.des", QDir::Files, QDir::Name))
-            scenarios << QFileInfo(file).completeBaseName().toLower();
+            scenarios << String(QFileInfo(file).completeBaseName()).toLower();
     }
 
     QTextStream out(stdout);
-    QMap<QString, int> totals;
+    QMap<String, int> totals;
     int objects = 0;
-    foreach (const QString &name, scenarios) {
+    for (const String &name : scenarios) {
         fight::Scenario scenario(name);
-        QMap<QString, int> counts;
-        foreach (const QString &issue, scenario.loadReport())
+        QMap<String, int> counts;
+        for (const String &issue : scenario.loadReport())
             counts[issue]++;
 
         out << name << ": " << scenario.objectRecords().size() << " objects\n";
         for (auto it = counts.cbegin(); it != counts.cend(); ++it) {
             out << "  " << it.value() << "x " << it.key() << "\n";
             // object ids differ between missions, so don't tell them apart in the totals
-            QString kind = it.key();
+            String kind = it.key();
             if (kind.startsWith("condition: "))
                 kind.replace(QRegularExpression("\\d+"), "#");
             totals[kind] += it.value();
@@ -368,7 +368,7 @@ int Vertigo::check(const QStringList &names)
     }
 
     // totals per kind of issue, most frequent first
-    QMultiMap<int, QString> byCount;
+    QMultiMap<int, String> byCount;
     for (auto it = totals.cbegin(); it != totals.cend(); ++it)
         byCount.insert(it.value(), it.key());
     out << "\nTotal: " << scenarios.size() << " missions, " << objects << " objects\n";
@@ -388,7 +388,7 @@ void Vertigo::createChapter()
     ));
 }
 
-void Vertigo::startGame(const QString &name)
+void Vertigo::startGame(const String &name)
 {
     if (name.isEmpty())
         return;
@@ -404,7 +404,7 @@ void Vertigo::startGame(const QString &name)
     m_intro->play([this]() { introFinished(); });
 }
 
-void Vertigo::loadGame(const QString &name)
+void Vertigo::loadGame(const String &name)
 {
     createChapter();
     m_chapter->load(name);

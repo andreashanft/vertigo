@@ -30,6 +30,7 @@
 #include <map>
 #include <deque>
 #include <list>
+#include "util/string.hpp"
 
 namespace game {
 
@@ -44,14 +45,14 @@ private:
     {
     public:
         int model;
-        QString mounting;
+        String mounting;
         int state;
         int cost;
         ui::Label lblState;
         ui::Label lblCost;
         ui::Button btnRepair;
         
-        RepairItem(int model, const QString &mounting, ui::Label *parent) : model(model), mounting(mounting), lblState(parent), lblCost(parent), btnRepair(parent) { }
+        RepairItem(int model, const String &mounting, ui::Label *parent) : model(model), mounting(mounting), lblState(parent), lblCost(parent), btnRepair(parent) { }
     };
 
 public:

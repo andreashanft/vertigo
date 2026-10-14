@@ -33,12 +33,13 @@ namespace game {
 
 Chapter *Chapter::m_singleton = NULL;
 
+// a path, which can hold any character
 static QString dataLocation()
 {
     return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 }
 
-Chapter::Chapter(const QString &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame) :
+Chapter::Chapter(const String &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame) :
     m_code(-1),
     m_area(NULL),
     m_desktop(NULL),
@@ -100,12 +101,12 @@ Chapter::~Chapter()
 void Chapter::loadChapter(int chapter)
 {
     if (m_code != -1) {
-        m_tasksFile.setSection(QString("localtask_%1").arg(m_code));
-        foreach (const QString &key, m_tasksFile.keys().filter(QRegularExpression("^task\\d*")))
+        m_tasksFile.setSection(String("localtask_%1").arg(m_code));
+        for (const String &key : m_tasksFile.keys().filter(QRegularExpression("^task\\d*")))
             m_runningTasks.removeAll(m_tasksFile.value(key).toInt());
     }
 
-    load(QString("dat:story/ch%1.des").arg(chapter), false);
+    load(String("dat:story/ch%1.des").arg(chapter), false);
 }
 
 
@@ -139,56 +140,56 @@ void Chapter::load(const QString &filename, bool load)
     m_code = file.value("code").toInt();
     m_area = new Area(file.value("area").toString());
     m_stations = m_area->stations();
-    const QString startStation = file.value("startstation").toString();
+    const String startStation = file.value("startstation").toString();
 
     int startStationIndex = 0;
     foreach (const Station &station, m_area->stations()) {
-        file.setSection(QString("station%1").arg(station.index()));
+        file.setSection(String("station%1").arg(station.index()));
         if (file.contains("approachmoviereplacement"))
             replaceApproachMovie(station.index(), file.value("approachmoviereplacement").toString());
 
         if (station.shortName() == startStation)
             startStationIndex = station.index();
 
-        foreach (const QString &key, file.keys().filter(QRegularExpression("^mission\\d*")))
+        for (const String &key : file.keys().filter(QRegularExpression("^mission\\d*")))
             addMission(file.value(key).toString(), station.index());
     }
 
     file.setSection("pendingdialogues");
-    foreach (const QString &key, file.keys().filter(QRegularExpression("^dialogue\\d*")))
+    for (const String &key : file.keys().filter(QRegularExpression("^dialogue\\d*")))
         addDialog(file.value(key).toInt());
 
     file.setSection("successmissions");
     if (file.value("clearmissions").toString().toLower() == "yes")
         m_successfulMissions.clear();
-    foreach (const QString &key, file.keys().filter(QRegularExpression("^mission\\d*")))
+    for (const String &key : file.keys().filter(QRegularExpression("^mission\\d*")))
         m_successfulMissions.append(file.value(key).toString());
 
-    file.setSection(QString("area%1").arg(m_area->code()));
-    foreach (const QString &key, file.keys().filter(QRegularExpression("^mission\\d*")))
+    file.setSection(String("area%1").arg(m_area->code()));
+    for (const String &key : file.keys().filter(QRegularExpression("^mission\\d*")))
         addMission(file.value(key).toString(), -1);
 
     file.setSection("runningtasks");
     if (file.value("cleartasks").toString().toLower() == "yes")
         m_runningTasks.clear();
-    foreach (const QString &key, file.keys().filter(QRegularExpression("^task\\d*")))
+    for (const String &key : file.keys().filter(QRegularExpression("^task\\d*")))
         addTask(file.value(key).toInt());
 
     file.setSection("messageboard");
     if (file.value("clearboard").toString().toLower() == "yes")
         m_messages.clear();
-    foreach (const QString &key, file.keys().filter(QRegularExpression("^message\\d*")))
+    for (const String &key : file.keys().filter(QRegularExpression("^message\\d*")))
         addMessage(file.value(key).toInt());
 
     file.setSection("disabledstations");
-    foreach (const QString &key, file.keys().filter(QRegularExpression("^station\\d*")))
+    for (const String &key : file.keys().filter(QRegularExpression("^station\\d*")))
         disableStation(file.value(key).toInt());
 
     file.setSection("statistics");
     m_numSmallTalks = file.value("numofsmalltalkssincelaststory", 0).toInt();
 
     file.setSection("movies");
-    foreach (const QString &key, file.keys().filter(QRegularExpression("^movie\\d*")))
+    for (const String &key : file.keys().filter(QRegularExpression("^movie\\d*")))
         m_playedMovies << file.value(key).toInt();
 
     file.setSection("Ship");
@@ -211,7 +212,8 @@ void Chapter::save() const
     txt::DesFile file;
 
     file.setValue("name", m_desktop->name());
-    file.setValue("time", QDateTime::currentDateTime());
+    // as QVariant wrote the time before
+    file.setValue("time", String(QDateTime::currentDateTime().toString(Qt::ISODateWithMs)));
     file.setValue("credit", m_credits);
 
     file.setSection("chapter");
@@ -224,31 +226,31 @@ void Chapter::save() const
     int i = 1;
     file.setSection("pendingdialogues");
     foreach (int dialog, m_pendingDialogues.keys()) {
-        file.setValue(QString("dialogue%1").arg(i++), dialog);
+        file.setValue(String("dialogue%1").arg(i++), dialog);
     }
 
     file.setSection("runningtasks");
     file.setValue("cleartasks", "yes");
     i = 1;
     foreach (int task, m_runningTasks)
-        file.setValue(QString("task%1").arg(i++), task);
+        file.setValue(String("task%1").arg(i++), task);
 
     file.setSection("messageboard");
     file.setValue("clearboard", "yes");
     i = 1;
     foreach (int message, m_messages)
-        file.setValue(QString("message%1").arg(i++), message);
+        file.setValue(String("message%1").arg(i++), message);
 
     file.setSection("successmissions");
     file.setValue("clearmissions", "yes");
     i = 1;
-    foreach (const QString &mission, m_successfulMissions)
-        file.setValue(QString("mission%1").arg(i++), mission);
+    for (const String &mission : m_successfulMissions)
+        file.setValue(String("mission%1").arg(i++), mission);
 
-    QMapIterator<int, QString> it(m_approachMovieReplacement);
+    QMapIterator<int, String> it(m_approachMovieReplacement);
     while (it.hasNext()) {
         it.next();
-        file.setSection(QString("station%1").arg(it.key()));
+        file.setSection(String("station%1").arg(it.key()));
         file.setValue("approachmoviereplacement", it.value());
     }
 
@@ -256,24 +258,24 @@ void Chapter::save() const
     i = 0;
     foreach (const Station &station, m_stations) {
         if (!station.isEnabled())
-            file.setValue(QString("station%1").arg(i++), station.index());
+            file.setValue(String("station%1").arg(i++), station.index());
     }
 
     i = 1;
     foreach (const Mission *mission, m_missions) {
         if (mission->station() == -1) {
-            file.setSection(QString("area%1").arg(m_area->code()));
-            file.setValue(QString("mission%1").arg(i++), mission->shortName());
+            file.setSection(String("area%1").arg(m_area->code()));
+            file.setValue(String("mission%1").arg(i++), mission->shortName());
         } else {
-            file.setSection(QString("station%1").arg(mission->station()));
-            file.setValue(QString("mission%1").arg(i++), mission->shortName()); // TODO: Mission index
+            file.setSection(String("station%1").arg(mission->station()));
+            file.setValue(String("mission%1").arg(i++), mission->shortName()); // TODO: Mission index
         }
     }
 
     file.setSection("movies");
     i = 0;
     foreach (int movie, m_playedMovies)
-        file.setValue(QString("movie%1").arg(i++), movie);
+        file.setValue(String("movie%1").arg(i++), movie);
 
     file.setSection("Ship");
     file.setValue("type", m_boat->type());
@@ -281,7 +283,7 @@ void Chapter::save() const
     for (i = 0; i < m_boat->mountings().size(); i++)
     {
         const Boat::Mounting &mounting = m_boat->mountings()[i];
-        file.setSection(QString("ShipMounting%1").arg(i));
+        file.setSection(String("ShipMounting%1").arg(i));
 
         std::vector<int> items = m_boat->getItems(mounting.name);
         file.setValue("side", mounting.side);
@@ -300,7 +302,7 @@ void Chapter::save() const
             if (item->type == Items::Fixer)
                 file.setValue("fixer", 0);
             if (item->type == Items::Buzzer)
-                file.setValue(QString("buzzer%1").arg(buzzer++), 0);
+                file.setValue(String("buzzer%1").arg(buzzer++), 0);
             if (item->type == Items::Engine)
                 file.setValue("engine", model);
             if (item->type == Items::Booster)
@@ -312,7 +314,7 @@ void Chapter::save() const
             if (item->type == Items::Magazine)
                 file.setValue("model", model);
             if (item->type == Items::Torpedo)
-                file.setValue(QString("torpedo%1").arg(torpedo++), model);
+                file.setValue(String("torpedo%1").arg(torpedo++), model);
             if (item->type == Items::Software)
                 file.setValue("software", model);
         }
@@ -328,16 +330,14 @@ void Chapter::save() const
     file.setValue("Tur1", m_boat->defects()[Boat::DefectTur1]);
     file.setValue("Tur2", m_boat->defects()[Boat::DefectTur2]);
 
-    const QString path = dataLocation();
-    file.save(QString("%1/save/%2.des").arg(path, m_name));
+    file.save(QString("%1/save/%2.des").arg(dataLocation(), QString(m_name)));
 }
 
 
-void Chapter::load(const QString &name)
+void Chapter::load(const String &name)
 {
     m_name = name;
-    const QString path = dataLocation();
-    load(QString("%1/save/%2.des").arg(path, name), true);
+    load(QString("%1/save/%2.des").arg(dataLocation(), QString(name)), true);
 }
 
 
@@ -367,9 +367,9 @@ void Chapter::setStation(int stationIndex, bool load)
     }
 
     if (m_movieHarbour && previousStation >= 0)
-        m_movies.emplace(QString("gfx:mvi/film/%1hf.mvi").arg(m_boat->moviePrefix()), Movie::MovieTransit, 
+        m_movies.emplace(String("gfx:mvi/film/%1hf.mvi").arg(m_boat->moviePrefix()), Movie::MovieTransit, 
                          txt::StringTable::get(txt::Movie_Dock), 
-                         QString("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Leaving)).arg(m_stations[previousStation].name()));
+                         String("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Leaving)).arg(m_stations[previousStation].name()));
 
     if (!m_mission && !load)
         playApproach(true);
@@ -378,7 +378,7 @@ void Chapter::setStation(int stationIndex, bool load)
 }
 
 
-void Chapter::startMission(const QString &name)
+void Chapter::startMission(const String &name)
 {
     if (m_desktop) {
         save();
@@ -397,9 +397,9 @@ void Chapter::startMission(const QString &name)
     }
 
     if (m_movieHarbour)
-        m_movies.emplace(QString("gfx:mvi/film/%1hf.mvi").arg(m_boat->moviePrefix()), Movie::MovieTransit,
+        m_movies.emplace(String("gfx:mvi/film/%1hf.mvi").arg(m_boat->moviePrefix()), Movie::MovieTransit,
                          txt::StringTable::get(txt::Movie_Dock),
-                         QString("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Leaving)).arg(m_stations[m_currentStation].name()));
+                         String("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Leaving)).arg(m_stations[m_currentStation].name()));
 
     m_currentStation = -1;
 
@@ -485,7 +485,7 @@ void Chapter::restartMission()
 void Chapter::loadLastSave()
 {
     Q_ASSERT(m_scenario);
-    if (!QFile::exists(QString("%1/save/%2.des").arg(dataLocation(), m_name))) {
+    if (!QFile::exists(QString("%1/save/%2.des").arg(dataLocation(), QString(m_name)))) {
         restartMission();
         return;
     }
@@ -500,7 +500,7 @@ void Chapter::loadLastSave()
 void Chapter::playApproach(bool autopilot)
 {
     if (m_approachMovieReplacement.contains(m_currentStation)) {
-        const QString movie = m_approachMovieReplacement.take(m_currentStation);
+        const String movie = m_approachMovieReplacement.take(m_currentStation);
         const QRegularExpressionMatch match = QRegularExpression("d(\\d*)\\.mvi").match(movie);
         if (match.hasMatch()) {
             m_playedMovies << match.captured(1).toInt();
@@ -510,9 +510,9 @@ void Chapter::playApproach(bool autopilot)
         m_movies.emplace("gfx:mvi/film/" + movie, Movie::MovieFilm);
     } else {
         if (m_movieAutopilot && autopilot)
-            m_movies.emplace(QString("gfx:mvi/film/%1fl.mvi").arg(m_boat->moviePrefix()), Movie::MovieTransit,
+            m_movies.emplace(String("gfx:mvi/film/%1fl.mvi").arg(m_boat->moviePrefix()), Movie::MovieTransit,
                              txt::StringTable::get(txt::Movie_Autopilot),
-                             QString("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Approaching)).arg(m_desktop->name()));
+                             String("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Approaching)).arg(m_desktop->name()));
         if (m_movieApproach)
             m_movies.emplace(m_desktop->approachMovie(), Movie::MovieStation, m_desktop->name(), m_desktop->description());
     }
@@ -521,7 +521,7 @@ void Chapter::playApproach(bool autopilot)
 
 void Chapter::playMovie(int movie)
 {
-    m_movies.emplace(QString("gfx:mvi/film/d%1.mvi").arg(movie, 2, 10, QChar('0')), Movie::MovieFilm);
+    m_movies.emplace(String("gfx:mvi/film/d%1.mvi").arg(movie, 2, 10, '0'), Movie::MovieFilm);
     playMovies();
 }
 
@@ -566,7 +566,7 @@ void Chapter::quit()
 }
 
 
-void Chapter::replaceApproachMovie(int station, const QString &movie)
+void Chapter::replaceApproachMovie(int station, const String &movie)
 {
     m_approachMovieReplacement.insert(station, movie);
 }
@@ -666,8 +666,8 @@ void Chapter::addDialog(int dialogId)
         [this](int n) { addCredit(n); },
         [this](int n) { enableStation(n); },
         [this](int n) { disableStation(n); },
-        [this](QString mission, int station) { addMission(mission, station); },
-        [this](int station, QString movie) { replaceApproachMovie(station, movie); },
+        [this](String mission, int station) { addMission(mission, station); },
+        [this](int station, String movie) { replaceApproachMovie(station, movie); },
         [this](int type) { upgradeBoat(type); },
         [this]() { gameOver(); }
     );
@@ -703,7 +703,7 @@ void Chapter::disableStation(int station)
 }
 
 
-void Chapter::addMission(const QString &mission, int station)
+void Chapter::addMission(const String &mission, int station)
 {
     m_missions.append(new Mission(mission, station));
 }
@@ -739,7 +739,7 @@ QList<Task> Chapter::tasks()
     m_tasksFile.setSection("Task");
     QList<Task> t;
     foreach (int id, m_runningTasks)
-        t.append(Task(m_tasksFile.value(QString("Task_%1").arg(id)).toString()));
+        t.append(Task(m_tasksFile.value(String("Task_%1").arg(id)).toString()));
     return t;
 }
 
@@ -748,20 +748,17 @@ QList<Chapter::SavedGame> Chapter::savedGames()
 {
     QList<SavedGame> saves;
 
-    const QString path = dataLocation();
-    QDir dir(path + "/save");
+    QDir dir(dataLocation() + "/save");
     const QRegularExpression reg("(.*)\\.des");
     foreach (const QString &save, dir.entryList()) {
         const QRegularExpressionMatch match = reg.match(save);
         if (match.hasMatch()) {
-            const QString filename = dir.filePath(save);
-
-            txt::DesFile file(filename);
+            txt::DesFile file(dir.filePath(save));
 
             SavedGame game;
-            game.name = match.captured(1);
+            game.name = String(match.captured(1));
             game.station = file.value("name").toString();
-            game.time = file.value("time").toDateTime();
+            game.time = QDateTime::fromString(file.value("time").toString(), Qt::ISODate);
             saves << game;
         }
     }

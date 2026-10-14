@@ -21,7 +21,7 @@
 #include "module.h"
 
 #include <map>
-#include <QString>
+#include "util/string.hpp"
 
 namespace gfx { class TextureManager; }
 
@@ -33,11 +33,11 @@ public:
     ModuleManager(gfx::TextureManager &texMan);
 
 public:
-    Module* get(const QString &name);
+    Module* get(const String &name);
 
 private:
     gfx::TextureManager &m_textureManager;
-    std::map<QString, Module> m_modules;
+    std::map<String, Module> m_modules;
 };
 
 } // namespace fight

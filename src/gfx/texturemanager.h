@@ -21,6 +21,7 @@
 
 #include "texture.h"
 #include <QMap>
+#include "util/string.hpp"
 
 
 namespace gfx {
@@ -32,10 +33,10 @@ public:
     TextureManager();
 
 public:
-    Texture getModule(const QString &filename, bool colorKey = false);
+    Texture getModule(const String &filename, bool colorKey = false);
 
 private:
-    QMap<QString, Texture> m_textures;
+    QMap<String, Texture> m_textures;
 };
 
 

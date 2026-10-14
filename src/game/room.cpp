@@ -25,7 +25,7 @@
 namespace game {
 
 
-Room::Room(int index, const QString &title, const QString &name,
+Room::Room(int index, const String &title, const String &name,
     std::function<void()> funcClose,
     std::function<void(Dialog*)> funcStartDialog,
     std::function<void(Dialog*)> funcStartEnCom,
@@ -46,8 +46,8 @@ Room::Room(int index, const QString &title, const QString &name,
     txt::DesFile file("dat:world/" + name + ".des");
     file.setSection("Room");
 
-    const QString background = file.value("BackGround").toString();
-    const QString backgroundSound = file.value("Sound").toString();
+    const String background = file.value("BackGround").toString();
+    const String backgroundSound = file.value("Sound").toString();
     m_backgroundImage = gfx::Image::loadPCX("gfx:pic/room/" + background + ".pcx").toRgb565();
     m_miniMovie.setColorTable(m_backgroundImage.colorTable());
     m_backgroundSound.load("sfx:snd/room/" + backgroundSound + ".pcm");
@@ -65,8 +65,8 @@ Room::Room(int index, const QString &title, const QString &name,
 
     file.setSection("Dock");
     if (file.contains("Name")) {
-        const QString name = file.value("Name").toString();
-        const QString sound = file.value("Sound").toString();
+        const String name = file.value("Name").toString();
+        const String sound = file.value("Sound").toString();
         const int rate = file.value("Rate", 0).toInt();
         m_dockSound.load("sfx:snd/room/" + sound + ".pcm", rate);
 
@@ -76,7 +76,7 @@ Room::Room(int index, const QString &title, const QString &name,
 
     int personId = 1;
     for (;;) {
-        file.setSection(QString("Person%1").arg(personId));
+        file.setSection(String("Person%1").arg(personId));
 
         if (!file.contains("Arrow"))
             break;

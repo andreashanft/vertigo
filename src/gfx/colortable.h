@@ -21,6 +21,7 @@
 #include "util/file.h"
 
 #include <QImage>
+#include "util/string.hpp"
 
 namespace gfx {
 
@@ -29,10 +30,10 @@ class ColorTable : public QVector<QRgb>
 public:
     ColorTable();
     ColorTable(const QVector<QRgb> &colorTable);
-    ColorTable(const QString &filename);
+    ColorTable(const String &filename);
 
 public:
-    bool loadFromFile(const QString &filename);
+    bool loadFromFile(const String &filename);
     void load(const QByteArray &data);
     void load(util::File &file);
     void toRgb565();

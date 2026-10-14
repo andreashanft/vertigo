@@ -26,6 +26,7 @@
 
 #include <QElapsedTimer>
 #include <functional>
+#include "util/string.hpp"
 
 namespace game {
 
@@ -33,7 +34,7 @@ namespace game {
 class MiniMovie
 {
 public:
-    MiniMovie(const QString &path, std::function<void()> &&funcFinished);
+    MiniMovie(const String &path, std::function<void()> &&funcFinished);
     ~MiniMovie();
 
 public:
@@ -55,7 +56,7 @@ private:
         bool oneShot;
     };
 
-    QString m_path;
+    String m_path;
     QList<Video*> m_videos;
     QElapsedTimer m_time;
     gfx::ColorTable m_colorTable;

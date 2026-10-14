@@ -43,17 +43,17 @@ Image& Image::toRgb565()
     return *this;
 }
 
-Image Image::load(const QString &filename, const QVector<QRgb> &colorTable)
+Image Image::load(const String &filename, const QVector<QRgb> &colorTable)
 {
-    util::File file(QString(filename).replace(":", "/").toUtf8().data());
+    util::File file(String(filename).replace(":", "/").toUtf8().data());
     std::uint16_t type;
     file >> type;
     return load(file, Type(type), colorTable);
 }
 
-Image Image::load(const QString &filename, int w, int h, bool colorKey)
+Image Image::load(const String &filename, int w, int h, bool colorKey)
 {
-    util::File file(QString(filename).replace(":", "/").toUtf8().data());
+    util::File file(String(filename).replace(":", "/").toUtf8().data());
 
     QImage image(w, h, colorKey ? QImage::Format_ARGB32 : QImage::Format_RGB888);
 
@@ -75,9 +75,9 @@ Image Image::load(const QString &filename, int w, int h, bool colorKey)
     return image;
 }
 
-Image Image::loadPCX(const QString &filename)
+Image Image::loadPCX(const String &filename)
 {
-    util::File file(QString(filename).replace(":", "/").toUtf8().data());
+    util::File file(String(filename).replace(":", "/").toUtf8().data());
 
     struct
     {
@@ -145,7 +145,7 @@ Image Image::loadPCX(const QString &filename)
     return image;
 }
 
-QCursor Image::loadCursor(const QString &filename, const QVector<QRgb> &colorTable)
+QCursor Image::loadCursor(const String &filename, const QVector<QRgb> &colorTable)
 {
     const QImage image = load(filename, colorTable);
 

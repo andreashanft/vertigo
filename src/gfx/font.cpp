@@ -33,9 +33,9 @@ FontPrivate::FontPrivate() :
 
 }
 
-void FontPrivate::load(const QString &filename, const QVector<QRgb> &colorTable, bool scale, bool smooth)
+void FontPrivate::load(const String &filename, const QVector<QRgb> &colorTable, bool scale, bool smooth)
 {
-    util::File file(QString(filename).replace(":", "/").toUtf8().data());
+    util::File file(String(filename).replace(":", "/").toUtf8().data());
 
     int scaleFactor = scale ? 2 : 1;
     const float res = 256 * scaleFactor;
@@ -107,7 +107,7 @@ void FontPrivate::load(const QString &filename, const QVector<QRgb> &colorTable,
     m_height = maxHeight / scaleFactor;
 }
 
-Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCenter, bool alignBottom, const ClipRect *clipRect)
+Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCenter, bool alignBottom, const ClipRect *clipRect)
 {
     m_texture.bind();
 
@@ -119,7 +119,7 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
             drawRect.x += (dstRect.width - totalW) / 2;
     }
 
-    QStringList strings = text.split(" ");
+    StringList strings = text.split(" ");
     if (alignBottom) {
         const int totalH = height(dstRect.width, strings);
         if (dstRect.height > totalH)
@@ -145,7 +145,7 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
     bool highlight = false;
     int lineWidth = 0;
     int current = 0;
-    foreach (QString word, strings) {
+    for (String word : strings) {
         if (++current < strings.size())
             word += " ";
         const int wordWidth = width(word);
@@ -157,12 +157,12 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
             lineWidth = 0;
         }
 
-        const QByteArray latin1 = word.toLatin1();
-        for (int i = 0; i < latin1.length(); i++) {
+        const std::string latin1 = word.toLatin1();
+        for (int i = 0; i < int(latin1.length()); i++) {
             quint8 c = latin1[i];
             if (c == '~') {
                 i++;
-                c = word[i].toLatin1();
+                c = word[i];
                 switch (c) {
                 case '0':
                     highlight = false;
@@ -207,11 +207,11 @@ Rect FontPrivate::draw(const QString &text, const Rect &dstRect, bool alignHCent
     return drawRect;
 }
 
-int FontPrivate::height(int w, const QStringList &strings) const
+int FontPrivate::height(int w, const StringList &strings) const
 {
     int totalHeight = m_height;
     int lineWidth = 0.0f;
-    foreach (QString word, strings) {
+    for (String word : strings) {
         word += " ";
         const int wordWidth = width(word);
         if (w > 0 && lineWidth + wordWidth > w) {
@@ -225,11 +225,11 @@ int FontPrivate::height(int w, const QStringList &strings) const
     return totalHeight;
 }
 
-int FontPrivate::width(const QString &text) const
+int FontPrivate::width(const String &text) const
 {
     int totalW = 0;
-    const QByteArray latin1 = text.toLatin1();
-    for (int i = 0; i < latin1.size(); i++) {
+    const std::string latin1 = text.toLatin1();
+    for (int i = 0; i < int(latin1.size()); i++) {
         quint8 c = latin1[i];
         if (c == '~') {
             i++;

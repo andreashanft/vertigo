@@ -25,6 +25,7 @@
 #include "collisionmesh.h"
 
 #include <list>
+#include "util/string.hpp"
 
 
 namespace gfx { class TextureManager; }
@@ -36,7 +37,7 @@ namespace fight {
 class Module
 {
 public:
-    Module(gfx::TextureManager &texMan, const QString &name);
+    Module(gfx::TextureManager &texMan, const String &name);
 
 public:
     void draw();

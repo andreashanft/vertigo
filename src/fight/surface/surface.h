@@ -24,6 +24,7 @@
 #include <map>
 #include <vector>
 #include <QImage>
+#include "util/string.hpp"
 
 namespace gfx { class Texture; }
 
@@ -33,7 +34,7 @@ class Surface
 {
 public:
     Surface();
-    void load(const QString &name, int maxheightscale, int mapping);
+    void load(const String &name, int maxheightscale, int mapping);
 
 public:
     void draw(const Vector3D &position, const Vector3D &direction);

@@ -35,17 +35,17 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle
     Vector3D scale = scenario->surface().scale();
     m_position = Vector3D(x + 0.5f, y + 0.5f - size, 0)*scale;
 
-    while (file.sections().contains(QString("cluster%1").arg(i))) {
-        file.setSection(QString("cluster%1").arg(i));
+    while (file.sections().contains(String("cluster%1").arg(i))) {
+        file.setSection(String("cluster%1").arg(i));
 
         m_clusters.emplace_back();
         Cluster &cluster = m_clusters.back();
         cluster.module = scenario->moduleManager().get(file.value("base").toString());
 
-        file.setSection(QString("size%1").arg(i));
+        file.setSection(String("size%1").arg(i));
         cluster.scale = file.value("scale").toFloat() * 16;
 
-        file.setSection(QString("position%1").arg(i));
+        file.setSection(String("position%1").arg(i));
         int offsetX = file.value("OffsetX").toInt();
         int offsetY = file.value("OffsetY").toInt();
         cluster.offset.x = offsetX;

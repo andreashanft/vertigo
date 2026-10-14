@@ -20,6 +20,7 @@
 
 
 #include "simpleobject.h"
+#include "util/string.hpp"
 
 
 namespace fight {
@@ -48,7 +49,7 @@ private:
 private:
     std::unique_ptr<Object> m_body;
     Vector3D m_turretPosition; // model units
-    QString m_turretName;
+    String m_turretName;
     float m_yaw;               // radians, 0 is +y, increasing to the right
     float m_pitch;
     float m_targetYaw;

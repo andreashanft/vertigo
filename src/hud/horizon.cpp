@@ -90,16 +90,16 @@ Horizon::Horizon(HUD *hud, glm::ivec2 center, const txt::DesFile &file) :
     std::vector<int> upColors(file.value("UP_NumOfPoints").toInt());
     for (i = 0; i < upPoints.size(); i++)
     {
-        upPoints[i] = PointF(file.value(QString("UP_PointX%1").arg(i)).toFloat(), file.value(QString("UP_PointY%1").arg(i)).toFloat());
-        upColors[i] = file.value(QString("UP_Color%1").arg(i)).toInt();
+        upPoints[i] = PointF(file.value(String("UP_PointX%1").arg(i)).toFloat(), file.value(String("UP_PointY%1").arg(i)).toFloat());
+        upColors[i] = file.value(String("UP_Color%1").arg(i)).toInt();
     }
         
     std::vector<PointF> downPoints(file.value("DN_NumOfPoints").toInt());
     std::vector<int> downColors(file.value("DN_NumOfPoints").toInt());
     for (i = 0; i < downPoints.size(); i++)
     {
-        downPoints[i] = PointF(file.value(QString("DN_PointX%1").arg(i)).toFloat(), file.value(QString("DN_PointY%1").arg(i)).toFloat());
-        downColors[i] = file.value(QString("DN_Color%1").arg(i)).toInt();
+        downPoints[i] = PointF(file.value(String("DN_PointX%1").arg(i)).toFloat(), file.value(String("DN_PointY%1").arg(i)).toFloat());
+        downColors[i] = file.value(String("DN_Color%1").arg(i)).toInt();
     }
 
     PointF c(upPoints[1].x, 10);

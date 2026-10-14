@@ -29,7 +29,7 @@ SimpleObject::SimpleObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 {
     // composite objects (cargo ships) have no model of their own and set up their box themselves
     file.setSection("cluster");
-    const QString base = file.contains("base") ? file.value("base").toString() : file.value("name").toString();
+    const String base = file.contains("base") ? file.value("base").toString() : file.value("name").toString();
     m_base = base.isEmpty() ? nullptr : scenario->moduleManager().get(base);
 
     file.setSection("size");

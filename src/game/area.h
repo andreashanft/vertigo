@@ -21,6 +21,7 @@
 
 #include "station.h"
 #include <QMap>
+#include "util/string.hpp"
 
 
 namespace game {
@@ -30,23 +31,23 @@ class Area
 {
 public:
     Area();
-    Area(const QString &name);
+    Area(const String &name);
 
 public:
     int code() const { return m_code; }
-    const QString& shortName() const { return m_shortName; }
-    QString map() const { return m_map; }
+    const String& shortName() const { return m_shortName; }
+    String map() const { return m_map; }
     QMap<int, Station> stations() const { return m_stations; }
 
 private:
     Q_DISABLE_COPY(Area);
-    void load(const QString &name);
+    void load(const String &name);
 
 private:
     int m_code;
-    QString m_shortName;
-    QString m_name;
-    QString m_map;
+    String m_shortName;
+    String m_name;
+    String m_map;
     QMap<int, Station> m_stations;
 };
 

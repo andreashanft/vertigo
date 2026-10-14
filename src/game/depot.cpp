@@ -102,8 +102,8 @@ Depot::Depot(std::function<void()> &&funcClose) :
     m_lblItemText->setAlignCenter(false);
 
 
-    m_videoFlip1.open(QString("gfx:mvi/sflip/%011.mvi").arg(Chapter::get()->boat()->moviePrefix()));
-    m_videoFlip2.open(QString("gfx:mvi/sflip/%012.mvi").arg(Chapter::get()->boat()->moviePrefix()));
+    m_videoFlip1.open(String("gfx:mvi/sflip/%011.mvi").arg(Chapter::get()->boat()->moviePrefix()));
+    m_videoFlip2.open(String("gfx:mvi/sflip/%012.mvi").arg(Chapter::get()->boat()->moviePrefix()));
     m_videoFlip1.setFrameRate(25);
     m_videoFlip2.setFrameRate(25);
     m_videoFlip2.play();
@@ -221,11 +221,11 @@ Depot::Depot(std::function<void()> &&funcClose) :
 
         item.lblState.setFont(gfx::Font::Medium);
         item.lblState.setPosition(98, 131 + i*16);
-        item.lblState.setText(QString("%1%").arg(item.state));
+        item.lblState.setText(String("%1%").arg(item.state));
 
         item.lblCost.setFont(gfx::Font::Medium);
         item.lblCost.setPosition(162, 131 + i*16);
-        item.lblCost.setText(QString("$%1").arg(item.cost));
+        item.lblCost.setText(String("$%1").arg(item.cost));
 
         item.btnRepair.setFont(gfx::Font::Medium);
         item.btnRepair.setDisabledFont(fontMediumDisabled);
@@ -244,7 +244,7 @@ Depot::Depot(std::function<void()> &&funcClose) :
 
     m_repairCost.setFont(gfx::Font::Medium);
     m_repairCost.setPosition(162, 131 + i*16);
-    m_repairCost.setText(QString("$%1").arg(total));
+    m_repairCost.setText(String("$%1").arg(total));
 
     m_repairButton.setFont(gfx::Font::Medium);
     m_repairButton.setDisabledFont(fontMediumDisabled);
@@ -393,7 +393,7 @@ void Depot::updateInfo()
     m_lblItemName->setText(item->longname);
     m_lblItemText->setText(item->text);
 
-    m_videoItem.open(QString("gfx:mvi/thing/%1.mvi").arg(item->imgname));
+    m_videoItem.open(String("gfx:mvi/thing/%1.mvi").arg(item->imgname));
     m_videoItem.setFrameRate(13);
     m_videoItem.playLoop();
     m_itemTexture.createEmpty(m_videoItem.width(), m_videoItem.height(), gfx::Texture::RGBA);
@@ -403,9 +403,9 @@ void Depot::updateInfo()
         if (m_boat->repairCost(item->model, m_boat->mountings()[m_mounting].name) > 0)
             m_lblItemPrice->setText(txt::StringTable::get(txt::Repair_Defective));
         else if (m_boat->canSell(item->model, m_boat->mountings()[m_mounting].name))
-            m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Bid) + QString("%1").arg(price));
+            m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Bid) + String("%1").arg(price));
         else
-            m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Value) + QString("%1").arg(price));
+            m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Value) + String("%1").arg(price));
     }
     if (m_selectedList == 1)
     {
@@ -415,12 +415,12 @@ void Depot::updateInfo()
         {
             int oldPrice = Items::getDepotPrice(oldModel);
             if (oldPrice < price)
-                m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Upgrade) + QString("%1").arg(price - oldPrice));
+                m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Upgrade) + String("%1").arg(price - oldPrice));
             else
-                m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Degrade) + QString("%1").arg(price - oldPrice));
+                m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Degrade) + String("%1").arg(price - oldPrice));
         }
         else
-            m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Cost) + QString("%1").arg(price));
+            m_lblItemPrice->setText(txt::StringTable::get(txt::Depot_Cost) + String("%1").arg(price));
     }
 
     m_lblInfo->show();
@@ -429,7 +429,7 @@ void Depot::updateInfo()
 
 void Depot::updateCredits()
 {
-    m_credits->setText(QString("CREDITS: $%1").arg(Chapter::get()->credits()));
+    m_credits->setText(String("CREDITS: $%1").arg(Chapter::get()->credits()));
 }
 
 
@@ -469,7 +469,7 @@ void Depot::updateButtons()
 
 void Depot::buy()
 {
-    const QString &mounting = m_boat->mountings()[m_mounting].name;
+    const String &mounting = m_boat->mountings()[m_mounting].name;
     if (m_selectedList != 1)
         return;
     Items::Item *item = Items::get(m_list1.at(m_selectedItem));
@@ -504,7 +504,7 @@ void Depot::buy()
 
 void Depot::sell()
 {
-    const QString &mounting = m_boat->mountings()[m_mounting].name;
+    const String &mounting = m_boat->mountings()[m_mounting].name;
     if (m_selectedList != 2 || m_selectedItem >= m_list2.size())
         return;
     Items::Item *item = Items::get(m_list2.at(m_selectedItem));
@@ -706,15 +706,15 @@ void Depot::repairItem(int index)
     item.state = m_boat->repairState(item.model, item.mounting);
     item.cost = m_boat->repairCost(item.model, item.mounting);
 
-    item.lblState.setText(QString("%1%").arg(item.state));
-    item.lblCost.setText(QString("$%1").arg(item.cost));
+    item.lblState.setText(String("%1%").arg(item.state));
+    item.lblCost.setText(String("$%1").arg(item.cost));
     if (item.cost == 0)
         item.btnRepair.disable();
     
     int total = 0;
     for (RepairItem &item : m_repairItems)
         total += item.cost;
-    m_repairCost.setText(QString("$%1").arg(total));
+    m_repairCost.setText(String("$%1").arg(total));
     if (total == 0)
         m_repairButton.disable();
     updateCredits();

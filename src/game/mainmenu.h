@@ -24,6 +24,7 @@
 #include "ui/button.h"
 #include <QElapsedTimer>
 #include <list>
+#include "util/string.hpp"
 
 namespace game {
 
@@ -33,7 +34,7 @@ private:
     enum State { Invalid, Presents, Title, Loading };
 
 public:
-    MainMenu(std::function<void(QString)> funcStartGame, std::function<void(QString)> funcLoadGame, std::function<void()> funcQuit);
+    MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void()> funcQuit);
 
 private:
     void showMain();
@@ -75,12 +76,12 @@ private:
     ui::Label m_lblLoadingWait;
 
     sfx::Sound m_backgroundSound;
-    QString m_name;
+    String m_name;
     bool m_cursor;
     QElapsedTimer m_time;
-    std::function<void(QString)> m_funcStartGame;
-    std::function<void(QString)> m_funcLoadGame;
-    QString m_loadingGame;
+    std::function<void(String)> m_funcStartGame;
+    std::function<void(String)> m_funcLoadGame;
+    String m_loadingGame;
 };
 
 } // namespace game

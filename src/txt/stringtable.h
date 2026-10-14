@@ -19,7 +19,7 @@
 #define TXT_STRINGTABLE_H
 
 
-#include <QStringList>
+#include "util/string.hpp"
 
 
 namespace txt {
@@ -319,14 +319,14 @@ class StringTable
 {
 public:
     static bool load();
-    static const QString& language() { return m_language; }
-    static QString get(StringId string);
-    static QString get(StringFight string);
+    static const String& language() { return m_language; }
+    static String get(StringId string);
+    static String get(StringFight string);
 
 private:
-    static QString m_language;
-    static QStringList m_tableDesktop;
-    static QStringList m_tableFight;
+    static String m_language;
+    static StringList m_tableDesktop;
+    static StringList m_tableFight;
 };
 
 

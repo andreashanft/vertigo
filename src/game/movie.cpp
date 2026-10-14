@@ -23,7 +23,7 @@
 namespace game {
 
 
-    Movie::Movie(const QString &filename, MovieType type, const QString &textLarge, const QString &textSmall) :
+    Movie::Movie(const String &filename, MovieType type, const String &textLarge, const String &textSmall) :
     m_pause(false),
     m_filename(filename),
     m_type(type),

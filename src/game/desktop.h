@@ -30,6 +30,7 @@
 #include "gfx/texture.h"
 #include "sfx/sound.h"
 #include "ui/button.h"
+#include "util/string.hpp"
 
 
 namespace game {
@@ -38,15 +39,15 @@ namespace game {
 class Desktop : public Menu
 {
 public:
-    Desktop(const QString &name);
+    Desktop(const String &name);
     ~Desktop();
 
 public:
     void start();
     void draw();
-    const QString& name() const { return m_name; }
-    const QString& description() const { return m_description; }
-    const QString& approachMovie() const { return m_approachMovie; }
+    const String& name() const { return m_name; }
+    const String& description() const { return m_description; }
+    const String& approachMovie() const { return m_approachMovie; }
 
 private:
     void showNotebook();
@@ -69,8 +70,8 @@ private:
 private:
     struct RoomEntry
     {
-        QString name;
-        QString title;
+        String name;
+        String title;
     };
 
     gfx::Texture m_background;
@@ -85,9 +86,9 @@ private:
     EnCom *m_enCom;
     Departure *m_departure;
     ui::Button *m_btnQuit;
-    QString m_name;
-    QString m_description;
-    QString m_approachMovie;
+    String m_name;
+    String m_description;
+    String m_approachMovie;
     MiniMovie m_miniMovie;
     bool m_first;
     QMap<int, RoomEntry> m_rooms;

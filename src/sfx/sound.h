@@ -19,7 +19,7 @@
 #define SFX_SOUND_H
 
 
-#include <QString>
+#include "util/string.hpp"
 
 
 namespace sfx {
@@ -30,7 +30,7 @@ class Sound
 public:
     Sound();
     Sound(Sound&& o);
-    Sound(const QString &file);
+    Sound(const String &file);
     ~Sound();
 
 public:
@@ -40,8 +40,8 @@ public:
     void playInstance();
     void pause();
     void resume();
-    void load(const QString &file, int rate = 0);
-    void load(const QString &leftFile, const QString &rightFile);
+    void load(const String &file, int rate = 0);
+    void load(const String &leftFile, const String &rightFile);
     void setVolume(float volume);
     void setRandomPitch(float randomPitch);
     void setPitch(float pitch);
@@ -53,7 +53,7 @@ public:
 private:
     friend class SampleMap;
     Sound(const Sound &o);
-    QByteArray loadFile(const QString &filename);
+    QByteArray loadFile(const String &filename);
     bool acquire();
 
 private:

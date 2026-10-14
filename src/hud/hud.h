@@ -27,6 +27,7 @@
 #include "gfx/image.h"
 
 #include <memory>
+#include "util/string.hpp"
 
 
 class QOpenGLFramebufferObject;
@@ -95,7 +96,7 @@ public:
     const RectF& rectHUD() const { return m_rectHUD; }
     const Point& center() const { return m_center; }
     ui::Widget* widget() { return m_integerScale ? &m_integerScaleWidget : &m_noScaleWidget; }
-    gfx::Image getImage(const QString &name);
+    gfx::Image getImage(const String &name);
     gfx::Font& fontGreen() { return m_fontGreen; }
     gfx::Font& fontRed() { return m_fontRed; }
     gfx::Font& fontYellow() { return m_fontYellow; }

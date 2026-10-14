@@ -28,12 +28,12 @@ Video::Video()
 
 }
 
-Video::Video(const QString &filename)
+Video::Video(const String &filename)
 {
     open(filename);
 }
 
-void Video::open(const QString &filename)
+void Video::open(const String &filename)
 {
     m_playing = false;
     m_looping = false;
@@ -44,7 +44,7 @@ void Video::open(const QString &filename)
     m_entries.clear();
     m_frame.clear();
 
-    m_file.open(QString(filename).replace(":", "/").toUtf8().constData());
+    m_file.open(String(filename).replace(":", "/").toUtf8());
 
     std::uint32_t totalFrames;
     std::uint32_t audioFrames;

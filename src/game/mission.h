@@ -19,9 +19,8 @@
 #define GAME_MISSION_H
 
 
-#include <QString>
+#include "util/string.hpp"
 #include <QPoint>
-#include <QStringList>
 
 
 namespace game {
@@ -30,27 +29,27 @@ namespace game {
 class Mission
 {
 public:
-    Mission(const QString &name, int station);
+    Mission(const String &name, int station);
 
 public:
-    const QString& shortName() const { return m_shortName; }
-    const QString& name() const { return m_name; }
-    const QString& scenario() const { return m_scenario; }
+    const String& shortName() const { return m_shortName; }
+    const String& name() const { return m_name; }
+    const String& scenario() const { return m_scenario; }
     int station() const { return m_station; }
     const QPoint& pos() const { return m_pos; }
-    const QStringList& textB() const { return m_textB; }
-    const QStringList& textP() const { return m_textP; }
-    const QStringList& textS() const { return m_textS; }
+    const StringList& textB() const { return m_textB; }
+    const StringList& textP() const { return m_textP; }
+    const StringList& textS() const { return m_textS; }
 
 private:
-    QString m_shortName;
-    QString m_name;
-    QString m_scenario;
+    String m_shortName;
+    String m_name;
+    String m_scenario;
     int m_station;
     QPoint m_pos;
-    QStringList m_textB;
-    QStringList m_textP;
-    QStringList m_textS;
+    StringList m_textB;
+    StringList m_textP;
+    StringList m_textS;
 };
 
 

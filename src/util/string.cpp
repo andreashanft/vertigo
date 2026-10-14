@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "string.hpp"
+#include <QRegularExpression>
 #include <algorithm>
 #include <charconv>
 #include <climits>
@@ -32,8 +33,7 @@ namespace {
 
 bool isSpace(char c)
 {
-    const unsigned char u = static_cast<unsigned char>(c);
-    return u == ' ' || (u >= 9 && u <= 13) || u == 0x85 || u == 0xa0;
+    return String::isSpace(c);
 }
 
 
@@ -369,6 +369,13 @@ String pad(const String &arg, int fieldWidth, char fill)
 }
 
 } // namespace
+
+
+bool String::isSpace(char c)
+{
+    const unsigned char u = static_cast<unsigned char>(c);
+    return u == ' ' || (u >= 9 && u <= 13) || u == 0x85 || u == 0xa0;
+}
 
 
 String::String(const char *utf8)
@@ -934,6 +941,35 @@ std::ostream &operator<<(std::ostream &stream, const String &s)
 String::String(const QString &s) :
     m_data(s.toLatin1().toStdString())
 {
+}
+
+
+String &String::replace(const QRegularExpression &expression, const String &after)
+{
+    *this = String(QString(*this).replace(expression, after));
+    return *this;
+}
+
+
+bool String::contains(const QRegularExpression &expression) const
+{
+    return QString(*this).contains(expression);
+}
+
+
+StringList String::split(const QRegularExpression &expression, SplitBehavior behavior) const
+{
+    return StringList(QString(*this).split(expression, behavior == SkipEmptyParts ? Qt::SkipEmptyParts : Qt::KeepEmptyParts));
+}
+
+
+StringList StringList::filter(const QRegularExpression &expression) const
+{
+    StringList list;
+    for (const String &s : *this)
+        if (s.contains(expression))
+            list << s;
+    return list;
 }
 
 

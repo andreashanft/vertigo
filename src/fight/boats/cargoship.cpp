@@ -60,13 +60,13 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
     // the blocks, each against a side of an earlier one
     for (int i = 0; ; i++)
     {
-        file.setSection(QString("CargoBlock%1").arg(i));
+        file.setSection(String("CargoBlock%1").arg(i));
         if (!file.contains("name"))
             break;
         const int reference = file.value("ConnectReference").toInt();
         const int side = file.value("ConnectSide").toInt();
 
-        txt::DesFile blockFile(QString("vfx:sobjects/%1.des").arg(file.value("name").toString()));
+        txt::DesFile blockFile(String("vfx:sobjects/%1.des").arg(file.value("name").toString()));
         blockFile.setSection("cluster");
         Block block;
         block.module = scenario->moduleManager().get(blockFile.value("base").toString());
@@ -97,11 +97,11 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
         // the block's turrets: RelativePosition x/y on the block (model units), z +-1000: on top or under it
         for (int t = 0; ; t++)
         {
-            blockFile.setSection(QString("Turret%1").arg(t));
+            blockFile.setSection(String("Turret%1").arg(t));
             if (!blockFile.contains("name"))
                 break;
             ShipTurret turret;
-            const QString name = blockFile.value("name").toString();
+            const String name = blockFile.value("name").toString();
             const float x = blockFile.value("RelativePositionX").toFloat();
             const float y = blockFile.value("RelativePositionY").toFloat();
             turret.below = blockFile.value("RelativePositionZ").toFloat() < 0;
@@ -122,7 +122,7 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
                 z = sign*10.0f - sign*distance;
             turret.position = block.position + Vector3D(x, y, z)*block.scale;
 
-            txt::DesFile turretFile(QString("vfx:sobjects/%1.des").arg(name));
+            txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(name));
             turret.model.reset(new Turret(scenario, turretFile));
             turretFile.setSection("size");
             turret.scale = turretFile.value("scale").toFloat()/32.0f;
@@ -203,19 +203,19 @@ bool CargoShip::update(float elapsedTime)
 }
 
 
-QString CargoShip::pictureFor(const QString &desName)
+String CargoShip::pictureFor(const String &desName)
 {
     // from the comments of the ship files; cship* are container freighters
-    static const std::map<QString, QString> pictures = {
+    static const std::map<String, String> pictures = {
         { "bship0", "shpseaco" }, { "bship1", "shptrito" }, { "bship2", "shppolar" }, { "bship3", "shpinder" },
         { "bship4", "shpbiont" }, { "bship5", "shpbfm" }, { "bship6", "shpbfm" }, { "bship7", "shpbiont" },
         { "bship8", "shptrito" }, { "bship9", "shppolar" }, { "bship10", "shpinder" },
     };
-    const QString name = desName.toLower();
+    const String name = desName.toLower();
     const auto it = pictures.find(name);
     if (it != pictures.end())
         return it->second;
-    return name.startsWith("cship") ? "shpcontf" : QString();
+    return name.startsWith("cship") ? "shpcontf" : String();
 }
 
 
@@ -286,7 +286,7 @@ float CargoSegment::noise() const
 }
 
 
-QString CargoSegment::observationImage() const
+String CargoSegment::observationImage() const
 {
     return m_ship->observationImage();
 }

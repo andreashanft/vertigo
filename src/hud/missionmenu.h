@@ -22,7 +22,7 @@
 #include "util/geometry2d.h"
 #include "ui/widget.h"
 #include "gfx/texture.h"
-#include <QStringList>
+#include "util/string.hpp"
 
 
 namespace gfx { class Font; }
@@ -56,7 +56,7 @@ public:
     void open(Page page);
     Action keyPressEvent(int key);
     // shows the lines for a few seconds while no menu is open
-    void notice(const QStringList &lines, float seconds);
+    void notice(const StringList &lines, float seconds);
 
 protected:
     void draw();
@@ -64,7 +64,7 @@ protected:
 private:
     struct Line
     {
-        QString text;
+        String text;
         gfx::Font *font;
     };
     std::vector<Line> lines() const;
@@ -76,7 +76,7 @@ private:
     int m_turret = 0;
     int m_turretOrder = 0;
     int m_turretCount = 0;
-    QStringList m_notice;
+    StringList m_notice;
     unsigned int m_noticeEnd;
 
     gfx::Texture m_black;

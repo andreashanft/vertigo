@@ -9,7 +9,7 @@
 namespace game {
 
 
-DialogFrame::DialogFrame(Dialog* dialog, const QString &roomName, std::function<void()> &&funcClose) :
+DialogFrame::DialogFrame(Dialog* dialog, const String &roomName, std::function<void()> &&funcClose) :
     Frame(std::move(funcClose)),
     m_dialog(dialog)
 {
@@ -20,7 +20,7 @@ DialogFrame::DialogFrame(Dialog* dialog, const QString &roomName, std::function<
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
     // not every room has its own dialog background, and loading a missing image aborts
-    QString background = QString("gfx:img/desktop/bground/d_%1.img").arg(roomName);
+    String background = String("gfx:img/desktop/bground/d_%1.img").arg(roomName);
     if (!QFile::exists(util::DataPath::resolve(background)))
         background = "gfx:img/desktop/bground/d_ew1.img";
     QImage image = gfx::Image::load(background, colorTable);

@@ -28,7 +28,7 @@
 namespace game {
 
 
-Desktop::Desktop(const QString &name) :
+Desktop::Desktop(const String &name) :
     m_notebook([this]() { hideNotebook(); }),
     m_room(NULL),
     m_dialog(NULL),
@@ -44,15 +44,15 @@ Desktop::Desktop(const QString &name) :
 
     file.setSection("Station");
 
-    const QString background = file.value("BackGround").toString();
-    const QString backgroundSound = file.value("Sound").toString();
-    const QString nameSound = "st" + file.value("SFV").toString().right(4);
+    const String background = file.value("BackGround").toString();
+    const String backgroundSound = file.value("Sound").toString();
+    const String nameSound = "st" + file.value("SFV").toString().right(4);
     QImage image = gfx::Image::loadPCX("gfx:pic/bground/" + background + ".pcx").toRgb565();
     m_miniMovie.setColorTable(image.colorTable());
     m_background.fromImage(image);
     m_backgroundSound.load("sfx:snd/bground/" + backgroundSound + ".pcl", "sfx:snd/bground/" + backgroundSound + ".pcr");
     m_nameSound.load("sfx:snd/names/" + nameSound + ".pcm");
-    m_approachMovie = QString("gfx:mvi/approach/%1.mvi").arg(file.value("ApproachMovie").toString());
+    m_approachMovie = String("gfx:mvi/approach/%1.mvi").arg(file.value("ApproachMovie").toString());
     m_name = file.value("Name").toString();
     m_description = file.value("Description").toString();
 
@@ -78,13 +78,13 @@ Desktop::Desktop(const QString &name) :
     m_notebook.hide();
 
     m_widgetRooms = new ui::Label(&m_lblBackground);
-    foreach (const QString &section, file.sections().filter(QRegularExpression("^room"))) {
+    for (const String &section : file.sections().filter(QRegularExpression("^room"))) {
         file.setSection(section);
 
         const int index = QRegularExpression("^room(\\d*)$").match(section).captured(1).toInt();
 
-        const QString name = file.value("Name").toString();
-        const QString arrow = file.value("Arrow").toString();
+        const String name = file.value("Name").toString();
+        const String arrow = file.value("Arrow").toString();
         const int width = gfx::Font(gfx::Font::Medium).width(name);
 
         const bool left = arrow.endsWith("Left");
@@ -110,7 +110,7 @@ Desktop::Desktop(const QString &name) :
         offset += offsetArrow;
 
         ui::Label *lblArrow = new ui::Label(m_widgetRooms);
-        lblArrow->setTexture(gfx::Image::load(QString("gfx:img/desktop/gui/arr%1%2lar.img").arg(arrowY).arg(arrowX), colorTable));
+        lblArrow->setTexture(gfx::Image::load(String("gfx:img/desktop/gui/arr%1%2lar.img").arg(arrowY).arg(arrowX), colorTable));
         lblArrow->setPosition(offsetArrow.x() + file.value("X").toInt(), offsetArrow.y() + file.value("Y").toInt());
 
         ui::Button *button = new ui::Button([this, index]() { showRoom(index); }, m_widgetRooms);

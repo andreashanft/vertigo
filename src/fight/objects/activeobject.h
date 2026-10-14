@@ -21,6 +21,7 @@
 
 #include "object.h"
 #include <memory>
+#include "util/string.hpp"
 
 
 namespace txt { class DesFile; }
@@ -40,8 +41,8 @@ public:
     struct ObjectInfo
     {
         int iff;
-        QString name;
-        QString cargo;
+        String name;
+        String cargo;
         int sensor;
         int sensorRange;
 
@@ -62,8 +63,8 @@ public:
     ConditionEvent* eventBoard() { return &m_eventBoard; }
 
     int iff() const { return m_info.iff; }
-    const QString& name() const { return m_info.name; }
-    const QString& cargo() const { return m_info.cargo; }
+    const String& name() const { return m_info.name; }
+    const String& cargo() const { return m_info.cargo; }
     int sensor() const { return m_info.sensor; }
     int sensorRange() const { return m_info.sensorRange; }
     virtual float noise() const { return m_noise + (m_info.sensor > 1 ? 1 : 0); }
@@ -103,7 +104,7 @@ public:
     // whether the sonar shows it (a cargo ship shows its blocks instead)
     virtual bool isContact() const { return true; }
     // a picture (GFX/IMG/COCKPIT) the master monitor shows instead of the model, e.g. shpcontf
-    virtual QString observationImage() const { return QString(); }
+    virtual String observationImage() const { return String(); }
     // the unit isn't in the mission at this difficulty: it never appears (see ConditionEntry::absent)
     void leaveMission();
 

@@ -41,7 +41,7 @@ Departure::Departure(std::function<void()> &&funcClose) :
     label->setPosition(186, 74);
 
     ui::Label *lblMap = new ui::Label(label);
-    lblMap->setTexture(gfx::Image::loadPCX(QString("gfx:pic/apilot/%1.pcx").arg(Chapter::get()->area()->map())));
+    lblMap->setTexture(gfx::Image::loadPCX(String("gfx:pic/apilot/%1.pcx").arg(Chapter::get()->area()->map())));
     lblMap->setPosition(46, 41);
 
     label = new ui::Label(lblMap);
@@ -73,7 +73,7 @@ Departure::Departure(std::function<void()> &&funcClose) :
 
     foreach (Mission* mission, Chapter::get()->missions()) {
         if (mission->station() == -1) {
-            const QString shortName = mission->shortName();
+            const String shortName = mission->shortName();
             ui::Button *button = new ui::Button([this, shortName]() { Chapter::get()->startMission(shortName); }, lblMap);
             button->setFont(font);
             button->setText(mission->name());

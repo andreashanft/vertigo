@@ -19,7 +19,7 @@
 #define FIGHT_GUN_H
 
 
-#include <QString>
+#include "util/string.hpp"
 #include <vector>
 #include "util/geometry3d.h"
 #include "sfx/samplemap.h"
@@ -39,8 +39,8 @@ public:
     enum State { StateReady, StateRearming, StateFiring, StateJammed, StateEmpty, StateEnergyDelay };
     struct GunState
     {
-        QString longName;
-        QString shortName;
+        String longName;
+        String shortName;
     };
     static GunState* GunStates;
 
@@ -58,9 +58,9 @@ public:
     float defect() const { return m_defect; }
     int ammo() const { return m_ammo; }
     bool usesAmmo() const { return m_energyDemand == 0.0f; }
-    const QString& shortName() const { return m_shortName; }
-    QString stateName() const { return GunStates ? GunStates[m_state].shortName : QString(); }
-    QString stateText() const { return GunStates ? GunStates[m_state].longName : QString(); }
+    const String& shortName() const { return m_shortName; }
+    String stateName() const { return GunStates ? GunStates[m_state].shortName : String(); }
+    String stateText() const { return GunStates ? GunStates[m_state].longName : String(); }
     State state() const { return m_state; }
 
     void setDefect(float defect) { m_defect = defect; }
@@ -77,9 +77,9 @@ protected:
     ActiveObject *m_owner;
 
     int m_model;
-    QString m_longName;
-    QString m_shortName;
-    QString m_imageName;
+    String m_longName;
+    String m_shortName;
+    String m_imageName;
 
     float m_rearmingTime;
     float m_energyDemand;

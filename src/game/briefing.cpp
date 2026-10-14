@@ -52,7 +52,7 @@ Briefing::Briefing() :
 
     m_lblMap = new ui::Label(&m_lblMain);
     m_lblMap->setPosition(304, 32);
-    m_lblMap->setTexture(gfx::Image::load(QString("gfx:pic/area/%1.r16").arg(Chapter::get()->area()->map()), 304, 284, true));
+    m_lblMap->setTexture(gfx::Image::load(String("gfx:pic/area/%1.r16").arg(Chapter::get()->area()->map()), 304, 284, true));
 
     m_lblArrow = new ui::Label(m_lblMap);
     m_lblArrow->setPosition(Chapter::get()->mission()->pos() - QPoint(7, 7));

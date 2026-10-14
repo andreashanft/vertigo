@@ -61,7 +61,7 @@ EnCom::EnCom(Dialog *dialog, std::function<void()> &&funcClose) :
     label->setWidth(304);
     label->setAlignment(ui::Label::AlignHCenter);
     label->setFont(font);
-    label->setText(QString("%1 %2").arg(txt::StringTable::get(txt::EnCom_Person), m_dialog->name()));
+    label->setText(String("%1 %2").arg(txt::StringTable::get(txt::EnCom_Person), m_dialog->name()));
 
     label = new ui::Label(labelMain);
     label->setPosition(0, 56);

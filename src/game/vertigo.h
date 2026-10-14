@@ -27,6 +27,7 @@
 #include "sfx/soundsystem.h"
 
 #include <QKeySequence>
+#include "util/string.hpp"
 
 namespace game {
 
@@ -35,9 +36,9 @@ class Vertigo
 public:
     struct Options
     {
-        QString scenario;                               // start this mission directly (test mode)
+        String scenario;                               // start this mission directly (test mode)
         int boat = 0;                                   // test mode boat type, 0 = chapter 1 boat
-        std::vector<std::pair<QString, int>> equipment; // test mode items: mounting, model
+        std::vector<std::pair<String, int>> equipment; // test mode items: mounting, model
         int timeout = 0;                                // test mode time limit in seconds
         bool debugOverlay = false;
         bool headless = false;                          // test mode: no window and no sound, simulated time
@@ -50,12 +51,12 @@ public:
         std::vector<int> trace;                         // test mode: print these units' state every second
         std::vector<int> fire;                          // test mode: these units fire (towers and tanks aim at the player)
         int near = 0;                                   // test mode: enable this unit and start next to it
-        struct Screenshot { float time; QString file; };
+        struct Screenshot { float time; QString file; };            // the file is a path
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
         struct Click { float time; QPointF pos; };
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
         bool check = false;                             // report what the mission loader ignores
-        QStringList checkScenarios;                     // empty = all missions
+        StringList checkScenarios;                     // empty = all missions
     };
 
     enum ExitCode
@@ -75,10 +76,10 @@ public:
     int start(const Options &options);
 
 private:
-    int check(const QStringList &names);
+    int check(const StringList &names);
 
-    void startGame(const QString &name);
-    void loadGame(const QString &name);
+    void startGame(const String &name);
+    void loadGame(const String &name);
     void endGame();
     void introFinished();
     void createMainMenu(bool skipToTitle);
@@ -91,7 +92,7 @@ private:
     MainMenu m_mainMenu;
     std::unique_ptr<Movie> m_intro;
     std::unique_ptr<Chapter> m_chapter;
-    QString m_name;
+    String m_name;
 };
 
 } // namespace game

@@ -48,7 +48,7 @@ Sound::Sound(Sound&& o)
     o.m_buffer = 0;
 }
 
-Sound::Sound(const QString &file) :
+Sound::Sound(const String &file) :
     m_source(0),
     m_buffer(0),
     m_volume(1.0f),
@@ -181,7 +181,7 @@ void Sound::resume()
 }
 
 
-void Sound::load(const QString &file, int rate)
+void Sound::load(const String &file, int rate)
 {
     const QByteArray data = loadFile(file);
 
@@ -193,7 +193,7 @@ void Sound::load(const QString &file, int rate)
 }
 
 
-void Sound::load(const QString &leftFile, const QString &rightFile)
+void Sound::load(const String &leftFile, const String &rightFile)
 {
     const QByteArray left = loadFile(leftFile);
     const QByteArray right = loadFile(rightFile);
@@ -215,7 +215,7 @@ void Sound::load(const QString &leftFile, const QString &rightFile)
 }
 
 
-QByteArray Sound::loadFile(const QString &filename)
+QByteArray Sound::loadFile(const String &filename)
 {
     QFile file(util::DataPath::resolve(filename));
     if (!file.open(QFile::ReadOnly))

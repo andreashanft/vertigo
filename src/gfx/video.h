@@ -24,6 +24,7 @@
 #include "util/file.h"
 
 #include <QElapsedTimer>
+#include "util/string.hpp"
 
 namespace gfx {
 
@@ -31,10 +32,10 @@ class Video
 {
 public:
     Video();
-    Video(const QString &filename);
+    Video(const String &filename);
 
 public:
-    void open(const QString &filename);
+    void open(const String &filename);
     void play();
     void playLoop();
     void stop();

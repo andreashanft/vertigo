@@ -206,9 +206,9 @@ Rect HUD::readRect(const txt::DesFile &file)
 }
 
 
-gfx::Image HUD::getImage(const QString &name)
+gfx::Image HUD::getImage(const String &name)
 {
-    return gfx::Image::load(QString("gfx:img/cockpit/%1.img").arg(name), m_colorTable);
+    return gfx::Image::load(String("gfx:img/cockpit/%1.img").arg(name), m_colorTable);
 }
 
 
@@ -220,9 +220,9 @@ void HUD::load(game::Boat *boat)
     m_children.clear();
 
     m_wide = false;
-    m_cockpit.setTexture(gfx::Image::load(QString("vfx:cockpit/%1/cockpit.r16").arg(boat->cockpit()), 640, 480, true));
+    m_cockpit.setTexture(gfx::Image::load(String("vfx:cockpit/%1/cockpit.r16").arg(boat->cockpit()), 640, 480, true));
 
-    txt::DesFile file(QString("vfx:cockpit/%1.des").arg(boat->cockpit()));
+    txt::DesFile file(String("vfx:cockpit/%1.des").arg(boat->cockpit()));
 
     file.setSection("front");
     m_center = glm::ivec2(file.value("VFX_StartX").toInt() + file.value("VFX_FlightX").toInt(), file.value("VFX_StartY").toInt() + file.value("VFX_FlightY").toInt());
@@ -236,7 +236,7 @@ void HUD::load(game::Boat *boat)
     if (m_model)
         m_model->setCamera(m_focal, m_center);
     else if (cockpitMode() == CockpitMode::Model)
-        std::cerr << "No 3D cockpit cockpit_" << boat->cockpit().toUtf8().constData() << ".glb in "
+        std::cerr << "No 3D cockpit cockpit_" << boat->cockpit() << ".glb in "
                   << Cockpit3D::directory().toUtf8().constData() << ", showing the 2D cockpit" << std::endl;
     m_rectGL = Rect();
 
@@ -263,7 +263,7 @@ void HUD::load(game::Boat *boat)
     m_slaveMonitors.clear();
     for (int i = 0; i < 2; i++)
     {
-        file.setSection(QString("slavemonitor%1").arg(i));
+        file.setSection(String("slavemonitor%1").arg(i));
         if (!file.contains("X1"))
             continue;
         SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Weapon : SlaveMonitor::Page::Armor);
@@ -678,7 +678,7 @@ void HUD::keyPressEvent(QKeyEvent *e)
     {
         setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
         if (cockpitMode() == CockpitMode::Model && !showsModel())
-            std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit().toUtf8().constData() << " in "
+            std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit() << " in "
                       << Cockpit3D::directory().toUtf8().constData() << std::endl;
         m_menu->notice({ showsModel() ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
         // the view angle changes with it

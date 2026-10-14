@@ -33,7 +33,7 @@ namespace hud {
 
 namespace {
 
-QString typeName(int type)
+String typeName(int type)
 {
     switch (type) {
     case 2049: return "boat";
@@ -49,7 +49,7 @@ QString typeName(int type)
     case 2061: return "navpoint";
     case 2062: return "activebuilding";
     }
-    return QString::number(type);
+    return String::number(type);
 }
 
 }
@@ -114,23 +114,23 @@ void DebugOverlay::drawInfo()
         if (record.object->isEnabled())
             enabled++;
 
-    QStringList lines;
-    lines << QString("%1  T %2").arg(scenario->name()).arg(scenario->time(), 0, 'f', 1);
-    lines << QString("POS %1 %2 %3  CELL %4 %5  H %6")
+    StringList lines;
+    lines << String("%1  T %2").arg(scenario->name()).arg(scenario->time(), 0, 'f', 1);
+    lines << String("POS %1 %2 %3  CELL %4 %5  H %6")
              .arg(int(pos.x)).arg(int(pos.y)).arg(int(pos.z))
              .arg(int(pos.x/scale.x)).arg(int(pos.y/scale.y))
              .arg(int(scenario->height()));
-    lines << QString("SPEED %1  OBJECTS %2/%3")
+    lines << String("SPEED %1  OBJECTS %2/%3")
              .arg(int(glm::length(scenario->player()->velocity())))
              .arg(enabled).arg(scenario->objectRecords().size());
-    lines << QString("SONAR %1").arg(scenario->sonar().isActive() ? "ACTIVE" : "PASSIVE");
+    lines << String("SONAR %1").arg(scenario->sonar().isActive() ? "ACTIVE" : "PASSIVE");
     const Vector3D current = scenario->current(pos);
     if (glm::length(current) > 0.01f)
-        lines << QString("CURRENT %1 %2 %3 M/S").arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1);
+        lines << String("CURRENT %1 %2 %3 M/S").arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1);
 
     gfx::Font &font = m_hud->fontYellow();
     Point p = m_hud->project(Point(8, 8));
-    for (const QString &line : lines) {
+    for (const String &line : lines) {
         font.draw(line, p.x, p.y);
         p.y += font.height() + 2;
     }
@@ -158,19 +158,19 @@ void DebugOverlay::drawLabels()
             continue;
         const Point point = glm::round(Vector2D(point4)/point4.w);
 
-        QString text = QString("%1 %2 D%3").arg(record.id).arg(record.des.isEmpty() ? typeName(record.type) : record.des).arg(int(distance));
+        String text = String("%1 %2 D%3").arg(record.id).arg(record.des.isEmpty() ? typeName(record.type) : record.des).arg(int(distance));
         gfx::Font *font = &m_hud->fontGreen();
         if (!object->isEnabled()) {
             font = &m_hud->fontRed();
         } else if (const fight::ActiveObject *active = dynamic_cast<const fight::ActiveObject*>(object)) {
-            text += QString(" IFF%1 S%2/%3").arg(active->iff())
+            text += String(" IFF%1 S%2/%3").arg(active->iff())
                     .arg(int(scenario->sonar().passiveRange(active)))
                     .arg(int(scenario->sonar().activeRange(active)));
             const float speed = glm::length(active->velocity());
             if (speed > 0.1f)
-                text += QString(" V%1").arg(int(speed*3.6f));
+                text += String(" V%1").arg(int(speed*3.6f));
             if (active->orders() && active->orders()->currentSlot())
-                text += QString(" O%1 %2").arg(active->orders()->current()).arg(active->orders()->state());
+                text += String(" O%1 %2").arg(active->orders()->current()).arg(active->orders()->state());
             if (detected.count(object))
                 font = &m_hud->fontYellow();
         }

@@ -31,7 +31,7 @@ Frame::Frame(std::function<void()> &&funcClose, ui::Widget *parent) :
 {
 }
 
-void Frame::setupFrame(const QSize &size, const QString &title, bool closable)
+void Frame::setupFrame(const QSize &size, const String &title, bool closable)
 {
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
@@ -98,7 +98,7 @@ void Frame::setupFrame(const QSize &size, const QString &title, bool closable)
 
 int Frame::updateBorder(gfx::Texture texture, const gfx::ColorTable &colorTable, int x, int id)
 {
-    QImage image = gfx::Image::load(QString("gfx:img/desktop/gui/bort%1.img").arg(id), colorTable);
+    QImage image = gfx::Image::load(String("gfx:img/desktop/gui/bort%1.img").arg(id), colorTable);
     if (texture.width() - (x + image.width()) < 0) {
         const int width = texture.width() - x;
         texture.update(x, 0, image.copy(0, 0, width, image.height()));
@@ -117,7 +117,7 @@ void Frame::closeFrame()
 
 QImage Frame::getBorder(const gfx::ColorTable &colorTable, int id)
 {
-    return gfx::Image::load(QString("gfx:img/desktop/gui/bort%1.img").arg(id), colorTable);
+    return gfx::Image::load(String("gfx:img/desktop/gui/bort%1.img").arg(id), colorTable);
 }
 
 } // namespace ui

@@ -73,7 +73,7 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
     file.setSection("gunturret");
     if (file.contains("name"))
     {
-        txt::DesFile turretFile(QString("vfx:sobjects/%1.des").arg(file.value("name").toString()));
+        txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(file.value("name").toString()));
         m_turret.reset(new Turret(scenario, turretFile));
         m_turret->setPosition(Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat()));
         m_localBox.add(m_turret->box().scale(m_scale));
