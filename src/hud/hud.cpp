@@ -791,7 +791,7 @@ void HUD::mousePressEvent(input::MouseEvent *e)
     if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
         return;
     m_looking = true;
-    m_lookStart = e->pos();
+    m_lookStart = e->position();
     m_lookFrom = m_look;
 }
 
@@ -801,7 +801,7 @@ void HUD::mouseMoveEvent(input::MouseEvent *e)
     if (!m_looking)
         return;
     // drag right to look right, up to look up
-    const Point drag = e->pos() - m_lookStart;
+    const PointD drag = e->position() - m_lookStart;
     m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag), LookMin, LookMax);
 }
 

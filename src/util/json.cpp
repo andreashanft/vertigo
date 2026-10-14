@@ -213,7 +213,7 @@ private:
             const char c = m_text[m_position++];
             if (c == '"')
                 return true;
-            // (control characters are taken as they are, as QJsonDocument took them)
+            // (control characters are taken as they are)
             if (c != '\\') {
                 out += c;
                 continue;
@@ -251,7 +251,7 @@ private:
                 break;
             }
             default:
-                // the character itself, as QJsonDocument read it
+                // an unknown escape: the character itself
                 out += m_text[m_position - 1];
                 break;
             }
@@ -260,53 +260,12 @@ private:
 
     bool number(Json &value)
     {
-        const std::size_t start = m_position;
-        bool integral = true;
-        if (m_position < m_text.size() && m_text[m_position] == '-')
-            m_position++;
-        auto digits = [this]() {
-            const std::size_t from = m_position;
-            while (m_position < m_text.size() && m_text[m_position] >= '0' && m_text[m_position] <= '9')
-                m_position++;
-            return m_position - from;
-        };
-        // scanned as loosely as QJsonDocument did ("1." and ".5" are numbers), then converted
-        if (m_position < m_text.size() && m_text[m_position] == '0')
-            m_position++;
-        else
-            digits();
-        if (m_position < m_text.size() && m_text[m_position] == '.') {
-            m_position++;
-            integral = false;
-            digits();
-        }
-        if (m_position < m_text.size() && (m_text[m_position] == 'e' || m_text[m_position] == 'E')) {
-            m_position++;
-            integral = false;
-            if (m_position < m_text.size() && (m_text[m_position] == '+' || m_text[m_position] == '-'))
-                m_position++;
-            digits();
-        }
+        const char *first = m_text.data() + m_position;
+        const std::from_chars_result result = std::from_chars(first, m_text.data() + m_text.size(), value.m_number);
+        if (result.ec != std::errc() || result.ptr == first)
+            return fail("an illegal number");
         value.m_type = Number;
-        const char *first = m_text.data() + start;
-        const char *last = m_text.data() + m_position;
-        if (integral) {
-            const std::from_chars_result result = std::from_chars(first, last, value.m_integer);
-            value.m_integral = result.ec == std::errc() && result.ptr == last;
-        }
-        if (!value.m_integral) {
-            // too large or too small for a double, as QJsonDocument refused them
-            const std::from_chars_result result = std::from_chars(first, last, value.m_number);
-            if (result.ec != std::errc() || result.ptr != last)
-                return fail("an illegal number");
-            // whole numbers are integers (so -0.0 is 0)
-            if (value.m_number >= -9223372036854775808.0 && value.m_number < 9223372036854775808.0 && value.m_number == std::floor(value.m_number)) {
-                value.m_integer = std::int64_t(value.m_number);
-                value.m_integral = true;
-            }
-        }
-        if (value.m_integral)
-            value.m_number = double(value.m_integer);
+        m_position += std::size_t(result.ptr - first);
         return true;
     }
 
@@ -346,23 +305,16 @@ double Json::toDouble(double defaultValue) const
 
 int Json::toInt(int defaultValue) const
 {
-    if (m_type != Number)
+    if (m_type != Number || m_number < std::numeric_limits<int>::min() || m_number > std::numeric_limits<int>::max() || m_number != std::floor(m_number))
         return defaultValue;
-    if (m_integral)
-        return m_integer >= std::numeric_limits<int>::min() && m_integer <= std::numeric_limits<int>::max() ? int(m_integer) : defaultValue;
-    if (m_number >= std::numeric_limits<int>::min() && m_number <= std::numeric_limits<int>::max() && m_number == std::floor(m_number))
-        return int(m_number);
-    return defaultValue;
+    return int(m_number);
 }
 
 
 std::int64_t Json::toInt64() const
 {
-    if (m_type != Number)
-        return 0;
-    if (m_integral)
-        return m_integer;
-    return std::int64_t(std::llround(m_number));
+    // (doubles hold whole numbers exactly up to 2^53, far beyond the sizes of glTF files)
+    return m_type == Number && std::fabs(m_number) < 9.2e18 ? std::int64_t(std::llround(m_number)) : 0;
 }
 
 

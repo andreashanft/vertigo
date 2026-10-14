@@ -81,8 +81,6 @@ public:
     MouseEvent(const PointD &position = PointD(0), MouseButton button = NoButton, int buttons = NoButton) : m_position(position), m_button(button), m_buttons(buttons) {}
 
     const PointD& position() const { return m_position; }
-    // to the nearest
-    Point pos() const;
     // the one pressed or released
     MouseButton button() const { return m_button; }
     // those held down now

@@ -12,9 +12,8 @@ nix run github:pnordhus/vertigo
 # Compiling
 
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
-or OpenGL ES 3. Where Qt 6 is installed, the build also has tests that compare
-our replacements of Qt's types with Qt (`ctest`); the game itself doesn't need
-Qt.
+or OpenGL ES 3. The build also has tests of the game's own types for text,
+data values, images and JSON (`ctest`).
 
 ```
 mkdir build

@@ -29,8 +29,8 @@
 namespace gfx {
 
 // An image in memory, in one of the formats the game uses, with the rows one after the other
-// without gaps. It behaves as QImage did, which it replaces: pixels outside the image read as 0
-// and aren't written, nor are indices beyond the colour table.
+// without gaps. Pixels outside the image read as 0 and aren't written; indices beyond the colour
+// table are transparent black.
 class Image
 {
 public:
@@ -76,8 +76,7 @@ public:
     Image copy(int x, int y, int width, int height) const;
     // the pixel nearest to each one's centre, or with smooth the average of the pixels covered
     Image scaled(int width, int height, bool smooth = false) const;
-    // to a format without an index; indices beyond the colour table become transparent black
-    // if the table has transparent colours, else opaque black (an empty table is grey levels)
+    // to a format without an index (an empty colour table is grey levels)
     Image convertToFormat(Format format) const;
     // upside down
     Image flipped() const;

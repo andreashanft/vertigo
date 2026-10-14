@@ -38,10 +38,9 @@ struct DateTime
     bool isValid() const { return year != 0; }
 
     static DateTime now();
-    // "2026-10-14T16:05:09.123" (seconds and the fraction may be missing, a space may stand for
-    // the 'T', and a date alone is its midnight); invalid if it isn't one
+    // "2026-10-14T16:05:09.123", the milliseconds may be missing; invalid if it isn't one
     static DateTime fromIso(const String &text);
-    // with milliseconds, as above
+    // with milliseconds
     String toIso() const;
 
     bool operator<(const DateTime &other) const { return fields() < other.fields(); }

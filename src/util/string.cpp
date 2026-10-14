@@ -18,11 +18,8 @@
 #include "string.hpp"
 #include <algorithm>
 #include <charconv>
-#include <climits>
 #include <cmath>
-#include <cstdlib>
 #include <cstring>
-#include <limits>
 #include <ostream>
 
 namespace util {
@@ -36,255 +33,32 @@ bool isSpace(char c)
 }
 
 
-int digitValue(char c)
+// A number of the type T: the whole text but whitespace around it and a '+' sign, up to a zero
+// byte (some values in the data end with one)
+template <typename T>
+bool parseNumber(const String &text, T &value)
 {
-    if (c >= '0' && c <= '9')
-        return c - '0';
-    if (c >= 'a' && c <= 'z')
-        return c - 'a' + 10;
-    if (c >= 'A' && c <= 'Z')
-        return c - 'A' + 10;
-    return 99;
-}
-
-
-// numbers may have ASCII whitespace around them (not 0x85 and 0xa0, unlike trimmed())
-String trimmedAscii(const String &text)
-{
-    int first = 0, last = text.size();
-    auto ascii = [](char c) { return c == ' ' || (c >= 9 && c <= 13); };
-    while (first < last && ascii(text[first]))
+    const char *first = text.constData();
+    const char *last = first + std::strlen(first);
+    while (first < last && isSpace(*first))
         first++;
-    while (last > first && ascii(text[last - 1]))
+    while (last > first && isSpace(last[-1]))
         last--;
-    return text.mid(first, last - first);
+    if (last - first > 1 && first[0] == '+' && first[1] != '-')
+        first++;
+    const std::from_chars_result result = std::from_chars(first, last, value);
+    return first < last && result.ec == std::errc() && result.ptr == last;
 }
 
 
-// the digits of an integer with an optional sign, as Qt's C locale reads them; false if there
-// is anything else. Like Qt, this stops at a zero byte (some values in the data end with one).
-bool parseInteger(const String &text, int base, bool &negative, unsigned long long &value)
+template <typename T>
+T toNumber(const String &text, bool *ok)
 {
-    const int end = text.indexOf('\0');
-    const String s = trimmedAscii(end >= 0 ? text.left(end) : text);
-    int i = 0;
-    negative = false;
-    if (i < s.size() && (s[i] == '+' || s[i] == '-'))
-        negative = s[i++] == '-';
-    if ((base == 0 || base == 16) && i + 1 < s.size() && s[i] == '0' && (s[i + 1] == 'x' || s[i + 1] == 'X')) {
-        base = 16;
-        i += 2;
-    } else if (base == 0) {
-        base = i < s.size() && s[i] == '0' ? 8 : 10;
-    }
-    if (i >= s.size())
-        return false;
-    value = 0;
-    for (; i < s.size(); i++) {
-        const int digit = digitValue(s[i]);
-        if (digit >= base)
-            return false;
-        if (value > (std::numeric_limits<unsigned long long>::max() - digit)/base)
-            return false;
-        value = value*base + digit;
-    }
-    return true;
-}
-
-
-// a decimal number, as Qt's C locale reads it: digits with an optional point and exponent,
-// "inf" or "nan"; too large numbers are infinite, but not ok. Unlike integers, Qt allows all of
-// QChar::isSpace() around it
-bool parseDouble(const String &text, double &value)
-{
-    const String s = text.trimmed();
-    if (s.isEmpty())
-        return false;
-    int i = 0;
-    const bool negative = s[0] == '-';
-    if (s[0] == '+' || s[0] == '-')
-        i++;
-    const String rest = s.mid(i).toLower();
-    if (rest == "inf" || rest == "nan") {
-        value = rest == "inf" ? std::numeric_limits<double>::infinity() : std::numeric_limits<double>::quiet_NaN();
-        if (negative)
-            value = -value;
-        return true;
-    }
-    int digits = 0;
-    const int start = i;
-    while (i < s.size() && s[i] >= '0' && s[i] <= '9') {
-        i++;
-        digits++;
-    }
-    if (i < s.size() && s[i] == '.') {
-        i++;
-        while (i < s.size() && s[i] >= '0' && s[i] <= '9') {
-            i++;
-            digits++;
-        }
-    }
-    if (digits == 0)
-        return false;
-    if (i < s.size() && (s[i] == 'e' || s[i] == 'E')) {
-        i++;
-        if (i < s.size() && (s[i] == '+' || s[i] == '-'))
-            i++;
-        int exponentDigits = 0;
-        while (i < s.size() && s[i] >= '0' && s[i] <= '9') {
-            i++;
-            exponentDigits++;
-        }
-        if (exponentDigits == 0)
-            return false;
-    }
-    if (i != s.size())
-        return false;
-    // from_chars takes no '+', and is independent of the C locale (Qt sets the user's)
-    const char *begin = s.constData() + start;
-    const std::from_chars_result result = std::from_chars(begin, s.constData() + s.size(), value);
-    if (result.ec == std::errc::result_out_of_range) {
-        // too large or too small: the power of ten of the first significant digit tells which
-        int digit = 0, point = -1, firstSignificant = -1;
-        int k = start;
-        for (; k < s.size() && s[k] != 'e' && s[k] != 'E'; k++) {
-            if (s[k] == '.') {
-                point = digit;
-                continue;
-            }
-            if (firstSignificant < 0 && s[k] != '0')
-                firstSignificant = digit;
-            digit++;
-        }
-        if (point < 0)
-            point = digit;
-        const long long exponent = k < s.size() ? std::strtoll(s.constData() + k + 1, nullptr, 10) : 0;
-        const bool tooLarge = firstSignificant >= 0 && point - firstSignificant + exponent > 0;
-        value = tooLarge ? std::numeric_limits<double>::infinity() : 0;
-        if (negative)
-            value = -value;
-        return false;
-    }
-    if (result.ec != std::errc() || result.ptr != s.constData() + s.size())
-        return false;
-    if (negative)
-        value = -value;
-    return true;
-}
-
-
-// The exact decimal digits of a finite, positive double, without leading zeros, and the power of
-// ten of the first one (every double has a finite decimal expansion, at most 767 significant
-// digits)
-std::string exactDigits(double value, int &exponent)
-{
-    char buffer[1024];
-    const std::to_chars_result result = std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::scientific, 800);
-    const std::string text(buffer, result.ptr);
-    const size_t e = text.find('e');
-    exponent = std::atoi(text.c_str() + e + 1);
-    std::string digits = text.substr(0, 1) + text.substr(2, e - 2);
-    digits.erase(digits.find_last_not_of('0') + 1);
-    return digits.empty() ? "0" : digits;
-}
-
-
-// the first n digits (n >= 0), rounded half away from zero as Qt does (std::to_chars rounds
-// exact halves to even: 2.5 to 2, Qt to 3); a carry raises the exponent, and for n = 0 gives "1"
-std::string roundDigits(const std::string &digits, int n, int &exponent)
-{
-    std::string kept = digits.substr(0, size_t(n));
-    kept.resize(size_t(n), '0');
-    if (n < int(digits.size()) && digits[size_t(n)] >= '5') {
-        int i = n - 1;
-        while (i >= 0 && kept[size_t(i)] == '9')
-            kept[size_t(i--)] = '0';
-        if (i >= 0) {
-            kept[size_t(i)]++;
-        } else {
-            kept.insert(0, "1");
-            if (n > 0)
-                kept.pop_back();
-            exponent++;
-        }
-    }
-    return kept;
-}
-
-
-std::string fixedText(double value, int precision)
-{
-    int exponent;
-    const std::string digits = exactDigits(value, exponent);
-    // digits up to the precision; none at all if the number is below half its last place
-    const int n = exponent + 1 + precision;
-    std::string kept;
-    if (n >= 0) {
-        kept = roundDigits(digits, n, exponent);
-        if (int(kept.size()) < exponent + 1 + precision)
-            kept += '0';
-    } else {
-        exponent = -precision - 1;
-    }
-    // as many digits as the integer part and the precision need
-    std::string integer, fraction;
-    const int integerDigits = exponent + 1;
-    if (integerDigits > 0) {
-        integer = kept.substr(0, size_t(integerDigits));
-        integer.resize(size_t(integerDigits), '0');
-        fraction = kept.size() > size_t(integerDigits) ? kept.substr(size_t(integerDigits)) : std::string();
-    } else {
-        integer = "0";
-        fraction = std::string(size_t(-integerDigits), '0') + kept;
-    }
-    fraction.resize(size_t(precision), '0');
-    return precision > 0 ? integer + "." + fraction : integer;
-}
-
-
-std::string exponentText(int exponent, bool upper)
-{
-    std::string text = upper ? "E" : "e";
-    text += exponent < 0 ? '-' : '+';
-    const std::string number = std::to_string(std::abs(exponent));
-    return text + (number.size() < 2 ? "0" : "") + number;
-}
-
-
-std::string scientificText(double value, int precision, bool upper)
-{
-    int exponent;
-    const std::string digits = exactDigits(value, exponent);
-    const std::string kept = value == 0 ? std::string(size_t(precision + 1), '0') : roundDigits(digits, precision + 1, exponent);
-    if (value == 0)
-        exponent = 0;
-    std::string text = kept.substr(0, 1);
-    if (precision > 0)
-        text += "." + kept.substr(1);
-    return text + exponentText(exponent, upper);
-}
-
-
-// as printf's %g: fixed or scientific by the exponent after rounding, without trailing zeros
-std::string generalText(double value, int precision, bool upper)
-{
-    if (precision == 0)
-        precision = 1;
-    int exponent = 0;
-    if (value != 0) {
-        const std::string digits = exactDigits(value, exponent);
-        roundDigits(digits, precision, exponent);
-    }
-    std::string text = exponent < -4 || exponent >= precision ? scientificText(value, precision - 1, upper) : fixedText(value, precision - 1 - exponent);
-    const size_t e = text.find_first_of("eE");
-    std::string mantissa = text.substr(0, e);
-    const std::string rest = e == std::string::npos ? std::string() : text.substr(e);
-    if (mantissa.find('.') != std::string::npos) {
-        mantissa.erase(mantissa.find_last_not_of('0') + 1);
-        if (mantissa.back() == '.')
-            mantissa.pop_back();
-    }
-    return mantissa + rest;
+    T value = 0;
+    const bool valid = parseNumber(text, value);
+    if (ok)
+        *ok = valid;
+    return valid ? value : 0;
 }
 
 
@@ -292,21 +66,13 @@ String formatDouble(double value, char format, int precision)
 {
     if (precision < 0)
         precision = 6;
-    const bool upper = format == 'E' || format == 'G';
-    if (std::isnan(value))
-        return upper ? "NAN" : "nan";
-    if (std::isinf(value))
-        return value < 0 ? (upper ? "-INF" : "-inf") : (upper ? "INF" : "inf");
-    // Qt writes zero without a sign, also -0.0, but keeps the sign of what rounds to zero
-    const bool negative = value < 0;
-    value = std::fabs(value);
-    std::string text;
-    switch (format) {
-    case 'f': case 'F': text = fixedText(value, precision); break;
-    case 'e': case 'E': text = scientificText(value, precision, upper); break;
-    default: text = generalText(value, precision, upper); break;
-    }
-    return String::fromLatin1((negative ? "-" : "") + text);
+    const std::chars_format chars = format == 'f' || format == 'F' ? std::chars_format::fixed
+            : format == 'e' || format == 'E' ? std::chars_format::scientific : std::chars_format::general;
+    // (-0.0 without its sign)
+    std::vector<char> buffer(size_t(precision) + 400);
+    const std::to_chars_result result = std::to_chars(buffer.data(), buffer.data() + buffer.size(), value == 0 ? 0.0 : value, chars, precision);
+    String text = String::fromLatin1(buffer.data(), int(result.ptr - buffer.data()));
+    return format >= 'A' && format <= 'Z' ? text.toUpper() : text;
 }
 
 
@@ -372,8 +138,7 @@ String pad(const String &arg, int fieldWidth, char fill)
 
 bool String::isSpace(char c)
 {
-    const unsigned char u = static_cast<unsigned char>(c);
-    return u == ' ' || (u >= 9 && u <= 13) || u == 0x85 || u == 0xa0;
+    return c == ' ' || (c >= 9 && c <= 13);
 }
 
 
@@ -427,7 +192,7 @@ String String::fromUtf8(const char *data, int size)
             codePoint = (codePoint << 6) | (next & 0x3f);
         }
         if (!valid) {
-            // like Qt's replacement character, which is '?' in Latin-1
+            // a broken sequence is a character unknown to Latin-1
             s.m_data += '?';
             i++;
             continue;
@@ -490,22 +255,13 @@ void String::truncate(int position)
 
 String &String::insert(int position, const String &s)
 {
-    if (position < 0)
-        position += size();
-    if (position < 0)
-        return *this;
-    // beyond the end the string is extended with spaces, as in Qt
-    if (position > size())
-        m_data.resize(size_t(position), ' ');
-    m_data.insert(size_t(position), s.m_data);
+    m_data.insert(size_t(std::clamp(position, 0, size())), s.m_data);
     return *this;
 }
 
 
 String &String::remove(int position, int n)
 {
-    if (position < 0)
-        position += size();
     if (position < 0 || position >= size() || n <= 0)
         return *this;
     m_data.erase(size_t(position), size_t(std::min(n, size() - position)));
@@ -565,21 +321,15 @@ String String::right(int n) const
 
 String String::mid(int position, int n) const
 {
-    // QContainerImplHelper::mid()
-    const int length = size();
-    if (position > length)
-        return String();
+    // what lies before the start counts towards n
     if (position < 0) {
-        if (n < 0 || n + position >= length)
-            return *this;
-        if (n + position <= 0)
-            return String();
-        n += position;
+        if (n >= 0)
+            n = std::max(0, n + position);
         position = 0;
-    } else if (n < 0 || n > length - position) {
-        n = length - position;
     }
-    return fromLatin1(m_data.data() + position, n);
+    if (position >= size())
+        return String();
+    return fromLatin1(m_data.data() + position, n < 0 || n > size() - position ? size() - position : n);
 }
 
 
@@ -591,33 +341,16 @@ String String::section(char separator, int start, int end, int flags) const
 
 String String::section(const String &separator, int start, int end, int flags) const
 {
-    // QString::section()
-    const StringList sections = split(separator);
-    const int count = sections.size();
-    const bool skipEmpty = flags & SectionSkipEmpty;
-    int skip = 0;
-    if (skipEmpty)
-        for (const String &s : sections)
-            if (s.isEmpty())
-                skip++;
+    const StringList sections = split(separator, flags & SectionSkipEmpty ? SkipEmptyParts : KeepEmptyParts);
     if (start < 0)
-        start += count - skip;
+        start += sections.size();
     if (end < 0)
-        end += count - skip;
-    if (start >= count || end < 0 || start > end)
-        return String();
-
+        end += sections.size();
+    start = std::max(start, 0);
+    end = std::min(end, sections.size() - 1);
     String result;
-    for (int i = 0, x = 0; x <= end && i < count; i++) {
-        const String &s = sections[i];
-        if (x >= start) {
-            if (x > start && i > 0)
-                result += separator;
-            result += s;
-        }
-        if (!s.isEmpty() || !skipEmpty)
-            x++;
-    }
+    for (int i = start; i <= end; i++)
+        result += (i > start ? separator : String()) + sections[i];
     return result;
 }
 
@@ -632,13 +365,8 @@ StringList String::split(const String &separator, SplitBehavior behavior) const
 {
     StringList list;
     if (separator.isEmpty()) {
-        // as Qt: an empty part, every character, an empty part
-        if (behavior == KeepEmptyParts)
-            list << String();
-        for (char c : m_data)
-            list << String(1, c);
-        if (behavior == KeepEmptyParts)
-            list << String();
+        if (behavior == KeepEmptyParts || !isEmpty())
+            list << *this;
         return list;
     }
     size_t position = 0;
@@ -666,60 +394,22 @@ String String::trimmed() const
 }
 
 
-String String::simplified() const
-{
-    String result;
-    bool space = false;
-    for (char c : trimmed().m_data) {
-        if (isSpace(c)) {
-            space = true;
-            continue;
-        }
-        if (space)
-            result.m_data += ' ';
-        space = false;
-        result.m_data += c;
-    }
-    return result;
-}
-
-
 String String::toLower() const
 {
     String result = *this;
-    for (char &c : result.m_data) {
-        const unsigned char u = static_cast<unsigned char>(c);
-        if ((u >= 'A' && u <= 'Z') || (u >= 0xc0 && u <= 0xde && u != 0xd7))
-            c = char(u + 32);
-    }
+    for (char &c : result.m_data)
+        if (c >= 'A' && c <= 'Z')
+            c = char(c - 'A' + 'a');
     return result;
 }
 
 
 String String::toUpper() const
 {
-    String result;
-    result.m_data.reserve(m_data.size());
-    for (char c : m_data) {
-        const unsigned char u = static_cast<unsigned char>(c);
-        if ((u >= 'a' && u <= 'z') || (u >= 0xe0 && u <= 0xfe && u != 0xf7))
-            result.m_data += char(u - 32);
-        else if (u == 0xdf)
-            result.m_data += "SS";
-        else if (u == 0xff || u == 0xb5)
-            result.m_data += '?';
-        else
-            result.m_data += c;
-    }
-    return result;
-}
-
-
-String String::repeated(int times) const
-{
-    String result;
-    for (int i = 0; i < times; i++)
-        result += *this;
+    String result = *this;
+    for (char &c : result.m_data)
+        if (c >= 'a' && c <= 'z')
+            c = char(c - 'a' + 'A');
     return result;
 }
 
@@ -772,7 +462,7 @@ int String::count(char c) const
 
 int String::count(const String &s) const
 {
-    // overlapping, as Qt counts
+    // overlapping ones too
     int n = 0;
     for (size_t found = m_data.find(s.m_data); found != std::string::npos; found = m_data.find(s.m_data, found + 1))
         n++;
@@ -780,83 +470,41 @@ int String::count(const String &s) const
 }
 
 
-long long String::toLongLong(bool *ok, int base) const
+long long String::toLongLong(bool *ok) const
 {
-    bool negative;
-    unsigned long long value;
-    const bool valid = parseInteger(*this, base, negative, value)
-            && value <= (negative ? (unsigned long long)LLONG_MAX + 1 : (unsigned long long)LLONG_MAX);
-    if (ok)
-        *ok = valid;
-    if (!valid)
-        return 0;
-    return negative ? (long long)(0 - value) : (long long)value;
+    return toNumber<long long>(*this, ok);
 }
 
 
-unsigned long long String::toULongLong(bool *ok, int base) const
+unsigned long long String::toULongLong(bool *ok) const
 {
-    bool negative;
-    unsigned long long value;
-    const bool valid = parseInteger(*this, base, negative, value) && !negative;
-    if (ok)
-        *ok = valid;
-    return valid ? value : 0;
+    return toNumber<unsigned long long>(*this, ok);
 }
 
 
-int String::toInt(bool *ok, int base) const
+int String::toInt(bool *ok) const
 {
-    bool valid;
-    const long long value = toLongLong(&valid, base);
-    valid = valid && value >= INT_MIN && value <= INT_MAX;
-    if (ok)
-        *ok = valid;
-    return valid ? int(value) : 0;
+    return toNumber<int>(*this, ok);
 }
 
 
-unsigned int String::toUInt(bool *ok, int base) const
+unsigned int String::toUInt(bool *ok) const
 {
-    bool valid;
-    const unsigned long long value = toULongLong(&valid, base);
-    valid = valid && value <= UINT_MAX;
-    if (ok)
-        *ok = valid;
-    return valid ? (unsigned int)value : 0;
+    return toNumber<unsigned int>(*this, ok);
 }
 
 
 double String::toDouble(bool *ok) const
 {
-    double value = 0;
-    const bool valid = parseDouble(*this, value);
-    if (ok)
-        *ok = valid;
-    return valid || std::isinf(value) ? value : 0;
+    return toNumber<double>(*this, ok);
 }
 
 
 float String::toFloat(bool *ok) const
 {
-    // through double, as Qt does (QLocaleData::convertDoubleToFloat())
-    bool valid;
-    const double value = toDouble(&valid);
-    if (valid && !std::isinf(value)) {
-        if (std::fabs(value) > std::numeric_limits<float>::max()) {
-            if (ok)
-                *ok = false;
-            return value < 0 ? -std::numeric_limits<float>::infinity() : std::numeric_limits<float>::infinity();
-        }
-        if (value != 0 && float(value) == 0) {
-            if (ok)
-                *ok = false;
-            return 0;
-        }
-    }
-    if (ok)
-        *ok = valid;
-    return float(value);
+    // rounded to a double first, as it always was (rounding the text to a float directly gives
+    // the other neighbour in rare cases)
+    return float(toDouble(ok));
 }
 
 
@@ -967,14 +615,6 @@ int StringList::removeAll(const String &s)
     const int before = size();
     erase(std::remove(begin(), end(), s), end());
     return before - size();
-}
-
-
-String StringList::takeFirst()
-{
-    const String s = front();
-    erase(begin());
-    return s;
 }
 
 

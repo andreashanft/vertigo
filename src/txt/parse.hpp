@@ -20,8 +20,9 @@
 
 #include "util/string.hpp"
 
-// The patterns of the game's text formats. They were regular expressions (in the comments), and
-// match the same: digits and whitespace are ASCII ones, '.' is any character but '\n'.
+// The patterns of the game's text formats, one line each. They were regular expressions (in the
+// comments), and match what they matched in the game data: digits and whitespace are ASCII ones,
+// '.' is any character but '\n'.
 namespace txt {
 
 // "^\s*\[(.*)\]": the text between the '[' after leading whitespace and the line's last ']'

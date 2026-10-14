@@ -15,371 +15,256 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
-// util::String and txt::Value replace QString and QVariant. While Qt is linked (until step Q5 of
-// the iPad port) they are compared with them here: on fixed and random cases, and with the game
-// data's directory as the argument also on every line and value of its text files.
 
-#include "util/string.hpp"
+// util::String, txt::Value and util::DateTime, as the game uses them
+
+#include "check.hpp"
+
 #include "txt/value.h"
 #include "util/datetime.hpp"
-
-#include <QDateTime>
-#include <QDirIterator>
-#include <QFile>
-#include <QStringList>
-#include <QVariant>
-
-#include <cmath>
-#include <cstring>
-#include <iostream>
-#include <random>
+#include "util/string.hpp"
 
 
 namespace {
 
-// String and QString, as String converted them while Qt was linked: Latin-1, characters beyond
-// it become '?'
-QString toQt(const String &s)
+String withZero(const char *before, const char *after)
 {
-    return QString::fromLatin1(s.constData(), s.size());
+    return String(before) + String(1, '\0') + String(after);
 }
 
 
-String fromQt(const QString &s)
+void testNumbers()
 {
-    const QByteArray latin1 = s.toLatin1();
-    return String::fromLatin1(latin1.constData(), int(latin1.size()));
+    bool ok = false;
+    CHECK_EQUAL(String("12").toInt(&ok), 12);
+    CHECK(ok);
+    CHECK_EQUAL(String(" \t-7 \r\n").toInt(), -7);
+    CHECK_EQUAL(String("+5").toInt(), 5);
+    CHECK_EQUAL(String("+-5").toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK_EQUAL(String("12a").toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK_EQUAL(String("10.5").toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK_EQUAL(String("").toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK_EQUAL(String("2147483647").toInt(), 2147483647);
+    CHECK_EQUAL(String("2147483648").toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK_EQUAL(String("2147483648").toLongLong(), 2147483648LL);
+    CHECK_EQUAL(String("4294967295").toUInt(), 4294967295u);
+    CHECK_EQUAL(String("-1").toUInt(&ok), 0u);
+    CHECK(!ok);
+    CHECK_EQUAL(String("18446744073709551615").toULongLong(), 18446744073709551615ULL);
+    // the data has values ending with a zero byte, the rest doesn't count
+    CHECK_EQUAL(withZero("206 ", "").toInt(), 206);
+    CHECK_EQUAL(withZero("7", "x").toInt(), 7);
+    CHECK_EQUAL(withZero("", "5").toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK_EQUAL(withZero("1.5", "").toDouble(), 1.5);
+    // only ASCII whitespace: in code page 437, 0xa0 is 'á'
+    CHECK_EQUAL(String::fromLatin1("\xa0" "7").toInt(&ok), 0);
+    CHECK(!ok);
+
+    CHECK_EQUAL(String("1.5").toDouble(), 1.5);
+    CHECK_EQUAL(String(" -.5 ").toDouble(), -0.5);
+    CHECK_EQUAL(String("1.").toDouble(), 1.0);
+    CHECK_EQUAL(String("1e3").toDouble(), 1000.0);
+    CHECK_EQUAL(String("2.5E-1").toDouble(), 0.25);
+    CHECK_EQUAL(String("+3").toDouble(), 3.0);
+    CHECK_EQUAL(String("1,5").toDouble(&ok), 0.0);
+    CHECK(!ok);
+    CHECK_EQUAL(String("1e").toDouble(&ok), 0.0);
+    CHECK(!ok);
+    CHECK_EQUAL(String("1e999").toDouble(&ok), 0.0);
+    CHECK(!ok);
+    CHECK_EQUAL(String(".").toDouble(&ok), 0.0);
+    CHECK(!ok);
+    // through a double, as always
+    CHECK_EQUAL(String("0.1").toFloat(), float(0.1));
+    CHECK_EQUAL(String("2.7").toFloat(&ok), 2.7f);
+    CHECK(ok);
+
+    CHECK_EQUAL(String::number(42), "42");
+    CHECK_EQUAL(String::number(-5), "-5");
+    CHECK_EQUAL(String::number(4000000000u), "4000000000");
+    CHECK_EQUAL(String::number(255, 16), "ff");
+    CHECK_EQUAL(String::number(0.1), "0.1");
+    CHECK_EQUAL(String::number(1234567.0), "1.23457e+06");
+    CHECK_EQUAL(String::number(1e-5), "1e-05");
+    CHECK_EQUAL(String::number(2.5, 'f', 0), "2");
+    CHECK_EQUAL(String::number(1.0/3, 'e', 2), "3.33e-01");
+    CHECK_EQUAL(String::number(1.0/3, 'E', 2), "3.33E-01");
 }
 
 
-QStringList toQt(const StringList &list)
+void testArg()
 {
-    QStringList result;
-    for (const String &s : list)
-        result << toQt(s);
-    return result;
+    CHECK_EQUAL(String("%1-%2").arg("a").arg("b"), "a-b");
+    CHECK_EQUAL(String("%2 %1").arg("x"), "%2 x");
+    CHECK_EQUAL(String("%1%1").arg("x"), "xx");
+    CHECK_EQUAL(String("%10 %1").arg("x"), "%10 x");
+    CHECK_EQUAL(String("no escape").arg("x"), "no escape");
+    CHECK_EQUAL(String("%2 %1").arg(String("a"), String("b")), "b a");
+    CHECK_EQUAL(String("%1/%2/%3").arg(String("1"), String("2"), String("3")), "1/2/3");
+    CHECK_EQUAL(String("[%1]").arg("ab", 4), "[  ab]");
+    CHECK_EQUAL(String("[%1]").arg("ab", -4, '*'), "[ab**]");
+    CHECK_EQUAL(String("%1").arg('c'), "c");
+    CHECK_EQUAL(String("tex_%1").arg(7, 3, 10, '0'), "tex_007");
+    CHECK_EQUAL(String("%1").arg(-7, 4, 10, '0'), "-007");
+    CHECK_EQUAL(String("%1").arg(-7, 4), "  -7");
+    CHECK_EQUAL(String("%1").arg(255, 0, 16), "ff");
+    CHECK_EQUAL(String("%1").arg(4000000000u), "4000000000");
+    CHECK_EQUAL(String("%1").arg(-9000000000LL), "-9000000000");
+    // doubles as the traces print them: correctly rounded, so exact halves to even
+    CHECK_EQUAL(String("%1").arg(229.26, 0, 'f', 1), "229.3");
+    CHECK_EQUAL(String("%1").arg(229.25, 0, 'f', 1), "229.2");
+    CHECK_EQUAL(String("%1").arg(-0.04, 0, 'f', 1), "-0.0");
+    CHECK_EQUAL(String("%1").arg(-0.0, 0, 'f', 1), "0.0");
+    CHECK_EQUAL(String("%1").arg(1.5, 6, 'f', 2, '0'), "001.50");
+    CHECK_EQUAL(String("%1").arg(0.5), "0.5");
 }
 
 
-int g_checks = 0;
-int g_failures = 0;
-
-
-void fail(const QString &what, const QString &expected, const QString &actual)
+void testText()
 {
-    if (++g_failures <= 100000)
-        std::cerr << "FAIL " << what.toUtf8().constData() << ": Qt " << expected.toUtf8().constData()
-                  << ", ours " << actual.toUtf8().constData() << std::endl;
+    CHECK_EQUAL(String(" \t a b \r\n").trimmed(), "a b");
+    CHECK_EQUAL(String::fromLatin1("\x85" "x\xa0").trimmed(), String::fromLatin1("\x85" "x\xa0"));
+    CHECK_EQUAL(String::fromLatin1("AbC\xc4\x8e").toLower(), String::fromLatin1("abc\xc4\x8e"));
+    CHECK_EQUAL(String::fromLatin1("abc\xe1\x84").toUpper(), String::fromLatin1("ABC\xe1\x84"));
+
+    CHECK_EQUAL(String("a,,b").split(',').join('|'), "a||b");
+    CHECK_EQUAL(String("a,,b").split(',', String::SkipEmptyParts).join('|'), "a|b");
+    CHECK_EQUAL(String(",a,").split(',').size(), 3);
+    CHECK_EQUAL(String("").split(',').size(), 1);
+    CHECK_EQUAL(String("").split(',', String::SkipEmptyParts).size(), 0);
+    CHECK_EQUAL(String("a  b").split("  ").join('|'), "a|b");
+
+    CHECK_EQUAL(String("  3082 x").section(' ', 0, 0, String::SectionSkipEmpty), "3082");
+    CHECK_EQUAL(String("\\path\\to\\file.img").section('\\', -1), "file.img");
+    CHECK_EQUAL(String("file.img").section('.', 0, 0), "file");
+    CHECK_EQUAL(String("x.y.z").section('.', 1), "y.z");
+    CHECK_EQUAL(String("x.y.z").section('.', -2, -2), "y");
+    CHECK_EQUAL(String("x.y.z").section('.', 5), "");
+
+    const String hello("hello");
+    CHECK_EQUAL(hello.mid(1, 3), "ell");
+    CHECK_EQUAL(hello.mid(3), "lo");
+    CHECK_EQUAL(hello.mid(9), "");
+    CHECK_EQUAL(hello.mid(-2, 4), "he");
+    CHECK_EQUAL(hello.mid(-2), "hello");
+    CHECK_EQUAL(hello.mid(2, 99), "llo");
+    CHECK_EQUAL(hello.left(2), "he");
+    CHECK_EQUAL(hello.left(-1), "hello");
+    CHECK_EQUAL(hello.left(9), "hello");
+    CHECK_EQUAL(hello.right(2), "lo");
+    CHECK_EQUAL(hello.right(9), "hello");
+    CHECK_EQUAL(hello.indexOf('l'), 2);
+    CHECK_EQUAL(hello.indexOf('l', 3), 3);
+    CHECK_EQUAL(hello.indexOf("lo"), 3);
+    CHECK_EQUAL(hello.indexOf('x'), -1);
+    CHECK_EQUAL(hello.lastIndexOf('l'), 3);
+    CHECK_EQUAL(hello.lastIndexOf('l', 2), 2);
+    CHECK_EQUAL(hello.lastIndexOf("he"), 0);
+    CHECK_EQUAL(String("aaa").count("aa"), 2);
+    CHECK_EQUAL(hello.count('l'), 2);
+    CHECK(hello.startsWith("he") && hello.endsWith("lo") && hello.contains("ell") && !hello.contains("x"));
+    CHECK(!String("lo").endsWith("hello"));
+
+    String s("a.b.c");
+    CHECK_EQUAL(s.replace(".", "::"), "a::b::c");
+    CHECK_EQUAL(s.remove(':'), "abc");
+    CHECK_EQUAL(s.insert(1, "-"), "a-bc");
+    CHECK_EQUAL(s.insert(99, "!"), "a-bc!");
+    CHECK_EQUAL(s.remove(1, 1), "abc!");
+    s.chop(1);
+    CHECK_EQUAL(s, "abc");
+    s.truncate(1);
+    CHECK_EQUAL(s, "a");
+    CHECK_EQUAL(String("vfx\\surface").replace('\\', '/'), "vfx/surface");
+
+    // UTF-8 in and out, as Latin-1
+    CHECK_EQUAL(String("Zerstört").toLatin1(), "Zerst\xf6rt");
+    CHECK_EQUAL(String("€").toLatin1(), "?");
+    CHECK_EQUAL(String::fromUtf8("a\xff" "b").toLatin1(), "a?b");
+    CHECK_EQUAL(String::fromLatin1("\xe4" "b").toUtf8(), "\xc3\xa4" "b");
+
+    StringList list{ "station1", "room2", "station3" };
+    CHECK_EQUAL(list.withPrefix("station").join(','), "station1,station3");
+    CHECK_EQUAL(list.indexOf("room2"), 1);
+    CHECK(list.contains("room2") && !list.contains("room"));
+    CHECK_EQUAL(list.removeAll("room2"), 1);
+    CHECK_EQUAL(list.value(5, "none"), "none");
 }
 
 
-QString describe(const QString &s)
+void testValue()
 {
-    QString d = "\"";
-    for (QChar c : s)
-        d += c.unicode() >= 32 && c.unicode() < 127 ? QString(c) : QString("\\x%1").arg(int(c.unicode()), 2, 16, QChar('0'));
-    return d + "\"";
+    bool ok = false;
+    CHECK_EQUAL(txt::Value("12").toInt(&ok), 12);
+    CHECK(ok);
+    CHECK_EQUAL(txt::Value("abc").toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK_EQUAL(txt::Value(" 1.5 ").toFloat(), 1.5f);
+    CHECK_EQUAL(txt::Value("2.5").toDouble(), 2.5);
+    CHECK(!txt::Value("false").toBool() && !txt::Value("FALSE").toBool() && !txt::Value("0").toBool() && !txt::Value("").toBool());
+    CHECK(txt::Value("x").toBool() && txt::Value("1").toBool());
+    // the defaults the code passes
+    CHECK_EQUAL(txt::Value(7).toString(), "7");
+    CHECK_EQUAL(txt::Value(2.5).toInt(), 3);
+    CHECK_EQUAL(txt::Value(-2.5).toInt(), -3);
+    CHECK(!txt::Value(0.4).toBool() && txt::Value(0.5).toBool());
+    CHECK_EQUAL(txt::Value(0.5f).toString(), "0.5");
+    CHECK_EQUAL(txt::Value(123.456).toString(), "123.456");
+    CHECK_EQUAL(txt::Value(1e20).toString(), "1e+20");
+    CHECK_EQUAL(txt::Value(-0.0).toString(), "0");
+    CHECK_EQUAL(txt::Value(true).toString(), "true");
+    CHECK_EQUAL(txt::Value(true).toInt(), 1);
+    // lists: text with one line, never numbers
+    CHECK_EQUAL(txt::Value(StringList{ "12" }).toString(), "12");
+    CHECK_EQUAL(txt::Value(StringList{ "a", "b" }).toString(), "");
+    CHECK_EQUAL(txt::Value(StringList{ "a", "b" }).toStringList().size(), 2);
+    CHECK_EQUAL(txt::Value(StringList{ "12" }).toInt(&ok), 0);
+    CHECK(!ok);
+    CHECK(txt::Value().isNull() && !txt::Value("").isNull());
+    CHECK_EQUAL(txt::Value().toString(), "");
 }
 
 
-// texts compare as Latin-1, which is how the game uses them
-void same(const QString &what, const QString &expected, const String &actual)
+void testDateTime()
 {
-    g_checks++;
-    const QString latin1 = QString::fromLatin1(expected.toLatin1());
-    if (latin1 != toQt(actual))
-        fail(what, describe(latin1), describe(toQt(actual)));
+    const util::DateTime time = util::DateTime::fromIso("2026-10-13T10:37:52.563");
+    CHECK(time.isValid());
+    CHECK_EQUAL(time.year, 2026);
+    CHECK_EQUAL(time.month, 10);
+    CHECK_EQUAL(time.day, 13);
+    CHECK_EQUAL(time.hour, 10);
+    CHECK_EQUAL(time.minute, 37);
+    CHECK_EQUAL(time.second, 52);
+    CHECK_EQUAL(time.millisecond, 563);
+    CHECK_EQUAL(time.toIso(), "2026-10-13T10:37:52.563");
+    CHECK_EQUAL(util::DateTime::fromIso("2026-10-13T10:37:52").toIso(), "2026-10-13T10:37:52.000");
+    CHECK(util::DateTime::fromIso("2024-02-29T00:00:00").isValid());
+    for (const char *text : { "", "garbage", "2026-02-29T00:00:00", "2026-13-01T00:00:00", "2026-10-00T00:00:00", "2026-10-14",
+                              "2026-10-14T16:60:00", "2026-10-14T24:00:00", "2026-10-14 16:05:09", "2026-10-14T16:05:09.12",
+                              "2026-10-14T16:05:09.1234", "0000-10-14T16:05:09" })
+        test::equal(util::DateTime::fromIso(text).isValid(), false, text, __LINE__);
+    CHECK(util::DateTime::fromIso("2026-10-13T10:37:52.563") < util::DateTime::fromIso("2026-10-13T10:37:52.564"));
+    CHECK(util::DateTime::fromIso("2027-01-01T00:00:00") > util::DateTime::fromIso("2026-12-31T23:59:59.999"));
+    const util::DateTime now = util::DateTime::now();
+    CHECK(now.isValid());
+    CHECK(util::DateTime::fromIso(now.toIso()) == now);
 }
-
-
-void same(const QString &what, const QStringList &expected, const StringList &actual)
-{
-    g_checks++;
-    QStringList latin1;
-    for (const QString &s : expected)
-        latin1 << QString::fromLatin1(s.toLatin1());
-    if (latin1 != toQt(actual)) {
-        QStringList a, b;
-        for (const QString &s : latin1)
-            a << describe(s);
-        for (const String &s : actual)
-            b << describe(toQt(s));
-        fail(what, "(" + a.join(", ") + ")", "(" + b.join(", ") + ")");
-    }
-}
-
-
-template <typename T>
-void same(const QString &what, T expected, bool expectedOk, T actual, bool actualOk)
-{
-    g_checks++;
-    const bool equal = expected == actual || (std::isnan(double(expected)) && std::isnan(double(actual)));
-    if (!equal || expectedOk != actualOk)
-        fail(what, QString::number(double(expected), 'g', 17) + (expectedOk ? " ok" : " not ok"),
-             QString::number(double(actual), 'g', 17) + (actualOk ? " ok" : " not ok"));
-}
-
-
-void sameNumbers(const QString &text)
-{
-    const String s = fromQt(text);
-    const QString what = describe(text);
-    bool okQ, ok;
-    int i = text.toInt(&okQ);
-    same(what + ".toInt()", i, okQ, s.toInt(&ok), ok);
-    unsigned u = text.toUInt(&okQ);
-    same(what + ".toUInt()", u, okQ, s.toUInt(&ok), ok);
-    long long l = text.toLongLong(&okQ);
-    same(what + ".toLongLong()", l, okQ, s.toLongLong(&ok), ok);
-    i = text.toInt(&okQ, 16);
-    same(what + ".toInt(16)", i, okQ, s.toInt(&ok, 16), ok);
-    i = text.toInt(&okQ, 0);
-    same(what + ".toInt(0)", i, okQ, s.toInt(&ok, 0), ok);
-    double d = text.toDouble(&okQ);
-    same(what + ".toDouble()", d, okQ, s.toDouble(&ok), ok);
-    float f = text.toFloat(&okQ);
-    same(what + ".toFloat()", f, okQ, s.toFloat(&ok), ok);
-}
-
-
-void sameText(const QString &text)
-{
-    const String s = fromQt(text);
-    const QString what = describe(text);
-    same(what + ".trimmed()", text.trimmed(), s.trimmed());
-    same(what + ".simplified()", text.simplified(), s.simplified());
-    same(what + ".toLower()", text.toLower(), s.toLower());
-    same(what + ".toUpper()", text.toUpper(), s.toUpper());
-    for (const char *separator : { " ", ",", "\\", "=", "  " }) {
-        same(what + ".split(" + separator + ")", text.split(separator), s.split(separator));
-        same(what + ".split(" + separator + ", skip)", text.split(separator, Qt::SkipEmptyParts), s.split(separator, String::SkipEmptyParts));
-    }
-    for (int start = -3; start <= 3; start++) {
-        for (int end = -2; end <= 2; end++) {
-            same(what + QString(".section(' ', %1, %2)").arg(start).arg(end), text.section(' ', start, end), s.section(' ', start, end));
-            same(what + QString(".section(' ', %1, %2, skip)").arg(start).arg(end),
-                 text.section(' ', start, end, QString::SectionSkipEmpty), s.section(' ', start, end, String::SectionSkipEmpty));
-        }
-        same(what + QString(".section('\\\\', %1)").arg(start), text.section('\\', start), s.section('\\', start));
-        same(what + QString(".section('.', %1, 0)").arg(start), text.section('.', start, 0), s.section('.', start, 0));
-    }
-    for (int position = -3; position <= text.size() + 2; position++) {
-        same(what + QString(".left(%1)").arg(position), text.left(position), s.left(position));
-        same(what + QString(".right(%1)").arg(position), text.right(position), s.right(position));
-        same(what + QString(".mid(%1)").arg(position), text.mid(position), s.mid(position));
-        for (int n = -2; n <= 3; n++)
-            same(what + QString(".mid(%1, %2)").arg(position).arg(n), text.mid(position, n), s.mid(position, n));
-        same(what + QString(".indexOf(' ', %1)").arg(position), QString::number(text.indexOf(' ', position)), String::number(s.indexOf(' ', position)));
-    }
-    sameNumbers(text);
-}
-
-
-void sameValue(const QVariant &q, const txt::Value &v, const QString &what)
-{
-    bool okQ, ok;
-    same(what + ".toString()", q.toString(), v.toString());
-    same(what + ".toStringList()", q.toStringList(), v.toStringList());
-    int i = q.toInt(&okQ);
-    same(what + ".toInt()", i, okQ, v.toInt(&ok), ok);
-    float f = q.toFloat(&okQ);
-    same(what + ".toFloat()", f, okQ, v.toFloat(&ok), ok);
-    double d = q.toDouble(&okQ);
-    same(what + ".toDouble()", d, okQ, v.toDouble(&ok), ok);
-    same(what + ".toBool()", int(q.toBool()), true, int(v.toBool()), true);
-}
-
-
-void sameValue(const QString &text)
-{
-    sameValue(QVariant(text), txt::Value(fromQt(text)), "Value(" + describe(text) + ")");
-}
-
-
-const char *const NumberTexts[] = {
-    "", " ", "0", "1", "-1", "+1", "12", " 12", "12 ", "\t12\n", "1 2", "12a", "a12", "0x10", "0X1f", "010", "08",
-    "--1", "+-1", "-+1", "+", "-", "1.", ".5", "-.5", "+.5", "1.5", "10.5", "1e3", "1E3", "1e+3", "1e-3", "1e", "1e+",
-    "e5", ".", "1..2", "1.2.3", "1,5", "1,000", "inf", "-inf", "+inf", "INF", "Inf", "nan", "NaN", "NAN", "infinity",
-    "2147483647", "2147483648", "-2147483648", "-2147483649", "4294967295", "4294967296", "9223372036854775807",
-    "9223372036854775808", "-9223372036854775808", "18446744073709551616", "1e38", "3.5e38", "1e39", "-1e39",
-    "1e-45", "1e-46", "1e308", "1e309", "1e-320", "1e-400", "0.1", "0.2", "0.3", "1.0f", "0.000001", "123456789012",
-    "\x85" "5\xa0", "\xa0" "7", "5\x85", "\xa0", "1\x0b", "\x0c" "2", "00", "-0", "+0", "-0.0", "0e0", "007", "1_000",
-};
-
-// values with a zero byte, as some in the data
-const char NumbersWithZero[][8] = { "206\0", "1.5\0", "\0" "5", "7\0x", "12 \0", "" };
-
-const double Doubles[] = {
-    0, -0.0, 0.5, 1.5, 2.5, -2.5, 0.05, 0.15, 0.25, 0.35, -0.04, -0.05, 1e-5, 1.23456789, 123456.789, 1234567.0,
-    1e15, 1e16, 1e17, 1e20, 1e21, 1e-4, 1e-7, 0.1, 1.0/3, 2.0/3, 99.95, 99.995, 1e100, -1e-100, 16.0, 3.0, 100.0,
-    1e6, 999999.5, 0.000123456, 47.25, -273.15, 5.55e-10,
-};
 
 } // namespace
 
 
-int main(int argc, char *argv[])
+int main()
 {
-    // QString::arg() warns about texts without escapes, which are tested on purpose
-    qInstallMessageHandler([](QtMsgType, const QMessageLogContext &, const QString &) {});
-
-    // every character, alone and around text
-    for (int c = 1; c < 256; c++) {
-        const QString one = QString(QChar(c));
-        sameText(one);
-        sameText(QString("a") + one + "B");
-        sameText(one + "x " + one + one);
-    }
-
-    for (const char *text : NumberTexts) {
-        sameText(QString::fromLatin1(text));
-        sameValue(QString::fromLatin1(text));
-    }
-    for (const char *text : NumbersWithZero) {
-        const QString s = QString::fromLatin1(text, int(strlen(text)) + 1 + int(strlen(text + strlen(text) + 1)));
-        sameNumbers(s);
-        sameValue(s);
-    }
-
-    // random number-like texts
-    std::mt19937 random(1);
-    const char alphabet[] = "0123456789+-.eE x\t";
-    for (int i = 0; i < 100000; i++) {
-        QString text;
-        const int length = int(random() % 10);
-        for (int k = 0; k < length; k++)
-            text += QChar(alphabet[random() % (sizeof(alphabet) - 1)]);
-        sameNumbers(text);
-    }
-
-    // texts with separators
-    for (const char *text : { "a b c", " a  b ", "a\\b\\c.d", "x.y.z", "a,,b", ",a,", "  ", "a  b  c", "key = value ; c",
-                              "\\path\\to\\file.img", "one", "", "a\\", "\\a" })
-        sameText(QString::fromLatin1(text));
-
-    // arg() and number()
-    const QStringList formats = { "%1", "%2 %1", "a%1b%1c", "%1%2", "%10 %1", "%01 %2", "%1 %9 %10 %99", "no escape",
-                                  "%", "100%", "%%1", "%0 %1", "%1%" };
-    for (const QString &format : formats) {
-        const String f = fromQt(format);
-        for (int width : { 0, 3, -3, 6, -6 }) {
-            for (QChar fill : { QChar(' '), QChar('0'), QChar('*') }) {
-                const QString what = describe(format) + QString(".arg(…, %1, '%2')").arg(width).arg(fill);
-                for (const char *a : { "", "x", "abc", "longer text" })
-                    same(what + a, format.arg(QString(a), width, fill), f.arg(String(a), width, fill.toLatin1()));
-                for (int n : { 0, 5, -5, 42, -42, 12345, -123456, INT_MAX, INT_MIN }) {
-                    same(what + QString::number(n), format.arg(n, width, 10, fill), f.arg(n, width, 10, fill.toLatin1()));
-                    same(what + QString::number(n) + " hex", format.arg(n, width, 16, fill), f.arg(n, width, 16, fill.toLatin1()));
-                }
-                for (unsigned n : { 0u, 7u, 4000000000u })
-                    same(what + QString::number(n), format.arg(n, width, 10, fill), f.arg(n, width, 10, fill.toLatin1()));
-                for (long long n : { 0ll, -9000000000ll, 9000000000ll })
-                    same(what + QString::number(n), format.arg(n, width, 10, fill), f.arg(n, width, 10, fill.toLatin1()));
-                same(what + "char", format.arg(QChar('c'), width, fill), f.arg('c', width, fill.toLatin1()));
-                for (double d : Doubles) {
-                    for (char form : { 'f', 'e', 'g', 'E', 'G' }) {
-                        for (int precision : { -1, 0, 1, 2, 3, 6, 10 }) {
-                            const QString w = what + QString::number(d, 'g', 17) + " " + form + QString::number(precision);
-                            same(w, format.arg(d, width, form, precision, fill), f.arg(d, width, form, precision, fill.toLatin1()));
-                        }
-                    }
-                    same(what + QString::number(d, 'g', 17), format.arg(d), f.arg(d));
-                }
-            }
-        }
-        same(describe(format) + ".arg(a, b)", format.arg("first", "second"), f.arg(String("first"), String("second")));
-        same(describe(format) + ".arg(a, b, c)", format.arg("1st", "2nd", "3rd"), f.arg(String("1st"), String("2nd"), String("3rd")));
-    }
-    for (double d : Doubles) {
-        for (char form : { 'f', 'e', 'g' })
-            for (int precision : { 0, 1, 2, 6 })
-                same(QString("number(%1, %2, %3)").arg(d, 0, 'g', 17).arg(form).arg(precision),
-                     QString::number(d, form, precision), String::number(d, form, precision));
-        same(QString("number(%1)").arg(d, 0, 'g', 17), QString::number(d), String::number(d));
-    }
-    for (int n : { 0, 1, -1, 255, INT_MAX, INT_MIN })
-        for (int base : { 2, 8, 10, 16, 36 })
-            same(QString("number(%1, %2)").arg(n).arg(base), QString::number(n, base), String::number(n, base));
-
-    // values of other types (the defaults passed to DesFile::value())
-    for (int i : { 0, 1, -1, 7, 10000000 })
-        sameValue(QVariant(i), txt::Value(i), QString("Value(%1)").arg(i));
-    for (float f : { 0.0f, 1.0f, 0.5f, 0.1f, 2.7f, -2.5f, 1.5f, 1e20f, 3.25f })
-        sameValue(QVariant(f), txt::Value(f), QString("Value(%1f)").arg(f));
-    for (double d : { 0.0, 0.8, 0.5, 2.5, -1.5, 1e-5, 1e20, 123.456 })
-        sameValue(QVariant(d), txt::Value(d), QString("Value(%1)").arg(d));
-    for (bool b : { false, true })
-        sameValue(QVariant(b), txt::Value(b), QString("Value(%1)").arg(b));
-    sameValue(QVariant(), txt::Value(), "Value()");
-    for (const QStringList &list : { QStringList(), QStringList{ "12" }, QStringList{ "a", "b" }, QStringList{ "" } }) {
-        StringList l;
-        for (const QString &s : list)
-            l << fromQt(s);
-        sameValue(QVariant(list), txt::Value(l), "Value(list " + list.join("|") + ")");
-    }
-
-    // UTF-8 literals
-    same("String(\"Zerstört\")", QString("Zerstört"), String("Zerstört"));
-    same("String(\"\\u20ac\")", QString("\u20ac"), String("\u20ac"));
-    g_checks++;
-    if (String::fromLatin1("\xe4" "b").toUtf8() != QString::fromLatin1("\xe4" "b").toUtf8().toStdString())
-        fail("toUtf8()", "", "");
-
-    // the game data: every line and every value of its text files
-    // the times of saved games, read as QDateTime::fromString(…, Qt::ISODate) read them and
-    // written as toString(Qt::ISODateWithMs) wrote them
-    auto sameTime = [](const QString &text) {
-        const QDateTime q = QDateTime::fromString(text, Qt::ISODate);
-        const util::DateTime ours = util::DateTime::fromIso(fromQt(text));
-        const bool equal = q.isValid() ? ours.isValid() && ours.year == q.date().year() && ours.month == q.date().month() && ours.day == q.date().day()
-                && ours.hour == q.time().hour() && ours.minute == q.time().minute() && ours.second == q.time().second() && ours.millisecond == q.time().msec()
-                : !ours.isValid();
-        same("DateTime " + describe(text), q.isValid() ? q.toString(Qt::ISODateWithMs) : QString("invalid"), equal ? (q.isValid() ? ours.toIso() : String("invalid")) : String("different: ") + ours.toIso());
-    };
-    std::mt19937 times(2);
-    for (int i = 0; i < 20000; i++) {
-        const QDateTime t(QDate(1990 + int(times() % 60), 1 + int(times() % 12), 1 + int(times() % 28)), QTime(int(times() % 24), int(times() % 60), int(times() % 60), int(times() % 1000)));
-        sameTime(t.toString(Qt::ISODateWithMs));
-        sameTime(t.toString(Qt::ISODate));
-    }
-    // (not those with a time zone, which saved games never had)
-    for (const char *text : { "2026-10-14T16:05:09", "2026-10-14T16:05", "2026-10-14 16:05:09.5", "2026-02-29T00:00:00.000",
-                              "2024-02-29T00:00:00.000", "2026-13-01T00:00", "2026-00-10T00:00", "2026-10-00T00:00", "2026-10-14", "",
-                              "garbage", "2026-10-14T16:60:00", "2026-10-14T16:05:60", "2026-10-14T16:05:09.1234", "2026-10-14T16:05:09.",
-                              "2026-10-14T16:05:09.12", "2026-10-14T1:05:09", "26-10-14T16:05:09", "2026-10-14T16:05:09.000x",
-                              "0000-10-14T16:05:09.000" })
-        sameTime(QString::fromLatin1(text));
-
-    if (argc > 1) {
-        int files = 0, lines = 0;
-        QDirIterator it(QString::fromLocal8Bit(argv[1]), QDir::Files, QDirIterator::Subdirectories);
-        while (it.hasNext()) {
-            const QString path = it.next();
-            const QString suffix = QFileInfo(path).suffix().toLower();
-            if (suffix != "des" && suffix != "txt" && suffix != "ini")
-                continue;
-            QFile file(path);
-            if (!file.open(QFile::ReadOnly))
-                continue;
-            files++;
-            while (!file.atEnd()) {
-                const QString line = QString::fromLatin1(file.readLine());
-                lines++;
-                sameText(line);
-                const int equals = line.indexOf('=');
-                if (equals >= 0) {
-                    QString value = line.mid(equals + 1);
-                    const int comment = value.indexOf(';');
-                    if (comment >= 0)
-                        value.truncate(comment);
-                    sameText(value.trimmed());
-                    sameValue(value.trimmed());
-                }
-            }
-        }
-        std::cout << files << " data files, " << lines << " lines" << std::endl;
-    }
-
-    std::cout << g_checks << " checks, " << g_failures << " failures" << std::endl;
-    return g_failures == 0 ? 0 : 1;
+    testNumbers();
+    testArg();
+    testText();
+    testValue();
+    testDateTime();
+    return test::result();
 }

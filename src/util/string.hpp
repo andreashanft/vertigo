@@ -29,12 +29,11 @@ namespace util {
 
 class StringList;
 
-// Text as the game uses it: one byte per character, the character code being the byte
-// (Latin-1). The game data is 8-bit text (DOS code page 437) and the fonts are indexed by
-// those bytes, so this keeps them as they are. The functions are the part of QString's
-// interface the code uses and behave like it on such text (the comments name the cases
-// where that isn't obvious). Literals and other UTF-8 text become Latin-1, characters
-// outside it '?'. File paths, which can hold any character, aren't Strings.
+// Text as the game uses it: one byte per character. The game data is 8-bit text (DOS code page
+// 437) and the fonts are indexed by those bytes, so this keeps them as they are; only ASCII
+// letters change case and only ASCII whitespace counts as such. Converted from and to UTF-8 as
+// Latin-1 (characters outside it become '?'). The functions are named as QString's, which the
+// code used before. File paths, which can hold any character, aren't Strings.
 class String
 {
 public:
@@ -50,10 +49,8 @@ public:
     static String fromLatin1(const std::string &data) { return fromLatin1(data.data(), int(data.size())); }
     static String fromUtf8(const char *data, int size = -1);
     static String fromUtf8(const std::string &data) { return fromUtf8(data.data(), int(data.size())); }
-    static String fromStdString(const std::string &utf8) { return fromUtf8(utf8); }
-    static String fromLocal8Bit(const char *data) { return fromUtf8(data); }
 
-    // QString::number(): as arg() below
+    // as arg() below
     static String number(int n, int base = 10) { return number((long long)n, base); }
     static String number(unsigned int n, int base = 10) { return number((unsigned long long)n, base); }
     static String number(long n, int base = 10) { return number((long long)n, base); }
@@ -61,7 +58,7 @@ public:
     static String number(long long n, int base = 10);
     static String number(unsigned long long n, int base = 10);
     static String number(double n, char format = 'g', int precision = 6);
-    // as QChar::isSpace(): 9 to 13, 32, 0x85 and 0xa0
+    // ASCII whitespace: 9 to 13 and 32
     static bool isSpace(char c);
 
 public:
@@ -82,7 +79,6 @@ public:
 
     std::string toLatin1() const { return m_data; }
     std::string toUtf8() const;
-    std::string toStdString() const { return toUtf8(); }
 
     void clear() { m_data.clear(); }
     void resize(int size) { m_data.resize(size_t(size > 0 ? size : 0)); }
@@ -101,23 +97,18 @@ public:
     String &operator+=(const char *s) { return append(String(s)); }
     String &operator+=(char c) { return append(c); }
 
-    // like QString, for indexes beyond the string as well
+    // also for counts beyond the string, and n < 0 for all of it
     String left(int n) const;
     String right(int n) const;
     String mid(int position, int n = -1) const;
+    // the parts from start to end, counted from the last where negative
     String section(char separator, int start, int end = -1, int flags = SectionDefault) const;
     String section(const String &separator, int start, int end = -1, int flags = SectionDefault) const;
     StringList split(char separator, SplitBehavior behavior = KeepEmptyParts) const;
     StringList split(const String &separator, SplitBehavior behavior = KeepEmptyParts) const;
-    // whitespace: 9 to 13, 32, and like QChar::isSpace() also 0x85 and 0xa0 (in the game's code
-    // page 'à' and 'á')
     String trimmed() const;
-    String simplified() const;
-    // as QString: 0xe0-0xfe (not 0xf7) and 0xc0-0xde (not 0xd7) change case; 0xdf (ß) becomes
-    // "SS", 0xff and 0xb5 (µ) become characters outside Latin-1, here '?'
     String toLower() const;
     String toUpper() const;
-    String repeated(int times) const;
 
     bool contains(char c) const { return m_data.find(c) != std::string::npos; }
     bool contains(const String &s) const { return m_data.find(s.m_data) != std::string::npos; }
@@ -133,18 +124,18 @@ public:
     int count(const String &s) const;
     int count() const { return size(); }
 
-    // as QString: the C locale, whitespace around the number allowed, nothing else; 0 and
-    // ok = false if the text isn't a number of the type ("10.5".toInt() is 0)
-    int toInt(bool *ok = nullptr, int base = 10) const;
-    unsigned int toUInt(bool *ok = nullptr, int base = 10) const;
-    long long toLongLong(bool *ok = nullptr, int base = 10) const;
-    unsigned long long toULongLong(bool *ok = nullptr, int base = 10) const;
+    // decimal, whitespace around the number allowed, nothing else (but a zero byte and what
+    // follows it); 0 and ok = false if the text isn't a number of the type ("10.5".toInt() is 0)
+    int toInt(bool *ok = nullptr) const;
+    unsigned int toUInt(bool *ok = nullptr) const;
+    long long toLongLong(bool *ok = nullptr) const;
+    unsigned long long toULongLong(bool *ok = nullptr) const;
     double toDouble(bool *ok = nullptr) const;
     float toFloat(bool *ok = nullptr) const;
 
-    // as QString::arg(): replaces every %1 to %99 with the lowest number in the text; a positive
-    // field width pads on the left, a negative one on the right; a '0' fill pads numbers after
-    // their sign
+    // replaces every %1 to %99 with the lowest number in the text; a positive field width pads
+    // on the left, a negative one on the right; a '0' fill pads numbers after their sign.
+    // Doubles are rounded correctly ('f', 'e' or 'g' as printf's, but without a sign at zero)
     String arg(const String &a, int fieldWidth = 0, char fill = ' ') const;
     String arg(const char *a, int fieldWidth = 0, char fill = ' ') const { return arg(String(a), fieldWidth, fill); }
     String arg(char a, int fieldWidth = 0, char fill = ' ') const { return arg(String(1, a), fieldWidth, fill); }
@@ -194,7 +185,7 @@ private:
 };
 
 
-// QStringList's part in use, with signed sizes
+// a list of Strings, with signed sizes
 class StringList : public std::vector<String>
 {
 public:
@@ -219,8 +210,6 @@ public:
     bool contains(const String &s) const;
     int indexOf(const String &s, int from = 0) const;
     int removeAll(const String &s);
-    void removeAt(int i) { erase(begin() + i); }
-    String takeFirst();
     String join(const String &separator) const;
     String join(char separator) const { return join(String(1, separator)); }
 

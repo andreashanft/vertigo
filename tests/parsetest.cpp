@@ -15,174 +15,115 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
-// The parsers of txt/parse.hpp replace regular expressions. While Qt is linked (until step Q5 of
-// the iPad port) they are compared with QRegularExpression here: on random texts of the
-// characters that matter, and with the game data's directory as the argument also on every line
-// of its text files.
+
+// The parsers of txt/parse.hpp, on lines of the shapes the game data has
+
+#include "check.hpp"
 
 #include "txt/parse.hpp"
-
-#include <QDirIterator>
-#include <QFile>
-#include <QRegularExpression>
-
-#include <iostream>
-#include <map>
-#include <random>
 
 
 namespace {
 
-// all of it, also past a zero byte
-String fromQt(const QString &s)
+// the parts a parser found, joined by '|', or "-" if it found nothing
+String section(const String &line)
 {
-    const QByteArray latin1 = s.toLatin1();
-    return String::fromLatin1(latin1.constData(), int(latin1.size()));
+    String name;
+    return txt::parseSection(line, name) ? name : "-";
 }
 
 
-int g_checks = 0;
-int g_failures = 0;
-std::map<std::string, int> g_kinds;
-
-
-std::string describe(const String &s)
+String keyValue(const String &line)
 {
-    std::string d = "\"";
-    for (const char c : s.toLatin1()) {
-        const unsigned char u = static_cast<unsigned char>(c);
-        if (u >= 32 && u < 127) {
-            d += c;
-        } else {
-            char hex[8];
-            std::snprintf(hex, sizeof(hex), "\\x%02x", u);
-            d += hex;
-        }
-    }
-    return d + "\"";
+    String key, value;
+    return txt::parseKeyValue(line, key, value) ? key + "|" + value : "-";
 }
 
 
-// a match and its groups, as Qt finds them and as ours
-void same(const char *kind, const String &text, const QRegularExpressionMatch &expected, bool matched, const std::vector<String> &groups)
+String numberedText(const String &line)
 {
-    g_checks++;
-    bool ok = expected.hasMatch() == matched;
-    for (std::size_t i = 0; ok && matched && i < groups.size(); i++)
-        ok = fromQt(expected.captured(int(i) + 1)) == groups[i];
-    if (ok)
-        return;
-    g_failures++;
-    if (++g_kinds[kind] > 5)
-        return;
-    std::cerr << "FAIL " << kind << " on " << describe(text) << ": Qt " << (expected.hasMatch() ? "matches" : "doesn't match");
-    for (int i = 1; expected.hasMatch() && i <= expected.lastCapturedIndex(); i++)
-        std::cerr << " " << describe(fromQt(expected.captured(i)));
-    std::cerr << ", ours " << (matched ? "matches" : "doesn't match");
-    for (std::size_t i = 0; matched && i < groups.size(); i++)
-        std::cerr << " " << describe(groups[i]);
-    std::cerr << std::endl;
+    String number, text;
+    return txt::parseNumberedText(line, number, text) ? number + "|" + text : "-";
 }
 
 
-void check(const String &text)
+String numbered(const String &name, const String &prefix)
 {
-    const QString q = QString::fromLatin1(text.constData(), text.size());
-    String a, b, c;
+    String number;
+    return txt::parseNumbered(name, prefix, number) ? number : "-";
+}
 
-    static const QRegularExpression section("^\\s*\\[(.*)\\]");
-    bool matched = txt::parseSection(text, a);
-    same("section", text, section.match(q), matched, { a });
 
-    static const QRegularExpression keyValue("([^=]*)=([^;]*)");
-    matched = txt::parseKeyValue(text, a, b);
-    same("keyValue", text, keyValue.match(q), matched, { a, b });
+String tagged(const String &text)
+{
+    String tag, rest;
+    return txt::parseTagged(text, tag, rest) ? tag + "|" + rest : "-";
+}
 
-    static const QRegularExpression numberedText("#(\\d*).*\\{(.*)\\}");
-    matched = txt::parseNumberedText(text, a, b);
-    same("numberedText", text, numberedText.match(q), matched, { a, b });
 
-    for (const char *prefix : { "station", "room", "" }) {
-        const QRegularExpression numbered(QString("^%1(\\d*)$").arg(prefix));
-        matched = txt::parseNumbered(text, prefix, a);
-        same("numbered", text, numbered.match(q), matched, { a });
-    }
+String movieNumber(const String &name)
+{
+    String number;
+    return txt::parseMovieNumber(name, number) ? number : "-";
+}
 
-    static const QRegularExpression tagged("(\\w): (.*)");
-    matched = txt::parseTagged(text, a, b);
-    same("tagged", text, tagged.match(q), matched, { a, b });
 
-    static const QRegularExpression movie("d(\\d*)\\.mvi");
-    matched = txt::parseMovieNumber(text, a);
-    same("movie", text, movie.match(q), matched, { a });
-
-    static const QRegularExpression position("(\\d*)\\/(\\d*)\\/(\\d*)\\/(\\d*)");
+String position(const String &text)
+{
     String numbers[4];
-    matched = txt::parsePosition(text, numbers);
-    same("position", text, position.match(q), matched, { numbers[0], numbers[1], numbers[2], numbers[3] });
-
-    g_checks++;
-    static const QRegularExpression digits("\\d+");
-    const String replaced = txt::replaceNumbers(text, "#");
-    const String expected = fromQt(QString(q).replace(digits, "#"));
-    if (replaced != expected) {
-        g_failures++;
-        if (++g_kinds["replaceNumbers"] <= 5)
-            std::cerr << "FAIL replaceNumbers on " << describe(text) << ": Qt " << describe(expected) << ", ours " << describe(replaced) << std::endl;
-    }
-}
-
-
-void silence(QtMsgType, const QMessageLogContext &, const QString &)
-{
+    return txt::parsePosition(text, numbers) ? numbers[0] + "|" + numbers[1] + "|" + numbers[2] + "|" + numbers[3] : "-";
 }
 
 } // namespace
 
 
-int main(int argc, char *argv[])
+int main()
 {
-    qInstallMessageHandler(silence);
+    CHECK_EQUAL(section("[Global]\r\n"), "Global");
+    CHECK_EQUAL(section("  [ station1 ] ; x\n"), " station1 ");
+    CHECK_EQUAL(section("[a]b]"), "a]b");
+    CHECK_EQUAL(section("[a"), "-");
+    CHECK_EQUAL(section("x [a]"), "-");
+    CHECK_EQUAL(section(""), "-");
 
-    // every character alone, and random texts of those that matter (and some that only look so)
-    for (int c = 0; c < 256; c++)
-        check(String(1, char(c)));
-    const std::string alphabet = std::string("#{}[]=;:/ \t\n\r\v\f.dmvistaonroTAM_xyz0123456789") + "\xa0\x85\xb2\xe9\xc4";
-    std::mt19937 random(1);
-    for (int i = 0; i < 400000; i++) {
-        String text;
-        const int length = std::uniform_int_distribution<int>(0, 24)(random);
-        for (int j = 0; j < length; j++)
-            text += alphabet[std::uniform_int_distribution<std::size_t>(0, alphabet.size() - 1)(random)];
-        check(text);
-    }
-    // the shapes they are meant for
-    for (const char *text : { "[Global]\n", "  [ station1 ] ; x\n", "key = value ; comment\n", "#12 x {Hallo} y}\n", "station12",
-                              "station12\n", "room3", "T: Text", "xd36.mvi", "1/2/3/4", "a1/2/3/4/5", "condition: 12 of 345" })
-        check(text);
+    CHECK_EQUAL(keyValue("key = value ; comment\n"), "key | value ");
+    CHECK_EQUAL(keyValue("a=b"), "a|b");
+    CHECK_EQUAL(keyValue("=x;y"), "|x");
+    CHECK_EQUAL(keyValue("a=b=c"), "a|b=c");
+    CHECK_EQUAL(keyValue("no value"), "-");
 
-    // every line of the game's text files, as DesFile and Dialog read them
-    if (argc > 1) {
-        QDirIterator it(QString::fromLocal8Bit(argv[1]), QDir::Files, QDirIterator::Subdirectories);
-        int files = 0;
-        while (it.hasNext()) {
-            QFile file(it.next());
-            const QString suffix = QFileInfo(file.fileName()).suffix().toLower();
-            if (suffix != "des" && suffix != "txt" && suffix != "ini" && suffix != "sen" && suffix != "lan")
-                continue;
-            if (!file.open(QIODevice::ReadOnly))
-                continue;
-            files++;
-            while (!file.atEnd()) {
-                const QByteArray line = file.readLine();
-                check(String::fromLatin1(line.constData(), int(line.size())));
-            }
-        }
-        std::cout << files << " files" << std::endl;
-    }
+    // the last '{' before the last '}'
+    CHECK_EQUAL(numberedText("#12 x {Hallo} y}\n"), "12|Hallo} y");
+    CHECK_EQUAL(numberedText("#5 {a}{b}"), "5|b");
+    CHECK_EQUAL(numberedText("#{x}"), "|x");
+    CHECK_EQUAL(numberedText("#7 x"), "-");
+    CHECK_EQUAL(numberedText("{x} #3"), "-");
+    CHECK_EQUAL(numberedText("no hash {x}"), "-");
 
-    for (const auto &kind : g_kinds)
-        std::cout << kind.second << " failures of " << kind.first << std::endl;
-    std::cout << g_checks << " checks, " << g_failures << " failures" << std::endl;
-    return g_failures == 0 ? 0 : 1;
+    CHECK_EQUAL(numbered("station12", "station"), "12");
+    CHECK_EQUAL(numbered("station", "station"), "");
+    CHECK_EQUAL(numbered("room3", "room"), "3");
+    CHECK_EQUAL(numbered("station12x", "station"), "-");
+    CHECK_EQUAL(numbered("xstation1", "station"), "-");
+
+    CHECK_EQUAL(tagged("T: Text"), "T|Text");
+    CHECK_EQUAL(tagged("condition: 12 of 345\n"), "n|12 of 345");
+    CHECK_EQUAL(tagged("no tag"), "-");
+    CHECK_EQUAL(tagged(": x"), "-");
+
+    CHECK_EQUAL(movieNumber("gfx:mvi/film/d36.mvi"), "36");
+    CHECK_EQUAL(movieNumber("dd5.mvi"), "5");
+    CHECK_EQUAL(movieNumber("d.mvi"), "");
+    CHECK_EQUAL(movieNumber("d5.mv"), "-");
+
+    CHECK_EQUAL(position("1/2/3/4"), "1|2|3|4");
+    CHECK_EQUAL(position("a1/2/3/4/5"), "1|2|3|4");
+    CHECK_EQUAL(position(String("9/7/2/0") + String(1, '\0')), "9|7|2|0");
+    CHECK_EQUAL(position("//3/"), "||3|");
+    CHECK_EQUAL(position("1/2/3"), "-");
+
+    CHECK_EQUAL(txt::replaceNumbers("condition: 12 of 345", "#"), "condition: # of #");
+    CHECK_EQUAL(txt::replaceNumbers("text12", "#"), "text#");
+    CHECK_EQUAL(txt::replaceNumbers("none", "#"), "none");
+    return test::result();
 }

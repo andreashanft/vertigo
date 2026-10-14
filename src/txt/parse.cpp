@@ -89,19 +89,17 @@ bool parseKeyValue(const String &line, String &key, String &value)
 
 bool parseNumberedText(const String &line, String &number, String &text)
 {
-    // from the first '#' that the rest follows on the same line
-    for (int hash = line.indexOf('#'); hash >= 0; hash = line.indexOf('#', hash + 1)) {
-        const int digits = digitsFrom(line, hash + 1);
-        const int end = lineEnd(line, hash + 1);
-        const int close = line.left(end).lastIndexOf('}');
-        const int open = close < 0 ? -1 : line.left(close).lastIndexOf('{');
-        if (open < digits)
-            continue;
-        number = line.mid(hash + 1, digits - hash - 1);
-        text = line.mid(open + 1, close - open - 1);
-        return true;
-    }
-    return false;
+    const int hash = line.indexOf('#');
+    if (hash < 0)
+        return false;
+    const int digits = digitsFrom(line, hash + 1);
+    const int close = line.left(lineEnd(line, hash + 1)).lastIndexOf('}');
+    const int open = close < 0 ? -1 : line.left(close).lastIndexOf('{');
+    if (open < digits)
+        return false;
+    number = line.mid(hash + 1, digits - hash - 1);
+    text = line.mid(open + 1, close - open - 1);
+    return true;
 }
 
 
@@ -109,9 +107,8 @@ bool parseNumbered(const String &name, const String &prefix, String &number)
 {
     if (!name.startsWith(prefix))
         return false;
-    int end = digitsFrom(name, prefix.size());
-    // '$' also matches before a final '\n'
-    if (end != name.size() && !(end == name.size() - 1 && name[end] == '\n'))
+    const int end = digitsFrom(name, prefix.size());
+    if (end != name.size())
         return false;
     number = name.mid(prefix.size(), end - prefix.size());
     return true;

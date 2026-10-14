@@ -157,7 +157,7 @@ private:
     std::unique_ptr<gfx::Framebuffer> m_instruments;   // the instruments, projected onto the model
     Vector2D m_look;        // yaw (left) and pitch (up) of the pilot's head in radians
     bool m_looking;         // a mouse button is held
-    Point m_lookStart;      // where the drag started
+    PointD m_lookStart;     // where the drag started
     Vector2D m_lookFrom;    // and the look direction then
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;

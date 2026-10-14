@@ -23,10 +23,8 @@
 namespace txt {
 
 // A value of a DesFile: the text after "key =", the lines of a "{ }" block, or a default the
-// code passes. The conversions behave like QVariant's, which DesFile returned before: text
-// converts as String does (but toInt() cuts a 64-bit number to 32 bits), a number to text in its
-// shortest form, a double to int or bool rounded; a list is text only if it has one line, and
-// never a number.
+// code passes. Text converts to numbers as String does, a number to text in its shortest form, a
+// double to int or bool rounded; a list is text only if it has one line, and never a number.
 class Value
 {
 public:

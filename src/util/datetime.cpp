@@ -79,36 +79,14 @@ DateTime DateTime::now()
 
 DateTime DateTime::fromIso(const String &text)
 {
+    // "yyyy-mm-ddThh:mm:ss", and ".zzz" for the milliseconds
     DateTime time;
-    if (!number(text, 0, 4, time.year) || text.mid(4, 1) != "-" || !number(text, 5, 2, time.month) || text.mid(7, 1) != "-"
-            || !number(text, 8, 2, time.day))
+    const bool milliseconds = text.size() == 23 && text[19] == '.' && number(text, 20, 3, time.millisecond);
+    if ((text.size() != 19 && !milliseconds) || !number(text, 0, 4, time.year) || text[4] != '-' || !number(text, 5, 2, time.month)
+            || text[7] != '-' || !number(text, 8, 2, time.day) || text[10] != 'T' || !number(text, 11, 2, time.hour) || text[13] != ':'
+            || !number(text, 14, 2, time.minute) || text[16] != ':' || !number(text, 17, 2, time.second))
         return DateTime();
-    // a date alone is its midnight
-    int at = 10;
-    if (at < text.size()) {
-        if ((text.mid(10, 1) != "T" && text.mid(10, 1) != " ") || !number(text, 11, 2, time.hour) || text.mid(13, 1) != ":"
-                || !number(text, 14, 2, time.minute))
-            return DateTime();
-        at = 16;
-    }
-    if (text.mid(at, 1) == ":") {
-        if (!number(text, at + 1, 2, time.second))
-            return DateTime();
-        at += 3;
-        // a fraction of a second, to the millisecond
-        if (text.mid(at, 1) == "." || text.mid(at, 1) == ",") {
-            int digits = 0;
-            double fraction = 0, scale = 0.1;
-            for (at++; at < text.size() && text[at] >= '0' && text[at] <= '9'; at++, digits++, scale /= 10)
-                fraction += (text[at] - '0')*scale;
-            if (digits == 0)
-                return DateTime();
-            time.millisecond = int(fraction*1000 + 0.5);
-            if (time.millisecond == 1000)
-                time.millisecond = 999;
-        }
-    }
-    if (at != text.size() || time.year == 0 || time.month < 1 || time.month > 12 || time.day < 1 || time.day > daysInMonth(time.year, time.month)
+    if (time.year == 0 || time.month < 1 || time.month > 12 || time.day < 1 || time.day > daysInMonth(time.year, time.month)
             || time.hour > 23 || time.minute > 59 || time.second > 59)
         return DateTime();
     return time;

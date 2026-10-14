@@ -99,8 +99,7 @@ void Image::setPixel(int x, int y, std::uint32_t indexOrRgb)
     std::uint8_t *p = scanLine(y) + x*bytesPerPixel();
     switch (m_format) {
     case Indexed8:
-        if (indexOrRgb < std::uint32_t(m_colorTable.size()))
-            *p = std::uint8_t(indexOrRgb);
+        *p = std::uint8_t(indexOrRgb);
         break;
     case RGB888:
         p[0] = red(indexOrRgb);
@@ -277,14 +276,11 @@ Image Image::convertToFormat(Format format) const
     std::vector<Rgb> row(m_width);
     if (m_format == Indexed8) {
         Rgb colors[256];
-        bool transparent = false;
-        for (const Rgb color : m_colorTable)
-            transparent = transparent || alpha(color) != 255;
         for (int i = 0; i < 256; i++) {
             if (m_colorTable.empty())
                 colors[i] = rgb(i, i, i);
             else
-                colors[i] = i < m_colorTable.size() ? m_colorTable[i] : transparent ? 0 : rgb(0, 0, 0);
+                colors[i] = i < m_colorTable.size() ? m_colorTable[i] : 0;
         }
         for (int y = 0; y < m_height; y++) {
             const std::uint8_t *index = constScanLine(y);

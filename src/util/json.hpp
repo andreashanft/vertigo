@@ -27,8 +27,7 @@
 namespace util {
 
 // A JSON value, as the glTF files of the 3D cockpits need it. Reading what isn't there (a missing
-// key, an index past the end, a value of another type) gives an undefined value or the default,
-// as QJsonValue did.
+// key, an index past the end, a value of another type) gives an undefined value or the default.
 class Json
 {
 public:
@@ -48,7 +47,7 @@ public:
     double toDouble(double defaultValue = 0) const;
     // whole numbers in range, else the default
     int toInt(int defaultValue = 0) const;
-    // whole numbers exactly, others rounded; 0 for anything but a number
+    // rounded; 0 for anything but a number
     std::int64_t toInt64() const;
     // UTF-8
     const std::string& toString() const;
@@ -69,9 +68,6 @@ private:
     Type m_type = Undefined;
     bool m_bool = false;
     double m_number = 0;
-    // for numbers written without a fraction or an exponent, which fit
-    bool m_integral = false;
-    std::int64_t m_integer = 0;
     std::string m_string;
     std::shared_ptr<std::vector<Json>> m_elements;
     std::shared_ptr<std::map<std::string, Json>> m_members;

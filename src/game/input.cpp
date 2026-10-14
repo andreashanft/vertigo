@@ -22,12 +22,6 @@
 namespace input {
 
 
-Point MouseEvent::pos() const
-{
-    return Point(int(std::lround(m_position.x)), int(std::lround(m_position.y)));
-}
-
-
 Key parseKey(const String &text, int &modifiers)
 {
     modifiers = NoModifier;

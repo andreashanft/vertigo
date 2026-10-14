@@ -29,7 +29,7 @@ typedef util::RectangleExclusive<int> Rect;
 
 typedef util::RectangleInclusive<float> RectF;
 
-// in double precision, where the window's geometry was QRectF's
+// in double precision, for positions in the window
 typedef util::RectangleInclusive<double> RectD;
 
 typedef glm::ivec2 Point;

@@ -54,8 +54,7 @@ void Menu::setRootWidget(ui::Widget *widget)
 
 Point Menu::imagePos(input::MouseEvent *event)
 {
-    // (from the nearest point, as Qt gave it)
-    const PointD pos = screenToImage(PointD(event->pos()));
+    const PointD pos = screenToImage(event->position());
     return Point(int(std::lround(pos.x)), int(std::lround(pos.y)));
 }
 

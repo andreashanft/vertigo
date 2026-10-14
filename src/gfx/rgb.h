@@ -22,7 +22,7 @@
 
 namespace gfx {
 
-// a colour as 0xAARRGGBB, not premultiplied (QRgb's layout, which this replaces)
+// a colour as 0xAARRGGBB, not premultiplied
 using Rgb = std::uint32_t;
 
 constexpr int red(Rgb c) { return (c >> 16) & 0xff; }
@@ -46,10 +46,10 @@ constexpr int gray(Rgb c)
     return (red(c)*11 + green(c)*16 + blue(c)*5)/32;
 }
 
-// brighter or darker by a factor in percent, keeping the hue and the alpha: in HSV, the value
-// times the factor (as QColor::lighter() and darker() do, to the bit)
-Rgb lighter(Rgb c, int factor = 150);
-Rgb darker(Rgb c, int factor = 200);
+// brighter or darker by a factor in percent (100 or more), keeping the hue and the alpha; a
+// colour too bright to grow brighter becomes whiter instead
+Rgb lighter(Rgb c, int factor);
+Rgb darker(Rgb c, int factor);
 
 } // namespace gfx
 

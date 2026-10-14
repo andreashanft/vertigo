@@ -27,8 +27,8 @@
 
 namespace util {
 
-// Reads little-endian numbers from bytes, as QDataStream did: a number past the end reads as 0
-// (and so does every one after it)
+// Reads little-endian numbers from bytes: a number past the end reads as 0 (and so does every one
+// after it)
 class ByteReader
 {
 public:
