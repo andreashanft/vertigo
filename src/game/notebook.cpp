@@ -131,19 +131,19 @@ Notebook::Notebook(std::function<void()> funcClose) :
     }
 }
 
-void Notebook::createLabel(ui::Widget *parent, txt::String text, float posY)
+void Notebook::createLabel(ui::Widget *parent, txt::StringId text, float posY)
 {
     m_labels.emplace_back(parent);
     setupLabel(m_labels.back(), text, posY);
 }
 
-void Notebook::createButton(std::function<void()> funcClick, ui::Widget *parent, txt::String text, float posY)
+void Notebook::createButton(std::function<void()> funcClick, ui::Widget *parent, txt::StringId text, float posY)
 {
     m_buttons.emplace_back(funcClick, parent);
     setupButton(m_buttons.back(), text, posY);
 }
 
-void Notebook::setupLabel(ui::Label &label, txt::String text, float posY)
+void Notebook::setupLabel(ui::Label &label, txt::StringId text, float posY)
 {
     label.setFont(m_fontYellow);
     label.setText(txt::StringTable::get(text));
@@ -152,7 +152,7 @@ void Notebook::setupLabel(ui::Label &label, txt::String text, float posY)
     label.setAlignment(ui::Label::AlignHCenter);
 }
 
-void Notebook::setupButton(ui::Button &button, txt::String text, float posY)
+void Notebook::setupButton(ui::Button &button, txt::StringId text, float posY)
 {
     setupLabel(button, text, posY);
     button.setFont(m_fontGreen);
@@ -226,7 +226,7 @@ void Notebook::showMoviePlayer()
     int y = 40;
     foreach (int movie, movies) {
         m_movieButtons.emplace_back([this, movie]() { Chapter::get()->playMovie(movie); }, &m_lblMoviePlayer);
-        setupButton(m_movieButtons.back(), txt::String(txt::FirstMovie + movie), y);
+        setupButton(m_movieButtons.back(), txt::StringId(txt::FirstMovie + movie), y);
         y += 10;
     }
     m_btnMoviePlayerHide.setPosition(0, y + 10);
@@ -252,17 +252,17 @@ void Notebook::hideMap()
 
 void Notebook::updateMovies()
 {
-    txt::String autopilot = txt::Notebook_Movies_Autopilot_No;
+    txt::StringId autopilot = txt::Notebook_Movies_Autopilot_No;
     if (Chapter::get()->movieAutopilot())
         autopilot = txt::Notebook_Movies_Autopilot_Yes;
     m_btnMoviesAutopilot.setText(txt::StringTable::get(autopilot));
 
-    txt::String approach = txt::Notebook_Movies_Approach_No;
+    txt::StringId approach = txt::Notebook_Movies_Approach_No;
     if (Chapter::get()->movieApproach())
         approach = txt::Notebook_Movies_Approach_Yes;
     m_btnMoviesApproach.setText(txt::StringTable::get(approach));
 
-    txt::String harbour = txt::Notebook_Movies_Harbour_No;
+    txt::StringId harbour = txt::Notebook_Movies_Harbour_No;
     if (Chapter::get()->movieHarbour())
         harbour = txt::Notebook_Movies_Harbour_Yes;
     m_btnMoviesHarbour.setText(txt::StringTable::get(harbour));

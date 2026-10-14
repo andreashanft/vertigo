@@ -65,7 +65,7 @@ bool StringTable::load()
 }
 
 
-QString StringTable::get(String string)
+QString StringTable::get(StringId string)
 {
     return m_tableDesktop.at(string);
 }

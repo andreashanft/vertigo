@@ -301,7 +301,7 @@ void MainMenu::showLoading()
 
 void MainMenu::updateDifficulty()
 {
-    m_btnMainDifficulty.setText(txt::StringTable::get(txt::String(txt::Text107 + fight::Scenario::difficulty())));
+    m_btnMainDifficulty.setText(txt::StringTable::get(txt::StringId(txt::Text107 + fight::Scenario::difficulty())));
 }
 
 

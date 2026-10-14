@@ -25,7 +25,7 @@
 namespace txt {
 
 
-enum String
+enum StringId
 {
     Text0,
     Text1,
@@ -320,7 +320,7 @@ class StringTable
 public:
     static bool load();
     static const QString& language() { return m_language; }
-    static QString get(String string);
+    static QString get(StringId string);
     static QString get(StringFight string);
 
 private:

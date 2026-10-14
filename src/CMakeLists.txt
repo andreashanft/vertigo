@@ -218,6 +218,8 @@ set(SOURCES
     sfx/samplemap.cpp
     sfx/samplemap.h
 
+    txt/value.cpp
+    txt/value.h
     txt/desfile.cpp
     txt/desfile.h
     txt/stringtable.cpp
@@ -253,6 +255,8 @@ set(SOURCES
     util/rect.hpp
     util/ticks.h
     util/size.hpp
+    util/string.cpp
+    util/string.hpp
 )
 
 add_executable(vertigo WIN32 ${SOURCES})
