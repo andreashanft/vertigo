@@ -18,6 +18,7 @@
 #include "vertigo.h"
 
 #include "hud/hud.h"
+#include "game/renderer.h"
 #include "game/boat.h"
 #include "game/items.h"
 #include "fight/scenario.h"
@@ -36,6 +37,7 @@
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QKeyEvent>
+#include <QMouseEvent>
 #include <QMap>
 #include <QTextStream>
 #include <QRegularExpression>
@@ -153,17 +155,21 @@ int Vertigo::start(const Options &options)
     }
     float nextTrace = 0;
     auto keys = options.keys;
+    auto clicks = options.clicks;
     QElapsedTimer timer;
     timer.start();
-    // test times are mission seconds: simulated without a window, real time with one
+    // test times are mission seconds: simulated without a window, real time with one, unless the
+    // mission advances by a fixed step per frame
     float simulatedTime = 0;
-    auto elapsed = [&]() { return headless ? simulatedTime : timer.elapsed()/1000.0f; };
+    const float fixedStep = options.fixedStep && !headless && hud ? 0.02f : 0;
+    hud::HUD::setFixedStep(fixedStep);
+    auto elapsed = [&]() { return headless ? simulatedTime : fixedStep > 0 ? hud->frames()*fixedStep : timer.elapsed()/1000.0f; };
 
     if (headless) {
         sfx::SoundSystem::get()->setVolume(0);
     } else {
         // automated runs (with a time limit) shouldn't take the focus (on macOS see also main())
-        if (!options.scenario.isEmpty() && options.timeout > 0)
+        if (options.timeout > 0)
             // what Qt::WA_ShowWithoutActivating sets for a widget
             m_window.setProperty("_q_showWithoutActivating", true);
         m_window.show();
@@ -203,7 +209,8 @@ int Vertigo::start(const Options &options)
             }
             destroy.clear();
         }
-        for (auto it = keys.begin(); scenario && it != keys.end(); ) {
+        // keys and screenshots work in the main menu too, at seconds since the start
+        for (auto it = keys.begin(); it != keys.end(); ) {
             // a key's release is due at time + hold; hold < 0 marks a key that is already pressed
             const bool pressed = it->hold < 0;
             if (elapsed() < it->time) {
@@ -284,7 +291,20 @@ int Vertigo::start(const Options &options)
                 }
             }
         }
-        for (auto it = screenshots.begin(); scenario && it != screenshots.end(); ) {
+        for (auto it = clicks.begin(); it != clicks.end(); ) {
+            if (elapsed() < it->time || !m_window.renderer()) {
+                ++it;
+                continue;
+            }
+            // the mouse moves there first, so the button under it is highlighted as for a player
+            const QPointF pos = m_window.renderer()->imageToScreen(it->pos);
+            const QPointF global = m_window.mapToGlobal(pos.toPoint());
+            QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseMove, pos, global, Qt::NoButton, Qt::NoButton, Qt::NoModifier));
+            QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseButtonPress, pos, global, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier));
+            QCoreApplication::postEvent(&m_window, new QMouseEvent(QEvent::MouseButtonRelease, pos, global, Qt::LeftButton, Qt::NoButton, Qt::NoModifier));
+            it = clicks.erase(it);
+        }
+        for (auto it = screenshots.begin(); it != screenshots.end(); ) {
             if (elapsed() < it->time) {
                 ++it;
                 continue;
@@ -297,7 +317,7 @@ int Vertigo::start(const Options &options)
         // test mode doesn't wait for the autopilot key
         if (scenario && result == ExitAborted && scenario->conditionManager().autopilot())
             finish(ExitSuccess);
-        if (scenario && options.timeout > 0 && elapsed() >= options.timeout)
+        if (options.timeout > 0 && elapsed() >= options.timeout)
             finish(result == ExitAborted ? ExitTimeout : result);
     }
 

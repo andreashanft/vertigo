@@ -72,6 +72,7 @@ HUD::CockpitMode g_cockpitMode = HUD::CockpitMode::Art;
 float g_headMotion = 1;
 bool g_lookFixed = false;
 Vector2D g_look;
+float g_fixedStep = 0;
 
 // mouse look: degrees per pixel dragged, how far the head turns (further, the eye would be in the
 // headrest), and the neck it turns about (below and behind the eye, so the eye moves as well)
@@ -142,6 +143,12 @@ float HUD::headMotion()
 {
     readSettings();
     return g_headMotion;
+}
+
+
+void HUD::setFixedStep(float seconds)
+{
+    g_fixedStep = seconds;
 }
 
 
@@ -359,6 +366,7 @@ void HUD::start(fight::Scenario *scenario)
     m_scenario = scenario;
     m_scenario->setBoat(m_boat);
     m_lastTicks = util::ticks();
+    m_frames = 0;
     m_navPoint = -1;
     m_paused = false;
     m_frozen = false;
@@ -507,8 +515,10 @@ void HUD::draw()
 
     const int ticks = util::ticks();
     // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
-    step(std::min((ticks - m_lastTicks)/1000.0f, 0.25f));
-    updateLook((ticks - m_lastTicks)/1000.0f);
+    const float elapsed = g_fixedStep > 0 ? g_fixedStep : std::min((ticks - m_lastTicks)/1000.0f, 0.25f);
+    m_frames++;
+    step(elapsed);
+    updateLook(g_fixedStep > 0 ? g_fixedStep : (ticks - m_lastTicks)/1000.0f);
     m_lastTicks = ticks;
     // a handler of the events in step() may have ended the mission
     if (!m_scenario)

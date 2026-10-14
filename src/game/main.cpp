@@ -45,10 +45,10 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument("mission", "Start this mission directly (test mode), e.g. s00101.", "[mission]");
     const QCommandLineOption boatOption("boat", "Boat in test mode: 2049 Hiob, 2050 Gator, 2051 Zorn, 2052 Succubus.", "type");
     const QCommandLineOption equipOption("equip", "Install items in test mode, e.g. GUN=3082,TUR1=3074 (repeatable, see --list-items).", "mounting=model");
-    const QCommandLineOption timeoutOption("timeout", "End test mode after this many seconds.", "seconds");
+    const QCommandLineOption timeoutOption("timeout", "End test mode, or the game, after this many seconds.", "seconds");
     const QCommandLineOption overlayOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     const QCommandLineOption destroyOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
-    const QCommandLineOption keysOption("keys", "Press keys at the given seconds (test mode), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
+    const QCommandLineOption keysOption("keys", "Press keys at the given seconds (test mode, or since the start), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
     const QCommandLineOption driveOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     const QCommandLineOption traceOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     const QCommandLineOption headlessOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
@@ -60,13 +60,15 @@ int main(int argc, char *argv[])
     const QCommandLineOption seedOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
     const QCommandLineOption cockpitOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
     const QCommandLineOption shakeOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
-    const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), e.g. 3=front.png.", "time=file");
+    const QCommandLineOption screenshotOption("screenshot", "Save the window at the given mission seconds (test mode), or seconds since the start, e.g. 3=front.png.", "time=file");
     const QCommandLineOption dataOption("data", "Use the game data in this directory for this run, instead of the remembered one.", "directory");
+    const QCommandLineOption fixedStepOption("fixed-step", "Advance the mission by 20 ms per frame instead of by the real time (test mode, with a window), so runs repeat exactly, e.g. for --screenshot.");
+    const QCommandLineOption clickOption("click", "Click at the given seconds (test mode, or since the start) at a point of the 640x480 screen, e.g. 2=320,300.", "time=x,y");
     const QCommandLineOption lookOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
-    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, nearOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, lookOption, dataOption });
+    parser.addOptions({ boatOption, equipOption, timeoutOption, overlayOption, destroyOption, keysOption, driveOption, traceOption, fireOption, nearOption, headlessOption, checkOption, itemsOption, difficultyOption, seedOption, cockpitOption, shakeOption, screenshotOption, fixedStepOption, clickOption, lookOption, dataOption });
 
-    // Automated runs with a window (a mission with a time limit) shouldn't take the focus. On
-    // macOS, Qt and AppKit (which takes the mission argument for a file to open) activate the app
+    // Automated runs with a window (with a time limit) shouldn't take the focus. On macOS, Qt
+    // and AppKit (which takes a mission argument for a file to open) activate the app
     // when it has finished launching. Unless this is set, Qt makes the process a foreground app
     // when the QApplication is created, so the arguments are checked before: a background app
     // can't be activated, but it has no Dock icon and gets no keyboard input other than --keys.
@@ -74,7 +76,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < argc; i++)
         arguments << QString::fromLocal8Bit(argv[i]);
     if (parser.parse(arguments) && !parser.isSet(checkOption) && !parser.isSet(headlessOption)
-            && !parser.positionalArguments().isEmpty() && parser.value(timeoutOption).toInt() > 0)
+            && parser.value(timeoutOption).toInt() > 0)
         qputenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1");
 
     QApplication app(argc, argv);
@@ -96,6 +98,7 @@ int main(int argc, char *argv[])
     options.timeout = parser.value(timeoutOption).toInt();
     options.debugOverlay = parser.isSet(overlayOption);
     options.headless = parser.isSet(headlessOption);
+    options.fixedStep = parser.isSet(fixedStepOption);
     // test runs don't depend on the difficulty chosen in the game
     if (options.check || !options.scenario.isEmpty())
     {
@@ -137,6 +140,14 @@ int main(int argc, char *argv[])
             return game::Vertigo::ExitUsage;
         }
         options.screenshots.push_back({ format.captured(1).toFloat(), format.captured(2) });
+    }
+    foreach (const QString &value, parser.values(clickOption)) {
+        const QRegularExpressionMatch format = QRegularExpression(QRegularExpression::anchoredPattern("([\\d.]+)=([\\d.]+),([\\d.]+)")).match(value);
+        if (!format.hasMatch()) {
+            QTextStream(stderr) << "Invalid --click value " << value << ", expected time=x,y\n";
+            return game::Vertigo::ExitUsage;
+        }
+        options.clicks.push_back({ format.captured(1).toFloat(), QPointF(format.captured(2).toFloat(), format.captured(3).toFloat()) });
     }
     foreach (const QString &value, parser.values(destroyOption)) {
         foreach (const QString &id, value.split(',', Qt::SkipEmptyParts)) {

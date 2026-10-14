@@ -79,6 +79,15 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   instead of following their orders.
 - `--screenshot 3=front.png` saves the window at the given mission seconds
   (not with `--headless`).
+- `--fixed-step` advances the mission by 20 ms per frame instead of by the
+  real time, so runs with a window repeat exactly, frame by frame (test times
+  are then mission seconds). Screenshots of two builds can be compared pixel
+  by pixel this way, e.g. after changes to the renderer.
+- `--click 2=320,300` clicks at the given seconds at a point of the 640×480
+  screen (the mouse moves there first).
+- Without a mission, `--timeout`, `--keys`, `--click` and `--screenshot`
+  work in the main menu and the game it starts, in seconds since the start,
+  e.g. `vertigo --click 1=320,240 --screenshot 3=menu.png --timeout 4`.
 - `--seed 5` picks the random numbers (default 1), so a run repeats exactly.
   Compare runs only between builds of the same build type: an optimized
   build rounds floating point differently, and missions can end differently.

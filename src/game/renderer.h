@@ -51,6 +51,7 @@ public:
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
     QRectF rectOrtho() const { return m_rectOrtho; }
     QPointF screenToImage(const QPointF &pos);
+    QPointF imageToScreen(const QPointF &pos);
 
 public:
     virtual void keyPressEvent(QKeyEvent *) {}

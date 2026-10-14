@@ -39,6 +39,7 @@ public:
 
 public:
     void setRenderer(Renderer *renderer);
+    Renderer* renderer() const { return m_renderer; }
     // saves the next frame as an image file
     void saveScreenshot(const QString &fileName);
     // shows what has been drawn so far, e.g. a loading screen before a long load

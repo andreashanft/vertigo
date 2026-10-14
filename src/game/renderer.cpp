@@ -121,4 +121,11 @@ QPointF Renderer::screenToImage(const QPointF &pos)
 }
 
 
+QPointF Renderer::imageToScreen(const QPointF &pos)
+{
+    const Vector4D p = m_projectionMatrix * Vector4D(pos.x(), pos.y(), 0, 1);
+    return QPointF((p.x + 1.0f)/2.0f*width(), (1.0f - p.y)/2.0f*height());
+}
+
+
 } // namespace game

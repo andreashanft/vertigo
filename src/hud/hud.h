@@ -66,6 +66,11 @@ public:
     // turns the pilot's head in the 3D cockpit for good (degrees, left and up positive), e.g. for
     // screenshots; the mouse can't turn it then
     static void setLook(float yaw, float pitch);
+    // advances the mission by this many seconds per frame instead of by the real time, so test
+    // runs with a window repeat exactly (0: real time)
+    static void setFixedStep(float seconds);
+    // frames drawn of the current mission
+    int frames() const { return m_frames; }
 
 public:
     // the player leaves the mission: accomplished (autopilot), abort the game, restart the mission, load the last save
@@ -137,6 +142,7 @@ private:
     game::Boat *m_boat;
     fight::Scenario *m_scenario;
     int m_lastTicks;
+    int m_frames = 0;
     int m_navPoint;
 
     bool m_wide;
