@@ -18,9 +18,8 @@
 #include "desfile.h"
 #include "stringtable.h"
 #include "util/datapath.h"
+#include "parse.hpp"
 #include "util/path.hpp"
-
-#include <QRegularExpression>
 
 
 // also used by Items
@@ -59,27 +58,24 @@ bool DesFile::load(const std::string &filename)
     const std::vector<std::string> lines = util::lines(data);
     std::size_t next = 0;
 
-    const QRegularExpression regSection("^\\s*\\[(.*)\\]");
-    // values may be followed by a ';' comment, which can contain '=' itself
-    const QRegularExpression regKey("([^=]*)=([^;]*)");
 
     while (next < lines.size()) {
         // the game data is 8-bit (DOS codepage 437) text; keep the raw bytes, the fonts are indexed by them
-        const std::string &bytes = lines[next++];
-        const QString line = QString::fromLatin1(bytes.data(), int(bytes.size()));
+        const String line = String::fromLatin1(lines[next++]);
 
-        const QRegularExpressionMatch section = regSection.match(line);
-        if (section.hasMatch())
-            setSection(String(section.captured(1)).trimmed().toLower());
+        String section;
+        if (parseSection(line, section))
+            setSection(section.trimmed().toLower());
 
-        const QRegularExpressionMatch keyValue = regKey.match(line);
-        if (keyValue.hasMatch()) {
-            const String key = String(keyValue.captured(1)).trimmed().toLower();
+        // values may be followed by a ';' comment, which can contain '=' itself
+        String key, value;
+        if (parseKeyValue(line, key, value)) {
+            key = key.trimmed().toLower();
             if (!key.startsWith(";") && !key.startsWith("/"))
-                setValue(key, String(keyValue.captured(2)).trimmed());
+                setValue(key, value.trimmed());
         }
 
-        if (String::fromLatin1(bytes).trimmed() == "{")
+        if (line.trimmed() == "{")
         {
             // up to "}"; at the end of the file, without the last line
             StringList text;

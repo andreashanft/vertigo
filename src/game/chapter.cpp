@@ -21,11 +21,11 @@
 #include "hud/hud.h"
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
+#include "txt/parse.hpp"
 #include "util/containers.hpp"
 #include "util/path.hpp"
 #include <QStandardPaths>
 #include <QSettings>
-#include <QRegularExpression>
 
 
 namespace game {
@@ -108,7 +108,7 @@ void Chapter::loadChapter(int chapter)
 {
     if (m_code != -1) {
         m_tasksFile.setSection(String("localtask_%1").arg(m_code));
-        for (const String &key : m_tasksFile.keys().filter(QRegularExpression("^task\\d*")))
+        for (const String &key : m_tasksFile.keys().withPrefix("task"))
             util::removeAll(m_runningTasks, m_tasksFile.value(key).toInt());
     }
 
@@ -158,45 +158,45 @@ void Chapter::load(const std::string &filename, bool load)
         if (station.shortName() == startStation)
             startStationIndex = station.index();
 
-        for (const String &key : file.keys().filter(QRegularExpression("^mission\\d*")))
+        for (const String &key : file.keys().withPrefix("mission"))
             addMission(file.value(key).toString(), station.index());
     }
 
     file.setSection("pendingdialogues");
-    for (const String &key : file.keys().filter(QRegularExpression("^dialogue\\d*")))
+    for (const String &key : file.keys().withPrefix("dialogue"))
         addDialog(file.value(key).toInt());
 
     file.setSection("successmissions");
     if (file.value("clearmissions").toString().toLower() == "yes")
         m_successfulMissions.clear();
-    for (const String &key : file.keys().filter(QRegularExpression("^mission\\d*")))
+    for (const String &key : file.keys().withPrefix("mission"))
         m_successfulMissions.append(file.value(key).toString());
 
     file.setSection(String("area%1").arg(m_area->code()));
-    for (const String &key : file.keys().filter(QRegularExpression("^mission\\d*")))
+    for (const String &key : file.keys().withPrefix("mission"))
         addMission(file.value(key).toString(), -1);
 
     file.setSection("runningtasks");
     if (file.value("cleartasks").toString().toLower() == "yes")
         m_runningTasks.clear();
-    for (const String &key : file.keys().filter(QRegularExpression("^task\\d*")))
+    for (const String &key : file.keys().withPrefix("task"))
         addTask(file.value(key).toInt());
 
     file.setSection("messageboard");
     if (file.value("clearboard").toString().toLower() == "yes")
         m_messages.clear();
-    for (const String &key : file.keys().filter(QRegularExpression("^message\\d*")))
+    for (const String &key : file.keys().withPrefix("message"))
         addMessage(file.value(key).toInt());
 
     file.setSection("disabledstations");
-    for (const String &key : file.keys().filter(QRegularExpression("^station\\d*")))
+    for (const String &key : file.keys().withPrefix("station"))
         disableStation(file.value(key).toInt());
 
     file.setSection("statistics");
     m_numSmallTalks = file.value("numofsmalltalkssincelaststory", 0).toInt();
 
     file.setSection("movies");
-    for (const String &key : file.keys().filter(QRegularExpression("^movie\\d*")))
+    for (const String &key : file.keys().withPrefix("movie"))
         m_playedMovies.insert(file.value(key).toInt());
 
     file.setSection("Ship");
@@ -498,10 +498,10 @@ void Chapter::playApproach(bool autopilot)
 {
     if (m_approachMovieReplacement.count(m_currentStation)) {
         const String movie = util::take(m_approachMovieReplacement, m_currentStation);
-        const QRegularExpressionMatch match = QRegularExpression("d(\\d*)\\.mvi").match(movie);
-        if (match.hasMatch()) {
-            m_playedMovies.insert(match.captured(1).toInt());
-            if (match.captured(1).toInt() == 36)
+        String number;
+        if (txt::parseMovieNumber(movie, number)) {
+            m_playedMovies.insert(number.toInt());
+            if (number.toInt() == 36)
                 m_end = true;
         }
         m_movies.emplace("gfx:mvi/film/" + movie, Movie::MovieFilm);

@@ -222,6 +222,8 @@ set(SOURCES
     sfx/samplemap.cpp
     sfx/samplemap.h
 
+    txt/parse.cpp
+    txt/parse.hpp
     txt/value.cpp
     txt/value.h
     txt/desfile.cpp

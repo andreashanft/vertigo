@@ -26,3 +26,14 @@ target_include_directories(imagetest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(imagetest SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/3rdparty/stb)
 target_link_libraries(imagetest Qt${QT_VERSION_MAJOR}::Gui)
 add_test(NAME image COMMAND imagetest)
+
+# the parsers of txt/parse.hpp, compared with the regular expressions they replace while Qt is
+# linked; with the game data's directory as the argument also on every line of its text files
+add_executable(parsetest
+    parsetest.cpp
+    ${PROJECT_SOURCE_DIR}/src/txt/parse.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/string.cpp
+)
+target_include_directories(parsetest PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(parsetest Qt${QT_VERSION_MAJOR}::Core)
+add_test(NAME parse COMMAND parsetest)

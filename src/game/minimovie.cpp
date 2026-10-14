@@ -20,7 +20,6 @@
 #include "gfx/image.h"
 #include "util/random.h"
 #include "util/string.hpp"
-#include <QRegularExpression>
 
 
 namespace game {
@@ -42,7 +41,7 @@ MiniMovie::~MiniMovie()
 
 void MiniMovie::load(txt::DesFile &file)
 {
-    for (const String &section : file.sections().filter(QRegularExpression("^minimovie"))) {
+    for (const String &section : file.sections().withPrefix("minimovie")) {
         file.setSection(section);
 
         const String name = file.value("Name").toString();

@@ -20,11 +20,11 @@
 #include "gfx/colortable.h"
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
+#include "txt/parse.hpp"
 #include "txt/stringtable.h"
 #include "util/bytereader.hpp"
 #include "util/datapath.h"
 #include "util/path.hpp"
-#include <QRegularExpression>
 #include <algorithm>
 
 
@@ -77,18 +77,19 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
 
     m_name = file.value("Name").toString();
 
-    const QRegularExpressionMatch position = QRegularExpression("(\\d*)\\/(\\d*)\\/(\\d*)\\/(\\d*)").match(file.value("Position").toString());
-    if (position.hasMatch()) {
-        m_area = position.captured(1).toInt();
-        m_station = position.captured(2).toInt();
-        m_room = position.captured(3).toInt();
-        m_person = position.captured(4).toInt();
+    // area/station/room/person
+    String position[4];
+    if (txt::parsePosition(file.value("Position").toString(), position)) {
+        m_area = position[0].toInt();
+        m_station = position[1].toInt();
+        m_room = position[2].toInt();
+        m_person = position[3].toInt();
     }
 
     m_female = file.value("Sex").toString() == "f";
     m_isSmallTalk = file.value("Type").toString() == "smalltalk";
 
-    for (const String &section : file.sections().filter(QRegularExpression("^message"))) {
+    for (const String &section : file.sections().withPrefix("message")) {
         file.setSection(section);
         const int id = file.value("Id").toInt();
         const String type = file.value("Type").toString();
@@ -140,7 +141,7 @@ Dialog::Dialog(int chapter, int id, ui::Widget *parent,
         m_messages.emplace_hint(m_messages.lower_bound(id), id, message);
     }
 
-    for (const String &section : file.sections().filter(QRegularExpression("^precondition"))) {
+    for (const String &section : file.sections().withPrefix("precondition")) {
         file.setSection(section);
 
         const String type = file.value("Type").toString().toLower();
@@ -399,16 +400,11 @@ void Dialog::loadStrings(const String &filename)
     if (!util::readFile(util::DataPath::resolve(filename), data))
         return;
 
-    const QRegularExpression regexp("#(\\d*).*\\{(.*)\\}");
-    for (const std::string &bytes : util::lines(data)) {
-        String line = String::fromLatin1(bytes);
-
-        const QRegularExpressionMatch match = regexp.match(line);
-        if (match.hasMatch()) {
-            const int index = match.captured(1).toInt();
-            const String text(match.captured(2));
-            m_strings[index] = text;
-        }
+    // #<index> ... {<text>}
+    for (const std::string &line : util::lines(data)) {
+        String index, text;
+        if (txt::parseNumberedText(String::fromLatin1(line), index, text))
+            m_strings[index.toInt()] = text;
     }
 }
 

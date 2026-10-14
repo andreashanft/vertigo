@@ -30,6 +30,7 @@
 #include <cmath>
 #include <algorithm>
 #include "txt/desfile.h"
+#include "txt/parse.hpp"
 #include "util/datapath.h"
 #include "util/path.hpp"
 
@@ -37,7 +38,6 @@
 #include <QElapsedTimer>
 #include <QKeyEvent>
 #include <QMouseEvent>
-#include <QRegularExpression>
 #include <iostream>
 
 namespace game {
@@ -361,7 +361,7 @@ int Vertigo::check(const StringList &names)
             // object ids differ between missions, so don't tell them apart in the totals
             String kind = count.first;
             if (kind.startsWith("condition: "))
-                kind.replace(QRegularExpression("\\d+"), "#");
+                kind = txt::replaceNumbers(kind, "#");
             totals[kind] += count.second;
         }
         objects += scenario.objectRecords().size();

@@ -19,7 +19,7 @@
 #include "desktop.h"
 #include "txt/desfile.h"
 
-#include <QRegularExpression>
+#include "txt/parse.hpp"
 
 
 namespace game {
@@ -49,10 +49,10 @@ void Area::load(const String &name)
     m_map = file.value("Name").toString();
 
     for (const String &section : file.sections()) {
-        const QRegularExpressionMatch match = QRegularExpression("^station(\\d*)$").match(section);
-        if (match.hasMatch()) {
+        String number;
+        if (txt::parseNumbered(section, "station", number)) {
             file.setSection(section);
-            const int index = match.captured(1).toUInt();
+            const int index = number.toUInt();
             const String station = file.value("Name").toString();
             m_stations[index] = Station(index, station);
         }

@@ -246,6 +246,8 @@ public:
     explicit StringList(const QStringList &list);
     operator QStringList() const;
     StringList filter(const QRegularExpression &expression) const;
+    // those starting with the prefix
+    StringList withPrefix(const String &prefix) const;
 };
 
 } // namespace util

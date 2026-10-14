@@ -963,6 +963,16 @@ StringList String::split(const QRegularExpression &expression, SplitBehavior beh
 }
 
 
+StringList StringList::withPrefix(const String &prefix) const
+{
+    StringList result;
+    for (const String &s : *this)
+        if (s.startsWith(prefix))
+            result.append(s);
+    return result;
+}
+
+
 StringList StringList::filter(const QRegularExpression &expression) const
 {
     StringList list;

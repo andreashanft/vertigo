@@ -22,7 +22,7 @@
 #include "sfx/soundsystem.h"
 #include "txt/desfile.h"
 #include <QKeyEvent>
-#include <QRegularExpression>
+#include "txt/parse.hpp"
 #include <cassert>
 
 
@@ -79,10 +79,12 @@ Desktop::Desktop(const String &name) :
     m_notebook.hide();
 
     m_widgetRooms = new ui::Label(&m_lblBackground);
-    for (const String &section : file.sections().filter(QRegularExpression("^room"))) {
+    for (const String &section : file.sections().withPrefix("room")) {
         file.setSection(section);
 
-        const int index = QRegularExpression("^room(\\d*)$").match(section).captured(1).toInt();
+        String number;
+        txt::parseNumbered(section, "room", number);
+        const int index = number.toInt();
 
         const String name = file.value("Name").toString();
         const String arrow = file.value("Arrow").toString();

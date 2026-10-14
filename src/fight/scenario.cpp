@@ -28,6 +28,7 @@
 #include "game/boat.h"
 #include "sfx/samplemap.h"
 #include "util/debug.h"
+#include "txt/parse.hpp"
 #include "txt/stringtable.h"
 
 #include "objects/building.h"
@@ -46,7 +47,6 @@
 #include <qopengl.h>
 #include <QSettings>
 #include <QTime>
-#include <QRegularExpression>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtx/transform.hpp>
@@ -154,7 +154,7 @@ Scenario::Scenario(const String &name) :
     std::vector<std::pair<ActiveObject *, std::vector<OrderSlot>>> pendingOrders;
     std::vector<ActiveObject *> absentUnits; // only at a higher difficulty
     const int difficulty = Scenario::difficulty();
-    for (const String &section : m_file.sections().filter(QRegularExpression("^movable\\d*"))) {
+    for (const String &section : m_file.sections().withPrefix("movable")) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -465,7 +465,7 @@ Scenario::Scenario(const String &name) :
     }
 
     // currents: each cell covers a 2x2 block of map cells; speeds aren't in the data (docs/ROADMAP.md, appendix D)
-    for (const String &section : m_file.sections().filter(QRegularExpression("^current\\d*", QRegularExpression::CaseInsensitiveOption))) {
+    for (const String &section : m_file.sections().withPrefix("current")) {
         m_file.setSection(section);
         m_file.value("id");
         if (m_file.value("typ").toInt() != 3072 || m_file.value("pz").toInt() != 0)
@@ -487,7 +487,7 @@ Scenario::Scenario(const String &name) :
         m_currentGrid[std::make_pair(x/2, y/2)] = direction*speed;
     }
 
-    for (const String &section : m_file.sections().filter(QRegularExpression("^radio\\d*"))) {
+    for (const String &section : m_file.sections().withPrefix("radio")) {
         m_file.setSection(section);
 
         const int id = m_file.value("id").toInt();
@@ -537,17 +537,16 @@ Scenario::Scenario(const String &name) :
     m_endType = m_file.value("Type").toInt();
 
     // report what the loader ignored, with numbers in names collapsed to '#'
-    const QRegularExpression digits("\\d+");
     for (const String &section : m_file.sections()) {
         if (placeholderSections.count(section))
             continue;
-        const String sectionName = String(section).replace(digits, "#");
+        const String sectionName = txt::replaceNumbers(section, "#");
         if (!m_file.wasSectionRead(section)) {
             loadIssue(String("unread section: %1").arg(sectionName));
             continue;
         }
         for (const String &key : m_file.unreadKeys(section))
-            loadIssue(String("unread key: %1/%2").arg(sectionName, String(key).replace(digits, "#")));
+            loadIssue(String("unread key: %1/%2").arg(sectionName, txt::replaceNumbers(key, "#")));
     }
 
 

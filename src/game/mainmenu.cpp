@@ -26,7 +26,6 @@
 #include <qopengl.h>
 #include <QKeyEvent>
 #include <QLocale>
-#include <QRegularExpression>
 #include <algorithm>
 
 namespace game {
@@ -231,8 +230,12 @@ void MainMenu::keyPressEvent(QKeyEvent *event)
         if (event->key() == Qt::Key_Backspace)
             m_name.chop(1);
 
-        String text = String(event->text()).toLower();
-        text.remove(QRegularExpression("[^a-z\\-0-9 ]*"));
+        // only lower-case letters, digits, '-' and spaces
+        const String typed = String(event->text()).toLower();
+        String text;
+        for (const char c : typed)
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == ' ')
+                text += c;
         if (!text.isEmpty())
             m_name += text;
 

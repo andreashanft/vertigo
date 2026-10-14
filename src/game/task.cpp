@@ -16,7 +16,7 @@
  ***************************************************************************/
 
 #include "task.h"
-#include <QRegularExpression>
+#include "txt/parse.hpp"
 
 
 namespace game {
@@ -24,14 +24,15 @@ namespace game {
 
 Task::Task(const String &text)
 {
-    const QRegularExpressionMatch match = QRegularExpression("(\\w): (.*)").match(text);
-    if (match.captured(1) == "T")
+    // "T: text", a tip; A a job, M a mission
+    String type;
+    txt::parseTagged(text, type, m_text);
+    if (type == "T")
         m_type = Tip;
-    else if (match.captured(1) == "A")
+    else if (type == "A")
         m_type = Job;
-    else if (match.captured(1) == "M")
+    else if (type == "M")
         m_type = Mission;
-    m_text = String(match.captured(2));
 }
 
 
