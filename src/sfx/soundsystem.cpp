@@ -36,7 +36,8 @@ struct SoundSystemPrivate
 };
 
 
-SoundSystem::SoundSystem()
+SoundSystem::SoundSystem(bool silent) :
+    m_silent(silent)
 {
     assert(m_singleton == NULL);
     m_singleton = this;
@@ -146,9 +147,13 @@ void SoundSystem::setListener(float x, float y, float z, float fx, float fy, flo
 }
 
 
-void SoundSystem::setVolume(float volume)
+void SoundSystem::setBufferData(std::uint32_t buffer, bool stereo, const std::vector<char> &data, int rate)
 {
-    alListenerf(AL_GAIN, volume);
+    // (silence rather than a gain of 0, as the listener's gain left macOS's OpenAL audible; and
+    // never a null pointer, also without data)
+    const std::vector<char> silence(m_silent ? data.size() : 0, char(0x80));
+    const std::vector<char> &samples = m_silent ? silence : data;
+    alBufferData(buffer, stereo ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8, samples.empty() ? "" : samples.data(), ALsizei(samples.size()), rate);
 }
 
 

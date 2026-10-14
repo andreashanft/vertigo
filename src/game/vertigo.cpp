@@ -43,6 +43,8 @@ Vertigo::Vertigo(const Options &options) :
     m_options(options),
     // automated runs (with a time limit) shouldn't take the focus (on macOS see also main())
     m_window(options.timeout <= 0),
+    // automated runs (headless, with a time limit, or checking missions) are silent
+    m_soundSystem(options.headless || options.timeout > 0 || options.check),
     m_mainMenu(
        [this](String name) { startGame(name); },
        [this](String name) { loadGame(name); },
@@ -120,9 +122,6 @@ int Vertigo::start()
     m_fixedStep = m_options.fixedStep && !m_headless && m_hud ? 0.02f : 0;
     hud::HUD::setFixedStep(m_fixedStep);
 
-    // automated runs (headless or with a time limit) are silent
-    if (m_headless || m_options.timeout > 0)
-        sfx::SoundSystem::get()->setVolume(0);
     if (!m_headless)
         m_window.show();
     return -1;

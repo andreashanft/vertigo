@@ -189,8 +189,7 @@ void Sound::load(const String &file, int rate)
     if (m_buffer != 0)
         alDeleteBuffers(1, &m_buffer);
     alGenBuffers(1, &m_buffer);
-    // (never a null pointer, also without data)
-    alBufferData(m_buffer, AL_FORMAT_MONO8, data.empty() ? "" : data.data(), ALsizei(data.size()), rate <= 0 ? 22050 : rate);
+    SoundSystem::get()->setBufferData(m_buffer, false, data, rate <= 0 ? 22050 : rate);
 }
 
 
@@ -211,7 +210,7 @@ void Sound::load(const String &leftFile, const String &rightFile)
     if (m_buffer != 0)
         alDeleteBuffers(1, &m_buffer);
     alGenBuffers(1, &m_buffer);
-    alBufferData(m_buffer, AL_FORMAT_STEREO8, data.empty() ? "" : data.data(), ALsizei(data.size()), 22050);
+    SoundSystem::get()->setBufferData(m_buffer, true, data, 22050);
 }
 
 
