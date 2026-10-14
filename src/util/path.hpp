@@ -44,6 +44,8 @@ std::string joinPath(const std::string &directory, const std::string &name);
 bool makeDirectory(const std::string &path);
 // the names of the files in a directory, sorted
 std::vector<std::string> files(const std::string &directory);
+// and of its directories
+std::vector<std::string> directories(const std::string &directory);
 
 // all of a file, from an offset on; false and nothing if it can't be read
 bool readFile(const std::string &path, std::vector<char> &data, std::size_t offset = 0);

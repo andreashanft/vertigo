@@ -111,6 +111,8 @@ set(SOURCES
     game/dialogframe.h
     game/encom.cpp
     game/encom.h
+    game/gamedata.cpp
+    game/gamedata.h
     game/input.cpp
     game/input.hpp
     game/items.cpp
@@ -254,6 +256,8 @@ set(SOURCES
     ui/widget.h
 
     util/bytereader.hpp
+    util/cdimage.cpp
+    util/cdimage.hpp
     util/commandline.cpp
     util/commandline.hpp
     util/containers.hpp

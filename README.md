@@ -13,7 +13,7 @@ nix run github:pnordhus/vertigo
 
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
 or OpenGL ES 3. The build also has tests of the game's own types for text,
-data values, images and JSON (`ctest`).
+data values, images, JSON and CD images (`ctest`).
 
 ```
 mkdir build
@@ -51,10 +51,16 @@ builds the app for the simulator and installs it there. For an iPad, open
 `-DVERTIGO_BUNDLE_ID=<identifier>`) to the first command and build with
 `-sdk iphoneos -allowProvisioningUpdates`.
 
-The game data goes into the app's Documents folder. In the simulator:
+The game data goes into Vertigo's folder in the Files app (On My iPad ›
+Vertigo), which the Finder also shows when the iPad is connected to a Mac.
+Copy a GOG installation of the game there, and Vertigo builds the game data
+from its CD image `game.gog` and the installed files, in the folder `Game Data`
+(580 MB, kept out of iCloud backups); then the installation can go. The game
+data itself (see below) works too, directly in Vertigo's folder or in a folder
+of its own. In the simulator, copy it into the app's container:
 
 ```
-cp -R <game data>/ "$(xcrun simctl get_app_container booted com.vertigo.Vertigo data)/Documents/"
+cp -R <GOG installation or game data> "$(xcrun simctl get_app_container booted com.vertigo.Vertigo data)/Documents/"
 ```
 
 Test mode takes its options there too, e.g.
@@ -71,7 +77,10 @@ only contains part of it; the rest is in the CD image (`game.gog`, a raw
 copied on top. The case of the file names doesn't matter, also on file systems
 that tell upper and lower case apart. Vertigo asks for the directory at the
 first start, and again whenever the remembered one lacks part of the data.
-`--data <directory>` uses another directory for one run, without remembering it.
+Given a GOG installation, or a directory with a CD image of the game (`.iso`,
+or `.bin` of a `MODE1/2352` track), it offers to build that directory itself,
+as `Game Data` next to the saved games. `--data <directory>` uses another
+directory for one run, without remembering it.
 
 ## Saved games and settings
 
