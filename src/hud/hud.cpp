@@ -21,7 +21,7 @@
 #include <QOpenGLContext>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLFunctions>
-#include <QSettings>
+#include "util/settings.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -88,9 +88,8 @@ void readSettings()
     if (g_settingsRead)
         return;
     g_settingsRead = true;
-    QSettings settings;
-    g_cockpitMode = settings.value("cockpit/mode").toString() == "3d" ? HUD::CockpitMode::Model : HUD::CockpitMode::Art;
-    g_headMotion = settings.value("cockpit/shake", 1.0f).toFloat();
+    g_cockpitMode = util::Settings::value("cockpit/mode") == "3d" ? HUD::CockpitMode::Model : HUD::CockpitMode::Art;
+    g_headMotion = util::Settings::floatValue("cockpit/shake", 1.0f);
 }
 
 // The pilot's head turned by `rotation` (boat camera frame): how points at infinity move in the
@@ -135,7 +134,7 @@ void HUD::setCockpitMode(CockpitMode mode, bool save)
     readSettings();
     g_cockpitMode = mode;
     if (save)
-        QSettings().setValue("cockpit/mode", mode == CockpitMode::Model ? "3d" : "2d");
+        util::Settings::setValue("cockpit/mode", mode == CockpitMode::Model ? "3d" : "2d");
 }
 
 
@@ -164,7 +163,7 @@ void HUD::setHeadMotion(float strength, bool save)
     readSettings();
     g_headMotion = strength;
     if (save)
-        QSettings().setValue("cockpit/shake", strength);
+        util::Settings::setValue("cockpit/shake", strength);
 }
 
 

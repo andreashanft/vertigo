@@ -30,6 +30,11 @@ namespace util {
 std::filesystem::path toPath(const std::string &path);
 std::string fromPath(const std::filesystem::path &path);
 
+// where the game keeps its saves and settings: Application Support/Vertigo/Vertigo on macOS
+// (in CFFIXED_USER_HOME if that is set), AppData/Local/Vertigo/Vertigo on Windows and
+// .local/share/Vertigo/Vertigo (XDG_DATA_HOME) elsewhere, where Qt kept them
+std::string appDataLocation();
+
 // a file or a directory
 bool exists(const std::string &path);
 // the part after the last '/'

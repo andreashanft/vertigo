@@ -16,7 +16,6 @@
  ***************************************************************************/
 
 #include "string.hpp"
-#include <QRegularExpression>
 #include <algorithm>
 #include <charconv>
 #include <climits>
@@ -944,25 +943,6 @@ String::String(const QString &s) :
 }
 
 
-String &String::replace(const QRegularExpression &expression, const String &after)
-{
-    *this = String(QString(*this).replace(expression, after));
-    return *this;
-}
-
-
-bool String::contains(const QRegularExpression &expression) const
-{
-    return QString(*this).contains(expression);
-}
-
-
-StringList String::split(const QRegularExpression &expression, SplitBehavior behavior) const
-{
-    return StringList(QString(*this).split(expression, behavior == SkipEmptyParts ? Qt::SkipEmptyParts : Qt::KeepEmptyParts));
-}
-
-
 StringList StringList::withPrefix(const String &prefix) const
 {
     StringList result;
@@ -970,16 +950,6 @@ StringList StringList::withPrefix(const String &prefix) const
         if (s.startsWith(prefix))
             result.append(s);
     return result;
-}
-
-
-StringList StringList::filter(const QRegularExpression &expression) const
-{
-    StringList list;
-    for (const String &s : *this)
-        if (s.contains(expression))
-            list << s;
-    return list;
 }
 
 

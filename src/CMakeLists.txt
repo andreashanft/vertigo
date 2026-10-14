@@ -247,6 +247,8 @@ set(SOURCES
     ui/widget.h
 
     util/bytereader.hpp
+    util/commandline.cpp
+    util/commandline.hpp
     util/containers.hpp
     util/core.h
     util/datapath.cpp
@@ -266,8 +268,11 @@ set(SOURCES
     util/path.hpp
     util/random.cpp
     util/random.h
+    util/settings.cpp
+    util/settings.hpp
     util/rect.hpp
     util/ticks.h
+    util/timer.hpp
     util/size.hpp
     util/string.cpp
     util/string.hpp
@@ -275,6 +280,10 @@ set(SOURCES
 
 add_executable(vertigo WIN32 ${SOURCES})
 target_link_libraries(vertigo Qt${QT_VERSION_MAJOR}::Widgets ${OPENGL_LIBRARY} ${OPENAL_LIBRARY})
+if(WIN32)
+    # CommandLineToArgvW() for the arguments in UTF-8
+    target_link_libraries(vertigo shell32)
+endif()
 if (QT_VERSION_MAJOR EQUAL 6)
     target_link_libraries(vertigo Qt6::OpenGL)
 endif()

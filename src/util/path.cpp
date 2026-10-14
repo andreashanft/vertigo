@@ -18,6 +18,8 @@
 #include "path.hpp"
 
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <system_error>
 
@@ -33,6 +35,44 @@ std::filesystem::path toPath(const std::string &path)
 std::string fromPath(const std::filesystem::path &path)
 {
     return path.u8string();
+}
+
+
+namespace {
+
+// an environment variable in UTF-8, or nothing
+std::string environment(const char *name)
+{
+#ifdef _WIN32
+    const std::wstring wide(name, name + std::strlen(name));
+    const wchar_t *value = _wgetenv(wide.c_str());
+    return value ? fromPath(std::filesystem::path(value)) : std::string();
+#else
+    const char *value = std::getenv(name);
+    return value ? std::string(value) : std::string();
+#endif
+}
+
+} // namespace
+
+
+std::string appDataLocation()
+{
+#if defined(__APPLE__)
+    std::string home = environment("CFFIXED_USER_HOME");
+    if (home.empty())
+        home = environment("HOME");
+    return home + "/Library/Application Support/Vertigo/Vertigo";
+#elif defined(_WIN32)
+    std::string local = environment("LOCALAPPDATA");
+    std::replace(local.begin(), local.end(), '\\', '/');
+    return local + "/Vertigo/Vertigo";
+#else
+    std::string data = environment("XDG_DATA_HOME");
+    if (data.empty() || data[0] != '/')
+        data = environment("HOME") + "/.local/share";
+    return data + "/Vertigo/Vertigo";
+#endif
 }
 
 

@@ -41,7 +41,8 @@ public:
     void setRenderer(Renderer *renderer);
     Renderer* renderer() const { return m_renderer; }
     // saves the next frame as an image file
-    void saveScreenshot(const QString &fileName);
+    // a path in UTF-8
+    void saveScreenshot(const std::string &fileName);
     // shows what has been drawn so far, e.g. a loading screen before a long load
     void swapBuffers();
     QRect rect() const { return QRect(QPoint(0, 0), size()); }
@@ -69,7 +70,7 @@ private:
     QRect m_geometry;   // the last one outside full screen
     QCursor m_cursor;
     Renderer *m_renderer;
-    QStringList m_screenshots;
+    std::vector<std::string> m_screenshots;
 };
 
 } // namespace game

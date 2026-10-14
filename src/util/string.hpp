@@ -28,7 +28,6 @@
 // the bridge to Qt while it is still linked (until step Q5 of the iPad port)
 #include <QString>
 #include <QStringList>
-class QRegularExpression;
 
 namespace util {
 
@@ -187,18 +186,13 @@ public:
     // as UTF-8
     friend std::ostream &operator<<(std::ostream &stream, const String &s);
 
-    // while Qt is linked: QString takes any String; the other way round characters outside
-    // Latin-1 become '?', so paths stay QStrings
+    // while Qt is linked (until step Q5): QString takes any String; the other way round
+    // characters outside Latin-1 become '?'
     explicit String(const QString &s);
     operator QString() const { return QString::fromLatin1(m_data.data(), size()); }
     // all bytes (QByteArray also converts to a pointer, which would end at a zero byte)
     static String fromLatin1(const QByteArray &data) { return fromLatin1(data.constData(), int(data.size())); }
     static String fromUtf8(const QByteArray &data) { return fromUtf8(data.constData(), int(data.size())); }
-    // regular expressions until step Q3
-    String &replace(const QRegularExpression &expression, const String &after);
-    String &remove(const QRegularExpression &expression) { return replace(expression, String()); }
-    bool contains(const QRegularExpression &expression) const;
-    StringList split(const QRegularExpression &expression, SplitBehavior behavior = KeepEmptyParts) const;
 
 private:
     String argInteger(long long a, bool isUnsigned, int fieldWidth, int base, char fill) const;
@@ -245,7 +239,6 @@ public:
     // while Qt is linked
     explicit StringList(const QStringList &list);
     operator QStringList() const;
-    StringList filter(const QRegularExpression &expression) const;
     // those starting with the prefix
     StringList withPrefix(const String &prefix) const;
 };

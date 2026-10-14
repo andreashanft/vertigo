@@ -25,7 +25,7 @@
 #include "gfx/image.h"
 #include "sfx/sound.h"
 
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 
 namespace ui {
 
@@ -64,7 +64,7 @@ private:
     int m_firstItem;
     int m_selectedItem;
     int m_offset;
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
 };
 
 } // namespace ui

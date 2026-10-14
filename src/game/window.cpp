@@ -21,12 +21,12 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 
-#include <QDataStream>
 #include <QImage>
 #include <QKeyEvent>
 #include <QPixmap>
 #include <QScreen>
-#include <QSettings>
+#include "util/settings.hpp"
+#include <sstream>
 #include <QTimer>
 #include <iostream>
 
@@ -107,14 +107,14 @@ void Window::render()
         m_renderer->draw();
     }
 
-    if (!m_screenshots.isEmpty()) {
+    if (!m_screenshots.empty()) {
         // the frame is still in the back buffer
         gfx::Image image(viewport.width(), viewport.height(), gfx::Image::RGBA8888);
         glReadPixels(0, 0, viewport.width(), viewport.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
         image = image.flipped().convertToFormat(gfx::Image::RGB888);
-        foreach (const QString &file, m_screenshots) {
-            if (!image.save(file.toStdString()))
-                std::cerr << "Cannot save the screenshot " << file.toUtf8().constData() << std::endl;
+        for (const std::string &file : m_screenshots) {
+            if (!image.save(file))
+                std::cerr << "Cannot save the screenshot " << file << std::endl;
         }
         m_screenshots.clear();
     }
@@ -128,9 +128,9 @@ void Window::swapBuffers()
         m_context.swapBuffers(this);
 }
 
-void Window::saveScreenshot(const QString &fileName)
+void Window::saveScreenshot(const std::string &fileName)
 {
-    m_screenshots << fileName;
+    m_screenshots.push_back(fileName);
 }
 
 bool Window::event(QEvent *event)
@@ -198,33 +198,19 @@ void Window::saveSettings()
 {
     // a maximized window comes back with its size, but not as maximized: on
     // macOS, maximizing a window of that size would shrink it again
-    QSettings settings;
-    settings.setValue("Window/geometry", m_geometry);
-    settings.setValue("Window/fullScreen", bool(windowStates() & Qt::WindowFullScreen));
+    // "x y width height"
+    std::ostringstream geometry;
+    geometry << m_geometry.x() << " " << m_geometry.y() << " " << m_geometry.width() << " " << m_geometry.height();
+    util::Settings::setValue("Window/geometry", geometry.str());
+    util::Settings::setValue("Window/fullScreen", bool(windowStates() & Qt::WindowFullScreen));
 }
 
 void Window::loadSettings()
 {
-    QSettings settings;
-    QRect geometry = settings.value("Window/geometry").toRect();
-    bool fullScreen = settings.value("Window/fullScreen", false).toBool();
-
-    // what QWidget::saveGeometry() stored before (version 3): frame and
-    // normal geometry, screen, maximized, full screen, screen width, geometry
-    if (!geometry.isValid() && settings.contains("MainWindow/geometry")) {
-        QDataStream stream(settings.value("MainWindow/geometry").toByteArray());
-        stream.setVersion(QDataStream::Qt_4_0);
-        quint32 magic;
-        quint16 major, minor;
-        QRect frameGeometry, normalGeometry, lastGeometry;
-        qint32 screen, screenWidth;
-        quint8 maximized, wasFullScreen;
-        stream >> magic >> major >> minor >> frameGeometry >> normalGeometry >> screen >> maximized >> wasFullScreen >> screenWidth >> lastGeometry;
-        if (stream.status() == QDataStream::Ok && magic == 0x1D9D0CB && major >= 3) {
-            geometry = wasFullScreen ? normalGeometry : lastGeometry;
-            fullScreen = wasFullScreen;
-        }
-    }
+    int x = 0, y = 0, width = 0, height = 0;
+    std::istringstream(util::Settings::value("Window/geometry")) >> x >> y >> width >> height;
+    const QRect geometry(x, y, width, height);
+    const bool fullScreen = util::Settings::boolValue("Window/fullScreen", false);
 
     if (geometry.isValid())
         setGeometry(geometry);

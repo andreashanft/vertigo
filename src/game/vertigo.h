@@ -51,7 +51,7 @@ public:
         std::vector<int> trace;                         // test mode: print these units' state every second
         std::vector<int> fire;                          // test mode: these units fire (towers and tanks aim at the player)
         int near = 0;                                   // test mode: enable this unit and start next to it
-        struct Screenshot { float time; QString file; };            // the file is a path
+        struct Screenshot { float time; std::string file; };        // the file is a path in UTF-8
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
         struct Click { float time; PointD pos; };
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen

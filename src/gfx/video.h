@@ -23,7 +23,7 @@
 
 #include "util/file.h"
 
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 #include "util/string.hpp"
 
 namespace gfx {
@@ -82,7 +82,7 @@ private:
     bool m_hasAudio;
     std::uint32_t m_frameRate;
 
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
     bool m_playing;
     bool m_looping;
 };

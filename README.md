@@ -41,6 +41,14 @@ copied on top. The case of the file names doesn't matter, also on file systems
 that tell upper and lower case apart. `--data <directory>` uses another
 directory for one run, without remembering it.
 
+## Saved games and settings
+
+Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
+`~/Library/Application Support/Vertigo/Vertigo` on macOS,
+`%LOCALAPPDATA%\Vertigo\Vertigo` on Windows and
+`~/.local/share/Vertigo/Vertigo` on Linux. The first start of a version with
+`settings.ini` takes over the settings of the versions before.
+
 ## Testing
 
 Vertigo can start a mission directly, which is meant for testing:

@@ -24,8 +24,7 @@
 #include "txt/parse.hpp"
 #include "util/containers.hpp"
 #include "util/path.hpp"
-#include <QStandardPaths>
-#include <QSettings>
+#include "util/settings.hpp"
 
 
 namespace game {
@@ -33,16 +32,10 @@ namespace game {
 
 Chapter *Chapter::m_singleton = NULL;
 
-// a path in UTF-8, which can hold any character
-static std::string dataLocation()
-{
-    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation).toStdString();
-}
-
 // of a saved game
 static std::string savePath(const String &name)
 {
-    return dataLocation() + "/save/" + name.toUtf8() + ".des";
+    return util::appDataLocation() + "/save/" + name.toUtf8() + ".des";
 }
 
 Chapter::Chapter(const String &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame) :
@@ -65,12 +58,9 @@ Chapter::Chapter(const String &name, std::function<void(Renderer*)> funcSetRende
     assert(m_singleton == NULL);
     m_singleton = this;
 
-    QSettings s;
-    s.beginGroup("Movie");
-    m_movieAutopilot = s.value("autopilot", true).toBool();
-    m_movieApproach = s.value("approach", true).toBool();
-    m_movieHarbour = s.value("harbour", true).toBool();
-    s.endGroup();
+    m_movieAutopilot = util::Settings::boolValue("Movie/autopilot", true);
+    m_movieApproach = util::Settings::boolValue("Movie/approach", true);
+    m_movieHarbour = util::Settings::boolValue("Movie/harbour", true);
 
     m_tasksFile.load("dat:story/tasks.des");
 
@@ -83,12 +73,9 @@ Chapter::Chapter(const String &name, std::function<void(Renderer*)> funcSetRende
 
 Chapter::~Chapter()
 {
-    QSettings s;
-    s.beginGroup("Movie");
-    s.setValue("autopilot", m_movieAutopilot);
-    s.setValue("approach", m_movieApproach);
-    s.setValue("harbour", m_movieHarbour);
-    s.endGroup();
+    util::Settings::setValue("Movie/autopilot", m_movieAutopilot);
+    util::Settings::setValue("Movie/approach", m_movieApproach);
+    util::Settings::setValue("Movie/harbour", m_movieHarbour);
 
     // the desktop's dialog frames still reference pending dialogs
     delete m_desktop;
@@ -749,7 +736,7 @@ std::vector<Chapter::SavedGame> Chapter::savedGames()
     std::vector<SavedGame> saves;
 
     // the files ending in .des, but not hidden ones
-    const std::string directory = dataLocation() + "/save";
+    const std::string directory = util::appDataLocation() + "/save";
     for (const std::string &save : util::files(directory)) {
         const std::string suffix = ".des";
         if (save.size() > suffix.size() && save[0] != '.' && save.compare(save.size() - suffix.size(), suffix.size(), suffix) == 0) {

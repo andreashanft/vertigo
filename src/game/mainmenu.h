@@ -22,7 +22,7 @@
 #include "gfx/texture.h"
 #include "sfx/sound.h"
 #include "ui/button.h"
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 #include <list>
 #include "util/string.hpp"
 
@@ -78,7 +78,7 @@ private:
     sfx::Sound m_backgroundSound;
     String m_name;
     bool m_cursor;
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
     std::function<void(String)> m_funcStartGame;
     std::function<void(String)> m_funcLoadGame;
     String m_loadingGame;

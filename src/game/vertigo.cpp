@@ -35,7 +35,7 @@
 #include "util/path.hpp"
 
 #include <QCoreApplication>
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <iostream>
@@ -153,7 +153,7 @@ int Vertigo::start(const Options &options)
     float nextTrace = 0;
     auto keys = options.keys;
     auto clicks = options.clicks;
-    QElapsedTimer timer;
+    util::ElapsedTimer timer;
     timer.start();
     // test times are mission seconds: simulated without a window, real time with one, unless the
     // mission advances by a fixed step per frame

@@ -21,11 +21,11 @@
 #include "util/datapath.h"
 #include "util/path.hpp"
 
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 #include <qopengl.h>
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
-#include <QSettings>
+#include "util/settings.hpp"
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -53,8 +53,7 @@ const float DecalNear = 0.03f;
 
 std::string Cockpit3D::directory()
 {
-    QSettings settings;
-    const std::string directory = settings.value("cockpit/directory").toString().toStdString();
+    const std::string directory = util::Settings::value("cockpit/directory");
     if (!directory.empty())
         return directory;
     return util::joinPath(util::DataPath::directory(), "3d-cockpits");
@@ -121,7 +120,7 @@ bool Cockpit3D::create()
         return m_state == State::Ready;
     m_state = State::Failed;
 
-    QElapsedTimer timer;
+    util::ElapsedTimer timer;
     timer.start();
     gfx::GlbModel model;
     if (!model.load(m_fileName))

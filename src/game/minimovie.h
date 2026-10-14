@@ -24,7 +24,7 @@
 #include "gfx/video.h"
 #include "txt/desfile.h"
 
-#include <QElapsedTimer>
+#include "util/timer.hpp"
 #include <functional>
 #include "util/string.hpp"
 
@@ -58,7 +58,7 @@ private:
 
     String m_path;
     std::vector<Video*> m_videos;
-    QElapsedTimer m_time;
+    util::ElapsedTimer m_time;
     gfx::ColorTable m_colorTable;
     std::function<void()> m_funcFinished;
 };

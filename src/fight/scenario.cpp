@@ -45,7 +45,7 @@
 #include "gfx/pipeline.h"
 
 #include <qopengl.h>
-#include <QSettings>
+#include "util/settings.hpp"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
@@ -64,13 +64,13 @@ int Scenario::difficulty()
 {
     if (s_difficultyOverride >= 0)
         return s_difficultyOverride;
-    return glm::clamp(QSettings().value("Game/difficulty", 1).toInt(), 0, 2);
+    return glm::clamp(util::Settings::intValue("Game/difficulty", 1), 0, 2);
 }
 
 
 void Scenario::setDifficulty(int difficulty)
 {
-    QSettings().setValue("Game/difficulty", glm::clamp(difficulty, 0, 2));
+    util::Settings::setValue("Game/difficulty", glm::clamp(difficulty, 0, 2));
 }
 
 
