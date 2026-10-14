@@ -149,6 +149,9 @@ public:
     void draw(const Matrix &projection, const Matrix &camera);
     void keyPressEvent(input::KeyEvent *);
     void keyReleaseEvent(input::KeyEvent *);
+    // a game controller's stick steers as far as it is pushed (x right, y back; each from -1 to 1),
+    // together with the keys
+    void setStick(const Vector2D &stick) { m_stick = stick; }
 
 private:
     Vector3D getPosition();
@@ -222,6 +225,7 @@ private:
     float m_right;
     float m_up;
     float m_down;
+    Vector2D m_stick = Vector2D(0);
     int m_forwards;
     int m_backwards;
 

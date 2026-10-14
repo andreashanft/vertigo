@@ -60,6 +60,22 @@ enum MouseButton
     MiddleButton = 4,
 };
 
+// a game controller's buttons by their place, as SDL names them: South is A on an Xbox controller
+// and Cross on a PlayStation one; the triggers count as buttons
+enum Button
+{
+    Button_None = -1,
+    Button_South, Button_East, Button_West, Button_North,
+    Button_Back, Button_Start, Button_LeftStick, Button_RightStick,
+    Button_LeftShoulder, Button_RightShoulder,
+    Button_Up, Button_Down, Button_Left, Button_Right,
+    Button_LeftTrigger, Button_RightTrigger,
+    ButtonCount
+};
+
+// a game controller's sticks: x to the right and y down, each from -1 to 1
+enum Stick { LeftStick, RightStick };
+
 // a key pressed or released, or text typed (then without a key)
 class KeyEvent
 {
@@ -102,6 +118,14 @@ Key parseKey(const String &text, int &modifiers);
 // Cmd+. (Ctrl+. on Windows and Linux) is Esc, as in iPadOS, and Cmd with the number row's keys
 // 1 to 0, - and = is F1 to F12. Other keys are themselves.
 KeyEvent alternative(const KeyEvent &event);
+
+// "A", "LB", "RT", "Up", "Start", "L3" (as --pad takes them, by an Xbox controller's names; any
+// case); Button_None if it isn't one
+Button parseButton(const String &text);
+
+// the key a button stands for outside missions: A is Return, B and Start are Esc, the d-pad the
+// arrows (so a button starts a mission after its briefing and skips a movie)
+KeyEvent menuKey(Button button);
 
 } // namespace input
 

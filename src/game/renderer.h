@@ -65,6 +65,11 @@ public:
     virtual void mousePressEvent(input::MouseEvent *) {}
     virtual void mouseReleaseEvent(input::MouseEvent *) {}
     virtual void mouseMoveEvent(input::MouseEvent *) {}
+    // a game controller's buttons, by default the keys of input::menuKey(); and a stick, where it
+    // is now (beyond its dead zone, else 0)
+    virtual void buttonPressEvent(input::Button button);
+    virtual void buttonReleaseEvent(input::Button button);
+    virtual void stickEvent(input::Stick, const Vector2D &) {}
 
 protected:
     void showCursor();

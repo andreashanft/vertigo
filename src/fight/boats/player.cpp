@@ -245,19 +245,21 @@ void Player::destroy()
 
 bool Player::update(float elapsedTime)
 {
+    // the turn rates go towards their maximum, or a part of it as far as a stick is pushed
+    const Vector3D turnRate = glm::abs(m_turnVelocity)*m_maxAngleVelocity;
     m_angleVelocity.x += m_angleVelocity.x*m_angleFriction.x*64*elapsedTime;
     m_angleVelocity.x -= 0.64f*dir().z*m_maxAngleVelocity.x*elapsedTime;
-    if (m_turnVelocity.x > 0 && m_angleVelocity.x < m_maxAngleVelocity.x)
-        m_angleVelocity.x -= m_maxAngleVelocity.x*m_angleFriction.x*64*elapsedTime;
-    else if (m_turnVelocity.x < 0 && m_angleVelocity.x > -m_maxAngleVelocity.x)
-        m_angleVelocity.x += m_maxAngleVelocity.x*m_angleFriction.x*64*elapsedTime;
+    if (m_turnVelocity.x > 0 && m_angleVelocity.x < turnRate.x)
+        m_angleVelocity.x -= turnRate.x*m_angleFriction.x*64*elapsedTime;
+    else if (m_turnVelocity.x < 0 && m_angleVelocity.x > -turnRate.x)
+        m_angleVelocity.x += turnRate.x*m_angleFriction.x*64*elapsedTime;
 
     m_angleVelocity.y += m_angleVelocity.y*m_angleFriction.y*64*elapsedTime;
     m_angleVelocity.y += m_roll*m_rollCenterVelocity*64*m_maxAngleVelocity.y*elapsedTime;
-    if (m_turnVelocity.y > 0 && m_angleVelocity.y < m_maxAngleVelocity.y)
-        m_angleVelocity.y -= m_maxAngleVelocity.y*m_angleFriction.y*64*elapsedTime;
-    if (m_turnVelocity.y < 0 && m_angleVelocity.y > -m_maxAngleVelocity.y)
-        m_angleVelocity.y += m_maxAngleVelocity.y*m_angleFriction.y*64*elapsedTime;
+    if (m_turnVelocity.y > 0 && m_angleVelocity.y < turnRate.y)
+        m_angleVelocity.y -= turnRate.y*m_angleFriction.y*64*elapsedTime;
+    if (m_turnVelocity.y < 0 && m_angleVelocity.y > -turnRate.y)
+        m_angleVelocity.y += turnRate.y*m_angleFriction.y*64*elapsedTime;
 
     m_angleVelocity.z = m_roll*m_bottomAlphaSupport*m_maxAngleVelocity.z;
 

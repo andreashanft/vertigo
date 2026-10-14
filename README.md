@@ -68,7 +68,8 @@ Test mode takes its options there too, e.g.
 simulator renders OpenGL ES in software: the 3D cockpit is too slow there, and
 now and then a triangle close to the camera goes missing.
 
-Missions need a hardware keyboard. On keyboards without Esc and function keys,
+Missions need a hardware keyboard or a game controller (see below). On
+keyboards without Esc and function keys,
 Cmd+. is Esc and Cmd with the number row's 1 to 0, - and = is F1 to F12 (on
 every system; Ctrl on Windows and Linux); iPadOS can also make Caps Lock an
 Esc key (Settings › General › Keyboard › Hardware Keyboard › Modifier Keys).
@@ -92,6 +93,38 @@ Given a GOG installation, or a directory with a CD image of the game (`.iso`,
 or `.bin` of a `MODE1/2352` track), it offers to build that directory itself,
 as `Game Data` next to the saved games. `--data <directory>` uses another
 directory for one run, without remembering it.
+
+## Game controllers
+
+Missions can be played with a game controller (Xbox, PlayStation, Switch Pro
+or MFi controllers, through SDL), on the desktop and on the iPad. The buttons
+are named after an Xbox controller's here. The left stick steers as far as it
+is pushed; as with the original's joystick, forward lowers the nose. The
+buttons stand for the keys in brackets, and LB held gives a second set:
+
+| Control | In a mission | With LB held |
+|---|---|---|
+| Left stick | steer | |
+| Right stick | look around in the 3D cockpit | |
+| RT | fire the gun (Space) | |
+| LT | fire a torpedo (Tab) | |
+| RB | lock the target in the reticle (L) | |
+| A | lock the nearest enemy (U) | autopilot (Alt+A) |
+| B | drop a buzzer (D) | engine on or off (the key left of 1) |
+| X | next torpedo (Enter) | |
+| Y | next nav point (N) | lock the nav point (Alt+N) |
+| D-pad up | 10 km/h faster, again and again while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
+| D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
+| D-pad left | stop (C) | |
+| D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
+| L3, R3 (press a stick) | full ahead, full astern while held (A, Z) | |
+| Start | mission menu (Esc), or go on after a pause (P) | pause (P) |
+| Back | turret menu (O) | 2D or 3D cockpit (Alt+V) |
+
+In the mission and turret menus the d-pad highlights an option, A takes it and
+B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a
+mission after its briefing, B or Start skips a movie, A confirms a new game's
+name. Menus and stations take the mouse, or touch on the iPad.
 
 ## Saved games and settings
 
@@ -136,6 +169,13 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
   Esc menu (here: restart the mission). `5=Space/0.1` holds a key for 0.1 s;
   keys like Space (fire) or the arrows need that to have an effect.
+- `--pad 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2` works a virtual game
+  controller at the given seconds: buttons by the names above (A, B, X, Y, LB,
+  RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or
+  the given seconds, several at once with `+` (pressed in that order); a
+  stick's axis (`LeftX`, `LeftY`, `RightX`, `RightY`, y down) at a value from
+  -1 to 1, for good or for the given seconds. Real controllers are ignored
+  then, and automated runs without `--pad` don't look for them.
 - `--fire 2050` lets units fire their guns; towers and tanks aim at the
   player.
 - `--near 2050` enables this unit and starts the player 40 m from it, looking

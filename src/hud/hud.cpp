@@ -80,6 +80,11 @@ const Vector2D LookMax(glm::radians(105.0f), glm::radians(65.0f));
 const Vector3D Neck(0, -0.10f, 0.08f);
 // after the drag the head turns back to the front, about two thirds of the way in this time
 const float LookReturn = 0.18f;
+// the head follows the right stick of a game controller, two thirds of the way in this time
+const float LookFollow = 0.08f;
+// the d-pad changes the speed again and again while held: after this long, then at this interval
+const float RepeatDelay = 0.4f;
+const float RepeatInterval = 0.1f;
 
 void readSettings()
 {
@@ -372,6 +377,7 @@ void HUD::start(fight::Scenario *scenario)
     m_deathTime = -1;
     m_menu->open(MissionMenu::Page::None);
     m_scenario->headMotion().setStrength(headMotion());
+    m_scenario->setStick(m_steerStick);
 }
 
 
@@ -383,6 +389,16 @@ void HUD::step(float elapsedTime)
     setFrozen(m_paused || m_menu->pauses());
     if (m_frozen)
         elapsedTime = 0;
+    if (m_repeat != input::Button_None && elapsedTime > 0)
+    {
+        m_repeatWait -= elapsedTime;
+        while (m_repeatWait <= 0 && m_repeat != input::Button_None)
+        {
+            m_repeatWait += RepeatInterval;
+            input::KeyEvent key = m_buttonKeys[m_repeat];
+            keyPressEvent(&key);
+        }
+    }
     while (elapsedTime > 0.0f) {
         const float step = std::min(elapsedTime, 0.02f);
         m_scenario->update(step);
@@ -640,30 +656,7 @@ void HUD::keyPressEvent(input::KeyEvent *e)
     const bool menuKey = (e->key() >= input::Key_0 && e->key() <= input::Key_9) || e->key() == input::Key_Escape || e->key() == input::Key_O;
     if (m_menu->page() != MissionMenu::Page::None && (!turretMenu || menuKey))
     {
-        switch (m_menu->keyPressEvent(e->key()))
-        {
-        case MissionMenu::Action::None:
-        case MissionMenu::Action::Continue:
-            break;
-        case MissionMenu::Action::Abort:
-            leave(m_eventAbort);
-            break;
-        case MissionMenu::Action::Restart:
-            leave(m_eventRestart);
-            break;
-        case MissionMenu::Action::Load:
-            leave(m_eventLoad);
-            break;
-        case MissionMenu::Action::TurretOrder:
-            {
-                const fight::PlayerTurret::Order orders[4] = { fight::PlayerTurret::Order::Attack, fight::PlayerTurret::Order::Sync,
-                                                               fight::PlayerTurret::Order::Search, fight::PlayerTurret::Order::Stop };
-                for (int i = 0; i < 2; i++)
-                    if ((m_menu->turret() == i || m_menu->turret() < 0) && m_scenario->player()->turret(i))
-                        m_scenario->player()->turret(i)->setOrder(orders[m_menu->turretOrder()]);
-            }
-            break;
-        }
+        menuAction(int(m_menu->keyPressEvent(e->key())));
         return;
     }
 
@@ -780,10 +773,174 @@ void HUD::keyPressEvent(input::KeyEvent *e)
 }
 
 
+void HUD::menuAction(int action)
+{
+    switch (MissionMenu::Action(action))
+    {
+    case MissionMenu::Action::None:
+    case MissionMenu::Action::Continue:
+        break;
+    case MissionMenu::Action::Abort:
+        leave(m_eventAbort);
+        break;
+    case MissionMenu::Action::Restart:
+        leave(m_eventRestart);
+        break;
+    case MissionMenu::Action::Load:
+        leave(m_eventLoad);
+        break;
+    case MissionMenu::Action::TurretOrder:
+        {
+            const fight::PlayerTurret::Order orders[4] = { fight::PlayerTurret::Order::Attack, fight::PlayerTurret::Order::Sync,
+                                                           fight::PlayerTurret::Order::Search, fight::PlayerTurret::Order::Stop };
+            for (int i = 0; i < 2; i++)
+                if ((m_menu->turret() == i || m_menu->turret() < 0) && m_scenario->player()->turret(i))
+                    m_scenario->player()->turret(i)->setOrder(orders[m_menu->turretOrder()]);
+        }
+        break;
+    }
+}
+
+
+// The keys a game controller's buttons stand for in a mission, after the original's joystick
+// buttons where it had them (fire, lock the target in the reticle, fire a torpedo, the next
+// torpedo); LB held gives the second set
+input::KeyEvent HUD::buttonKey(input::Button button)
+{
+    using namespace input;
+    const bool second = m_shoulder;
+    switch (button)
+    {
+    case Button_RightTrigger: return KeyEvent(Key_Space);
+    case Button_LeftTrigger: return KeyEvent(Key_Tab);
+    case Button_RightShoulder: return KeyEvent(Key_L);
+    case Button_South: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_U);
+    case Button_East: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_D);
+    case Button_West: return second ? KeyEvent() : KeyEvent(Key_Return);
+    case Button_North: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
+    case Button_Up: return second ? KeyEvent(Key(Key_F1 + m_weaponPage)) : KeyEvent(Key_S);
+    case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
+    case Button_Left: return second ? KeyEvent() : KeyEvent(Key_C);
+    case Button_Right: return second ? KeyEvent(Key_R, AltModifier) : KeyEvent(Key_R);
+    case Button_LeftStick: return KeyEvent(Key_A);
+    case Button_RightStick: return KeyEvent(Key_Z);
+    // Start opens the menu, or goes on after a pause
+    case Button_Start: return second || m_paused ? KeyEvent(Key_P) : KeyEvent(Key_Escape);
+    case Button_Back: return second ? KeyEvent(Key_V, AltModifier) : KeyEvent(Key_O);
+    default: return KeyEvent();
+    }
+}
+
+
+void HUD::buttonPressEvent(input::Button button)
+{
+    if (!m_scenario || button == input::Button_None)
+        return;
+    if (button == input::Button_LeftShoulder)
+    {
+        m_shoulder = true;
+        return;
+    }
+
+    // in the menus the d-pad picks an option, A takes it and B goes back; the turret menu leaves
+    // the other buttons to the boat
+    if (m_menu->page() != MissionMenu::Page::None)
+    {
+        const bool turretMenu = !m_menu->pauses();
+        switch (button)
+        {
+        case input::Button_Up:
+        case input::Button_Down:
+            m_menu->select(button == input::Button_Up ? -1 : 1);
+            return;
+        case input::Button_South:
+            menuAction(int(m_menu->choose()));
+            return;
+        case input::Button_East:
+            menuAction(int(m_menu->back()));
+            return;
+        case input::Button_Start:
+            if (!turretMenu)
+            {
+                menuAction(int(m_menu->back()));
+                return;
+            }
+            break;
+        case input::Button_Back:
+            if (turretMenu)
+            {
+                input::KeyEvent key(input::Key_O);
+                keyPressEvent(&key);
+                return;
+            }
+            break;
+        default:
+            break;
+        }
+        if (!turretMenu)
+            return;
+    }
+
+    input::KeyEvent key = buttonKey(button);
+    m_buttonKeys[button] = key;
+    if (key.key() == input::Key_None)
+        return;
+    const bool menu = m_menu->page() != MissionMenu::Page::None;
+    keyPressEvent(&key);
+    if (!m_scenario)
+        return;
+    // a menu opened by a button shows its highlight at once
+    if (!menu && m_menu->page() != MissionMenu::Page::None)
+        m_menu->select(0);
+    if (key.key() >= input::Key_F1 && key.key() <= input::Key_F4)
+        m_weaponPage = (m_weaponPage + 1) % 4;
+    if (key.key() == input::Key_S || key.key() == input::Key_X)
+    {
+        m_repeat = button;
+        m_repeatWait = RepeatDelay;
+    }
+}
+
+
+void HUD::buttonReleaseEvent(input::Button button)
+{
+    if (button == input::Button_None)
+        return;
+    if (button == input::Button_LeftShoulder)
+        m_shoulder = false;
+    if (button == m_repeat)
+        m_repeat = input::Button_None;
+    input::KeyEvent key = m_buttonKeys[button];
+    m_buttonKeys[button] = input::KeyEvent();
+    if (key.key() != input::Key_None)
+        keyReleaseEvent(&key);
+}
+
+
+void HUD::stickEvent(input::Stick stick, const Vector2D &position)
+{
+    if (stick == input::RightStick)
+        m_lookStick = position;
+    else
+    {
+        m_steerStick = position;
+        if (m_scenario)
+            m_scenario->setStick(position);
+    }
+}
+
+
 void HUD::updateLook(float elapsedTime)
 {
     if (g_lookFixed)
         m_look = g_look;
+    else if (m_lookStick != Vector2D(0) && showsModel())
+    {
+        // the right stick turns the head as far as it is pushed, and the head follows it smoothly
+        const Vector2D to(m_lookStick.x > 0 ? m_lookStick.x*LookMin.x : -m_lookStick.x*LookMax.x,
+                          m_lookStick.y > 0 ? m_lookStick.y*LookMin.y : -m_lookStick.y*LookMax.y);
+        m_look += (to - m_look)*(1 - std::exp(-std::max(0.0f, elapsedTime)/LookFollow));
+    }
     else if (!m_looking || !showsModel())
         m_look *= std::exp(-std::max(0.0f, elapsedTime)/LookReturn);
 }

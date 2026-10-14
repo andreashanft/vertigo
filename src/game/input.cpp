@@ -88,4 +88,36 @@ KeyEvent alternative(const KeyEvent &event)
 }
 
 
+Button parseButton(const String &text)
+{
+    static const struct { const char *name; Button button; } names[] = {
+        { "a", Button_South }, { "b", Button_East }, { "x", Button_West }, { "y", Button_North },
+        { "back", Button_Back }, { "start", Button_Start }, { "l3", Button_LeftStick }, { "r3", Button_RightStick },
+        { "lb", Button_LeftShoulder }, { "rb", Button_RightShoulder },
+        { "up", Button_Up }, { "down", Button_Down }, { "left", Button_Left }, { "right", Button_Right },
+        { "lt", Button_LeftTrigger }, { "rt", Button_RightTrigger },
+    };
+    const String lower = text.trimmed().toLower();
+    for (const auto &entry : names)
+        if (lower == entry.name)
+            return entry.button;
+    return Button_None;
+}
+
+
+KeyEvent menuKey(Button button)
+{
+    switch (button) {
+    case Button_South: return KeyEvent(Key_Return);
+    case Button_East:
+    case Button_Start: return KeyEvent(Key_Escape);
+    case Button_Up: return KeyEvent(Key_Up);
+    case Button_Down: return KeyEvent(Key_Down);
+    case Button_Left: return KeyEvent(Key_Left);
+    case Button_Right: return KeyEvent(Key_Right);
+    default: return KeyEvent();
+    }
+}
+
+
 } // namespace input

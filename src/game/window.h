@@ -19,6 +19,7 @@
 #define GAME_WINDOW_H
 
 #include "input.hpp"
+#include "util/geometry3d.h"
 
 #include <deque>
 #include <string>
@@ -64,6 +65,8 @@ public:
     void post(EventType type, const input::KeyEvent &event);
     void post(EventType type, const input::MouseEvent &event);
     void deliverPosted();
+    // test runs with a virtual game controller: only it counts, not those of the player
+    void setOnlyGamepad(unsigned int id) { m_onlyGamepad = id; }
 
     // draws a frame (when shown)
     void render();
@@ -74,6 +77,9 @@ public:
 
 private:
     void keyPressEvent(input::KeyEvent *event);
+    void buttonEvent(input::Button button, bool pressed);
+    void axisEvent(int axis, float value);
+    void releaseGamepad();
     void saveSettings();
     void loadSettings();
     void toggleFullScreen();
@@ -98,6 +104,12 @@ private:
     int m_viewportWidth = 0;
     int m_viewportHeight = 0;
     int m_buttons = input::NoButton;
+    // the game controllers' buttons held, their axes (SDL's order: the sticks' x and y, the
+    // triggers; from -1 to 1) and the sticks beyond their dead zone
+    bool m_padButtons[input::ButtonCount] = {};
+    float m_axes[6] = {};
+    Vector2D m_sticks[2] = { Vector2D(0), Vector2D(0) };
+    unsigned int m_onlyGamepad = 0;
     // the last geometry outside full screen: x, y, width, height
     int m_geometry[4] = { 0, 0, 0, 0 };
     Renderer *m_renderer = nullptr;

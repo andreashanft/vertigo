@@ -262,6 +262,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     parser.addOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
     parser.addOption("keys", "Press keys at the given seconds (test mode, or since the start), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
+    parser.addOption("pad", "Work a virtual game controller at the given seconds (test mode, or since the start): buttons by an Xbox controller's names (A, B, X, Y, LB, RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or the given seconds, together with +; sticks as LeftX, LeftY, RightX or RightY with a value from -1 to 1 (y down), held for good or the given seconds, e.g. 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2.", "time=control[/seconds]");
     parser.addOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     parser.addOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     parser.addOption("fire", "Let these units fire their guns (test mode); towers and tanks aim at the player.", "ids");
@@ -294,7 +295,9 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     if (!parser.isSet("check") && !parser.isSet("headless") && text(parser.value("timeout")).toInt() > 0)
         SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "1");
     SDL_SetAppMetadata("Vertigo", nullptr, "com.vertigo.Vertigo");
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    // game controllers, except in automated runs (where --pad brings a virtual one)
+    const bool automated = parser.isSet("check") || parser.isSet("headless") || text(parser.value("timeout")).toInt() > 0;
+    if (!SDL_Init(SDL_INIT_VIDEO | (automated ? 0 : SDL_INIT_GAMEPAD))) {
         std::cerr << "Cannot start SDL: " << SDL_GetError() << std::endl;
         return SDL_APP_FAILURE;
     }
@@ -384,6 +387,38 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
             return end(game::Vertigo::ExitUsage);
         }
         options.keys.push_back({ time, key, modifiers, hold.toFloat() });
+    }
+    for (const std::string &item : items(parser.values("pad"))) {
+        // time=buttons or time=axis:value, then optionally /hold
+        float time = 0;
+        std::string rest;
+        const bool format = timed(item, time, rest);
+        const String controlHold = text(rest);
+        const int slash = controlHold.indexOf('/');
+        const String control = controlHold.left(slash);
+        const String hold = slash < 0 ? String() : controlHold.mid(slash + 1);
+        game::Vertigo::Options::Pad pad = { time, {}, -1, 0, slash < 0 ? -1 : hold.toFloat() };
+        bool ok = format && (slash < 0 || isNumber(hold));
+        if (control.contains(':')) {
+            static const char *axes[] = { "leftx", "lefty", "rightx", "righty" };
+            const String name = control.section(':', 0, 0).trimmed().toLower();
+            const String value = control.section(':', 1).trimmed();
+            for (int axis = 0; axis < 4; axis++)
+                if (name == axes[axis])
+                    pad.axis = axis;
+            ok = ok && pad.axis >= 0 && isNumber(value, true) && std::abs(value.toFloat()) <= 1;
+            pad.value = value.toFloat();
+        } else {
+            for (const String &name : control.split('+')) {
+                pad.buttons.push_back(input::parseButton(name));
+                ok = ok && pad.buttons.back() != input::Button_None;
+            }
+        }
+        if (!ok) {
+            std::cerr << "Invalid --pad value " << item << ", expected time=buttons[/seconds] or time=stick axis:value[/seconds]" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.pad.push_back(pad);
     }
     if (parser.isSet("near")) {
         bool ok = false;

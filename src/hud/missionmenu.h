@@ -55,6 +55,11 @@ public:
     void setTurrets(int count) { m_turretCount = count; }
     void open(Page page);
     Action keyPressEvent(int key);
+    // a game controller: the d-pad highlights an option (the first press shows the highlight),
+    // choose() takes it as its digit, back() is Esc
+    void select(int step);
+    Action choose();
+    Action back();
     // shows the lines for a few seconds while no menu is open
     void notice(const StringList &lines, float seconds);
 
@@ -68,6 +73,8 @@ private:
         gfx::Font *font;
     };
     std::vector<Line> lines() const;
+    Action press(int key);
+    Action pressOnPage(int key);
 
 private:
     HUD *m_hud;
@@ -76,6 +83,9 @@ private:
     int m_turret = 0;
     int m_turretOrder = 0;
     int m_turretCount = 0;
+    // the option highlighted for a game controller, while it is used
+    bool m_highlight = false;
+    int m_selected = 0;
     StringList m_notice;
     unsigned int m_noticeEnd;
 

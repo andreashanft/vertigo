@@ -589,7 +589,8 @@ void Scenario::update(float elapsedTime)
 {
     m_time += elapsedTime;
 
-    m_player->setTurnVelocity(Vector3D(m_up - m_down, m_left - m_right, 0));
+    // pushed forward the stick lowers the nose, as the original's joystick (and the Up key)
+    m_player->setTurnVelocity(Vector3D(glm::clamp(m_up - m_down - m_stick.y, -1.0f, 1.0f), glm::clamp(m_left - m_right - m_stick.x, -1.0f, 1.0f), 0));
     m_player->update(elapsedTime);
     m_position = m_player->position();
 

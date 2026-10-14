@@ -122,6 +122,11 @@ protected:
     void mousePressEvent(input::MouseEvent *);
     void mouseReleaseEvent(input::MouseEvent *);
     void mouseMoveEvent(input::MouseEvent *);
+    // a game controller: the buttons stand for keys (a second set with LB held), the d-pad and A
+    // and B work the menus; the left stick steers, the right one turns the head in the 3D cockpit
+    void buttonPressEvent(input::Button button);
+    void buttonReleaseEvent(input::Button button);
+    void stickEvent(input::Stick stick, const Vector2D &position);
 
 private:
     Rect readRect(const txt::DesFile &file);
@@ -130,6 +135,8 @@ private:
     void leave(util::event<> &event);
     bool drawModel(double pixelRatio);
     void updateLook(float elapsedTime);
+    void menuAction(int action);
+    input::KeyEvent buttonKey(input::Button button);
     // the pilot's head turned by the mouse look, in the boat's camera frame
     Matrix lookTransform() const;
 
@@ -160,6 +167,13 @@ private:
     bool m_looking;         // a mouse button is held
     PointD m_lookStart;     // where the drag started
     Vector2D m_lookFrom;    // and the look direction then
+    Vector2D m_lookStick = Vector2D(0);    // the right stick
+    Vector2D m_steerStick = Vector2D(0);   // the left stick
+    bool m_shoulder = false;               // LB held: the buttons' second set
+    input::KeyEvent m_buttonKeys[input::ButtonCount];  // the keys the buttons held stand for
+    input::Button m_repeat = input::Button_None;       // the d-pad changes the speed while held
+    float m_repeatWait = 0;
+    int m_weaponPage = 0;   // the next of F1-F4 for LB+Up
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;
     Matrix m_integerScaleProjectionMatrixInverted;

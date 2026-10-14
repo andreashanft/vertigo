@@ -53,6 +53,49 @@ void MissionMenu::open(Page page)
 {
     m_page = page;
     m_noticeEnd = 0;
+    m_highlight = false;
+    m_selected = 0;
+}
+
+
+void MissionMenu::select(int step)
+{
+    int options = 0;
+    for (const Line &line : lines())
+        if (line.font == &m_hud->fontGreen())
+            options++;
+    if (m_highlight && options > 0)
+        m_selected = (m_selected + step + options) % options;
+    m_highlight = true;
+}
+
+
+MissionMenu::Action MissionMenu::choose()
+{
+    if (!m_highlight) {
+        select(0);
+        return Action::None;
+    }
+    // the option's digit; without options (no turrets) any key closes the menu
+    int key = input::Key_0;
+    int option = 0;
+    for (const Line &line : lines())
+        if (line.font == &m_hud->fontGreen() && option++ == m_selected && !line.text.isEmpty() && line.text[0] >= '0' && line.text[0] <= '9')
+            key = line.text[0];
+    return press(key);
+}
+
+
+MissionMenu::Action MissionMenu::back()
+{
+    return press(input::Key_Escape);
+}
+
+
+MissionMenu::Action MissionMenu::keyPressEvent(int key)
+{
+    m_highlight = false;
+    return press(key);
 }
 
 
@@ -63,7 +106,17 @@ void MissionMenu::notice(const StringList &lines, float seconds)
 }
 
 
-MissionMenu::Action MissionMenu::keyPressEvent(int key)
+MissionMenu::Action MissionMenu::press(int key)
+{
+    const Page page = m_page;
+    const Action action = pressOnPage(key);
+    if (m_page != page)
+        m_selected = 0;
+    return action;
+}
+
+
+MissionMenu::Action MissionMenu::pressOnPage(int key)
 {
     switch (m_page) {
     case Page::None:
@@ -196,11 +249,15 @@ void MissionMenu::draw()
     m_edgeTR.draw(rect.right() - m_edgeTR.width(), rect.top());
 
     int y = rect.y + 6;
+    int option = 0;
     for (size_t i = 0; i < lines.size(); i++) {
         // a gap between the title lines and the options
         if (i > 0 && lines[i].font != lines[i - 1].font)
             y += 4;
-        lines[i].font->draw(lines[i].text, Rect(rect.x, y, rect.width, lineHeight), true, false);
+        gfx::Font *font = lines[i].font;
+        if (font == &m_hud->fontGreen() && option++ == m_selected && m_highlight)
+            font = &m_hud->fontYellow();
+        font->draw(lines[i].text, Rect(rect.x, y, rect.width, lineHeight), true, false);
         y += lineHeight;
     }
 }

@@ -39,6 +39,22 @@ void Renderer::setWindow(Window *window)
 }
 
 
+void Renderer::buttonPressEvent(input::Button button)
+{
+    input::KeyEvent key = input::menuKey(button);
+    if (key.key() != input::Key_None)
+        keyPressEvent(&key);
+}
+
+
+void Renderer::buttonReleaseEvent(input::Button button)
+{
+    input::KeyEvent key = input::menuKey(button);
+    if (key.key() != input::Key_None)
+        keyReleaseEvent(&key);
+}
+
+
 void Renderer::showCursor()
 {
     m_cursorVisible = true;

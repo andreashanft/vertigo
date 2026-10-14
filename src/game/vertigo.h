@@ -32,6 +32,7 @@
 #include <memory>
 
 union SDL_Event;
+struct SDL_Joystick;
 namespace fight { class Scenario; }
 namespace hud { class HUD; }
 
@@ -59,6 +60,10 @@ public:
         int near = 0;                                   // test mode: enable this unit and start next to it
         struct Screenshot { float time; std::string file; };        // the file is a path in UTF-8
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
+        // buttons pressed together, or a stick's axis (0 left x, 1 left y, 2 right x, 3 right y)
+        // moved; held for this long (< 0: buttons 0.1 s, an axis for good)
+        struct Pad { float time; std::vector<input::Button> buttons; int axis; float value; float hold; bool down = false; };
+        std::vector<Pad> pad;                           // work a virtual game controller at these times
         struct Click { float time; PointD pos; };
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
         bool check = false;                             // report what the mission loader ignores
@@ -127,6 +132,8 @@ private:
     std::vector<Options::Screenshot> m_screenshots;
     std::vector<Options::Key> m_keys;
     std::vector<Options::Click> m_clicks;
+    std::vector<Options::Pad> m_pad;
+    SDL_Joystick *m_virtualPad = nullptr;
     util::ElapsedTimer m_timer;
     float m_simulatedTime = 0;
     float m_fixedStep = 0;

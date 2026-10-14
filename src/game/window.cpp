@@ -25,6 +25,8 @@
 #include "util/settings.hpp"
 
 #include <SDL3/SDL.h>
+#include <glm/geometric.hpp>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -102,6 +104,35 @@ input::MouseButton button(Uint8 button)
     default: return input::NoButton;
     }
 }
+
+
+// SDL's gamepad buttons as ours (the Guide button, the paddles and the touchpad aren't used)
+input::Button padButton(Uint8 button)
+{
+    switch (button) {
+    case SDL_GAMEPAD_BUTTON_SOUTH: return input::Button_South;
+    case SDL_GAMEPAD_BUTTON_EAST: return input::Button_East;
+    case SDL_GAMEPAD_BUTTON_WEST: return input::Button_West;
+    case SDL_GAMEPAD_BUTTON_NORTH: return input::Button_North;
+    case SDL_GAMEPAD_BUTTON_BACK: return input::Button_Back;
+    case SDL_GAMEPAD_BUTTON_START: return input::Button_Start;
+    case SDL_GAMEPAD_BUTTON_LEFT_STICK: return input::Button_LeftStick;
+    case SDL_GAMEPAD_BUTTON_RIGHT_STICK: return input::Button_RightStick;
+    case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: return input::Button_LeftShoulder;
+    case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: return input::Button_RightShoulder;
+    case SDL_GAMEPAD_BUTTON_DPAD_UP: return input::Button_Up;
+    case SDL_GAMEPAD_BUTTON_DPAD_DOWN: return input::Button_Down;
+    case SDL_GAMEPAD_BUTTON_DPAD_LEFT: return input::Button_Left;
+    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: return input::Button_Right;
+    default: return input::Button_None;
+    }
+}
+
+// a stick counts from this part of its way on (worn sticks don't quite come back to the middle);
+// a trigger is pressed when pulled this far and released when let go to the second
+const float StickDeadZone = 0.2f;
+const float TriggerPress = 0.5f;
+const float TriggerRelease = 0.3f;
 
 } // namespace
 
@@ -217,6 +248,10 @@ void Window::setRenderer(Renderer *renderer)
     if (m_renderer) {
         m_renderer->setWindow(this);
         m_renderer->activate();
+        // a stick held through the change
+        for (int stick = input::LeftStick; stick <= input::RightStick; stick++)
+            if (m_sticks[stick] != Vector2D(0))
+                m_renderer->stickEvent(input::Stick(stick), m_sticks[stick]);
     }
 }
 
@@ -348,6 +383,26 @@ void Window::handle(const SDL_Event &event)
         }
         break;
     }
+    // game controllers: all of them at once, each from when it is connected
+    case SDL_EVENT_GAMEPAD_ADDED:
+        if (!m_onlyGamepad || event.gdevice.which == m_onlyGamepad)
+            SDL_OpenGamepad(event.gdevice.which);
+        break;
+    case SDL_EVENT_GAMEPAD_REMOVED:
+        if (SDL_Gamepad *gamepad = SDL_GetGamepadFromID(event.gdevice.which)) {
+            SDL_CloseGamepad(gamepad);
+            releaseGamepad();
+        }
+        break;
+    case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+    case SDL_EVENT_GAMEPAD_BUTTON_UP:
+        if (!m_onlyGamepad || event.gbutton.which == m_onlyGamepad)
+            buttonEvent(padButton(event.gbutton.button), event.gbutton.down);
+        break;
+    case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+        if ((!m_onlyGamepad || event.gaxis.which == m_onlyGamepad) && event.gaxis.axis < SDL_GAMEPAD_AXIS_COUNT)
+            axisEvent(event.gaxis.axis, std::max(event.gaxis.value/32767.0f, -1.0f));
+        break;
     case SDL_EVENT_MOUSE_MOTION: {
         input::MouseEvent mouse(PointD(event.motion.x, event.motion.y), input::NoButton, m_buttons);
         if (m_renderer)
@@ -357,6 +412,52 @@ void Window::handle(const SDL_Event &event)
     default:
         break;
     }
+}
+
+void Window::buttonEvent(input::Button button, bool pressed)
+{
+    if (button == input::Button_None || m_padButtons[button] == pressed)
+        return;
+    m_padButtons[button] = pressed;
+    if (!m_renderer)
+        return;
+    if (pressed)
+        m_renderer->buttonPressEvent(button);
+    else
+        m_renderer->buttonReleaseEvent(button);
+}
+
+void Window::axisEvent(int axis, float value)
+{
+    m_axes[axis] = value;
+    if (axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER || axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+        const input::Button trigger = axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER ? input::Button_LeftTrigger : input::Button_RightTrigger;
+        if (value >= TriggerPress)
+            buttonEvent(trigger, true);
+        else if (value <= TriggerRelease)
+            buttonEvent(trigger, false);
+        return;
+    }
+    // the dead zone is round, and beyond it the stick goes from 0 to 1 (also on the diagonals of
+    // sticks that reach further there)
+    const int stick = axis < SDL_GAMEPAD_AXIS_RIGHTX ? input::LeftStick : input::RightStick;
+    Vector2D position(m_axes[2*stick], m_axes[2*stick + 1]);
+    const float length = glm::length(position);
+    position = length <= StickDeadZone ? Vector2D(0) : position*((std::min(length, 1.0f) - StickDeadZone)/(1 - StickDeadZone)/length);
+    if (position == m_sticks[stick])
+        return;
+    m_sticks[stick] = position;
+    if (m_renderer)
+        m_renderer->stickEvent(input::Stick(stick), position);
+}
+
+// a controller is gone: nothing of it is held any more
+void Window::releaseGamepad()
+{
+    for (int button = 0; button < input::ButtonCount; button++)
+        buttonEvent(input::Button(button), false);
+    for (int axis = 0; axis < SDL_GAMEPAD_AXIS_COUNT; axis++)
+        axisEvent(axis, 0);
 }
 
 void Window::post(EventType type, const input::KeyEvent &event)

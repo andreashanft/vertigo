@@ -36,9 +36,37 @@
 
 #include "util/timer.hpp"
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_init.h>
 #include <iostream>
 
 namespace game {
+
+namespace {
+
+// --pad: a button of the virtual game controller (the triggers are axes, at their minimum when
+// let go)
+void setPadButton(SDL_Joystick *pad, input::Button button, bool down)
+{
+    if (button == input::Button_LeftTrigger || button == input::Button_RightTrigger) {
+        SDL_SetJoystickVirtualAxis(pad, button == input::Button_LeftTrigger ? SDL_GAMEPAD_AXIS_LEFT_TRIGGER : SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,
+                                   down ? SDL_JOYSTICK_AXIS_MAX : SDL_JOYSTICK_AXIS_MIN);
+        SDL_UpdateJoysticks();
+        return;
+    }
+    static const SDL_GamepadButton buttons[] = {
+        SDL_GAMEPAD_BUTTON_SOUTH, SDL_GAMEPAD_BUTTON_EAST, SDL_GAMEPAD_BUTTON_WEST, SDL_GAMEPAD_BUTTON_NORTH,
+        SDL_GAMEPAD_BUTTON_BACK, SDL_GAMEPAD_BUTTON_START, SDL_GAMEPAD_BUTTON_LEFT_STICK, SDL_GAMEPAD_BUTTON_RIGHT_STICK,
+        SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
+        SDL_GAMEPAD_BUTTON_DPAD_UP, SDL_GAMEPAD_BUTTON_DPAD_DOWN, SDL_GAMEPAD_BUTTON_DPAD_LEFT, SDL_GAMEPAD_BUTTON_DPAD_RIGHT,
+    };
+    SDL_SetJoystickVirtualButton(pad, buttons[button], down);
+    // its event now, so the buttons of LB+A come in this order and not in SDL's
+    SDL_UpdateJoysticks();
+}
+
+} // namespace
 
 Vertigo::Vertigo(const Options &options) :
     m_options(options),
@@ -61,6 +89,11 @@ Vertigo::~Vertigo()
     m_window.setRenderer(nullptr);
     m_scenario.reset();
     m_hud.reset();
+    if (m_virtualPad) {
+        const SDL_JoystickID id = SDL_GetJoystickID(m_virtualPad);
+        SDL_CloseJoystick(m_virtualPad);
+        SDL_DetachVirtualJoystick(id);
+    }
 }
 
 int Vertigo::start()
@@ -118,6 +151,26 @@ int Vertigo::start()
     }
     m_keys = m_options.keys;
     m_clicks = m_options.clicks;
+    m_pad = m_options.pad;
+    if (!m_pad.empty()) {
+        // a virtual game controller, the only one that counts, whose input also comes without the
+        // focus (as automated runs don't take it)
+        SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+        SDL_VirtualJoystickDesc desc;
+        SDL_INIT_INTERFACE(&desc);
+        desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+        desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+        desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+        desc.name = "Vertigo --pad";
+        const SDL_JoystickID id = SDL_InitSubSystem(SDL_INIT_GAMEPAD) ? SDL_AttachVirtualJoystick(&desc) : 0;
+        m_virtualPad = id ? SDL_OpenJoystick(id) : nullptr;
+        if (m_virtualPad) {
+            m_window.setOnlyGamepad(id);
+        } else {
+            std::cerr << "--pad: no virtual game controller: " << SDL_GetError() << std::endl;
+            m_pad.clear();
+        }
+    }
     m_timer.start();
     // test times are mission seconds: simulated without a window, real time with one, unless the
     // mission advances by a fixed step per frame
@@ -261,6 +314,30 @@ void Vertigo::testFrame()
         } else {
             it->time += it->hold;
             it->hold = -1;
+            ++it;
+        }
+    }
+    // the virtual controller's input reaches the game with SDL's next events, before the next frame
+    for (auto it = m_pad.begin(); it != m_pad.end(); ) {
+        if (elapsed() < it->time) {
+            ++it;
+            continue;
+        }
+        const bool down = !it->down;
+        if (it->axis >= 0)
+            SDL_SetJoystickVirtualAxis(m_virtualPad, it->axis, Sint16(down ? it->value*SDL_JOYSTICK_AXIS_MAX : 0));
+        else if (down)
+            for (const input::Button button : it->buttons)
+                setPadButton(m_virtualPad, button, true);
+        else
+            for (auto button = it->buttons.rbegin(); button != it->buttons.rend(); ++button)
+                setPadButton(m_virtualPad, *button, false);
+        const float hold = it->hold >= 0 ? it->hold : it->axis >= 0 ? -1 : 0.1f;
+        if (!down || hold < 0) {
+            it = m_pad.erase(it);
+        } else {
+            it->time += hold;
+            it->down = true;
             ++it;
         }
     }
