@@ -18,6 +18,7 @@
 #include "fontmanager.h"
 #include "image.h"
 #include "pipeline.h"
+#include "util/error.h"
 #include <vector>
 
 namespace gfx {
@@ -78,7 +79,7 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
             break;
 
         default:
-            qFatal("Unknown font type");
+            util::fatal("Unknown font type");
         }
 
         image = image.scaled(image.width() * scaleFactor, image.height() * scaleFactor);

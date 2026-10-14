@@ -219,8 +219,8 @@ void Chapter::save() const
     txt::DesFile file;
 
     file.setValue("name", m_desktop->name());
-    // as QVariant wrote the time before
-    file.setValue("time", String(QDateTime::currentDateTime().toString(Qt::ISODateWithMs)));
+    // local, with milliseconds (as QVariant wrote it before)
+    file.setValue("time", util::DateTime::now().toIso());
     file.setValue("credit", m_credits);
 
     file.setSection("chapter");
@@ -758,7 +758,7 @@ std::vector<Chapter::SavedGame> Chapter::savedGames()
             SavedGame game;
             game.name = String::fromUtf8(save.substr(0, save.size() - suffix.size()));
             game.station = file.value("name").toString();
-            game.time = QDateTime::fromString(file.value("time").toString(), Qt::ISODate);
+            game.time = util::DateTime::fromIso(file.value("time").toString());
             saves.push_back(game);
         }
     }

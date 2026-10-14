@@ -23,12 +23,28 @@
 #include "txt/stringtable.h"
 #include "ui/button.h"
 #include "window.h"
+#include "util/error.h"
 #include <qopengl.h>
 #include <QKeyEvent>
+#include <QDateTime>
 #include <QLocale>
 #include <algorithm>
 
 namespace game {
+
+namespace {
+
+// in the system's short format, e.g. "14.10.26 16:05"; Qt's, until SDL tells the locale's
+// preferences (step Q5 of the iPad port)
+String shortDateTime(const util::DateTime &time)
+{
+    if (!time.isValid())
+        return String();
+    const QDateTime qt(QDate(time.year, time.month, time.day), QTime(time.hour, time.minute, time.second, time.millisecond));
+    return String(QLocale().toString(qt, QLocale::ShortFormat));
+}
+
+} // namespace
 
 MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void()> funcQuit) :
     m_state(Invalid),
@@ -195,7 +211,7 @@ void MainMenu::changeState(State state)
         break;
 
     default:
-        qFatal("Cannot change state!");
+        util::fatal("Cannot change state!");
     }
 }
 
@@ -290,7 +306,7 @@ void MainMenu::showLoad()
         label.setWidth(640);
         label.setAlignment(ui::Button::AlignHCenter);
         label.setFont(gfx::Font::Small);
-        label.setText(String(QLocale().toString(game.time, QLocale::ShortFormat)));
+        label.setText(shortDateTime(game.time));
 
         y += 20;
     }

@@ -35,7 +35,7 @@
 #include "task.h"
 #include "boat.h"
 
-#include <QDateTime>
+#include "util/datetime.hpp"
 #include "util/string.hpp"
 
 
@@ -58,7 +58,7 @@ public:
 
         String name;
         String station;
-        QDateTime time;
+        util::DateTime time;   // local
     };
 
 public:

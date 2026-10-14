@@ -28,4 +28,10 @@ void errorHandlerDefault(const char *file, int line)
     std::abort();
 }
 
+void fatal(const char *message)
+{
+    std::cerr << message << std::endl;
+    std::abort();
+}
+
 } // namespace util

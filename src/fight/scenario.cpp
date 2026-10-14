@@ -46,7 +46,7 @@
 
 #include <qopengl.h>
 #include <QSettings>
-#include <QTime>
+#include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtx/transform.hpp>
@@ -551,7 +551,9 @@ Scenario::Scenario(const String &name) :
 
 
 
-    util::seedRandom(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(QTime::currentTime().second() * 1000 + QTime::currentTime().msec()));
+    // without a seed of its own, the milliseconds of the current minute
+    const long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    util::seedRandom(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(milliseconds % 60000));
 
     sfx::SampleMap::load();
 }

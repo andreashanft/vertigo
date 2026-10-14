@@ -22,6 +22,9 @@ namespace util {
 
 void errorHandlerDefault(const char *file, int line);
 
+// prints the message and ends the program
+[[noreturn]] void fatal(const char *message);
+
 template <typename Func, typename Handler>
 auto errorVerify(Func &&expr, const char *file, int line, Handler &&handler) -> decltype(expr())
 {

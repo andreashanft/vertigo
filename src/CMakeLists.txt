@@ -250,6 +250,8 @@ set(SOURCES
     util/containers.hpp
     util/core.h
     util/datapath.cpp
+    util/datetime.cpp
+    util/datetime.hpp
     util/datapath.h
     util/deferreddeletable.cpp
     util/deferreddeletable.h

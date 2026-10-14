@@ -3,6 +3,7 @@
 add_executable(stringtest
     stringtest.cpp
     ${PROJECT_SOURCE_DIR}/src/util/string.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/datetime.cpp
     ${PROJECT_SOURCE_DIR}/src/txt/value.cpp
 )
 target_include_directories(stringtest PRIVATE ${PROJECT_SOURCE_DIR}/src)

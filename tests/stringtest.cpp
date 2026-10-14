@@ -21,7 +21,9 @@
 
 #include "util/string.hpp"
 #include "txt/value.h"
+#include "util/datetime.hpp"
 
+#include <QDateTime>
 #include <QDirIterator>
 #include <QFile>
 #include <QStringList>
@@ -300,6 +302,30 @@ int main(int argc, char *argv[])
         fail("toUtf8()", "", "");
 
     // the game data: every line and every value of its text files
+    // the times of saved games, read as QDateTime::fromString(…, Qt::ISODate) read them and
+    // written as toString(Qt::ISODateWithMs) wrote them
+    auto sameTime = [](const QString &text) {
+        const QDateTime q = QDateTime::fromString(text, Qt::ISODate);
+        const util::DateTime ours = util::DateTime::fromIso(String(text));
+        const bool equal = q.isValid() ? ours.isValid() && ours.year == q.date().year() && ours.month == q.date().month() && ours.day == q.date().day()
+                && ours.hour == q.time().hour() && ours.minute == q.time().minute() && ours.second == q.time().second() && ours.millisecond == q.time().msec()
+                : !ours.isValid();
+        same("DateTime " + describe(text), q.isValid() ? q.toString(Qt::ISODateWithMs) : QString("invalid"), equal ? (q.isValid() ? ours.toIso() : String("invalid")) : String("different: ") + ours.toIso());
+    };
+    std::mt19937 times(2);
+    for (int i = 0; i < 20000; i++) {
+        const QDateTime t(QDate(1990 + int(times() % 60), 1 + int(times() % 12), 1 + int(times() % 28)), QTime(int(times() % 24), int(times() % 60), int(times() % 60), int(times() % 1000)));
+        sameTime(t.toString(Qt::ISODateWithMs));
+        sameTime(t.toString(Qt::ISODate));
+    }
+    // (not those with a time zone, which saved games never had)
+    for (const char *text : { "2026-10-14T16:05:09", "2026-10-14T16:05", "2026-10-14 16:05:09.5", "2026-02-29T00:00:00.000",
+                              "2024-02-29T00:00:00.000", "2026-13-01T00:00", "2026-00-10T00:00", "2026-10-00T00:00", "2026-10-14", "",
+                              "garbage", "2026-10-14T16:60:00", "2026-10-14T16:05:60", "2026-10-14T16:05:09.1234", "2026-10-14T16:05:09.",
+                              "2026-10-14T16:05:09.12", "2026-10-14T1:05:09", "26-10-14T16:05:09", "2026-10-14T16:05:09.000x",
+                              "0000-10-14T16:05:09.000" })
+        sameTime(QString::fromLatin1(text));
+
     if (argc > 1) {
         int files = 0, lines = 0;
         QDirIterator it(QString::fromLocal8Bit(argv[1]), QDir::Files, QDirIterator::Subdirectories);
