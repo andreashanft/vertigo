@@ -97,11 +97,12 @@ or `.bin` of a `MODE1/2352` track), it offers to build that directory itself,
 as `Game Data` next to the saved games. `--data <directory>` uses another
 directory for one run, without remembering it.
 
-The missions' music is the CD's audio tracks 2 to 5. With a cue sheet next to
-the image (GOG's `game.ins`, or a `.cue`), building `Game Data` also copies
-them out, as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV` (98 MB); a directory put
-together by hand can have them there too. The notebook's Options › Sound
-turns the music off and on, as the original's "CD Musik" did.
+The missions' music is the CD's audio tracks 2 to 5. Building `Game Data`
+also copies them out of the image (or, for a rip with a file for each track,
+by its `.cue`), as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV` (98 MB); a directory
+put together by hand can have them there too. Game data built before this
+version lacks them: delete `Game Data` and build it again. The notebook's
+Options › Sound turns the music off and on, as the original's "CD Musik" did.
 
 ## Game controllers
 

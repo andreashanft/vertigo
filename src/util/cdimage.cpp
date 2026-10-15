@@ -35,6 +35,11 @@ const std::uint32_t MaxDirectory = 1 << 22;
 const int MaxDepth = 16;
 // sectors read at once
 const std::uint32_t Chunk = 256;
+// a raw sector, and its sync pattern in a data track
+const std::size_t RawSector = 2352;
+const char Sync[] = "\0\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
+// the silence between audio tracks: a second at least (75 sectors; the CD has two)
+const std::uint32_t TrackGap = 75;
 
 std::uint16_t le16(const unsigned char *bytes)
 {
@@ -68,6 +73,7 @@ std::string recordName(const unsigned char *name, std::size_t length)
 
 bool CdImage::open(const std::string &path)
 {
+    m_path = path;
     m_files.clear();
     m_image.close();
     m_image.clear();
@@ -93,6 +99,7 @@ bool CdImage::open(const std::string &path)
                 break;
             if (data[0] != 1 || le16(data + 128) != SectorData)
                 continue;
+            m_volumeSectors = le32(data + 80);
             std::set<std::uint32_t> visited;
             readDirectory(le32(data + 156 + 2), le32(data + 156 + 10), std::string(), 0, visited);
             return true;
@@ -120,6 +127,46 @@ bool CdImage::copy(const File &file, const std::string &path)
     }
     out.close();
     return !out.fail();
+}
+
+
+std::vector<CdImage::AudioTrack> CdImage::audioTracks()
+{
+    std::vector<AudioTrack> tracks;
+    if (m_sectorSize != RawSector)
+        return tracks;
+    // the sectors after the data track (those with the sync pattern): the tracks are those with
+    // sound, and silence of less than TrackGap in them
+    std::vector<char> raw(Chunk * RawSector);
+    bool data = true;
+    std::int64_t start = -1, sound = -1;
+    auto add = [&]() {
+        tracks.push_back({ int(tracks.size()) + 2, m_path, std::uint64_t(start) * RawSector, std::uint64_t(sound + 1 - start) * RawSector });
+    };
+    for (std::uint64_t first = std::min<std::uint64_t>(m_volumeSectors, m_sectors); first < m_sectors; first += Chunk) {
+        const std::uint32_t count = std::uint32_t(std::min<std::uint64_t>(Chunk, m_sectors - first));
+        if (!readRaw(std::uint32_t(first), count, raw.data()))
+            return {};
+        for (std::uint32_t i = 0; i < count; i++) {
+            const char *sector = raw.data() + i * RawSector;
+            if (data && std::memcmp(sector, Sync, 12) == 0)
+                continue;
+            data = false;
+            if (std::all_of(sector, sector + RawSector, [](char c) { return c == 0; }))
+                continue;
+            const std::int64_t n = std::int64_t(first + i);
+            if (start >= 0 && n - sound > TrackGap) {
+                add();
+                start = -1;
+            }
+            if (start < 0)
+                start = n;
+            sound = n;
+        }
+    }
+    if (start >= 0)
+        add();
+    return tracks;
 }
 
 
@@ -222,22 +269,29 @@ bool CdImage::copyAudio(const AudioTrack &track, const std::string &path)
 }
 
 
-bool CdImage::readSectors(std::uint32_t sector, std::uint32_t count, char *data)
+bool CdImage::readRaw(std::uint32_t sector, std::uint32_t count, char *raw)
 {
     if (std::uint64_t(sector) + count > m_sectors)
         return false;
     m_image.clear();
     m_image.seekg(std::streamoff(std::uint64_t(sector) * m_sectorSize));
+    return bool(m_image.read(raw, std::streamsize(std::uint64_t(count) * m_sectorSize)));
+}
+
+
+bool CdImage::readSectors(std::uint32_t sector, std::uint32_t count, char *data)
+{
     if (m_sectorSize == SectorData)
-        return bool(m_image.read(data, std::streamsize(std::uint64_t(count) * SectorData)));
+        return readRaw(sector, count, data);
 
     std::vector<char> raw(std::min(count, Chunk) * m_sectorSize);
     while (count > 0) {
         const std::uint32_t n = std::min(count, Chunk);
-        if (!m_image.read(raw.data(), std::streamsize(n * m_sectorSize)))
+        if (!readRaw(sector, n, raw.data()))
             return false;
         for (std::uint32_t i = 0; i < n; i++, data += SectorData)
             std::memcpy(data, raw.data() + i * m_sectorSize + m_dataOffset, SectorData);
+        sector += n;
         count -= n;
     }
     return true;

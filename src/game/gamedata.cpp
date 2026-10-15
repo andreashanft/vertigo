@@ -92,8 +92,7 @@ bool inParts(const std::string &name)
 }
 
 
-// the audio tracks of the image, by a cue sheet (.cue, or GOG's .ins) next to it that names it;
-// they can be in the image or in files of their own
+// the audio tracks of the image, by a cue sheet (.cue, or GOG's .ins) next to it that names it
 std::vector<util::CdImage::AudioTrack> audioTracks(const std::string &imagePath)
 {
     const std::filesystem::path image = util::toPath(imagePath);
@@ -195,9 +194,15 @@ bool GameData::import(const std::string &imagePath, const std::string &target, s
         error = "Cannot read " + util::fromPath(installation) + ": " + ec.message();
         return false;
     }
-    // the music of the missions: the CD's audio tracks, which a cue sheet next to the image
-    // (GOG's game.ins) finds in it, as SFX/CD/TRACK02.WAV and so on
-    const std::vector<util::CdImage::AudioTrack> tracks = audioTracks(imagePath);
+    // the music of the missions: the CD's four audio tracks, as SFX/CD/TRACK02.WAV and so on;
+    // after the data track in the image, or in files of their own, which a cue sheet next to the
+    // image finds
+    std::vector<util::CdImage::AudioTrack> tracks = image.audioTracks();
+    if (tracks.size() != 4) {
+        std::vector<util::CdImage::AudioTrack> listed = audioTracks(imagePath);
+        if (!listed.empty())
+            tracks = listed;
+    }
     for (const util::CdImage::AudioTrack &track : tracks) {
         char name[32];
         std::snprintf(name, sizeof(name), "SFX/CD/TRACK%02d.WAV", track.number);

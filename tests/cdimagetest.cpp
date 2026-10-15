@@ -157,13 +157,39 @@ int main()
     CHECK(!image.open(util::joinPath(directory, "missing.gog")));
     CHECK_EQUAL(image.files().size(), 0u);
 
+    // the audio tracks after the data track of a raw image: apart by a second of silence (75
+    // sectors) or more, with less in them; none in an image of 2048-byte sectors
+    const std::size_t Raw = 2352;
+    util::CdImage cd;
+    const std::string data = ::image(Raw, 16);
+    const std::size_t dataSectors = data.size() / Raw;
+    util::writeFile(imagePath, data + std::string(150 * Raw, '\0') + std::string(3 * Raw, 'a') + std::string(74 * Raw, '\0')
+                    + std::string(2 * Raw, 'b') + std::string(75 * Raw, '\0') + std::string(4 * Raw, 'c') + std::string(150 * Raw, '\0'));
+    CHECK(cd.open(imagePath));
+    std::vector<util::CdImage::AudioTrack> tracks = cd.audioTracks();
+    CHECK_EQUAL(tracks.size(), 2u);
+    if (tracks.size() == 2) {
+        CHECK_EQUAL(tracks[0].number, 2);
+        CHECK_EQUAL(tracks[0].file, imagePath);
+        CHECK_EQUAL(tracks[0].offset, (dataSectors + 150) * Raw);
+        CHECK_EQUAL(tracks[0].size, (3 + 74 + 2) * Raw);
+        CHECK_EQUAL(tracks[1].number, 3);
+        CHECK_EQUAL(tracks[1].offset, (dataSectors + 150 + 79 + 75) * Raw);
+        CHECK_EQUAL(tracks[1].size, 4 * Raw);
+    }
+    util::writeFile(imagePath, data);
+    CHECK(cd.open(imagePath));
+    CHECK_EQUAL(cd.audioTracks().size(), 0u);
+    util::writeFile(imagePath, ::image(Sector, 0) + std::string(4 * Sector, 'a'));
+    CHECK(cd.open(imagePath));
+    CHECK_EQUAL(cd.audioTracks().size(), 0u);
+
     // the audio tracks of cue sheets: after a data track in one image (as in GOG's game.ins;
     // its name in another case), with a pregap (index 0), and in files of their own
-    const std::size_t Raw = 2352;
     util::writeFile(util::joinPath(directory, "CD.GOG"), std::string(10 * Raw, 'd') + std::string(3 * Raw, 'a') + std::string(Raw, 'p') + std::string(2 * Raw, 'b'));
     util::writeFile(util::joinPath(directory, "game.ins"), "FILE \"cd.gog\" BINARY\r\n  TRACK 01 MODE1/2352\r\n    INDEX 01 00:00:00\r\n"
                     "  TRACK 02 AUDIO\r\n    INDEX 01 00:00:10\r\n  TRACK 03 AUDIO\r\n    INDEX 00 00:00:13\r\n    INDEX 01 00:00:14\r\n");
-    std::vector<util::CdImage::AudioTrack> tracks = util::CdImage::audioTracks(util::joinPath(directory, "game.ins"));
+    tracks = util::CdImage::audioTracks(util::joinPath(directory, "game.ins"));
     CHECK_EQUAL(tracks.size(), 2u);
     if (tracks.size() == 2) {
         CHECK_EQUAL(tracks[0].number, 2);
