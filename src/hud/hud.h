@@ -26,6 +26,7 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include "util/string.hpp"
@@ -74,6 +75,12 @@ public:
     static void setFixedStep(float seconds);
     // frames drawn of the current mission
     int frames() const { return m_frames; }
+    // the last second's frames, for the debug overlay: frames a second, the average and the
+    // longest time from one to the next and the time the game took for one (updating and drawing,
+    // without waiting for the screen), in milliseconds; 0 until a second has passed, and with a
+    // fixed step
+    struct FrameRate { float fps = 0, frame = 0, longest = 0, work = 0; };
+    const FrameRate& frameRate() const { return m_frameRate; }
 
 public:
     // the player leaves the mission: accomplished (autopilot), abort the game, restart the mission, load the last save
@@ -114,6 +121,7 @@ public:
 
     void setRect(const Rect &rect);
     void draw();
+    void drawFrame();
     // advances the mission without drawing (draw() calls it with the time since the last frame)
     void step(float elapsedTime);
 
@@ -154,6 +162,7 @@ private:
     void moveLook(const PointD &position);
     int menuOption(const PointD &position);
     void drawTouchControls(double pixelRatio);
+    void countFrame(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
     // the pilot's head turned by the mouse look, in the boat's camera frame
     Matrix lookTransform() const;
 
@@ -169,6 +178,12 @@ private:
     fight::Scenario *m_scenario;
     int m_lastTicks;
     int m_frames = 0;
+    FrameRate m_frameRate;
+    std::chrono::steady_clock::time_point m_frameBegin;     // of the last frame
+    std::chrono::steady_clock::time_point m_countBegin;     // of the second being counted
+    int m_countFrames = 0;
+    double m_countLongest = 0;
+    double m_countWork = 0;
     int m_navPoint;
 
     bool m_wide;

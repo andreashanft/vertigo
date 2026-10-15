@@ -387,6 +387,12 @@ void HUD::start(fight::Scenario *scenario)
     m_scenario->setBoat(m_boat);
     m_lastTicks = util::ticks();
     m_frames = 0;
+    // (not the time the mission took to load)
+    m_frameRate = FrameRate();
+    m_frameBegin = std::chrono::steady_clock::time_point();
+    m_countFrames = 0;
+    m_countLongest = 0;
+    m_countWork = 0;
     m_navPoint = -1;
     m_paused = false;
     m_frozen = false;
@@ -560,6 +566,43 @@ Rect HUD::projectCenter(const Rect &rect)
 
 
 void HUD::draw()
+{
+    const auto begin = std::chrono::steady_clock::now();
+    drawFrame();
+    countFrame(begin, std::chrono::steady_clock::now());
+}
+
+
+void HUD::countFrame(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end)
+{
+    // with a fixed step the screenshots repeat exactly, which the times wouldn't
+    if (!m_scenario || g_fixedStep > 0)
+        return;
+    using Milliseconds = std::chrono::duration<double, std::milli>;
+    if (m_frameBegin == std::chrono::steady_clock::time_point())
+    {
+        m_countBegin = begin;
+    }
+    else
+    {
+        m_countFrames++;
+        m_countLongest = std::max(m_countLongest, Milliseconds(begin - m_frameBegin).count());
+        m_countWork += Milliseconds(end - begin).count();
+    }
+    m_frameBegin = begin;
+    const double counted = Milliseconds(begin - m_countBegin).count();
+    if (counted >= 1000 && m_countFrames > 0)
+    {
+        m_frameRate = { float(m_countFrames*1000/counted), float(counted/m_countFrames), float(m_countLongest), float(m_countWork/m_countFrames) };
+        m_countBegin = begin;
+        m_countFrames = 0;
+        m_countLongest = 0;
+        m_countWork = 0;
+    }
+}
+
+
+void HUD::drawFrame()
 {
     if (!m_scenario)
     {

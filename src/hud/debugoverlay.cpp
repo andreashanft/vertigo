@@ -127,6 +127,10 @@ void DebugOverlay::drawInfo()
     const Vector3D current = scenario->current(pos);
     if (glm::length(current) > 0.01f)
         lines << String("CURRENT %1 %2 %3 M/S").arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1);
+    const HUD::FrameRate &rate = m_hud->frameRate();
+    if (rate.fps > 0)
+        lines << String("FPS %1  FRAME %2 MS  MAX %3  CPU %4 MS")
+                 .arg(rate.fps, 0, 'f', 1).arg(rate.frame, 0, 'f', 1).arg(rate.longest, 0, 'f', 1).arg(rate.work, 0, 'f', 1);
 
     gfx::Font &font = m_hud->fontYellow();
     Point p = m_hud->project(Point(8, 8));

@@ -172,8 +172,12 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   `--equip` installs items (`--list-items` lists them). Otherwise the
   chapter 1 boat is used.
 - `--overlay` shows the debug overlay with player state and a label for every
-  object (toggle with Ctrl+D, Cmd+D on macOS). Yellow labels are detected by
-  the sonar, green ones are enabled but not detected, red ones not enabled yet.
+  object (toggle with Ctrl+D, Cmd+D on macOS and the iPad). Yellow labels are
+  detected by the sonar, green ones are enabled but not detected, red ones not
+  enabled yet. Its FPS line tells the frames per second of the last second,
+  the average and the longest time between frames, and the CPU time the game
+  took per frame (updating and drawing, without waiting for the screen or the
+  GPU), in milliseconds; not with `--fixed-step`.
 - `--destroy 2064,2068` destroys these units (scenario ids, shown by the
   overlay) one second into the mission, to test objectives and conditions.
   The player's id destroys the player; for areas and nav points it counts as
