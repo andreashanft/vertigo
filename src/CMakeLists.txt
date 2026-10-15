@@ -313,7 +313,11 @@ if(IOS)
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY 2
         XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
         XCODE_ATTRIBUTE_MARKETING_VERSION 0.1
-        XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION 1)
+        XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION 1
+        # Xcode runs it optimised: a Debug build draws several times slower (20 instead of 120
+        # frames a second on an iPad Pro from 2018)
+        XCODE_GENERATE_SCHEME ON
+        XCODE_SCHEME_LAUNCH_CONFIGURATION RelWithDebInfo)
     # (Apple deprecated OpenGL ES, but it is in the SDK)
     target_compile_definitions(vertigo PRIVATE GLES_SILENCE_DEPRECATION)
     target_link_libraries(vertigo "-framework OpenGLES")

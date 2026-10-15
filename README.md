@@ -49,7 +49,9 @@ builds the app for the simulator and installs it there. For an iPad, open
 `build-ios/vertigo.xcodeproj` in Xcode and choose a team for signing, or pass
 `-DVERTIGO_DEVELOPMENT_TEAM=<team ID>` (and if needed
 `-DVERTIGO_BUNDLE_ID=<identifier>`) to the first command and build with
-`-sdk iphoneos -allowProvisioningUpdates`.
+`-sdk iphoneos -allowProvisioningUpdates`. Xcode's `vertigo` scheme runs the
+optimised RelWithDebInfo build: a Debug build manages only about 20 frames a
+second on an iPad Pro from 2018, against 120.
 
 The game data goes into Vertigo's folder in the Files app (On My iPad ›
 Vertigo), which the Finder also shows when the iPad is connected to a Mac.
@@ -179,7 +181,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   enabled yet. Its FPS line tells the frames per second of the last second,
   the average and the longest time between frames, and the CPU time the game
   took per frame (updating and drawing, without waiting for the screen or the
-  GPU), in milliseconds; not with `--fixed-step`.
+  GPU), in milliseconds; not with `--fixed-step`. It ends in DEBUG BUILD for
+  an unoptimised build, which draws several times slower.
 - `--destroy 2064,2068` destroys these units (scenario ids, shown by the
   overlay) one second into the mission, to test objectives and conditions.
   The player's id destroys the player; for areas and nav points it counts as

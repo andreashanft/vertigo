@@ -128,9 +128,15 @@ void DebugOverlay::drawInfo()
     if (glm::length(current) > 0.01f)
         lines << String("CURRENT %1 %2 %3 M/S").arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1);
     const HUD::FrameRate &rate = m_hud->frameRate();
-    if (rate.fps > 0)
-        lines << String("FPS %1  FRAME %2 MS  MAX %3  CPU %4 MS")
-                 .arg(rate.fps, 0, 'f', 1).arg(rate.frame, 0, 'f', 1).arg(rate.longest, 0, 'f', 1).arg(rate.work, 0, 'f', 1);
+    if (rate.fps > 0) {
+        String line = String("FPS %1  FRAME %2 MS  MAX %3  CPU %4 MS")
+                      .arg(rate.fps, 0, 'f', 1).arg(rate.frame, 0, 'f', 1).arg(rate.longest, 0, 'f', 1).arg(rate.work, 0, 'f', 1);
+#ifndef NDEBUG
+        // unoptimised, the game draws several times slower
+        line += "  DEBUG BUILD";
+#endif
+        lines << line;
+    }
 
     gfx::Font &font = m_hud->fontYellow();
     // right of the touch controls' buttons in the corner
