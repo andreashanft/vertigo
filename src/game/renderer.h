@@ -70,6 +70,10 @@ public:
     virtual void buttonPressEvent(input::Button button);
     virtual void buttonReleaseEvent(input::Button button);
     virtual void stickEvent(input::Stick, const Vector2D &) {}
+    // fingers on a touch screen (taps also come as mouse clicks, isFromTouch())
+    virtual void touchPressEvent(input::TouchEvent *) {}
+    virtual void touchMoveEvent(input::TouchEvent *) {}
+    virtual void touchReleaseEvent(input::TouchEvent *) {}
 
 protected:
     void showCursor();

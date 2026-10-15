@@ -97,18 +97,37 @@ private:
 class MouseEvent
 {
 public:
-    MouseEvent(const PointD &position = PointD(0), MouseButton button = NoButton, int buttons = NoButton) : m_position(position), m_button(button), m_buttons(buttons) {}
+    MouseEvent(const PointD &position = PointD(0), MouseButton button = NoButton, int buttons = NoButton, bool fromTouch = false) :
+        m_position(position), m_button(button), m_buttons(buttons), m_fromTouch(fromTouch) {}
 
     const PointD& position() const { return m_position; }
     // the one pressed or released
     MouseButton button() const { return m_button; }
     // those held down now
     int buttons() const { return m_buttons; }
+    // made up by the system from a finger on the touch screen, so that taps click
+    bool isFromTouch() const { return m_fromTouch; }
 
 private:
     PointD m_position;
     MouseButton m_button;
     int m_buttons;
+    bool m_fromTouch;
+};
+
+// a finger on a touch screen put down, moved or lifted, in the window's coordinates; the id tells
+// the fingers apart while they touch
+class TouchEvent
+{
+public:
+    TouchEvent(long long id = 0, const PointD &position = PointD(0)) : m_id(id), m_position(position) {}
+
+    long long id() const { return m_id; }
+    const PointD& position() const { return m_position; }
+
+private:
+    long long m_id;
+    PointD m_position;
 };
 
 // "Esc", "Alt+A", "Down", "F5", "2" (as --keys takes them; any case); Key_None if it isn't one

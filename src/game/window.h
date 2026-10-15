@@ -61,9 +61,10 @@ public:
     void handle(const SDL_Event &event);
     // input that test runs make up, delivered before the next frame as if it came from the
     // platform
-    enum class EventType { KeyPress, KeyRelease, MousePress, MouseRelease, MouseMove };
+    enum class EventType { KeyPress, KeyRelease, MousePress, MouseRelease, MouseMove, TouchPress, TouchMove, TouchRelease };
     void post(EventType type, const input::KeyEvent &event);
     void post(EventType type, const input::MouseEvent &event);
+    void post(EventType type, const input::TouchEvent &event);
     void deliverPosted();
     // test runs with a virtual game controller: only it counts, not those of the player
     void setOnlyGamepad(unsigned int id) { m_onlyGamepad = id; }
@@ -80,6 +81,7 @@ private:
     void buttonEvent(input::Button button, bool pressed);
     void axisEvent(int axis, float value);
     void releaseGamepad();
+    void touchEvent(EventType type, input::TouchEvent *event);
     void saveSettings();
     void loadSettings();
     void toggleFullScreen();
@@ -90,6 +92,7 @@ private:
         EventType type;
         input::KeyEvent key;
         input::MouseEvent mouse;
+        input::TouchEvent touch;
     };
 
     SDL_Window *m_window = nullptr;

@@ -56,7 +56,11 @@
 #include "slavemonitor.h"
 #include "symbols.h"
 #include "cockpit3d.h"
+#include "touchcontrols.h"
 #include "sfx/soundsystem.h"
+
+#include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_keyboard.h>
 #include "txt/stringtable.h"
 
 
@@ -71,6 +75,12 @@ float g_headMotion = 1;
 bool g_lookFixed = false;
 Vector2D g_look;
 float g_fixedStep = 0;
+// the touch controls are shown once a finger touched the screen in a mission, until a key or a
+// game controller is used (on the iPad from the start without either)
+bool g_touchControls = false;
+bool g_touchControlsChecked = false;
+// the keys held by touch buttons, after those of the game controller's buttons
+const int TouchButtons = 100;
 
 // mouse look: degrees per pixel dragged, how far the head turns (further, the eye would be in the
 // headrest), and the neck it turns about (below and behind the eye, so the eye moves as well)
@@ -187,6 +197,14 @@ HUD::HUD() :
     m_fontRed("gfx:fnt/cpit1bhc.fnt", m_colorTable, true, false),
     m_fontYellow("gfx:fnt/cpit1chc.fnt", m_colorTable, true, false)
 {
+    TouchControls::Handlers handlers;
+    handlers.press = [this](const input::KeyEvent &key, int button) { pressKey(key, TouchButtons + button); };
+    handlers.release = [this](const input::KeyEvent &, int button) { releaseKey(TouchButtons + button); };
+    handlers.stick = [this](const Vector2D &stick) { m_touchStick = stick; updateStick(); };
+    handlers.lookStart = [this](const PointD &position) { startLook(position); };
+    handlers.lookMove = [this](const PointD &position) { moveLook(position); };
+    handlers.lookEnd = [this]() { m_looking = false; };
+    m_touch.reset(new TouchControls(m_fontGreen, m_fontYellow, handlers));
 
 }
 
@@ -377,7 +395,20 @@ void HUD::start(fight::Scenario *scenario)
     m_deathTime = -1;
     m_menu->open(MissionMenu::Page::None);
     m_scenario->headMotion().setStrength(headMotion());
-    m_scenario->setStick(m_steerStick);
+#if defined(SDL_PLATFORM_IOS)
+    // on the iPad without a keyboard and a game controller the touch controls are there at once
+    if (!g_touchControlsChecked)
+        g_touchControls = !SDL_HasKeyboard() && !SDL_HasGamepad();
+#endif
+    g_touchControlsChecked = true;
+    // a finger on the screen comes back to the controls of the new mission when it is lifted
+    m_touch->reset();
+    m_touchStick = Vector2D(0);
+    for (auto it = m_heldKeys.begin(); it != m_heldKeys.end(); )
+        it = it->first >= TouchButtons ? m_heldKeys.erase(it) : std::next(it);
+    if (m_repeat >= TouchButtons)
+        m_repeat = -1;
+    updateStick();
 }
 
 
@@ -389,14 +420,14 @@ void HUD::step(float elapsedTime)
     setFrozen(m_paused || m_menu->pauses());
     if (m_frozen)
         elapsedTime = 0;
-    if (m_repeat != input::Button_None && elapsedTime > 0)
+    if (m_repeat >= 0 && elapsedTime > 0)
     {
         m_repeatWait -= elapsedTime;
-        while (m_repeatWait <= 0 && m_repeat != input::Button_None)
+        while (m_repeatWait <= 0 && m_repeat >= 0)
         {
             m_repeatWait += RepeatInterval;
-            input::KeyEvent key = m_buttonKeys[m_repeat];
-            keyPressEvent(&key);
+            input::KeyEvent key = m_heldKeys[m_repeat];
+            press(&key);
         }
     }
     while (elapsedTime > 0.0f) {
@@ -481,6 +512,7 @@ void HUD::leave(util::event<> &event)
 
 void HUD::setRect(const Rect &rect)
 {
+    m_touch->setSize(rect.width, rect.height);
     if (m_rectGL.width == rect.width && m_rectGL.height == rect.height)
         return;
 
@@ -554,7 +586,10 @@ void HUD::draw()
     // the GL viewport is in device pixels, the rects in logical pixels
     const double pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
     if (showsModel() && drawModel(pixelRatio))
+    {
+        drawTouchControls(pixelRatio);
         return;
+    }
     if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
         glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
 
@@ -578,6 +613,7 @@ void HUD::draw()
 
     if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+    drawTouchControls(pixelRatio);
 }
 
 
@@ -646,7 +682,16 @@ bool HUD::drawModel(double pixelRatio)
 }
 
 
+// the keyboard: the touch controls go
 void HUD::keyPressEvent(input::KeyEvent *e)
+{
+    if (e->key() != input::Key_None)
+        g_touchControls = false;
+    press(e);
+}
+
+
+void HUD::press(input::KeyEvent *e)
 {
     if (!m_scenario)
         return;
@@ -778,7 +823,10 @@ void HUD::menuAction(int action)
     switch (MissionMenu::Action(action))
     {
     case MissionMenu::Action::None:
+        break;
+    // also after a pause (P, or the app interrupted on the iPad)
     case MissionMenu::Action::Continue:
+        m_paused = false;
         break;
     case MissionMenu::Action::Abort:
         leave(m_eventAbort);
@@ -824,8 +872,7 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_Right: return second ? KeyEvent(Key_R, AltModifier) : KeyEvent(Key_R);
     case Button_LeftStick: return KeyEvent(Key_A);
     case Button_RightStick: return KeyEvent(Key_Z);
-    // Start opens the menu, or goes on after a pause
-    case Button_Start: return second || m_paused ? KeyEvent(Key_P) : KeyEvent(Key_Escape);
+    case Button_Start: return second ? KeyEvent(Key_P) : KeyEvent(Key_Escape);
     case Button_Back: return second ? KeyEvent(Key_V, AltModifier) : KeyEvent(Key_O);
     default: return KeyEvent();
     }
@@ -834,6 +881,7 @@ input::KeyEvent HUD::buttonKey(input::Button button)
 
 void HUD::buttonPressEvent(input::Button button)
 {
+    g_touchControls = false;
     if (!m_scenario || button == input::Button_None)
         return;
     if (button == input::Button_LeftShoulder)
@@ -870,7 +918,7 @@ void HUD::buttonPressEvent(input::Button button)
             if (turretMenu)
             {
                 input::KeyEvent key(input::Key_O);
-                keyPressEvent(&key);
+                press(&key);
                 return;
             }
             break;
@@ -881,12 +929,9 @@ void HUD::buttonPressEvent(input::Button button)
             return;
     }
 
-    input::KeyEvent key = buttonKey(button);
-    m_buttonKeys[button] = key;
-    if (key.key() == input::Key_None)
-        return;
     const bool menu = m_menu->page() != MissionMenu::Page::None;
-    keyPressEvent(&key);
+    const input::KeyEvent key = buttonKey(button);
+    pressKey(key, button);
     if (!m_scenario)
         return;
     // a menu opened by a button shows its highlight at once
@@ -894,11 +939,6 @@ void HUD::buttonPressEvent(input::Button button)
         m_menu->select(0);
     if (key.key() >= input::Key_F1 && key.key() <= input::Key_F4)
         m_weaponPage = (m_weaponPage + 1) % 4;
-    if (key.key() == input::Key_S || key.key() == input::Key_X)
-    {
-        m_repeat = button;
-        m_repeatWait = RepeatDelay;
-    }
 }
 
 
@@ -908,25 +948,119 @@ void HUD::buttonReleaseEvent(input::Button button)
         return;
     if (button == input::Button_LeftShoulder)
         m_shoulder = false;
-    if (button == m_repeat)
-        m_repeat = input::Button_None;
-    input::KeyEvent key = m_buttonKeys[button];
-    m_buttonKeys[button] = input::KeyEvent();
-    if (key.key() != input::Key_None)
-        keyReleaseEvent(&key);
+    releaseKey(button);
 }
 
 
 void HUD::stickEvent(input::Stick stick, const Vector2D &position)
 {
+    if (position != Vector2D(0))
+        g_touchControls = false;
     if (stick == input::RightStick)
         m_lookStick = position;
     else
     {
-        m_steerStick = position;
-        if (m_scenario)
-            m_scenario->setStick(position);
+        m_padStick = position;
+        updateStick();
     }
+}
+
+
+// A key a game controller's button or a touch button stands for: held until the button is let
+// go; the speed keys repeat meanwhile
+void HUD::pressKey(input::KeyEvent key, int source)
+{
+    m_heldKeys[source] = key;
+    if (key.key() == input::Key_None)
+        return;
+    press(&key);
+    if (m_scenario && (key.key() == input::Key_S || key.key() == input::Key_X))
+    {
+        m_repeat = source;
+        m_repeatWait = RepeatDelay;
+    }
+}
+
+
+void HUD::releaseKey(int source)
+{
+    if (source == m_repeat)
+        m_repeat = -1;
+    const auto held = m_heldKeys.find(source);
+    if (held == m_heldKeys.end())
+        return;
+    input::KeyEvent key = held->second;
+    m_heldKeys.erase(held);
+    if (key.key() != input::Key_None)
+        release(&key);
+}
+
+
+// both sticks steer, the controller's and the one on the touch screen
+void HUD::updateStick()
+{
+    if (m_scenario)
+        m_scenario->setStick(glm::clamp(m_padStick + m_touchStick, Vector2D(-1), Vector2D(1)));
+}
+
+
+void HUD::touchPressEvent(input::TouchEvent *e)
+{
+    if (!m_scenario)
+        return;
+    g_touchControls = true;
+    // (also without drawing, in headless runs)
+    if (window())
+        m_touch->setSize(window()->width(), window()->height());
+    // a tap on an option of a menu takes it
+    if (m_menu->page() != MissionMenu::Page::None)
+    {
+        const int option = menuOption(e->position());
+        if (option >= 0)
+        {
+            menuAction(int(m_menu->choose(option)));
+            return;
+        }
+    }
+    m_touch->press(e->id(), e->position());
+}
+
+
+void HUD::touchMoveEvent(input::TouchEvent *e)
+{
+    if (m_scenario)
+        m_touch->move(e->id(), e->position());
+}
+
+
+void HUD::touchReleaseEvent(input::TouchEvent *e)
+{
+    if (m_scenario)
+        m_touch->release(e->id());
+}
+
+
+// the option of the menu at a point of the window, or -1
+int HUD::menuOption(const PointD &position)
+{
+    // the menu is drawn in the HUD's rect, scaled by whole numbers
+    const Vector4D ndc(2*(position.x - rect().x)/rect().width - 1, 1 - 2*(position.y - rect().y)/rect().height, 0, 1);
+    const Vector4D point = m_integerScaleProjectionMatrixInverted*ndc;
+    m_integerScale = true;
+    const int option = m_menu->optionAt(Point(int(std::floor(point.x)), int(std::floor(point.y))));
+    m_integerScale = false;
+    return option;
+}
+
+
+void HUD::drawTouchControls(double pixelRatio)
+{
+    if (!g_touchControls || !m_scenario)
+        return;
+    glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+    setupGL(false);
+    gfx::Pipeline::setProjection(glm::ortho(0.0f, m_touch->width(), 480.0f, 0.0f));
+    m_touch->draw();
 }
 
 
@@ -952,34 +1086,55 @@ Matrix HUD::lookTransform() const
 }
 
 
+// (fingers come as touch events, see touchPressEvent())
 void HUD::mousePressEvent(input::MouseEvent *e)
 {
-    if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
-        return;
-    m_looking = true;
-    m_lookStart = e->position();
-    m_lookFrom = m_look;
+    if (!e->isFromTouch())
+        startLook(e->position());
 }
 
 
 void HUD::mouseMoveEvent(input::MouseEvent *e)
 {
-    if (!m_looking)
-        return;
-    // drag right to look right, up to look up
-    const PointD drag = e->position() - m_lookStart;
-    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag), LookMin, LookMax);
+    if (!e->isFromTouch())
+        moveLook(e->position());
 }
 
 
 void HUD::mouseReleaseEvent(input::MouseEvent *e)
 {
-    if (e->buttons() == input::NoButton)
+    if (!e->isFromTouch() && e->buttons() == input::NoButton)
         m_looking = false;
 }
 
 
+void HUD::startLook(const PointD &position)
+{
+    if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
+        return;
+    m_looking = true;
+    m_lookStart = position;
+    m_lookFrom = m_look;
+}
+
+
+void HUD::moveLook(const PointD &position)
+{
+    if (!m_looking)
+        return;
+    // drag right to look right, up to look up
+    const PointD drag = position - m_lookStart;
+    m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag), LookMin, LookMax);
+}
+
+
 void HUD::keyReleaseEvent(input::KeyEvent *e)
+{
+    release(e);
+}
+
+
+void HUD::release(input::KeyEvent *e)
 {
     if (!m_scenario)
         return;

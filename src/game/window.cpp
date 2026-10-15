@@ -374,7 +374,7 @@ void Window::handle(const SDL_Event &event)
             m_buttons |= b;
         else
             m_buttons &= ~b;
-        input::MouseEvent mouse(PointD(event.button.x, event.button.y), b, m_buttons);
+        input::MouseEvent mouse(PointD(event.button.x, event.button.y), b, m_buttons, event.button.which == SDL_TOUCH_MOUSEID);
         if (m_renderer) {
             if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
                 m_renderer->mousePressEvent(&mouse);
@@ -403,8 +403,19 @@ void Window::handle(const SDL_Event &event)
         if ((!m_onlyGamepad || event.gaxis.which == m_onlyGamepad) && event.gaxis.axis < SDL_GAMEPAD_AXIS_COUNT)
             axisEvent(event.gaxis.axis, std::max(event.gaxis.value/32767.0f, -1.0f));
         break;
+    // a touch screen's fingers (macOS also reports a trackpad's, which only move the mouse)
+    case SDL_EVENT_FINGER_DOWN:
+    case SDL_EVENT_FINGER_MOTION:
+    case SDL_EVENT_FINGER_UP:
+    case SDL_EVENT_FINGER_CANCELED:
+        if (SDL_GetTouchDeviceType(event.tfinger.touchID) == SDL_TOUCH_DEVICE_DIRECT) {
+            input::TouchEvent touch((long long)event.tfinger.fingerID, PointD(event.tfinger.x*width(), event.tfinger.y*height()));
+            touchEvent(event.type == SDL_EVENT_FINGER_DOWN ? EventType::TouchPress :
+                       event.type == SDL_EVENT_FINGER_MOTION ? EventType::TouchMove : EventType::TouchRelease, &touch);
+        }
+        break;
     case SDL_EVENT_MOUSE_MOTION: {
-        input::MouseEvent mouse(PointD(event.motion.x, event.motion.y), input::NoButton, m_buttons);
+        input::MouseEvent mouse(PointD(event.motion.x, event.motion.y), input::NoButton, m_buttons, event.motion.which == SDL_TOUCH_MOUSEID);
         if (m_renderer)
             m_renderer->mouseMoveEvent(&mouse);
         break;
@@ -460,14 +471,31 @@ void Window::releaseGamepad()
         axisEvent(axis, 0);
 }
 
+void Window::touchEvent(EventType type, input::TouchEvent *event)
+{
+    if (!m_renderer)
+        return;
+    if (type == EventType::TouchPress)
+        m_renderer->touchPressEvent(event);
+    else if (type == EventType::TouchMove)
+        m_renderer->touchMoveEvent(event);
+    else
+        m_renderer->touchReleaseEvent(event);
+}
+
 void Window::post(EventType type, const input::KeyEvent &event)
 {
-    m_posted.push_back({ type, event, input::MouseEvent() });
+    m_posted.push_back({ type, event, input::MouseEvent(), input::TouchEvent() });
 }
 
 void Window::post(EventType type, const input::MouseEvent &event)
 {
-    m_posted.push_back({ type, input::KeyEvent(), event });
+    m_posted.push_back({ type, input::KeyEvent(), event, input::TouchEvent() });
+}
+
+void Window::post(EventType type, const input::TouchEvent &event)
+{
+    m_posted.push_back({ type, input::KeyEvent(), input::MouseEvent(), event });
 }
 
 void Window::deliverPosted()
@@ -496,6 +524,11 @@ void Window::deliverPosted()
         case EventType::MouseMove:
             if (m_renderer)
                 m_renderer->mouseMoveEvent(&posted.mouse);
+            break;
+        case EventType::TouchPress:
+        case EventType::TouchMove:
+        case EventType::TouchRelease:
+            touchEvent(posted.type, &posted.touch);
             break;
         }
     }

@@ -46,7 +46,7 @@ public:
         String scenario;                               // start this mission directly (test mode)
         int boat = 0;                                   // test mode boat type, 0 = chapter 1 boat
         std::vector<std::pair<String, int>> equipment; // test mode items: mounting, model
-        int timeout = 0;                                // test mode time limit in seconds
+        float timeout = 0;                              // test mode time limit in seconds
         bool debugOverlay = false;
         bool headless = false;                          // test mode: no window and no sound, simulated time
         bool fixedStep = false;                         // test mode: 20 ms of mission time per frame
@@ -64,6 +64,9 @@ public:
         // moved; held for this long (< 0: buttons 0.1 s, an axis for good)
         struct Pad { float time; std::vector<input::Button> buttons; int axis; float value; float hold; bool down = false; };
         std::vector<Pad> pad;                           // work a virtual game controller at these times
+        // a finger from a point to another (fractions of the window), for this long
+        struct Touch { float time; PointD from; PointD to; float hold; bool down = false; float start = 0; long long id = 0; };
+        std::vector<Touch> touch;                       // touch the screen at these times
         struct Click { float time; PointD pos; };
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
         bool check = false;                             // report what the mission loader ignores
@@ -133,6 +136,7 @@ private:
     std::vector<Options::Key> m_keys;
     std::vector<Options::Click> m_clicks;
     std::vector<Options::Pad> m_pad;
+    std::vector<Options::Touch> m_touch;
     SDL_Joystick *m_virtualPad = nullptr;
     util::ElapsedTimer m_timer;
     float m_simulatedTime = 0;

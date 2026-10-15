@@ -152,6 +152,9 @@ int Vertigo::start()
     m_keys = m_options.keys;
     m_clicks = m_options.clicks;
     m_pad = m_options.pad;
+    m_touch = m_options.touch;
+    for (size_t i = 0; i < m_touch.size(); i++)
+        m_touch[i].id = (long long)i + 1;
     if (!m_pad.empty()) {
         // a virtual game controller, the only one that counts, whose input also comes without the
         // focus (as automated runs don't take it)
@@ -316,6 +319,30 @@ void Vertigo::testFrame()
             it->hold = -1;
             ++it;
         }
+    }
+    // the fingers, each with its own id, as the platform's would come
+    for (size_t i = 0; i < m_touch.size(); ) {
+        Options::Touch &touch = m_touch[i];
+        if (elapsed() < touch.time) {
+            i++;
+            continue;
+        }
+        const long long id = touch.id;
+        const PointD size(m_window.width(), m_window.height());
+        if (!touch.down) {
+            touch.down = true;
+            touch.start = touch.time;
+            m_window.post(Window::EventType::TouchPress, input::TouchEvent(id, touch.from*size));
+        }
+        const float moved = std::min((elapsed() - touch.start)/0.1f, 1.0f);
+        if (touch.to != touch.from)
+            m_window.post(Window::EventType::TouchMove, input::TouchEvent(id, (touch.from + (touch.to - touch.from)*double(moved))*size));
+        if (elapsed() >= touch.start + touch.hold) {
+            m_window.post(Window::EventType::TouchRelease, input::TouchEvent(id, touch.to*size));
+            m_touch.erase(m_touch.begin() + i);
+            continue;
+        }
+        i++;
     }
     // the virtual controller's input reaches the game with SDL's next events, before the next frame
     for (auto it = m_pad.begin(); it != m_pad.end(); ) {

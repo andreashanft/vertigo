@@ -218,6 +218,8 @@ set(SOURCES
     hud/debugoverlay.h
     hud/missionmenu.cpp
     hud/missionmenu.h
+    hud/touchcontrols.cpp
+    hud/touchcontrols.h
     hud/pause.cpp
     hud/pause.h
     hud/horizon.cpp

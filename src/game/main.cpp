@@ -263,6 +263,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
     parser.addOption("keys", "Press keys at the given seconds (test mode, or since the start), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
     parser.addOption("pad", "Work a virtual game controller at the given seconds (test mode, or since the start): buttons by an Xbox controller's names (A, B, X, Y, LB, RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or the given seconds, together with +; sticks as LeftX, LeftY, RightX or RightY with a value from -1 to 1 (y down), held for good or the given seconds, e.g. 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2.", "time=control[/seconds]");
+    parser.addOption("touch", "Touch the screen at the given seconds (test mode, or since the start) at a point given as fractions of the window's width and height, for 0.1 s or the given seconds; with a second point the finger moves there in 0.1 s. Repeatable, for several fingers, e.g. --touch 2=0.9,0.8/1 --touch 3=0.2,0.7>0.2,0.5/2.", "time=x,y[>x,y][/seconds]");
     parser.addOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     parser.addOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     parser.addOption("fire", "Let these units fire their guns (test mode); towers and tanks aim at the player.", "ids");
@@ -289,14 +290,26 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         return end(game::Vertigo::ExitSuccess);
     }
 
+    // the time limit, decimals too; a value that isn't one would leave an automated run without
+    // it, as a normal game that takes the focus and plays its sound
+    float timeout = 0;
+    if (parser.isSet("timeout")) {
+        const String value = text(parser.value("timeout")).trimmed();
+        timeout = isNumber(value) ? value.toFloat() : 0;
+        if (timeout <= 0) {
+            std::cerr << "Invalid --timeout value " << parser.value("timeout") << ", expected seconds above 0" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+    }
+
     // Automated runs with a window (with a time limit) shouldn't take the focus: on macOS, as a
     // background app (without a Dock icon, and no keyboard input other than --keys), and the
     // window isn't focusable either
-    if (!parser.isSet("check") && !parser.isSet("headless") && text(parser.value("timeout")).toInt() > 0)
+    if (!parser.isSet("check") && !parser.isSet("headless") && timeout > 0)
         SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "1");
     SDL_SetAppMetadata("Vertigo", nullptr, "com.vertigo.Vertigo");
     // game controllers, except in automated runs (where --pad brings a virtual one)
-    const bool automated = parser.isSet("check") || parser.isSet("headless") || text(parser.value("timeout")).toInt() > 0;
+    const bool automated = parser.isSet("check") || parser.isSet("headless") || timeout > 0;
     if (!SDL_Init(SDL_INIT_VIDEO | (automated ? 0 : SDL_INIT_GAMEPAD))) {
         std::cerr << "Cannot start SDL: " << SDL_GetError() << std::endl;
         return SDL_APP_FAILURE;
@@ -313,7 +326,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         options.scenario = text(parser.arguments()[0]);
     }
     options.boat = text(parser.value("boat")).toInt();
-    options.timeout = text(parser.value("timeout")).toInt();
+    options.timeout = timeout;
     options.debugOverlay = parser.isSet("overlay");
     options.headless = parser.isSet("headless");
     options.fixedStep = parser.isSet("fixed-step");
@@ -419,6 +432,31 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
             return end(game::Vertigo::ExitUsage);
         }
         options.pad.push_back(pad);
+    }
+    for (const std::string &item : parser.values("touch")) {
+        // time=x,y or time=x,y>x,y, then optionally /hold
+        float time = 0;
+        std::string rest;
+        const bool format = timed(item, time, rest);
+        const String pointsHold = text(rest);
+        const int slash = pointsHold.indexOf('/');
+        const String hold = slash < 0 ? String() : pointsHold.mid(slash + 1);
+        const StringList points = pointsHold.left(slash).split('>');
+        game::Vertigo::Options::Touch touch = { time, PointD(0), PointD(0), slash < 0 ? 0.1f : hold.toFloat() };
+        bool ok = format && (slash < 0 || isNumber(hold)) && points.size() >= 1 && points.size() <= 2;
+        for (int i = 0; ok && i < points.size(); i++) {
+            const StringList xy = points[i].split(',');
+            ok = xy.size() == 2 && isNumber(xy[0].trimmed()) && isNumber(xy[1].trimmed());
+            if (ok)
+                (i == 0 ? touch.from : touch.to) = PointD(xy[0].toFloat(), xy[1].toFloat());
+        }
+        if (points.size() == 1)
+            touch.to = touch.from;
+        if (!ok) {
+            std::cerr << "Invalid --touch value " << item << ", expected time=x,y[>x,y][/seconds]" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.touch.push_back(touch);
     }
     if (parser.isSet("near")) {
         bool ok = false;

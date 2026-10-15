@@ -60,6 +60,9 @@ public:
     void select(int step);
     Action choose();
     Action back();
+    // a tap: the option at this point (in the coordinates the menu is drawn in), or -1, and taking it
+    int optionAt(const Point &point) const;
+    Action choose(int option);
     // shows the lines for a few seconds while no menu is open
     void notice(const StringList &lines, float seconds);
 
@@ -73,6 +76,9 @@ private:
         gfx::Font *font;
     };
     std::vector<Line> lines() const;
+    // the box, and each line's place in it
+    Rect layout(const std::vector<Line> &lines, std::vector<Rect> &places) const;
+    int key(int option) const;
     Action press(int key);
     Action pressOnPage(int key);
 

@@ -70,19 +70,48 @@ void MissionMenu::select(int step)
 }
 
 
+// the option's digit; without options (no turrets) any key closes the menu
+int MissionMenu::key(int option) const
+{
+    int key = input::Key_0;
+    int n = 0;
+    for (const Line &line : lines())
+        if (line.font == &m_hud->fontGreen() && n++ == option && !line.text.isEmpty() && line.text[0] >= '0' && line.text[0] <= '9')
+            key = line.text[0];
+    return key;
+}
+
+
 MissionMenu::Action MissionMenu::choose()
 {
     if (!m_highlight) {
         select(0);
         return Action::None;
     }
-    // the option's digit; without options (no turrets) any key closes the menu
-    int key = input::Key_0;
+    return press(key(m_selected));
+}
+
+
+int MissionMenu::optionAt(const Point &point) const
+{
+    const std::vector<Line> lines = this->lines();
+    std::vector<Rect> places;
+    layout(lines, places);
     int option = 0;
-    for (const Line &line : lines())
-        if (line.font == &m_hud->fontGreen() && option++ == m_selected && !line.text.isEmpty() && line.text[0] >= '0' && line.text[0] <= '9')
-            key = line.text[0];
-    return press(key);
+    for (size_t i = 0; i < lines.size(); i++) {
+        if (lines[i].font != &m_hud->fontGreen())
+            continue;
+        if (point.x >= places[i].x && point.x < places[i].x + places[i].width && point.y >= places[i].y && point.y < places[i].y + places[i].height)
+            return option;
+        option++;
+    }
+    return -1;
+}
+
+
+MissionMenu::Action MissionMenu::choose(int option)
+{
+    return press(key(option));
 }
 
 
@@ -232,15 +261,33 @@ std::vector<MissionMenu::Line> MissionMenu::lines() const
 }
 
 
+Rect MissionMenu::layout(const std::vector<Line> &lines, std::vector<Rect> &places) const
+{
+    const int lineHeight = m_hud->fontGreen().height() + 4;
+    const int height = int(lines.size())*lineHeight + 8;
+    const Rect rect = m_hud->projectCenter(Rect(m_center.x - BoxWidth/2, m_center.y - height/2, BoxWidth, height));
+
+    places.clear();
+    int y = rect.y + 6;
+    for (size_t i = 0; i < lines.size(); i++) {
+        // a gap between the title lines and the options
+        if (i > 0 && lines[i].font != lines[i - 1].font)
+            y += 4;
+        places.push_back(Rect(rect.x, y, rect.width, lineHeight));
+        y += lineHeight;
+    }
+    return rect;
+}
+
+
 void MissionMenu::draw()
 {
     const std::vector<Line> lines = this->lines();
     if (lines.empty())
         return;
 
-    const int lineHeight = m_hud->fontGreen().height() + 4;
-    const int height = int(lines.size())*lineHeight + 8;
-    const util::RectangleInclusive<int> rect = m_hud->projectCenter(Rect(m_center.x - BoxWidth/2, m_center.y - height/2, BoxWidth, height));
+    std::vector<Rect> places;
+    const util::RectangleInclusive<int> rect = layout(lines, places);
 
     m_black.draw(rect);
     m_edgeBL.draw(rect.left(), rect.bottom() - m_edgeBL.height());
@@ -248,17 +295,12 @@ void MissionMenu::draw()
     m_edgeTL.draw(rect.left(), rect.top());
     m_edgeTR.draw(rect.right() - m_edgeTR.width(), rect.top());
 
-    int y = rect.y + 6;
     int option = 0;
     for (size_t i = 0; i < lines.size(); i++) {
-        // a gap between the title lines and the options
-        if (i > 0 && lines[i].font != lines[i - 1].font)
-            y += 4;
         gfx::Font *font = lines[i].font;
         if (font == &m_hud->fontGreen() && option++ == m_selected && m_highlight)
             font = &m_hud->fontYellow();
-        font->draw(lines[i].text, Rect(rect.x, y, rect.width, lineHeight), true, false);
-        y += lineHeight;
+        font->draw(lines[i].text, places[i], true, false);
     }
 }
 

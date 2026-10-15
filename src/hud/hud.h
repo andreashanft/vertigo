@@ -26,6 +26,7 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 
+#include <map>
 #include <memory>
 #include "util/string.hpp"
 
@@ -45,6 +46,7 @@ class SonarMonitor;
 class MissionMenu;
 class SlaveMonitor;
 class Cockpit3D;
+class TouchControls;
 
 
 class HUD : public game::Renderer
@@ -127,6 +129,10 @@ protected:
     void buttonPressEvent(input::Button button);
     void buttonReleaseEvent(input::Button button);
     void stickEvent(input::Stick stick, const Vector2D &position);
+    // a touch screen: the touch controls, taps on the menus' options
+    void touchPressEvent(input::TouchEvent *);
+    void touchMoveEvent(input::TouchEvent *);
+    void touchReleaseEvent(input::TouchEvent *);
 
 private:
     Rect readRect(const txt::DesFile &file);
@@ -137,6 +143,17 @@ private:
     void updateLook(float elapsedTime);
     void menuAction(int action);
     input::KeyEvent buttonKey(input::Button button);
+    // keys from any source; the keyboard's also hide the touch controls
+    void press(input::KeyEvent *);
+    void release(input::KeyEvent *);
+    // keys held by a controller's button or a touch button (source: the button)
+    void pressKey(input::KeyEvent key, int source);
+    void releaseKey(int source);
+    void updateStick();
+    void startLook(const PointD &position);
+    void moveLook(const PointD &position);
+    int menuOption(const PointD &position);
+    void drawTouchControls(double pixelRatio);
     // the pilot's head turned by the mouse look, in the boat's camera frame
     Matrix lookTransform() const;
 
@@ -168,11 +185,13 @@ private:
     PointD m_lookStart;     // where the drag started
     Vector2D m_lookFrom;    // and the look direction then
     Vector2D m_lookStick = Vector2D(0);    // the right stick
-    Vector2D m_steerStick = Vector2D(0);   // the left stick
+    Vector2D m_padStick = Vector2D(0);     // the left stick
+    Vector2D m_touchStick = Vector2D(0);   // the touch screen's
     bool m_shoulder = false;               // LB held: the buttons' second set
-    input::KeyEvent m_buttonKeys[input::ButtonCount];  // the keys the buttons held stand for
-    input::Button m_repeat = input::Button_None;       // the d-pad changes the speed while held
+    std::map<int, input::KeyEvent> m_heldKeys;  // the keys the buttons held stand for
+    int m_repeat = -1;      // the button that changes the speed again and again while held
     float m_repeatWait = 0;
+    std::unique_ptr<TouchControls> m_touch;
     int m_weaponPage = 0;   // the next of F1-F4 for LB+Up
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;

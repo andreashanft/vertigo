@@ -68,15 +68,16 @@ Test mode takes its options there too, e.g.
 simulator renders OpenGL ES in software: the 3D cockpit is too slow there, and
 now and then a triangle close to the camera goes missing.
 
-Missions need a hardware keyboard or a game controller (see below). On
-keyboards without Esc and function keys,
-Cmd+. is Esc and Cmd with the number row's 1 to 0, - and = is F1 to F12 (on
+Missions are played by touch, with a hardware keyboard or with a game
+controller (see below). On keyboards without Esc and function keys, Cmd+. is
+Esc and Cmd with the number row's 1 to 0, - and = is F1 to F12 (on
 every system; Ctrl on Windows and Linux); iPadOS can also make Caps Lock an
 Esc key (Settings › General › Keyboard › Hardware Keyboard › Modifier Keys).
 The on-screen keyboard comes up for a new game's name, which moves above it.
 
 When the app is interrupted (a call, Siri, the app switcher) or goes to the
-background, a mission pauses; P on the keyboard goes on. The game's sound
+background, a mission pauses; P, or continuing from the mission menu, goes
+on. The game's sound
 mixes with other apps' audio, such as music, and is silent with the silent
 switch.
 
@@ -118,13 +119,32 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 | D-pad left | stop (C) | |
 | D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
 | L3, R3 (press a stick) | full ahead, full astern while held (A, Z) | |
-| Start | mission menu (Esc), or go on after a pause (P) | pause (P) |
+| Start | mission menu (Esc) | pause (P) |
 | Back | turret menu (O) | 2D or 3D cockpit (Alt+V) |
 
 In the mission and turret menus the d-pad highlights an option, A takes it and
 B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a
 mission after its briefing, B or Start skips a movie, A confirms a new game's
 name. Menus and stations take the mouse, or touch on the iPad.
+
+## Touch controls
+
+On a touch screen (the iPad) missions show controls of their own over the
+cockpit: from the start when neither a keyboard nor a game controller is
+connected, otherwise once the screen is touched. A key or a controller's
+button hides them again.
+
+- A finger on the left part of the screen brings up a stick where it comes
+  down; it steers as far as it is pushed (up lowers the nose).
+- Under the right thumb: FIRE (held), TORP (fire a torpedo), LOCK (the
+  nearest enemy), NEXT (the next torpedo) and BUZZ (drop a buzzer); above
+  them + and - change the speed by 10 km/h (again and again while held), and
+  STOP stops.
+- In the corners: MENU (the mission menu), NAV (the next nav point), AUTO
+  (autopilot), SONAR (on or off), TURR (turret menu) and VIEW (2D or 3D
+  cockpit).
+- A tap on an option of the mission and turret menus takes it.
+- In the 3D cockpit a finger dragged elsewhere turns the head.
 
 ## Saved games and settings
 
@@ -191,6 +211,11 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   by pixel this way, e.g. after changes to the renderer.
 - `--click 2=320,300` clicks at the given seconds at a point of the 640×480
   screen (the mouse moves there first).
+- `--touch 2=0.9,0.8/1` puts a finger on the touch screen at the given
+  seconds, at a point given as fractions of the window's width and height,
+  for 0.1 s or the given seconds; `--touch 3=0.2,0.7>0.2,0.6/2` moves it to a
+  second point within 0.1 s (e.g. the stick). Repeat the option for more
+  fingers at once.
 - Without a mission, `--timeout`, `--keys`, `--click` and `--screenshot`
   work in the main menu and the game it starts, in seconds since the start,
   e.g. `vertigo --click 1=320,240 --screenshot 3=menu.png --timeout 4`.
@@ -208,8 +233,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   s01805: timeout after 5.006 s, 43/51 units enabled, 2 radio messages
   ```
 
-In a mission, Esc opens the mission menu (continue, abort the game, restart
-the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
+In a mission, Esc opens the mission menu (continue, which also ends a pause,
+abort the game, restart the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
 skips the mission as if it had been accomplished, for debugging.
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
