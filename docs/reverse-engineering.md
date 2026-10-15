@@ -27,8 +27,11 @@ and of the GOG installation on this Mac (checksums match the roadmap's table).
   an environment variable naming the log file, `AIL_DEBUG` in 3.01). A log of
   every `AIL_set_sample_volume`, `_pan`, `_playback_rate` and `_start_sample`
   call with timestamps, straight from the original, needs only `SET
-  MSS_DEBUG=C:\MSS.LOG` before the start. To be tried; if the name is wrong,
-  sfwin32's `--calltrace` gets the same log the hard way.
+  MSS_DEBUG=C:\MSS.LOG` before the start. Confirmed (October 2026): the log
+  appears at once with the init calls, then every `AIL_init_sample`,
+  `_set_sample_address`, `_set_sample_playback_rate`, `_set_sample_volume`,
+  `_set_sample_pan`, `_start_sample` and `_end_sample` with millisecond
+  timestamps and the sample's handle; 20 KB after 20 s of a mission.
 - This Mac is Apple silicon with no emulator, VM or disassembler installed.
   Homebrew offers native builds of everything needed: `dosbox-x` (built with
   `--enable-debug=heavy`, i.e. the full debugger), `ghidra`, `rizin`,
@@ -64,11 +67,15 @@ Native, free, and the only one that needs no Windows. It answers every
     `BPINT 21 3D` (break on file opens), `MEMDUMPBIN <seg>:<off> <len>` and
     instruction logs. The executable's link-time layout is known from
     sfwin32's analysis (two objects, code at `0x10000`, data at `0x140000`,
-    all 20,165 fixups internal); DOS/4GW loads them at another base, which
-    one `BPINT 21 3D` on the open of `fightin.des` reveals (EDX holds the
-    file name, whose link-time address is known). From there a `MEMDUMPBIN`
-    of the player's or a unit's record every few seconds is the original's
-    `--trace`.
+    all 20,165 fixups internal); the extender (CauseWay 3.25 in `FIGHT.EXE`,
+    which its crash screen names; `DOS4GW.EXE` is for the other executables)
+    loads them at another base, which one `BPINT 21 3D` on the open of
+    `fightin.des` reveals (EDX holds the file name, whose link-time address
+    is known). From there a `MEMDUMPBIN` of the player's or a unit's record
+    every few seconds is the original's `--trace`. Without any address, a
+    differential dump works too (done for the currents, see below): dump the
+    game's whole data range every second or two, then look for the fields
+    that change consistently with the motion.
   - Scripted runs: `[dosbox] mcp_server=<port>` makes DOSBox-X connect to a
     local TCP server and take debugger commands (`REQ <id> EXEC <command>`),
     so a small Python script can run a scenario, dump memory on a schedule and
@@ -188,7 +195,7 @@ sound falloff (one unit, the player approaching), the mine column spacing
 
 | Question | Instrument | Scenario |
 |---|---|---|
-| Current speeds, directions 8 and 9 | 1 (drift per second from a memory trace), 2 for the constant | s00406, s01806 |
+| Current speeds, directions 8 and 9 (**done**, roadmap appendix D) | 1 (drift per second from a memory trace, or the HUD's readouts in screenshots), 2 for the constant | s01801, s00704, s00405, s01306, s00202 |
 | `car` (towers, ambush), `con` (Explode), `diff`, `sle`, end types, `wccond 9` | 2, confirmed by 1 | s00401 (`card`), any with `sle` |
 | Engine volume and pan over distance | 1 (`MSS_DEBUG` log + distance trace) | s00101 |
 | Radiation trigger, cluster burst, alert, dust sprite, debris units | 1 (video) | s00701, s01804 |
@@ -203,9 +210,57 @@ sound falloff (one unit, the player approaching), the mine column spacing
 1. `brew install dosbox-x ghidra rizin`; copy the game folder to a work
    directory; write a `FIGHTIN.DES` for s00406 and run `FIGHT.EXE solo` by
    hand once, with `SET MSS_DEBUG=C:\MSS.LOG`, to confirm the launcher and
-   the log.
-2. Find the load base in the debugger (`BPINT 21 3D` on `fightin.des`) and
-   the player's record (instrument 2, or `BPLM` on a candidate from the
-   fixup-covered globals), then script the memory trace over the control
-   channel.
-3. Measure the current, then work down the table.
+   the log (**done**, see below).
+2. Find the player's record (**done** with differential dumps, no address
+   needed), then script the memory trace over the control channel
+   (**done**).
+3. Measure the current (**done**, roadmap appendix D: the horizontal cells
+   from memory dumps, the vertical ones from the HUD's depth and height in
+   screenshots), then work down the table.
+
+## The DOSBox-X workflow as set up (October 2026)
+
+Everything lives in `~/Documents/Legacy/AD-dosbox`, outside the repository:
+`game/` is the GOG folder without `game.gog`, `DOSBOX`, the installer and
+the mod; `ad.conf` mounts it as `C:`, mounts the CD image read-only from
+its original place, sets `MSS_DEBUG`, queues the keys with `AUTOTYPE` and
+runs `FIGHT.EXE solo`; `setup_run.py SCENARIO AREA PX PY [HEI [CARD]]`
+restores a scenario copy from its `.orig`, moves the player's start and
+writes `DAT\SAVE\FIGHTIN.DES`; `cellmap.py` prints a scenario's current
+cells with the player and the armed units; `dbxctl.py` is the control
+channel's other end. Start it first, then `cd` to the work directory and
+start `dosbox-x -conf ad.conf` from a terminal. What was learned:
+
+- `memory io optimization 1=false` in `[dosbox]`, or the briefing's text is
+  doubled and the lower half of the screen is noise. Don't resize the window
+  while the game runs, that garbles it too.
+- `AUTOTYPE -w 25 -p 2 space` in the autoexec presses the key that ends the
+  briefing about 25 s after boot (the mission starts about 7 s later);
+  `c` stops the boat and the key `grave` (left of 1) is the engine. The boat
+  starts a mission at rest, so neither is needed for a drift measurement.
+  The Terminal panel's keystrokes don't reach the game, and macOS refuses
+  `osascript` keystrokes without the accessibility permission.
+- The control channel: `mcp_server=58991` in `[dosbox]`; DOSBox-X connects
+  to a listening script and takes `REQ <id> BREAK`, `REQ <id> EXEC <debugger
+  command>` and `RUN` (README.debugger in DOSBox-X's source). While a
+  command runs the emulation is stopped, and a 12 MB `MEMDUMPBIN` takes
+  about a second, so the game's own clock (a 200 Hz counter, or the
+  mission-time floats in every unit record) is the time base, not the wall
+  clock. Two traps: the file name of `MEMDUMPBIN` goes through the
+  debugger's expression parser, which uppercases it and takes `/`, `-` and
+  `.` as operators (one run filled the repository with a 4 GB `BIN`), so
+  dump to a plain name in DOSBox-X's working directory and move the file;
+  and selector 0 wraps offsets to 16 bits, so address the dumps through the
+  game's flat `DS` (`MEMDUMPBIN DS:400000 B7C000 MEMDUMP` covers the
+  11.5 MB the game has mapped; `PAGING` lists the ranges).
+- The game crashes (CauseWay exception 0E) if a scenario copy is stripped
+  of its units, so measure in scenarios whose current cells are far from
+  armed units (`cellmap.py`), not in doctored ones. With the player moved
+  into a current the mission runs as usual; with it moved into s00406's
+  base it is shot within 20 s.
+- The drift measurement: dumps every 1–2 s with the boat at rest in a cell,
+  the position found by diffing dumps (three floats, map cells × 512), the
+  speed as the position's derivative over the game clock, cross-checked
+  with the HUD's km/h readout in screenshots taken alongside
+  (`screencapture` every 2 s, the readout cropped). Results in the roadmap,
+  appendix D.

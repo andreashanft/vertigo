@@ -291,7 +291,7 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 
 | Unknown | How |
 |---|---|
-| Current speeds; whether directions 8/9 are down and up | Measure the player's drift in the original, via the GOG DOSBox install or position logging in sfwin32 |
+| Current speeds and directions 8/9 (**measured**, appendix D: about 41 m/s along the boat's axis and 19 m/s across it for `spd` 2, about 5 m/s for `spd` 0, no fade, coasting afterwards; 8 is up at 5 m/s, 9 down at 4.5–9 m/s). Left: why one of S00202's two 8 cells does nothing, and the exact acceleration curve | Measured with the player's drift in the original under DOSBox-X; the rest the same way, or in `FIGHT.EXE` (instrument 2) |
 | Unclear order settings (`car` for towers and ambush, `con` for Explode, `sle`, `diff`), mission end types, one objective type (`wccond 9`) | Study the relevant `FIGHT.EXE` routines one at a time with sfwin32's tools, then write our own code (no copying) |
 | How engine volume and pan fall off with distance | Log the original's volume, pan and pitch calls in sfwin32's `audio.c` |
 | Radiation trigger, cluster burst, alert trigger, which dust sprite, debris units | Watch the original (e.g. `s00701` for radiation) |
@@ -595,9 +595,39 @@ no unit has (S00404, S01802, S02003, S02006); they never come true (G4).
   S00405, S00406, S00701–S00705, S00902, S00903, S01306, S01801–S01804,
   S01806 and STRAI2.
 - Direction: (sin(card·45°), cos(card·45°), 0), checked against map geometry
-  and briefings (S00406, S01806, S01801). 8 and 9 are vertical.
-- Speeds are not in the data; start with about 5 units/s for `spd` 0 and 12
-  for `spd` 2 and tune against the original.
+  and briefings (S00406, S01806, S01801). 8 is up and 9 down (measured, see
+  below; `scenario.cpp` still has them the other way round).
+- Speeds are not in the data. Measured in the original (October 2026, FIGHT.EXE
+  under DOSBox-X, see [reverse-engineering.md](reverse-engineering.md)): the
+  player's position was dumped from memory every 1–2 s through the debugger's
+  control channel and checked against the HUD's km/h readout in screenshots,
+  with the boat placed at rest inside current cells of copies of S01801,
+  S00704 and S00405 (map scale 512 units per 16 m cell, so 1 unit = 1/32 m).
+  - `spd` 2, boat facing along the current: from rest to about 1,300 units/s
+    (41 m/s, 147 km/h; the HUD showed 141) within about 5 s, then steady.
+    Facing across it (boat north, current east) only about 600 units/s
+    (19 m/s, 68 km/h; HUD 61).
+  - `spd` 0, facing along it: about 160–170 units/s (5 m/s, 18 km/h; HUD 12),
+    one run, noisy.
+  - The engine state doesn't matter (stopped with the engine on or off, the
+    boat is carried the same); the boat's own speed is 0 at a mission's start.
+    Outside the cells there is no fade: a boat half a cell outside (S00902's
+    own start, one map cell south of its first current cell) doesn't move, so
+    a cell covers the two map cells from `px`,`py` upwards. After leaving the
+    cells the boat coasts and slows at 110–150 units/s² (3.5–4.7 m/s²),
+    stopping after 150–290 m.
+  - Vertical cells (HUD depth and height readouts in screenshots every
+    second, boat at rest): `card` 9 pushes **down**, about 9 m/s (HUD
+    −32 km/h) for `spd` 2 and 4.5 m/s (−15 km/h) for `spd` 0, still at
+    150 m above the ground (S01306's block, S00202's single cell); the boat
+    lands and then slides along the bottom. `card` 8 pushes **up**, about
+    5 m/s for `spd` 0 (S00202's cell at 82,86), while S00202's other 8 cell
+    (92,80) moved the boat not at all, reason unknown. So 8 is up and 9
+    down, the other way round from Vertigo's reading.
+  - Vertigo uses 5 and 12 m/s with a bilinear fade; the slow value is about
+    right, the fast one is 3.4× too low (and the vertical fast one 1.3× too
+    high), 8 and 9 are swapped, and the fade, the heading dependence and the
+    coasting are missing.
 - Affected: the player (`[Kinematics] Current`), AI boats (`[Fluid] Current`
   0–1; possibly ignored by the original). Not affected: torpedoes, mines, gun
   projectiles.
