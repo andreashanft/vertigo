@@ -151,7 +151,7 @@ s00403: 39 objects
   24x unread key: movable#/sle
   1x unread section: cd
 s00404: 57 objects
-  8x condition: Objective not found 14
+  8x condition: No unit has objective 4 (achieved)
   33x unread key: movable#/ai
   4x unread key: movable#/card
   33x unread key: movable#/eint
@@ -430,7 +430,7 @@ s01801: 170 objects
   104x unread key: movable#/sle
   1x unread section: cd
 s01802: 181 objects
-  2x condition: Objective not found 24
+  2x condition: No unit has objective 9 (achieved)
   55x unread key: movable#/ai
   30x unread key: movable#/card
   55x unread key: movable#/eint
@@ -494,8 +494,8 @@ s02002: 27 objects
   25x unread key: movable#/sle
   1x unread section: cd
 s02003: 50 objects
-  1x condition: Objective not found 32
-  1x condition: Objective not found 36
+  1x condition: No unit has objective 13 (achieved)
+  1x condition: No unit has objective 15 (achieved)
   12x unread key: movable#/ai
   11x unread key: movable#/card
   12x unread key: movable#/eint
@@ -523,7 +523,7 @@ s02005: 63 objects
   24x unread key: movable#/sle
   1x unread section: cd
 s02006: 62 objects
-  1x condition: Objective not found 21
+  1x condition: No unit has objective 7 (failed)
   16x unread key: movable#/ai
   7x unread key: movable#/card
   16x unread key: movable#/eint
@@ -628,5 +628,6 @@ Total: 71 missions, 5388 objects
   1634x unread key: movable#/pz
   424x unread key: movable#/card
   71x unread section: cd
-  13x condition: Objective not found #
+  12x condition: No unit has objective # (achieved)
   1x condition: Empty faction #
+  1x condition: No unit has objective # (failed)
