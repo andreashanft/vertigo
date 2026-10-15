@@ -237,7 +237,7 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    [gaps found after milestone 6](#gaps-found-after-milestone-6): mission
    music, complete minefields, the unit keys nobody reads yet, the five
    missions with unresolved conditions, s00705, and the choice of station
-   after a mission.
+   after a mission. (G2 is done.)
 
 ## Differences to the original's cockpit (screenshots, October 2026)
 
@@ -280,7 +280,7 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | # | Gap | Effort | Notes |
 |---|---|---|---|
 | G1 | Mission music | S–M | Each scenario's `[CD] Track` (1–4; 0 only in s02005) presumably picks one of the CD's audio tracks 2–5 (`game.ins`: track 1 is data). Vertigo plays no music in missions, and the data directory doesn't contain these tracks. They are plain 44.1 kHz 16-bit stereo PCM in `game.gog` (2,352-byte sectors), so they can be copied out once (or on import, see the [iPad port](#ipad-port)) and streamed like the other sounds. Whether 0 means silence, and whether the stations use CD music too, is to be checked |
-| G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 20 missions are missing. How the original lays them out is to be compared |
+| G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 19 scenarios are missing. How the original lays them out is to be compared (**done**: an entry is a column of `num` mines, `dis` height units apart, the lowest at `hei` above the ground. Rows don't fit the data: the 202 entries with more than one mine sit in neighbouring cells, 16 m apart, and in s00201 two rows of five-mine columns (from 10 to 50) close a canyon whose walls rise about 50 height units, where single mines would leave it open above. The mines of an entry appear together; the entry is attacked when one of them is and destroyed when all of them are, which matters for s02205, whose objectives 2 and 3 are to destroy such columns. The 407 mines are added in 10 of the 19 scenarios with mines (one of them a training mission); elsewhere every entry has one mine and `dis` is just set for the whole scenario. In the traces of all 71 missions only the added mines differ, and the exit codes are the same; s02205 is won when every target is destroyed, but not with one mine column left, or with only the lowest mine of each column destroyed. Whether the original stacks them upwards is to be compared) |
 | G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing |
 | G4 | Unresolved conditions | S each | `--check` reports an empty faction in s00402 and objectives that don't exist in s00404 (objective 14, 8 times), s01802 (24), s02003 (32, 36) and s02006 (21). Check whether these missions can still be won, and what the original makes of such references |
 | G5 | s00705 | S | Ended with success after 33 s while the player did nothing (seed 1, with `qrand()`); with other seeds the player died or the time ran out, and with `util::random()` (P2) seeds 1–4 run out of time. Find out which units can fulfil the objectives without the player and whether that is right |
@@ -480,7 +480,7 @@ stock movables in parentheses).
 | 2051 | Tank (new class) | 2 tank0 (29), 3 tank1 (57), 4 tank2 (38), 65 tank3 (11); 66 tank4 unused |
 | 2052 | GunTower → TurretBase | 5 ✓, 6 guntow1 (12), 7 ✓, 90 guntow3 (96) |
 | 2059 | TorpedoTower | 36 ✓; 37/38 have no files and are unused |
-| 2058 | Mine | 27 ✓, 28 ✓; the mine keys `dis` and `num` are ignored today |
+| 2058 | Mine | 27 ✓, 28 ✓; `num` mines above each other, `dis` height units apart (G2) |
 | 2062 | Building → SimpleObject | 45 build0 (73), 46 build1 (145), 47 ✓, 48 ✓, 49 build4 (7), 50 ✓, 51 build6 (19), 52 build7 (55) |
 | 2063 | CargoShip (new composite class) | 68–77 cship0–9, 78–87 bship0–9, 91 bship10 (72 in total) |
 

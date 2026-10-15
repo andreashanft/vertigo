@@ -176,6 +176,7 @@ Scenario::Scenario(const String &name) :
         entry.condBoarded = NULL;
 
         Object *object = NULL;
+        std::vector<Mine *> moreMines; // a mine entry's mines above the first
         const int type = m_file.value("typ").toInt();
         const int dType = m_file.value("dtyp").toInt();
         String desName;
@@ -253,9 +254,19 @@ Scenario::Scenario(const String &name) :
 
         case TypeMine:
             {
-                // TODO: dis num
+                // num mines above each other, dis height units apart, the lowest at hei: the entries
+                // with more than one mine sit in neighbouring cells (16 m), too close for rows. To be
+                // compared with the original
                 object = new Mine(this, objectDes, info);
                 object->setPosition(getPosition());
+                const int count = m_file.value("num", 1).toInt();
+                const float distance = m_file.value("dis").toInt()*m_surface.scale().z;
+                for (int i = 1; i < count; i++)
+                {
+                    Mine *mine = new Mine(this, objectDes, info);
+                    mine->setPosition(getPosition() + Vector3D(0, 0, i*distance));
+                    moreMines.push_back(mine);
+                }
             }
             break;
 
@@ -394,6 +405,35 @@ Scenario::Scenario(const String &name) :
             NavPoint *navPoint = dynamic_cast<NavPoint *>(object);
             if (navPoint)
                 entry.condSignal = navPoint->eventReached();
+        }
+
+        // the mines of an entry come together: they appear at once, the entry is attacked when one of
+        // them is and destroyed when all of them are
+        if (!moreMines.empty())
+        {
+            Condition *enable = m_conditionManager.addCondition(0);
+            Condition *destroyed = m_conditionManager.addCondition(int(moreMines.size()) + 1);
+            Condition *attacked = m_conditionManager.addCondition(1);
+            moreMines.insert(moreMines.begin(), static_cast<Mine *>(object));
+            for (Mine *mine : moreMines)
+            {
+                if (mine != object)
+                {
+                    m_objects.emplace_back(mine);
+                    m_records.push_back({ id, type, desName, mine });
+                    mine->disable();
+                    mine->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                    if (entry.absent)
+                        absentUnits.push_back(mine);
+                }
+                mine->condEnable()->setLimit(1);
+                enable->addDependency(mine->condEnable());
+                mine->eventDestroy()->addDependency(destroyed);
+                mine->eventAttack()->addDependency(attacked);
+            }
+            entry.condTrigger = enable;
+            entry.condSignal = destroyed;
+            entry.condAttacked = attacked;
         }
 
         // order orderSlots; all of them are read, so the load report only lists what is really ignored
