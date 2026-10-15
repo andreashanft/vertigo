@@ -300,6 +300,10 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | Whether active buildings turn with `card` (0, 2, 4 or 6 on 51 of 424; buildings turn by card·45°) (G3) | Look at one in the original, e.g. s00401's hydrogen tank 2066 (`card` 6) |
 | What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | Study it with sfwin32's tools |
 
+[reverse-engineering.md](reverse-engineering.md) maps each question to an
+instrument: the original under DOSBox-X's debugger on the Mac first, a static
+reading of `FIGHT.EXE` second, sfwin32 last.
+
 [sfwin32](https://github.com/mnkraus/sfwin32) runs the original `FIGHT.EXE`
 machine code on Windows and only replaces the DOS, video and sound services.
 It contains no decompiled game logic, but it can log changes to the game's own
