@@ -66,6 +66,16 @@ void setPadButton(SDL_Joystick *pad, input::Button button, bool down)
     SDL_UpdateJoysticks();
 }
 
+// a mission of test mode by its scenario file's name (s00101, in any case); an error message if
+// there is none
+bool knownScenario(const String &name)
+{
+    if (util::exists(util::DataPath::resolve(String("vfx:scenario/%1.des").arg(name))))
+        return true;
+    std::cerr << "Unknown mission " << name << " (a scenario file of vfx/scenario, e.g. s00101)" << std::endl;
+    return false;
+}
+
 } // namespace
 
 Vertigo::Vertigo(const Options &options) :
@@ -108,6 +118,8 @@ int Vertigo::start()
     if (m_options.scenario.isEmpty()) {
         m_window.setRenderer(&m_mainMenu);
     } else {
+        if (!knownScenario(m_options.scenario))
+            return ExitUsage;
         txt::DesFile desfile("dat:story/ch1.des");
         m_boat.reset(new game::Boat(desfile));
         if (m_options.boat != 0) {
@@ -463,6 +475,9 @@ int Vertigo::check(const StringList &names)
                 scenarios << name.left(name.lastIndexOf('.')).toLower();
         }
     }
+    for (const String &name : scenarios)
+        if (!knownScenario(name))
+            return ExitUsage;
 
     std::ostream &out = std::cout;
     std::map<String, int> totals;
