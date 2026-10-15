@@ -339,6 +339,7 @@ void HUD::load(game::Boat *boat)
     m_children.emplace_back(energyBar);
 
     file.setSection("mastermonitor");
+    m_menu->setScreen(readRect(file));
     MasterMonitor *masterMonitor = new MasterMonitor(this, readRect(file), Rect(file.value("ObservationX1").toInt(), file.value("ObservationY1").toInt(), file.value("ObservationWidth").toInt(), file.value("ObservationHeight").toInt()), file);
     m_children.emplace_back(masterMonitor);
 
@@ -533,7 +534,8 @@ int HUD::destination() const
 
 void HUD::engageAutopilot()
 {
-    if (m_menu->destinations().isEmpty())
+    // with one destination the original went there at once
+    if (m_menu->destinations().size() <= 1)
         leave(m_eventSuccess);
     else
         m_menu->open(MissionMenu::Page::Autopilot);

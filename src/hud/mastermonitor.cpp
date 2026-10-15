@@ -17,6 +17,7 @@
 
 #include "mastermonitor.h"
 #include "hud.h"
+#include "missionmenu.h"
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/objects/navpoint.h"
@@ -48,6 +49,14 @@ MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::Des
 
 void MasterMonitor::draw()
 {
+    // a menu in place of the target and the voxel radar
+    if (m_hud->menu().onScreen())
+    {
+        m_lamp.draw(m_hud->scenario()->target().isLocked());
+        m_hud->menu().drawOnScreen();
+        return;
+    }
+
     Point pos;
     bool isFriend = true;
     String txtName = txt::StringTable::get(txt::Target_NoTargetLocked);

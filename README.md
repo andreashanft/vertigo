@@ -260,7 +260,9 @@ abort the game, restart the mission, load the last saved game), P pauses, and Ct
 skips the mission as if it had been accomplished, for debugging. Once a mission
 is accomplished, Alt+A (the autopilot) asks for the station to go to, in the
 original's autopilot menu: any open station of the area, or the one the boat was on its way
-to (test missions and training end at once).
+to. With only one it goes there at once, as do test missions and training. The
+mission, turret and autopilot menus show on the cockpit's big screen, in place
+of the target, as in the original.
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
 everything the loader skips or ignores: unsupported object types, unread

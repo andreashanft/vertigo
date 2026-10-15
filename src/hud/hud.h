@@ -115,6 +115,7 @@ public:
     ui::Widget* widget() { return m_integerScale ? &m_integerScaleWidget : &m_noScaleWidget; }
     gfx::Image getImage(const String &name);
     gfx::Font& fontGreen() { return m_fontGreen; }
+    MissionMenu& menu() { return *m_menu; }
     gfx::Font& fontRed() { return m_fontRed; }
     gfx::Font& fontYellow() { return m_fontYellow; }
 

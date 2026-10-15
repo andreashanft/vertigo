@@ -261,7 +261,8 @@ std::vector<MissionMenu::Line> MissionMenu::lines() const
     case Page::ConfirmLoad:
         return { { text(61), title }, { text(54), option }, { text(55), option } };
     case Page::GameOver:
-        return { { text(12).trimmed(), red }, { text(63), red }, { text(64), option }, { text(65), option }, { text(66), option } };
+        // ("------ MISSION ERFOLGLOS ------", too wide for the monitor)
+        return { { text(12).remove('-').trimmed(), red }, { text(63), red }, { text(64), option }, { text(65), option }, { text(66), option } };
     case Page::Died:
         return { { text(57), red }, { text(58), red }, { text(64), option }, { text(65), option }, { text(66), option } };
     case Page::Turrets:
@@ -295,14 +296,27 @@ std::vector<MissionMenu::Line> MissionMenu::lines() const
 
 Rect MissionMenu::layout(const std::vector<Line> &lines, std::vector<Rect> &places) const
 {
-    const int lineHeight = m_hud->fontGreen().height() + 4;
-    const int height = int(lines.size())*lineHeight + 8;
-    const Rect rect = m_hud->projectCenter(Rect(m_center.x - BoxWidth/2, m_center.y - height/2, BoxWidth, height));
+    // a gap between the title lines and the options
+    int gaps = 0;
+    for (size_t i = 1; i < lines.size(); i++)
+        gaps += lines[i].font != lines[i - 1].font ? 4 : 0;
+    const int fontHeight = m_hud->fontGreen().height();
+    int lineHeight = fontHeight + 4;
+    Rect rect;
+    if (onScreen()) {
+        // in the middle of the monitor, closer together, so that nine destinations fit
+        const int room = m_screen.height - 8 - gaps;
+        lineHeight = std::max(fontHeight, std::min(fontHeight + 2, room/std::max(int(lines.size()), 1)));
+        const int height = int(lines.size())*lineHeight + gaps;
+        rect = Rect(m_hud->project(m_screen.pos() + Point(0, std::max(4, (m_screen.height - height)/2))), Point(m_screen.width, height));
+    } else {
+        const int height = int(lines.size())*lineHeight + gaps + 8;
+        rect = m_hud->projectCenter(Rect(m_center.x - BoxWidth/2, m_center.y - height/2, BoxWidth, height));
+    }
 
     places.clear();
-    int y = rect.y + 6;
+    int y = rect.y + (onScreen() ? 0 : 6);
     for (size_t i = 0; i < lines.size(); i++) {
-        // a gap between the title lines and the options
         if (i > 0 && lines[i].font != lines[i - 1].font)
             y += 4;
         places.push_back(Rect(rect.x, y, rect.width, lineHeight));
@@ -315,7 +329,7 @@ Rect MissionMenu::layout(const std::vector<Line> &lines, std::vector<Rect> &plac
 void MissionMenu::draw()
 {
     const std::vector<Line> lines = this->lines();
-    if (lines.empty())
+    if (lines.empty() || onScreen())
         return;
 
     std::vector<Rect> places;
@@ -326,7 +340,21 @@ void MissionMenu::draw()
     m_edgeBR.draw(rect.right() - m_edgeBR.width(), rect.bottom() - m_edgeBR.height());
     m_edgeTL.draw(rect.left(), rect.top());
     m_edgeTR.draw(rect.right() - m_edgeTR.width(), rect.top());
+    drawLines(lines, places);
+}
 
+
+void MissionMenu::drawOnScreen()
+{
+    const std::vector<Line> lines = this->lines();
+    std::vector<Rect> places;
+    layout(lines, places);
+    drawLines(lines, places);
+}
+
+
+void MissionMenu::drawLines(const std::vector<Line> &lines, const std::vector<Rect> &places)
+{
     int option = 0;
     for (size_t i = 0; i < lines.size(); i++) {
         gfx::Font *font = lines[i].font;
