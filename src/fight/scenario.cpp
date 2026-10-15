@@ -118,6 +118,10 @@ Scenario::Scenario(const String &name) :
 
     m_file.load(String("vfx:scenario/%1.des").arg(name));
 
+    // the music: Track 1 is the CD's second track, its first audio track after the data (0: none)
+    m_file.setSection("cd");
+    m_cdTrack = m_file.value("track", 0).toInt();
+
     m_file.setSection("surface");
     m_depth = m_file.value("depth").toInt();
     m_surface.load(m_file.value("name").toString().toLower(), m_file.value("maxheightscale").toInt(), m_file.value("patchcomb").toInt());
@@ -176,6 +180,7 @@ Scenario::Scenario(const String &name) :
         entry.condBoarded = NULL;
 
         Object *object = NULL;
+        std::vector<Mine *> moreMines; // a mine entry's mines above the first
         const int type = m_file.value("typ").toInt();
         const int dType = m_file.value("dtyp").toInt();
         String desName;
@@ -253,9 +258,19 @@ Scenario::Scenario(const String &name) :
 
         case TypeMine:
             {
-                // TODO: dis num
+                // num mines above each other, dis height units apart, the lowest at hei: the entries
+                // with more than one mine sit in neighbouring cells (16 m), too close for rows. To be
+                // compared with the original
                 object = new Mine(this, objectDes, info);
                 object->setPosition(getPosition());
+                const int count = m_file.value("num", 1).toInt();
+                const float distance = m_file.value("dis").toInt()*m_surface.scale().z;
+                for (int i = 1; i < count; i++)
+                {
+                    Mine *mine = new Mine(this, objectDes, info);
+                    mine->setPosition(getPosition() + Vector3D(0, 0, i*distance));
+                    moreMines.push_back(mine);
+                }
             }
             break;
 
@@ -371,6 +386,9 @@ Scenario::Scenario(const String &name) :
             if (activeObject)
             {
                 activeObject->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                // armour and energy defence in percent (the AD Augmented Mod's changelog calls them PD
+                // and ED and changes them with these keys)
+                activeObject->setDefence(m_file.value("inte", 100).toInt(), m_file.value("eint", 100).toInt());
                 // torpedoes for units with tubes: boats, bombers and torpedo towers
                 const int torpedoes = m_file.value("ntor", 0).toInt();
                 const int torpedoType = m_file.value("tor", -1).toInt();
@@ -394,6 +412,35 @@ Scenario::Scenario(const String &name) :
             NavPoint *navPoint = dynamic_cast<NavPoint *>(object);
             if (navPoint)
                 entry.condSignal = navPoint->eventReached();
+        }
+
+        // the mines of an entry come together: they appear at once, the entry is attacked when one of
+        // them is and destroyed when all of them are
+        if (!moreMines.empty())
+        {
+            Condition *enable = m_conditionManager.addCondition(0);
+            Condition *destroyed = m_conditionManager.addCondition(int(moreMines.size()) + 1);
+            Condition *attacked = m_conditionManager.addCondition(1);
+            moreMines.insert(moreMines.begin(), static_cast<Mine *>(object));
+            for (Mine *mine : moreMines)
+            {
+                if (mine != object)
+                {
+                    m_objects.emplace_back(mine);
+                    m_records.push_back({ id, type, desName, mine });
+                    mine->disable();
+                    mine->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                    if (entry.absent)
+                        absentUnits.push_back(mine);
+                }
+                mine->condEnable()->setLimit(1);
+                enable->addDependency(mine->condEnable());
+                mine->eventDestroy()->addDependency(destroyed);
+                mine->eventAttack()->addDependency(attacked);
+            }
+            entry.condTrigger = enable;
+            entry.condSignal = destroyed;
+            entry.condAttacked = attacked;
         }
 
         // order orderSlots; all of them are read, so the load report only lists what is really ignored

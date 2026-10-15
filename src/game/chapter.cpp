@@ -413,6 +413,17 @@ void Chapter::startScenario()
 
     assert(m_mission);
     assert(m_scenario);
+    // the autopilot's destinations: the station the boat was on its way to, or any open one after a
+    // mission of the area
+    m_destinations.clear();
+    StringList names;
+    for (const auto &station : m_stations) {
+        if (m_currentStation >= 0 ? station.first == m_currentStation : station.second.isEnabled()) {
+            m_destinations.push_back(station.first);
+            names << station.second.name().toUpper();
+        }
+    }
+    m_HUD->setDestinations(names);
     m_HUD->start(m_scenario);
     m_funcSetRenderer(m_HUD.get());
 }
@@ -432,13 +443,10 @@ void Chapter::finishMission()
     m_save = true;
 
     if (m_currentStation < 0) {
-        //TODO: this should be selectable from within the mission if more than one station is enabled
-        for (const auto &station : m_stations) {
-            if (station.second.isEnabled()) {
-                setStation(station.second.index());
-                break;
-            }
-        }
+        // the station chosen in the autopilot's menu
+        const int destination = m_HUD->destination();
+        if (destination >= 0 && destination < int(m_destinations.size()))
+            setStation(m_destinations[destination]);
     } else {
         playApproach(true);
         playMovies();

@@ -42,8 +42,10 @@ private:
     void showNew();
     void showLoad();
     void showTraining();
+    void showOptions();
     void showLoading();
     void updateDifficulty();
+    void updateOptions();
 
     void draw();
     void activate();
@@ -67,6 +69,7 @@ private:
     ui::Button m_btnMainLoad;
     ui::Button m_btnMainDifficulty;
     ui::Button m_btnMainTraining;
+    ui::Button m_btnMainOptions;
     ui::Button m_btnMainQuit;
     ui::Label m_lblNew;
     ui::Label m_lblNewTitle;
@@ -80,6 +83,19 @@ private:
     ui::Label m_lblTrainingTitle;
     ui::Button m_btnTrainingBack;
     std::list<ui::Button> m_btnTrainingMissions;
+    ui::Label m_lblOptions;
+    ui::Label m_lblOptionsTitle;
+    ui::Button m_btnOptionsBack;
+    // the notebook's options and the touch screen's, each a button that switches it
+    struct Option
+    {
+        std::function<bool()> value;
+        std::function<void(bool)> setValue;
+        String on;
+        String off;
+    };
+    std::vector<Option> m_options;
+    std::list<ui::Button> m_btnOptions;
     ui::Label m_lblLoading;
     ui::Label m_lblLoadingTitle;
     ui::Label m_lblLoadingWait;

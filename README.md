@@ -97,6 +97,14 @@ or `.bin` of a `MODE1/2352` track), it offers to build that directory itself,
 as `Game Data` next to the saved games. `--data <directory>` uses another
 directory for one run, without remembering it.
 
+The missions' music is the CD's audio tracks 2 to 5. Building `Game Data`
+also copies them out of the image (or, for a rip with a file for each track,
+by its `.cue`), as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV` (98 MB); a directory
+put together by hand can have them there too. Game data built before this
+version lacks them: delete `Game Data` and build it again. The notebook's
+Options › Sound, or the main menu's Options, turns the music off and on, as
+the original's "CD Musik" did.
+
 ## Game controllers
 
 Missions can be played with a game controller (Xbox, PlayStation, Switch Pro
@@ -138,16 +146,21 @@ button hides them again.
 
 - A finger on the left part of the screen brings up a stick where it comes
   down; it steers as far as it is pushed (up lowers the nose).
-- Under the right thumb: FIRE (held), TORP (fire a torpedo), LOCK (the
-  nearest enemy), NEXT (the next torpedo) and BUZZ (drop a buzzer); above
-  them + and - change the speed by 10 km/h (again and again while held), and
-  STOP stops.
+- Under the right thumb: FIRE (held), and around it TORP (fire a torpedo),
+  BUZZ (drop a buzzer), NEXT (the next torpedo) and LOCK (the nearest enemy);
+  above them + and - change the speed by 10 km/h (again and again while held),
+  and STOP stops.
 - In the corners: MENU (the mission menu, when the finger is lifted; held for
   a second it shows or hides the debug overlay instead), NAV (the next nav
   point), AUTO (autopilot), SONAR (on or off), TURR (turret menu) and VIEW
   (2D or 3D cockpit).
 - A tap on an option of the mission and turret menus takes it.
 - In the 3D cockpit a finger dragged elsewhere turns the head.
+
+The controls keep the size they have on an 11-inch iPad, in the corners of a
+larger screen. The main menu's Options, and the notebook's Options › Input
+devices, put the stick on the right and the buttons on the left (Touch stick:
+RIGHT), and let up raise the nose (Touch stick vertical: INVERTED).
 
 ## Saved games and settings
 
@@ -244,7 +257,12 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 
 In a mission, Esc opens the mission menu (continue, which also ends a pause,
 abort the game, restart the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
-skips the mission as if it had been accomplished, for debugging.
+skips the mission as if it had been accomplished, for debugging. Once a mission
+is accomplished, Alt+A (the autopilot) asks for the station to go to, in the
+original's autopilot menu: any open station of the area, or the one the boat was on its way
+to. With only one it goes there at once, as do test missions and training. The
+mission, turret and autopilot menus show on the cockpit's big screen, in place
+of the target, as in the original.
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
 everything the loader skips or ignores: unsupported object types, unread

@@ -309,7 +309,9 @@ void ConditionManager::initCondition(int cond, int dep, int ref, Condition *cond
             // objectives that can only fail (protect, avoid an area) count as achieved until they fail
             m_condObjectives.at(objective + 1).addDependency(condDepend, false);
         else
-            issue(String("Objective not found %1").arg(cond));
+            // never happens: s01802 and s02006 took theirs over from s01801 and s02005, which have
+            // these objectives, and the missions fit it (G4)
+            issue(String("No unit has objective %1 (%2)").arg(objective/2).arg(objective % 2 ? "failed" : "achieved"));
         return;
     }
 

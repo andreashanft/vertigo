@@ -37,6 +37,8 @@ public:
 public:
     void draw();
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
+    // its triangles' corners in the world, three by three (for the voxel radar)
+    const std::vector<Vector3D>& triangles() const;
 
 private:
     struct Cluster
@@ -50,6 +52,7 @@ private:
     };
 
     std::vector<Cluster> m_clusters;
+    mutable std::vector<Vector3D> m_triangles;
     int m_size;
     float m_angle;
 };

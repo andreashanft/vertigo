@@ -25,6 +25,7 @@
 #include "ui/label.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
+#include "sfx/music.hpp"
 
 #include <chrono>
 #include <map>
@@ -90,6 +91,10 @@ public:
     util::event<>& eventAbort() { return m_eventAbort; }
     util::event<>& eventRestart() { return m_eventRestart; }
     util::event<>& eventLoad() { return m_eventLoad; }
+    // where the autopilot can take the boat once the mission is accomplished, chosen in its menu
+    // (none: it leaves at once, as in test mode and training); after eventSuccess the one chosen
+    void setDestinations(const StringList &names);
+    int destination() const;
     // the mission is over and the game over menu is shown
     util::event<>& eventFailure() { return m_eventFailure; }
     util::event<>& eventDied() { return m_eventDied; }
@@ -110,6 +115,7 @@ public:
     ui::Widget* widget() { return m_integerScale ? &m_integerScaleWidget : &m_noScaleWidget; }
     gfx::Image getImage(const String &name);
     gfx::Font& fontGreen() { return m_fontGreen; }
+    MissionMenu& menu() { return *m_menu; }
     gfx::Font& fontRed() { return m_fontRed; }
     gfx::Font& fontYellow() { return m_fontYellow; }
 
@@ -149,6 +155,8 @@ private:
     void setFrozen(bool frozen);
     void updateMissionState();
     void leave(util::event<> &event);
+    // leaves with success, through the destination menu if there are destinations
+    void engageAutopilot();
     bool drawModel(double pixelRatio);
     void updateLook(float elapsedTime);
     void menuAction(int action);
@@ -234,6 +242,7 @@ private:
 
     bool m_paused;
     bool m_frozen;          // mission time and sounds stopped (pause or menu)
+    sfx::Music m_music;     // the mission's CD track
     bool m_successShown;
     bool m_failureShown;
     float m_deathTime;      // mission time of the player's death, -1 while alive

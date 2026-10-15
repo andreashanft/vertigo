@@ -225,6 +225,8 @@ set(SOURCES
     hud/horizon.cpp
     hud/horizon.h
 
+    sfx/music.cpp
+    sfx/music.hpp
     sfx/openal.hpp
     sfx/sound.cpp
     sfx/sound.h
@@ -331,7 +333,7 @@ endif()
 target_link_libraries(vertigo SDL3::SDL3 ${OPENAL_LIBRARY})
 if(APPLE)
     # Apple deprecated its OpenAL, but it is in the SDKs
-    set_source_files_properties(sfx/sound.cpp sfx/soundsystem.cpp sfx/stream.cpp PROPERTIES COMPILE_OPTIONS -Wno-deprecated-declarations)
+    set_source_files_properties(sfx/music.cpp sfx/sound.cpp sfx/soundsystem.cpp sfx/stream.cpp PROPERTIES COMPILE_OPTIONS -Wno-deprecated-declarations)
     # the region's date format for the saved games
     target_link_libraries(vertigo "-framework CoreFoundation")
 endif()

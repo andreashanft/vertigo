@@ -85,13 +85,13 @@ enum StringId
     Notebook_Options_Title,
     Notebook_Options_TitleLine,
     Notebook_InputDevices,
-    Text58,
-    Text59,
+    Notebook_Sound_Title,
+    Notebook_Sound_TitleLine,
     Text60,
     Text61,
     Text62,
-    Text63,
-    Text64,
+    Notebook_Sound_CdMusic_On,
+    Notebook_Sound_CdMusic_Off,
     Text65,
     Text66,
     Text67,
@@ -105,8 +105,8 @@ enum StringId
     Notebook_Movies_Autopilot_No,
     Notebook_Movies_Approach_Yes,
     Notebook_Movies_Approach_No,
-    Text78,
-    Text79,
+    Notebook_InputDevices_Title,
+    Notebook_InputDevices_TitleLine,
     Text80,
     Text81,
     Text82,
@@ -315,6 +315,16 @@ enum StringFight
 };
 
 
+// Vertigo's own texts, for what the game didn't have, in the language of its data
+enum StringVertigo
+{
+    Touch_Stick_Left,
+    Touch_Stick_Right,
+    Touch_Stick_Normal,
+    Touch_Stick_Inverted,
+};
+
+
 class StringTable
 {
 public:
@@ -322,6 +332,7 @@ public:
     static const String& language() { return m_language; }
     static String get(StringId string);
     static String get(StringFight string);
+    static String get(StringVertigo string);
 
 private:
     static String m_language;

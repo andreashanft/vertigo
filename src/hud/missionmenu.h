@@ -34,25 +34,38 @@ namespace hud {
 class HUD;
 
 
-// The in-mission menus (Esc menu, confirmations, game over) and short notices
-// such as "autopilot not available", drawn in a box in the middle of the view.
+// The in-mission menus (Esc menu, confirmations, game over, turret orders, autopilot), which
+// the master monitor shows in place of the target, as the original did; and short notices such
+// as "autopilot not available", drawn in a box in the middle of the view (the menus too, in a
+// cockpit without a master monitor).
 class MissionMenu : public ui::Widget
 {
 public:
-    enum class Page { None, Main, ConfirmAbort, ConfirmRestart, ConfirmLoad, GameOver, Died, Turrets, Turret1, Turret2 };
-    enum class Action { None, Continue, Abort, Restart, Load, TurretOrder };
+    enum class Page { None, Main, ConfirmAbort, ConfirmRestart, ConfirmLoad, GameOver, Died, Turrets, Turret1, Turret2, Autopilot, ConfirmAutopilot };
+    enum class Action { None, Continue, Abort, Restart, Load, TurretOrder, Autopilot };
 
 public:
     MissionMenu(HUD *hud, const Point &center);
 
 public:
     Page page() const { return m_page; }
-    // the turret menu doesn't stop the mission
-    bool pauses() const { return m_page != Page::None && m_page != Page::Turrets && m_page != Page::Turret1 && m_page != Page::Turret2; }
+    // the turret and autopilot menus don't stop the mission
+    bool pauses() const { return m_page != Page::None && m_page != Page::Turrets && m_page != Page::Turret1 && m_page != Page::Turret2 &&
+                                 m_page != Page::Autopilot && m_page != Page::ConfirmAutopilot; }
     // after Action::TurretOrder: which turret (0, 1, or -1 for both) and which order (0 attack, 1 sync, 2 search, 3 stop)
     int turret() const { return m_turret; }
     int turretOrder() const { return m_turretOrder; }
     void setTurrets(int count) { m_turretCount = count; }
+    // the master monitor's rect (in the 640x480 art)
+    void setScreen(const Rect &rect) { m_screen = rect; }
+    // whether the master monitor shows a menu now, and drawing it there
+    bool onScreen() const { return m_page != Page::None && m_screen.width > 0; }
+    void drawOnScreen();
+    // the autopilot's destinations (up to 9), and after Action::Autopilot the one chosen (a
+    // single one is chosen from the start: the autopilot goes there without a menu)
+    void setDestinations(const StringList &names) { m_destinations = names; m_destination = names.size() == 1 ? 0 : -1; }
+    const StringList& destinations() const { return m_destinations; }
+    int destination() const { return m_destination; }
     void open(Page page);
     Action keyPressEvent(int key);
     // a game controller: the d-pad highlights an option (the first press shows the highlight),
@@ -76,8 +89,9 @@ private:
         gfx::Font *font;
     };
     std::vector<Line> lines() const;
-    // the box, and each line's place in it
+    // the box, or the master monitor's rect, and each line's place in it
     Rect layout(const std::vector<Line> &lines, std::vector<Rect> &places) const;
+    void drawLines(const std::vector<Line> &lines, const std::vector<Rect> &places);
     int key(int option) const;
     Action press(int key);
     Action pressOnPage(int key);
@@ -85,10 +99,13 @@ private:
 private:
     HUD *m_hud;
     Point m_center;
+    Rect m_screen = Rect(0, 0, 0, 0);
     Page m_page;
     int m_turret = 0;
     int m_turretOrder = 0;
     int m_turretCount = 0;
+    StringList m_destinations;
+    int m_destination = -1;
     // the option highlighted for a game controller, while it is used
     bool m_highlight = false;
     int m_selected = 0;

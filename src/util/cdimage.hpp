@@ -46,13 +46,36 @@ public:
     // false if the image ends before the file does or the copy can't be written
     bool copy(const File &file, const std::string &path);
 
+    // an audio track: 2352-byte sectors of 16-bit stereo samples at 44.1 kHz in an image file
+    struct AudioTrack
+    {
+        int number;           // as on the CD (2 for the game's first, after the data track)
+        std::string file;     // the image file
+        std::uint64_t offset; // in bytes
+        std::uint64_t size;
+    };
+    // the audio tracks after the data track of a raw image, apart by a second of silence or more
+    // (without the silence); none in an image of 2048-byte sectors
+    std::vector<AudioTrack> audioTracks();
+    // the audio tracks of a cue sheet (a .cue, or a GOG installation's game.ins), whose image
+    // files are next to it (in any case); none if it can't be read. (GOG's game.ins has them about
+    // two seconds later than they are in game.gog.)
+    static std::vector<AudioTrack> audioTracks(const std::string &cueSheet);
+    // a track as a WAV file; false if the image ends before the track does or the copy can't be
+    // written
+    static bool copyAudio(const AudioTrack &track, const std::string &path);
+
 private:
+    bool readRaw(std::uint32_t sector, std::uint32_t count, char *raw);
     bool readSectors(std::uint32_t sector, std::uint32_t count, char *data);
     void readDirectory(std::uint32_t sector, std::uint32_t size, const std::string &path, int depth, std::set<std::uint32_t> &visited);
 
 private:
+    std::string m_path;
     std::ifstream m_image;
     std::uint64_t m_sectors = 0;
+    // of the file system, which the data track can have a few more after
+    std::uint32_t m_volumeSectors = 0;
     std::size_t m_sectorSize = 0;
     // where the 2048 bytes of a sector's data start
     std::size_t m_dataOffset = 0;

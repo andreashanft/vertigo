@@ -19,6 +19,9 @@
 #include "path.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace util {
@@ -32,6 +35,11 @@ const std::uint32_t MaxDirectory = 1 << 22;
 const int MaxDepth = 16;
 // sectors read at once
 const std::uint32_t Chunk = 256;
+// a raw sector, and its sync pattern in a data track
+const std::size_t RawSector = 2352;
+const char Sync[] = "\0\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
+// the silence between audio tracks: a second at least (75 sectors; the CD has two)
+const std::uint32_t TrackGap = 75;
 
 std::uint16_t le16(const unsigned char *bytes)
 {
@@ -65,6 +73,7 @@ std::string recordName(const unsigned char *name, std::size_t length)
 
 bool CdImage::open(const std::string &path)
 {
+    m_path = path;
     m_files.clear();
     m_image.close();
     m_image.clear();
@@ -90,6 +99,7 @@ bool CdImage::open(const std::string &path)
                 break;
             if (data[0] != 1 || le16(data + 128) != SectorData)
                 continue;
+            m_volumeSectors = le32(data + 80);
             std::set<std::uint32_t> visited;
             readDirectory(le32(data + 156 + 2), le32(data + 156 + 10), std::string(), 0, visited);
             return true;
@@ -120,22 +130,168 @@ bool CdImage::copy(const File &file, const std::string &path)
 }
 
 
-bool CdImage::readSectors(std::uint32_t sector, std::uint32_t count, char *data)
+std::vector<CdImage::AudioTrack> CdImage::audioTracks()
+{
+    std::vector<AudioTrack> tracks;
+    if (m_sectorSize != RawSector)
+        return tracks;
+    // the sectors after the data track (those with the sync pattern): the tracks are those with
+    // sound, and silence of less than TrackGap in them
+    std::vector<char> raw(Chunk * RawSector);
+    bool data = true;
+    std::int64_t start = -1, sound = -1;
+    auto add = [&]() {
+        tracks.push_back({ int(tracks.size()) + 2, m_path, std::uint64_t(start) * RawSector, std::uint64_t(sound + 1 - start) * RawSector });
+    };
+    for (std::uint64_t first = std::min<std::uint64_t>(m_volumeSectors, m_sectors); first < m_sectors; first += Chunk) {
+        const std::uint32_t count = std::uint32_t(std::min<std::uint64_t>(Chunk, m_sectors - first));
+        if (!readRaw(std::uint32_t(first), count, raw.data()))
+            return {};
+        for (std::uint32_t i = 0; i < count; i++) {
+            const char *sector = raw.data() + i * RawSector;
+            if (data && std::memcmp(sector, Sync, 12) == 0)
+                continue;
+            data = false;
+            if (std::all_of(sector, sector + RawSector, [](char c) { return c == 0; }))
+                continue;
+            const std::int64_t n = std::int64_t(first + i);
+            if (start >= 0 && n - sound > TrackGap) {
+                add();
+                start = -1;
+            }
+            if (start < 0)
+                start = n;
+            sound = n;
+        }
+    }
+    if (start >= 0)
+        add();
+    return tracks;
+}
+
+
+std::vector<CdImage::AudioTrack> CdImage::audioTracks(const std::string &cueSheet)
+{
+    std::vector<char> text;
+    if (!readFile(cueSheet, text))
+        return {};
+    const std::filesystem::path directory = toPath(cueSheet).parent_path();
+
+    // where each track starts (its index 1) in its file and where its audio ends: at the next
+    // track's index 0 or 1 in the same file, or at the file's end
+    struct Track
+    {
+        int number;
+        bool audio;
+        std::string file;
+        std::int64_t start = -1;
+        std::int64_t end = -1;
+    };
+    std::vector<Track> tracks;
+    std::string file;
+    for (std::string line : lines(text)) {
+        while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+            line.pop_back();
+        const std::size_t first = line.find_first_not_of(" \t");
+        if (first == std::string::npos)
+            continue;
+        line = line.substr(first);
+        const std::string command = line.substr(0, line.find(' '));
+        const std::string rest = line.substr(std::min(line.size(), command.size() + 1));
+        if (command == "FILE") {
+            // the name, quoted or not, then the type
+            const std::size_t quote = rest.find('"', 1);
+            file = !rest.empty() && rest[0] == '"' && quote != std::string::npos ? rest.substr(1, quote - 1) : rest.substr(0, rest.rfind(' '));
+            // in any case, as on a CD or in a GOG installation copied elsewhere
+            for (const std::string &name : util::files(fromPath(directory)))
+                if (std::equal(name.begin(), name.end(), file.begin(), file.end(), [](char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }))
+                    file = name;
+            file = fromPath(directory / toPath(file));
+        } else if (command == "TRACK") {
+            tracks.push_back({ std::atoi(rest.c_str()), rest.find("AUDIO") != std::string::npos, file });
+        } else if (command == "INDEX" && !tracks.empty()) {
+            int index = 0, minutes = 0, seconds = 0, frames = 0;
+            if (std::sscanf(rest.c_str(), "%d %d:%d:%d", &index, &minutes, &seconds, &frames) != 4)
+                return {};
+            const std::int64_t position = (std::int64_t(minutes * 60 + seconds) * 75 + frames) * 2352;
+            if (tracks.size() > 1 && tracks[tracks.size() - 2].file == tracks.back().file && tracks[tracks.size() - 2].end < 0)
+                tracks[tracks.size() - 2].end = position;
+            if (index == 1)
+                tracks.back().start = position;
+        }
+    }
+
+    std::vector<AudioTrack> result;
+    for (const Track &track : tracks) {
+        std::error_code ec;
+        const std::int64_t size = std::int64_t(std::filesystem::file_size(toPath(track.file), ec));
+        const std::int64_t end = track.end >= 0 ? std::min(track.end, size) : size;
+        // whole samples of both channels
+        if (track.audio && !ec && track.start >= 0 && end > track.start)
+            result.push_back({ track.number, track.file, std::uint64_t(track.start), std::uint64_t(end - track.start) / 4 * 4 });
+    }
+    return result;
+}
+
+
+bool CdImage::copyAudio(const AudioTrack &track, const std::string &path)
+{
+    std::ifstream in(toPath(track.file), std::ios::binary);
+    in.seekg(std::streamoff(track.offset));
+    std::ofstream out(toPath(path), std::ios::binary | std::ios::trunc);
+    if (!in || !out || track.size > 0xffffffffu - 36)
+        return false;
+
+    // a WAV header: 16-bit PCM, 2 channels, 44,100 samples a second
+    std::string header("RIFF....WAVEfmt ....\1\0\2\0........\4\0\x10\0data....", 44);
+    auto put32 = [&header](std::size_t offset, std::uint32_t value) {
+        for (int i = 0; i < 4; i++)
+            header[offset + i] = char(value >> (8 * i));
+    };
+    put32(4, std::uint32_t(36 + track.size));
+    put32(16, 16);
+    put32(24, 44100);
+    put32(28, 44100 * 4);
+    put32(40, std::uint32_t(track.size));
+    out.write(header.data(), std::streamsize(header.size()));
+
+    std::vector<char> buffer(Chunk * 2352);
+    std::uint64_t left = track.size;
+    while (left > 0 && out) {
+        const std::size_t bytes = std::size_t(std::min<std::uint64_t>(left, buffer.size()));
+        if (!in.read(buffer.data(), std::streamsize(bytes)))
+            return false;
+        out.write(buffer.data(), std::streamsize(bytes));
+        left -= bytes;
+    }
+    out.close();
+    return !out.fail();
+}
+
+
+bool CdImage::readRaw(std::uint32_t sector, std::uint32_t count, char *raw)
 {
     if (std::uint64_t(sector) + count > m_sectors)
         return false;
     m_image.clear();
     m_image.seekg(std::streamoff(std::uint64_t(sector) * m_sectorSize));
+    return bool(m_image.read(raw, std::streamsize(std::uint64_t(count) * m_sectorSize)));
+}
+
+
+bool CdImage::readSectors(std::uint32_t sector, std::uint32_t count, char *data)
+{
     if (m_sectorSize == SectorData)
-        return bool(m_image.read(data, std::streamsize(std::uint64_t(count) * SectorData)));
+        return readRaw(sector, count, data);
 
     std::vector<char> raw(std::min(count, Chunk) * m_sectorSize);
     while (count > 0) {
         const std::uint32_t n = std::min(count, Chunk);
-        if (!m_image.read(raw.data(), std::streamsize(n * m_sectorSize)))
+        if (!readRaw(sector, n, raw.data()))
             return false;
         for (std::uint32_t i = 0; i < n; i++, data += SectorData)
             std::memcpy(data, raw.data() + i * m_sectorSize + m_dataOffset, SectorData);
+        sector += n;
         count -= n;
     }
     return true;

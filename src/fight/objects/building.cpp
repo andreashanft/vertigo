@@ -128,6 +128,15 @@ void Building::draw()
 }
 
 
+const std::vector<Vector3D>& Building::triangles() const
+{
+    if (m_triangles.empty())
+        for (const Cluster &cluster : m_clusters)
+            cluster.module->addTriangles(cluster.transform, m_triangles);
+    return m_triangles;
+}
+
+
 bool Building::intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal)
 {
     bool collision = false;

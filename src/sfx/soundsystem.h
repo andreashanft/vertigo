@@ -59,6 +59,7 @@ public:
     void release(std::uint32_t source);
     void pauseAll();
     void resumeAll();
+    bool isSilent() const { return m_silent; }
     // a buffer's unsigned 8-bit samples, or as many silent ones
     void setBufferData(std::uint32_t buffer, bool stereo, const std::vector<char> &data, int rate);
     // where positional sounds are heard from: position, forward and up

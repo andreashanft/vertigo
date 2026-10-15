@@ -138,6 +138,8 @@ private:
     Movie *m_movie;
     std::queue<Movie, std::list<Movie>> m_movies;
     std::map<int, String> m_approachMovieReplacement;
+    // the stations the autopilot offers in the mission, by index
+    std::vector<int> m_destinations;
     std::map<int, Station> m_stations;
     int m_currentStation;
     String m_currentStationName;

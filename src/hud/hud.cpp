@@ -19,9 +19,11 @@
 #include "gfx/framebuffer.hpp"
 #include "gfx/gl.hpp"
 #include <cmath>
+#include "util/datapath.h"
 #include "util/settings.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include "util/ticks.h"
 #include "fight/scenario.h"
@@ -337,6 +339,7 @@ void HUD::load(game::Boat *boat)
     m_children.emplace_back(energyBar);
 
     file.setSection("mastermonitor");
+    m_menu->setScreen(readRect(file));
     MasterMonitor *masterMonitor = new MasterMonitor(this, readRect(file), Rect(file.value("ObservationX1").toInt(), file.value("ObservationY1").toInt(), file.value("ObservationWidth").toInt(), file.value("ObservationHeight").toInt()), file);
     m_children.emplace_back(masterMonitor);
 
@@ -401,6 +404,13 @@ void HUD::start(fight::Scenario *scenario)
     m_deathTime = -1;
     m_menu->open(MissionMenu::Page::None);
     m_scenario->headMotion().setStrength(headMotion());
+    // the CD's audio tracks, as the game data import copies them out of the CD image, at half
+    // the volume (CD audio is mastered louder than the game's sounds)
+    if (m_scenario->cdTrack() > 0 && sfx::Music::isEnabled()) {
+        char name[32];
+        std::snprintf(name, sizeof(name), "sfx:cd/track%02d.wav", m_scenario->cdTrack());
+        m_music.play(util::DataPath::resolve(name), 0.5f);
+    }
 #if defined(SDL_PLATFORM_IOS)
     // on the iPad without a keyboard and a game controller the touch controls are there at once
     if (!g_touchControlsChecked)
@@ -426,6 +436,7 @@ void HUD::step(float elapsedTime)
     // (also in a pause)
     m_touch->update(elapsedTime);
     setFrozen(m_paused || m_menu->pauses());
+    m_music.update();
     if (m_frozen)
         elapsedTime = 0;
     if (m_repeat >= 0 && elapsedTime > 0)
@@ -466,6 +477,7 @@ void HUD::setFrozen(bool frozen)
         sfx::SoundSystem::get()->pauseAll();
     else
         sfx::SoundSystem::get()->resumeAll();
+    m_music.pause(frozen);
 }
 
 
@@ -508,10 +520,33 @@ void HUD::updateMissionState()
 }
 
 
+void HUD::setDestinations(const StringList &names)
+{
+    m_menu->setDestinations(names);
+}
+
+
+int HUD::destination() const
+{
+    return m_menu->destinations().isEmpty() ? -1 : m_menu->destination();
+}
+
+
+void HUD::engageAutopilot()
+{
+    // with one destination the original went there at once
+    if (m_menu->destinations().size() <= 1)
+        leave(m_eventSuccess);
+    else
+        m_menu->open(MissionMenu::Page::Autopilot);
+}
+
+
 void HUD::leave(util::event<> &event)
 {
     // paused sounds would never play again
     setFrozen(false);
+    m_music.stop();
     m_paused = false;
     m_scenario = nullptr;
     event();
@@ -747,7 +782,7 @@ void HUD::press(input::KeyEvent *e)
     if (!m_scenario)
         return;
 
-    // the turret menu only takes digits, Esc and O; everything else still steers the boat
+    // the turret and autopilot menus only take digits, Esc and O; everything else still steers the boat
     const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
     const bool menuKey = (e->key() >= input::Key_0 && e->key() <= input::Key_9) || e->key() == input::Key_Escape || e->key() == input::Key_O;
     if (m_menu->page() != MissionMenu::Page::None && (!turretMenu || menuKey))
@@ -788,7 +823,7 @@ void HUD::press(input::KeyEvent *e)
     // debug: Ctrl+K (Cmd+K on macOS) skips the mission as if it had been accomplished
     if (e->key() == input::Key_K && (e->modifiers() & input::ControlModifier))
     {
-        leave(m_eventSuccess);
+        engageAutopilot();
         return;
     }
     if (e->key() == input::Key_P)
@@ -858,7 +893,7 @@ void HUD::press(input::KeyEvent *e)
         {
             if (m_scenario->conditionManager().autopilot())
             {
-                leave(m_eventSuccess);
+                engageAutopilot();
                 return;
             }
             m_menu->notice({ txt::StringTable::get(txt::Fight31), txt::StringTable::get(txt::Fight32) }, 3.0f);
@@ -887,6 +922,9 @@ void HUD::menuAction(int action)
         break;
     case MissionMenu::Action::Load:
         leave(m_eventLoad);
+        break;
+    case MissionMenu::Action::Autopilot:
+        leave(m_eventSuccess);
         break;
     case MissionMenu::Action::TurretOrder:
         {
@@ -1110,7 +1148,7 @@ void HUD::drawTouchControls(double pixelRatio)
         return;
     glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
     setupGL(false);
-    gfx::Pipeline::setProjection(glm::ortho(0.0f, m_touch->width(), 480.0f, 0.0f));
+    gfx::Pipeline::setProjection(glm::ortho(0.0f, m_touch->width(), m_touch->height(), 0.0f));
     m_touch->draw();
 }
 

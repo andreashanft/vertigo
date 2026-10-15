@@ -28,6 +28,7 @@
 #endif
 
 #include <algorithm>
+#include <cstdio>
 #include <unordered_map>
 
 namespace game {
@@ -91,6 +92,24 @@ bool inParts(const std::string &name)
 }
 
 
+// the audio tracks of the image, by a cue sheet (.cue, or GOG's .ins) next to it that names it
+std::vector<util::CdImage::AudioTrack> audioTracks(const std::string &imagePath)
+{
+    const std::filesystem::path image = util::toPath(imagePath);
+    const std::string directory = util::fromPath(image.parent_path());
+    for (const std::string &name : util::files(directory)) {
+        const std::string extension = toLower(name.substr(std::min(name.size(), name.rfind('.'))));
+        if (extension != ".cue" && extension != ".ins")
+            continue;
+        const std::string path = util::joinPath(directory, name);
+        const std::vector<char> text = util::readFile(path);
+        if (toLower(std::string(text.begin(), text.end())).find(toLower(util::fileName(imagePath))) != std::string::npos)
+            return util::CdImage::audioTracks(path);
+    }
+    return {};
+}
+
+
 std::string megabytes(std::uintmax_t bytes)
 {
     return std::to_string((bytes + 999999) / 1000000) + " MB";
@@ -141,6 +160,7 @@ bool GameData::import(const std::string &imagePath, const std::string &target, s
         const util::CdImage::File *file;
         std::string installed;
         std::uintmax_t size;
+        const util::CdImage::AudioTrack *track = nullptr;
     };
     std::vector<Copy> copies;
     std::unordered_map<std::string, std::size_t> index;
@@ -174,6 +194,20 @@ bool GameData::import(const std::string &imagePath, const std::string &target, s
         error = "Cannot read " + util::fromPath(installation) + ": " + ec.message();
         return false;
     }
+    // the music of the missions: the CD's four audio tracks, as SFX/CD/TRACK02.WAV and so on;
+    // after the data track in the image, or in files of their own, which a cue sheet next to the
+    // image finds
+    std::vector<util::CdImage::AudioTrack> tracks = image.audioTracks();
+    if (tracks.size() != 4) {
+        std::vector<util::CdImage::AudioTrack> listed = audioTracks(imagePath);
+        if (!listed.empty())
+            tracks = listed;
+    }
+    for (const util::CdImage::AudioTrack &track : tracks) {
+        char name[32];
+        std::snprintf(name, sizeof(name), "SFX/CD/TRACK%02d.WAV", track.number);
+        copies.push_back({ name, nullptr, std::string(), track.size + 44, &track });
+    }
 
     std::uintmax_t total = 0;
     for (const Copy &copy : copies)
@@ -194,10 +228,12 @@ bool GameData::import(const std::string &imagePath, const std::string &target, s
     for (const Copy &copy : copies) {
         const std::filesystem::path path = part / util::toPath(copy.name);
         std::filesystem::create_directories(path.parent_path(), ec);
-        const bool copied = copy.file ? image.copy(*copy.file, util::fromPath(path))
-                                      : std::filesystem::copy_file(util::toPath(copy.installed), path, std::filesystem::copy_options::overwrite_existing, ec);
+        const bool copied = copy.file ? image.copy(*copy.file, util::fromPath(path)) :
+                            copy.track ? util::CdImage::copyAudio(*copy.track, util::fromPath(path)) :
+                            std::filesystem::copy_file(util::toPath(copy.installed), path, std::filesystem::copy_options::overwrite_existing, ec);
         if (!copied) {
-            error = "Cannot copy " + (copy.file ? copy.file->path + " from the CD image" : copy.installed) + " to " + util::fromPath(path) + ".";
+            error = "Cannot copy " + (copy.file ? copy.file->path + " from the CD image" : copy.track ? "track " + std::to_string(copy.track->number) + " of the CD image" : copy.installed) +
+                    " to " + util::fromPath(path) + ".";
             std::filesystem::remove_all(part, ec);
             return false;
         }
