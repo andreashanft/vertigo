@@ -43,6 +43,8 @@ public:
     void draw();
     const BoundingBox& box() const { return m_box; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
+    // its triangles' corners, transformed, three by three
+    void addTriangles(const Matrix &transform, std::vector<Vector3D> &corners) const;
 
 private:
     struct Mesh

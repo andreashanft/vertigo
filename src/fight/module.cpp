@@ -170,6 +170,14 @@ void Module::draw()
 }
 
 
+void Module::addTriangles(const Matrix &transform, std::vector<Vector3D> &corners) const
+{
+    for (const Mesh &mesh : m_meshes)
+        for (const std::uint16_t index : mesh.indices)
+            corners.push_back(Vector3D(transform*Vector4D(mesh.vertices[index], 1)));
+}
+
+
 bool Module::intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal)
 {
     return m_collisionMesh.intersect(start, dir, radius, distance, normal);

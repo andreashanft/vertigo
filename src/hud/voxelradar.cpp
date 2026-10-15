@@ -118,6 +118,25 @@ void VoxelRadar::render(fight::Scenario *scenario)
         const Vector2D local = toPatch(p);
         return std::abs(local.x) <= extent && std::abs(local.y) <= extent;
     };
+    // a polygon in the patch's frame (x, y and the height) cut at the patch's edges
+    auto clip = [&](std::vector<Vector3D> polygon) {
+        for (int axis = 0; axis < 2 && !polygon.empty(); axis++)
+            for (const float sign : { -1.0f, 1.0f })
+            {
+                std::vector<Vector3D> kept;
+                for (size_t k = 0; k < polygon.size(); k++)
+                {
+                    const Vector3D &a = polygon[k], &b = polygon[(k + 1) % polygon.size()];
+                    const float da = extent - sign*a[axis], db = extent - sign*b[axis];
+                    if (da >= 0)
+                        kept.push_back(a);
+                    if ((da >= 0) != (db >= 0))
+                        kept.push_back(a + (b - a)*(da/(da - db)));
+                }
+                polygon.swap(kept);
+            }
+        return polygon;
+    };
 
     // the height map's own grid (so the shading stays with the ground as the boat moves); lines
     // stand on it, so they meet the terrain as drawn
@@ -244,21 +263,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
                 const Vector2D local = toPatch(Vector3D((first[0] + i + c.first)*step, (first[1] + j + c.second)*step, 0));
                 polygon.push_back(Vector3D(local, heights[(j + c.second)*count + i + c.first]));
             }
-            for (int axis = 0; axis < 2 && !polygon.empty(); axis++)
-                for (const float sign : { -1.0f, 1.0f })
-                {
-                    std::vector<Vector3D> kept;
-                    for (size_t k = 0; k < polygon.size(); k++)
-                    {
-                        const Vector3D &a = polygon[k], &b = polygon[(k + 1) % polygon.size()];
-                        const float da = extent - sign*a[axis], db = extent - sign*b[axis];
-                        if (da >= 0)
-                            kept.push_back(a);
-                        if ((da >= 0) != (db >= 0))
-                            kept.push_back(a + (b - a)*(da/(da - db)));
-                    }
-                    polygon.swap(kept);
-                }
+            polygon = clip(polygon);
             if (polygon.size() < 3)
                 continue;
             Cell cell;
@@ -313,11 +318,57 @@ void VoxelRadar::render(fight::Scenario *scenario)
         fillPolygon({ fromPatch(hi.x, lo.y, z0), fromPatch(hi.x, hi.y, z0), fromPatch(hi.x, hi.y, z1), fromPatch(hi.x, lo.y, z1) }, gfx::darker(colour, 130));
     };
 
-    // buildings as orange blocks (opaque, so before anything translucent)
+    // buildings as their models in orange, the faces lit from above and behind, in a few shades
+    // (opaque, so before anything translucent)
     const gfx::Rgb orange = shade(FogRows - 1, Orange);
+    const Vector3D light = glm::normalize(Vector3D(-0.4f*right - 0.3f*forward, 0.85f));
+    const int Shades = 16;
+    gfx::Rgb shades[Shades];
+    for (int i = 0; i < Shades; i++)
+    {
+        const float lit = (i + 0.5f)/Shades;
+        shades[i] = lit >= 0.5f ? gfx::lighter(orange, int(100 + 60*(lit - 0.5f)/0.5f)) : gfx::darker(orange, int(100 + 60*(0.5f - lit)/0.5f));
+    }
     for (const auto &object : *scenario)
-        if (object->isEnabled() && dynamic_cast<const fight::Building *>(object.get()))
-            fillBlock(object->box().minPoint(), object->box().maxPoint(), orange);
+    {
+        const fight::Building *building = dynamic_cast<const fight::Building *>(object.get());
+        if (!building || !object->isEnabled())
+            continue;
+        Vector2D lo(1e9f), hi(-1e9f);
+        const Vector3D &a = object->box().minPoint(), &b = object->box().maxPoint();
+        for (const Vector3D &corner : { a, Vector3D(a.x, b.y, 0), Vector3D(b.x, a.y, 0), b })
+        {
+            lo = glm::min(lo, toPatch(corner));
+            hi = glm::max(hi, toPatch(corner));
+        }
+        if (lo.x > extent || lo.y > extent || hi.x < -extent || hi.y < -extent)
+            continue;
+        const std::vector<Vector3D> &corners = building->triangles();
+        for (size_t k = 0; k + 2 < corners.size(); k += 3)
+        {
+            const Vector3D *triangle = &corners[k];
+            const Vector3D normal = glm::cross(triangle[1] - triangle[0], triangle[2] - triangle[0]);
+            const float length = glm::length(normal);
+            if (length < 1e-6f)
+                continue;
+            const Vector2D local[3] = { toPatch(triangle[0]), toPatch(triangle[1]), toPatch(triangle[2]) };
+            const Vector2D low = glm::min(glm::min(local[0], local[1]), local[2]), high = glm::max(glm::max(local[0], local[1]), local[2]);
+            if (low.x > extent || low.y > extent || high.x < -extent || high.y < -extent)
+                continue;
+            // (either side, as the models' faces don't all turn the same way)
+            const gfx::Rgb colour = shades[std::min(int(std::abs(glm::dot(normal/length, light))*Shades), Shades - 1)];
+            if (low.x >= -extent && low.y >= -extent && high.x <= extent && high.y <= extent)
+            {
+                fillTriangle(project(triangle[0]), project(triangle[1]), project(triangle[2]), colour);
+                continue;
+            }
+            std::vector<Vector3D> polygon = clip({ Vector3D(local[0], triangle[0].z), Vector3D(local[1], triangle[1].z), Vector3D(local[2], triangle[2].z) });
+            for (Vector3D &corner : polygon)
+                corner = fromPatch(corner.x, corner.y, corner.z);
+            if (polygon.size() >= 3)
+                fillPolygon(polygon, colour);
+        }
+    }
 
     // the water currents as translucent blue boxes over their 2x2 blocks of map cells, one cell high
     const Vector3D &scale = surface.scale();
