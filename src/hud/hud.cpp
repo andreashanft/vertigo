@@ -508,6 +508,27 @@ void HUD::updateMissionState()
 }
 
 
+void HUD::setDestinations(const StringList &names)
+{
+    m_menu->setDestinations(names);
+}
+
+
+int HUD::destination() const
+{
+    return m_menu->destinations().isEmpty() ? -1 : m_menu->destination();
+}
+
+
+void HUD::engageAutopilot()
+{
+    if (m_menu->destinations().isEmpty())
+        leave(m_eventSuccess);
+    else
+        m_menu->open(MissionMenu::Page::Autopilot);
+}
+
+
 void HUD::leave(util::event<> &event)
 {
     // paused sounds would never play again
@@ -747,7 +768,7 @@ void HUD::press(input::KeyEvent *e)
     if (!m_scenario)
         return;
 
-    // the turret menu only takes digits, Esc and O; everything else still steers the boat
+    // the turret and autopilot menus only take digits, Esc and O; everything else still steers the boat
     const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
     const bool menuKey = (e->key() >= input::Key_0 && e->key() <= input::Key_9) || e->key() == input::Key_Escape || e->key() == input::Key_O;
     if (m_menu->page() != MissionMenu::Page::None && (!turretMenu || menuKey))
@@ -788,7 +809,7 @@ void HUD::press(input::KeyEvent *e)
     // debug: Ctrl+K (Cmd+K on macOS) skips the mission as if it had been accomplished
     if (e->key() == input::Key_K && (e->modifiers() & input::ControlModifier))
     {
-        leave(m_eventSuccess);
+        engageAutopilot();
         return;
     }
     if (e->key() == input::Key_P)
@@ -858,7 +879,7 @@ void HUD::press(input::KeyEvent *e)
         {
             if (m_scenario->conditionManager().autopilot())
             {
-                leave(m_eventSuccess);
+                engageAutopilot();
                 return;
             }
             m_menu->notice({ txt::StringTable::get(txt::Fight31), txt::StringTable::get(txt::Fight32) }, 3.0f);
@@ -887,6 +908,9 @@ void HUD::menuAction(int action)
         break;
     case MissionMenu::Action::Load:
         leave(m_eventLoad);
+        break;
+    case MissionMenu::Action::Autopilot:
+        leave(m_eventSuccess);
         break;
     case MissionMenu::Action::TurretOrder:
         {

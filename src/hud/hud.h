@@ -90,6 +90,10 @@ public:
     util::event<>& eventAbort() { return m_eventAbort; }
     util::event<>& eventRestart() { return m_eventRestart; }
     util::event<>& eventLoad() { return m_eventLoad; }
+    // where the autopilot can take the boat once the mission is accomplished, chosen in its menu
+    // (none: it leaves at once, as in test mode and training); after eventSuccess the one chosen
+    void setDestinations(const StringList &names);
+    int destination() const;
     // the mission is over and the game over menu is shown
     util::event<>& eventFailure() { return m_eventFailure; }
     util::event<>& eventDied() { return m_eventDied; }
@@ -149,6 +153,8 @@ private:
     void setFrozen(bool frozen);
     void updateMissionState();
     void leave(util::event<> &event);
+    // leaves with success, through the destination menu if there are destinations
+    void engageAutopilot();
     bool drawModel(double pixelRatio);
     void updateLook(float elapsedTime);
     void menuAction(int action);

@@ -244,7 +244,10 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 
 In a mission, Esc opens the mission menu (continue, which also ends a pause,
 abort the game, restart the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
-skips the mission as if it had been accomplished, for debugging.
+skips the mission as if it had been accomplished, for debugging. Once a mission
+is accomplished, Alt+A (the autopilot) asks for the station to go to, in the
+original's autopilot menu: any open station of the area, or the one the boat was on its way
+to (test missions and training end at once).
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
 everything the loader skips or ignores: unsupported object types, unread
