@@ -133,7 +133,8 @@ void DebugOverlay::drawInfo()
                  .arg(rate.fps, 0, 'f', 1).arg(rate.frame, 0, 'f', 1).arg(rate.longest, 0, 'f', 1).arg(rate.work, 0, 'f', 1);
 
     gfx::Font &font = m_hud->fontYellow();
-    Point p = m_hud->project(Point(8, 8));
+    // right of the touch controls' buttons in the corner
+    Point p = m_hud->project(Point(HUD::touchControls() ? 72 : 8, 8));
     for (const String &line : lines) {
         font.draw(line, p.x, p.y);
         p.y += font.height() + 2;

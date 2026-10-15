@@ -42,6 +42,8 @@ const float StickArea = 0.45f;
 const Vector2D StickHint(100, -110);
 // a button takes a finger that comes down a little outside it too
 const float ButtonSlop = 1.2f;
+// how long a button with a second key has to be held for it
+const float HoldTime = 0.8f;
 
 const Vector4D Green(0.35f, 1.0f, 0.35f, 1.0f);
 
@@ -84,7 +86,8 @@ TouchControls::TouchControls(gfx::Font &font, gfx::Font &fontPressed, const Hand
         { "+", KeyEvent(Key_S), Vector2D(-40, 192), 24, -1 },
         { "-", KeyEvent(Key_X), Vector2D(-40, 252), 24, -1 },
         { "STOP", KeyEvent(Key_C), Vector2D(-100, 222), 22, -1 },
-        { "MENU", KeyEvent(Key_Escape), Vector2D(30, 30), 22, -1 },
+        // held: the debug overlay (Ctrl+D)
+        { "MENU", KeyEvent(Key_Escape), Vector2D(30, 30), 22, -1, KeyEvent(Key_D, ControlModifier) },
         { "NAV", KeyEvent(Key_N), Vector2D(30, 82), 22, -1 },
         { "AUTO", KeyEvent(Key_A, AltModifier), Vector2D(30, 134), 22, -1 },
         { "SONAR", KeyEvent(Key_R), Vector2D(-30, 30), 22, -1 },
@@ -131,7 +134,11 @@ void TouchControls::press(long long finger, const PointD &position)
     }
     if (pressed) {
         pressed->finger = finger;
-        m_handlers.press(pressed->key, int(pressed - m_buttons.data()));
+        // which of its keys is decided when it is let go or held long enough
+        if (pressed->holdKey.key() != input::Key_None)
+            pressed->held = 0;
+        else
+            m_handlers.press(pressed->key, int(pressed - m_buttons.data()));
         return;
     }
     if (m_stickFinger < 0 && at.x < m_width*StickArea) {
@@ -162,9 +169,17 @@ void TouchControls::move(long long finger, const PointD &position)
 void TouchControls::release(long long finger)
 {
     for (Button &button : m_buttons) {
-        if (button.finger == finger) {
-            button.finger = -1;
-            m_handlers.release(button.key, int(&button - m_buttons.data()));
+        if (button.finger != finger)
+            continue;
+        button.finger = -1;
+        const int index = int(&button - m_buttons.data());
+        if (button.holdKey.key() == input::Key_None) {
+            m_handlers.release(button.key, index);
+        } else if (button.held >= 0) {
+            // a tap
+            button.held = -1;
+            m_handlers.press(button.key, index);
+            m_handlers.release(button.key, index);
         }
     }
     if (finger == m_stickFinger) {
@@ -178,10 +193,28 @@ void TouchControls::release(long long finger)
 }
 
 
+void TouchControls::update(float seconds)
+{
+    for (Button &button : m_buttons) {
+        if (button.finger < 0 || button.held < 0)
+            continue;
+        button.held += seconds;
+        if (button.held >= HoldTime) {
+            button.held = -1;
+            const int index = int(&button - m_buttons.data());
+            m_handlers.press(button.holdKey, index);
+            m_handlers.release(button.holdKey, index);
+        }
+    }
+}
+
+
 void TouchControls::reset()
 {
-    for (Button &button : m_buttons)
+    for (Button &button : m_buttons) {
         button.finger = -1;
+        button.held = -1;
+    }
     m_stickFinger = -1;
     m_lookFinger = -1;
 }

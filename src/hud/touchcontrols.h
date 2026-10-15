@@ -65,6 +65,8 @@ public:
     void release(long long finger);
     // lets go of everything without telling, for a new mission
     void reset();
+    // the time passed since the last call, for the buttons held
+    void update(float seconds);
     // with the projection set to the window and the view 480 high
     void draw();
     // the view's width (480 high)
@@ -79,6 +81,10 @@ private:
         Vector2D place;
         float radius;
         long long finger;
+        // held for a while, the button stands for this key instead, and for its own only when
+        // let go before
+        input::KeyEvent holdKey = input::KeyEvent();
+        float held = -1;
     };
 
     Vector2D center(const Button &button) const;

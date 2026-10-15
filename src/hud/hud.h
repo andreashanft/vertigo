@@ -81,6 +81,8 @@ public:
     // fixed step
     struct FrameRate { float fps = 0, frame = 0, longest = 0, work = 0; };
     const FrameRate& frameRate() const { return m_frameRate; }
+    // the touch controls are shown
+    static bool touchControls();
 
 public:
     // the player leaves the mission: accomplished (autopilot), abort the game, restart the mission, load the last save

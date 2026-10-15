@@ -112,7 +112,7 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 | RB | lock the target in the reticle (L) | |
 | A | lock the nearest enemy (U) | autopilot (Alt+A) |
 | B | drop a buzzer (D) | engine on or off (the key left of 1) |
-| X | next torpedo (Enter) | |
+| X | next torpedo (Enter) | debug overlay (Ctrl+D) |
 | Y | next nav point (N) | lock the nav point (Alt+N) |
 | D-pad up | 10 km/h faster, again and again while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
@@ -140,9 +140,10 @@ button hides them again.
   nearest enemy), NEXT (the next torpedo) and BUZZ (drop a buzzer); above
   them + and - change the speed by 10 km/h (again and again while held), and
   STOP stops.
-- In the corners: MENU (the mission menu), NAV (the next nav point), AUTO
-  (autopilot), SONAR (on or off), TURR (turret menu) and VIEW (2D or 3D
-  cockpit).
+- In the corners: MENU (the mission menu, when the finger is lifted; held for
+  a second it shows or hides the debug overlay instead), NAV (the next nav
+  point), AUTO (autopilot), SONAR (on or off), TURR (turret menu) and VIEW
+  (2D or 3D cockpit).
 - A tap on an option of the mission and turret menus takes it.
 - In the 3D cockpit a finger dragged elsewhere turns the head.
 
@@ -172,7 +173,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   `--equip` installs items (`--list-items` lists them). Otherwise the
   chapter 1 boat is used.
 - `--overlay` shows the debug overlay with player state and a label for every
-  object (toggle with Ctrl+D, Cmd+D on macOS and the iPad). Yellow labels are
+  object (toggle with Ctrl+D, Cmd+D on macOS and the iPad, LB+X on a game
+  controller, or by holding MENU on the touch screen). Yellow labels are
   detected by the sonar, green ones are enabled but not detected, red ones not
   enabled yet. Its FPS line tells the frames per second of the last second,
   the average and the longest time between frames, and the CPU time the game

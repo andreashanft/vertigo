@@ -423,6 +423,8 @@ void HUD::step(float elapsedTime)
     if (!m_scenario)
         return;
 
+    // (also in a pause)
+    m_touch->update(elapsedTime);
     setFrozen(m_paused || m_menu->pauses());
     if (m_frozen)
         elapsedTime = 0;
@@ -570,6 +572,12 @@ void HUD::draw()
     const auto begin = std::chrono::steady_clock::now();
     drawFrame();
     countFrame(begin, std::chrono::steady_clock::now());
+}
+
+
+bool HUD::touchControls()
+{
+    return g_touchControls;
 }
 
 
@@ -907,7 +915,7 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_RightShoulder: return KeyEvent(Key_L);
     case Button_South: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_U);
     case Button_East: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_D);
-    case Button_West: return second ? KeyEvent() : KeyEvent(Key_Return);
+    case Button_West: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_Return);
     case Button_North: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
     case Button_Up: return second ? KeyEvent(Key(Key_F1 + m_weaponPage)) : KeyEvent(Key_S);
     case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
