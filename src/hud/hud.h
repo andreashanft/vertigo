@@ -25,6 +25,7 @@
 #include "ui/label.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
+#include "sfx/music.hpp"
 
 #include <chrono>
 #include <map>
@@ -240,6 +241,7 @@ private:
 
     bool m_paused;
     bool m_frozen;          // mission time and sounds stopped (pause or menu)
+    sfx::Music m_music;     // the mission's CD track
     bool m_successShown;
     bool m_failureShown;
     float m_deathTime;      // mission time of the player's death, -1 while alive

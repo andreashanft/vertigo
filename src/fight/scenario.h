@@ -89,6 +89,8 @@ public:
     float pitch() const { return m_pitch; }
     float height() const { return m_height; }
     float depth() const { return m_depth - m_position.z; }
+    // the CD track of the mission's music, as numbered on the CD (0: none)
+    int cdTrack() const { return m_cdTrack > 0 ? m_cdTrack + 1 : 0; }
     float time() const { return m_time; }
     int buzzers() const { return m_buzzers; }
     bool useBuzzer() { if (m_buzzers <= 0) return false; m_buzzers--; return true; }
@@ -186,6 +188,7 @@ private:
 
     txt::DesFile m_file;
     int m_depth;
+    int m_cdTrack;
 
     Surface m_surface;
     gfx::TextureManager m_textureManager;

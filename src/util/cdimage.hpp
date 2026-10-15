@@ -46,6 +46,21 @@ public:
     // false if the image ends before the file does or the copy can't be written
     bool copy(const File &file, const std::string &path);
 
+    // an audio track: 2352-byte sectors of 16-bit stereo samples at 44.1 kHz in an image file
+    struct AudioTrack
+    {
+        int number;           // as on the CD (2 for the game's first, after the data track)
+        std::string file;     // the image file
+        std::uint64_t offset; // in bytes
+        std::uint64_t size;
+    };
+    // the audio tracks of a cue sheet (a .cue, or a GOG installation's game.ins), whose image
+    // files are next to it (in any case); none if it can't be read
+    static std::vector<AudioTrack> audioTracks(const std::string &cueSheet);
+    // a track as a WAV file; false if the image ends before the track does or the copy can't be
+    // written
+    static bool copyAudio(const AudioTrack &track, const std::string &path);
+
 private:
     bool readSectors(std::uint32_t sector, std::uint32_t count, char *data);
     void readDirectory(std::uint32_t sector, std::uint32_t size, const std::string &path, int depth, std::set<std::uint32_t> &visited);

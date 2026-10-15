@@ -19,6 +19,9 @@
 #include "path.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace util {
@@ -113,6 +116,105 @@ bool CdImage::copy(const File &file, const std::string &path)
         const std::uint32_t bytes = std::min<std::uint32_t>(left, count * SectorData);
         out.write(buffer.data(), bytes);
         sector += count;
+        left -= bytes;
+    }
+    out.close();
+    return !out.fail();
+}
+
+
+std::vector<CdImage::AudioTrack> CdImage::audioTracks(const std::string &cueSheet)
+{
+    std::vector<char> text;
+    if (!readFile(cueSheet, text))
+        return {};
+    const std::filesystem::path directory = toPath(cueSheet).parent_path();
+
+    // where each track starts (its index 1) in its file and where its audio ends: at the next
+    // track's index 0 or 1 in the same file, or at the file's end
+    struct Track
+    {
+        int number;
+        bool audio;
+        std::string file;
+        std::int64_t start = -1;
+        std::int64_t end = -1;
+    };
+    std::vector<Track> tracks;
+    std::string file;
+    for (std::string line : lines(text)) {
+        while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+            line.pop_back();
+        const std::size_t first = line.find_first_not_of(" \t");
+        if (first == std::string::npos)
+            continue;
+        line = line.substr(first);
+        const std::string command = line.substr(0, line.find(' '));
+        const std::string rest = line.substr(std::min(line.size(), command.size() + 1));
+        if (command == "FILE") {
+            // the name, quoted or not, then the type
+            const std::size_t quote = rest.find('"', 1);
+            file = !rest.empty() && rest[0] == '"' && quote != std::string::npos ? rest.substr(1, quote - 1) : rest.substr(0, rest.rfind(' '));
+            // in any case, as on a CD or in a GOG installation copied elsewhere
+            for (const std::string &name : util::files(fromPath(directory)))
+                if (std::equal(name.begin(), name.end(), file.begin(), file.end(), [](char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }))
+                    file = name;
+            file = fromPath(directory / toPath(file));
+        } else if (command == "TRACK") {
+            tracks.push_back({ std::atoi(rest.c_str()), rest.find("AUDIO") != std::string::npos, file });
+        } else if (command == "INDEX" && !tracks.empty()) {
+            int index = 0, minutes = 0, seconds = 0, frames = 0;
+            if (std::sscanf(rest.c_str(), "%d %d:%d:%d", &index, &minutes, &seconds, &frames) != 4)
+                return {};
+            const std::int64_t position = (std::int64_t(minutes * 60 + seconds) * 75 + frames) * 2352;
+            if (tracks.size() > 1 && tracks[tracks.size() - 2].file == tracks.back().file && tracks[tracks.size() - 2].end < 0)
+                tracks[tracks.size() - 2].end = position;
+            if (index == 1)
+                tracks.back().start = position;
+        }
+    }
+
+    std::vector<AudioTrack> result;
+    for (const Track &track : tracks) {
+        std::error_code ec;
+        const std::int64_t size = std::int64_t(std::filesystem::file_size(toPath(track.file), ec));
+        const std::int64_t end = track.end >= 0 ? std::min(track.end, size) : size;
+        // whole samples of both channels
+        if (track.audio && !ec && track.start >= 0 && end > track.start)
+            result.push_back({ track.number, track.file, std::uint64_t(track.start), std::uint64_t(end - track.start) / 4 * 4 });
+    }
+    return result;
+}
+
+
+bool CdImage::copyAudio(const AudioTrack &track, const std::string &path)
+{
+    std::ifstream in(toPath(track.file), std::ios::binary);
+    in.seekg(std::streamoff(track.offset));
+    std::ofstream out(toPath(path), std::ios::binary | std::ios::trunc);
+    if (!in || !out || track.size > 0xffffffffu - 36)
+        return false;
+
+    // a WAV header: 16-bit PCM, 2 channels, 44,100 samples a second
+    std::string header("RIFF....WAVEfmt ....\1\0\2\0........\4\0\x10\0data....", 44);
+    auto put32 = [&header](std::size_t offset, std::uint32_t value) {
+        for (int i = 0; i < 4; i++)
+            header[offset + i] = char(value >> (8 * i));
+    };
+    put32(4, std::uint32_t(36 + track.size));
+    put32(16, 16);
+    put32(24, 44100);
+    put32(28, 44100 * 4);
+    put32(40, std::uint32_t(track.size));
+    out.write(header.data(), std::streamsize(header.size()));
+
+    std::vector<char> buffer(Chunk * 2352);
+    std::uint64_t left = track.size;
+    while (left > 0 && out) {
+        const std::size_t bytes = std::size_t(std::min<std::uint64_t>(left, buffer.size()));
+        if (!in.read(buffer.data(), std::streamsize(bytes)))
+            return false;
+        out.write(buffer.data(), std::streamsize(bytes));
         left -= bytes;
     }
     out.close();

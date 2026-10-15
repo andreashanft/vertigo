@@ -37,12 +37,15 @@ private:
     void hideMissions();
     void showOptions();
     void hideOptions();
+    void showSound();
+    void hideSound();
     void showMovies();
     void hideMovies();
     void showMoviePlayer();
     void hideMoviePlayer();
     void showMap();
     void hideMap();
+    void updateSound();
     void updateMovies();
 
 private:
@@ -62,9 +65,11 @@ private:
     ui::Label m_lblMain;
     ui::Label m_lblMissions;
     ui::Label m_lblOptions;
+    ui::Label m_lblSound;
     ui::Label m_lblMovies;
     ui::Label m_lblMoviePlayer;
     ui::Label m_lblMap;
+    ui::Button m_btnSoundCdMusic;
     ui::Button m_btnMoviesAutopilot;
     ui::Button m_btnMoviesApproach;
     ui::Button m_btnMoviesHarbour;

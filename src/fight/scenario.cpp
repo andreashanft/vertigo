@@ -118,6 +118,10 @@ Scenario::Scenario(const String &name) :
 
     m_file.load(String("vfx:scenario/%1.des").arg(name));
 
+    // the music: Track 1 is the CD's second track, its first audio track after the data (0: none)
+    m_file.setSection("cd");
+    m_cdTrack = m_file.value("track", 0).toInt();
+
     m_file.setSection("surface");
     m_depth = m_file.value("depth").toInt();
     m_surface.load(m_file.value("name").toString().toLower(), m_file.value("maxheightscale").toInt(), m_file.value("patchcomb").toInt());

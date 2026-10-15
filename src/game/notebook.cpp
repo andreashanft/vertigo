@@ -21,6 +21,7 @@
 
 #include "gfx/colortable.h"
 #include "gfx/image.h"
+#include "sfx/music.hpp"
 
 namespace game {
 
@@ -29,9 +30,11 @@ Notebook::Notebook(std::function<void()> funcClose) :
     m_lblMain(&m_lblBackground),
     m_lblMissions(&m_lblBackground, false),
     m_lblOptions(&m_lblBackground, false),
+    m_lblSound(&m_lblBackground, false),
     m_lblMovies(&m_lblBackground, false),
     m_lblMoviePlayer(&m_lblBackground, false),
     m_lblMap(&m_lblBackground, false),
+    m_btnSoundCdMusic([this]() { sfx::Music::setEnabled(!sfx::Music::isEnabled()); updateSound(); }, &m_lblSound),
     m_btnMoviesAutopilot([this]() { Chapter::get()->toggleMovieAutopilot(); updateMovies(); }, &m_lblMovies),
     m_btnMoviesApproach([this]() { Chapter::get()->toggleMovieApproach(); updateMovies(); }, &m_lblMovies),
     m_btnMoviesHarbour([this]() { Chapter::get()->toggleMovieHarbour(); updateMovies(); }, &m_lblMovies),
@@ -74,12 +77,26 @@ Notebook::Notebook(std::function<void()> funcClose) :
         createLabel(&m_lblOptions, txt::Notebook_Options_Title, 30);
         createLabel(&m_lblOptions, txt::Notebook_Options_TitleLine, 40);
 
-        createButton([]() {}, &m_lblOptions, txt::Notebook_Sound, 90);
+        createButton([this]() { showSound(); }, &m_lblOptions, txt::Notebook_Sound, 90);
         createButton([]() {}, &m_lblOptions, txt::Notebook_Graphics, 110);
         createButton([this]() { showMovies(); }, &m_lblOptions, txt::Notebook_Movies, 130);
         createButton([]() {}, &m_lblOptions, txt::Notebook_InputDevices, 150);
         createButton([this]() { showMoviePlayer(); }, &m_lblOptions, txt::Notebook_MoviePlayer, 170);
         createButton([this]() { hideOptions(); }, &m_lblOptions, txt::Notebook_Back, 220);
+    }
+
+    {
+        m_lblSound.setPosition(162, 73);
+        m_lblSound.setTexture(m_background);
+
+        createLabel(&m_lblSound, txt::Notebook_Sound_Title, 30);
+        createLabel(&m_lblSound, txt::Notebook_Sound_TitleLine, 40);
+
+        setupButton(m_btnSoundCdMusic, txt::Notebook_Sound_CdMusic_On, 90);
+
+        createButton([this]() { hideSound(); }, &m_lblSound, txt::Notebook_Back, 130);
+
+        updateSound();
     }
 
     {
@@ -203,6 +220,18 @@ void Notebook::hideOptions()
     m_lblMain.show();
 }
 
+void Notebook::showSound()
+{
+    m_lblOptions.hide();
+    m_lblSound.show();
+}
+
+void Notebook::hideSound()
+{
+    m_lblSound.hide();
+    m_lblOptions.show();
+}
+
 void Notebook::showMovies()
 {
     m_lblOptions.hide();
@@ -249,6 +278,11 @@ void Notebook::hideMap()
 {
     m_lblMap.hide();
     m_lblMain.show();
+}
+
+void Notebook::updateSound()
+{
+    m_btnSoundCdMusic.setText(txt::StringTable::get(sfx::Music::isEnabled() ? txt::Notebook_Sound_CdMusic_On : txt::Notebook_Sound_CdMusic_Off));
 }
 
 void Notebook::updateMovies()

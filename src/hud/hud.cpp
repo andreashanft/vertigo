@@ -19,9 +19,11 @@
 #include "gfx/framebuffer.hpp"
 #include "gfx/gl.hpp"
 #include <cmath>
+#include "util/datapath.h"
 #include "util/settings.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include "util/ticks.h"
 #include "fight/scenario.h"
@@ -401,6 +403,13 @@ void HUD::start(fight::Scenario *scenario)
     m_deathTime = -1;
     m_menu->open(MissionMenu::Page::None);
     m_scenario->headMotion().setStrength(headMotion());
+    // the CD's audio tracks, as the game data import copies them out of the CD image, at half
+    // the volume (CD audio is mastered louder than the game's sounds)
+    if (m_scenario->cdTrack() > 0 && sfx::Music::isEnabled()) {
+        char name[32];
+        std::snprintf(name, sizeof(name), "sfx:cd/track%02d.wav", m_scenario->cdTrack());
+        m_music.play(util::DataPath::resolve(name), 0.5f);
+    }
 #if defined(SDL_PLATFORM_IOS)
     // on the iPad without a keyboard and a game controller the touch controls are there at once
     if (!g_touchControlsChecked)
@@ -426,6 +435,7 @@ void HUD::step(float elapsedTime)
     // (also in a pause)
     m_touch->update(elapsedTime);
     setFrozen(m_paused || m_menu->pauses());
+    m_music.update();
     if (m_frozen)
         elapsedTime = 0;
     if (m_repeat >= 0 && elapsedTime > 0)
@@ -466,6 +476,7 @@ void HUD::setFrozen(bool frozen)
         sfx::SoundSystem::get()->pauseAll();
     else
         sfx::SoundSystem::get()->resumeAll();
+    m_music.pause(frozen);
 }
 
 
@@ -533,6 +544,7 @@ void HUD::leave(util::event<> &event)
 {
     // paused sounds would never play again
     setFrozen(false);
+    m_music.stop();
     m_paused = false;
     m_scenario = nullptr;
     event();
