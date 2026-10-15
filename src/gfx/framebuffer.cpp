@@ -25,9 +25,12 @@ Framebuffer::Framebuffer(int width, int height) :
     m_width(width),
     m_height(height)
 {
-    GLint previous = 0, texture = 0;
+    // what is bound stays bound: on iOS SDL draws into a framebuffer of its own and shows the
+    // renderbuffer bound at the end of the frame
+    GLint previous = 0, texture = 0, renderbuffer = 0;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previous);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &texture);
+    glGetIntegerv(GL_RENDERBUFFER_BINDING, &renderbuffer);
 
     glGenTextures(1, &m_texture);
     glBindTexture(GL_TEXTURE_2D, m_texture);
@@ -41,7 +44,7 @@ Framebuffer::Framebuffer(int width, int height) :
     glGenRenderbuffers(1, &m_depth);
     glBindRenderbuffer(GL_RENDERBUFFER, m_depth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, GLuint(renderbuffer));
 
     glGenFramebuffers(1, &m_framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);

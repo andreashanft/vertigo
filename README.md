@@ -258,8 +258,8 @@ directory (or the folder set as `cockpit/directory`).
 - `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
   mission and saves the choice (setting `cockpit/mode`). Without a model for
   the boat's cockpit the 2D art is shown.
-- On the iPad the texture is halved to 4096x4096 (with 8192x8192 an iPad Pro
-  11" stopped drawing).
+- On the iPad the texture is halved to 4096x4096, which its screen doesn't
+  need more than; it loads in half the time and takes 0.5 GB less.
 - In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
   cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
   window. The instruments are projected onto the model's screens.

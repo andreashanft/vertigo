@@ -47,8 +47,9 @@ namespace {
 const float DecalNear = 0.03f;
 
 #if defined(SDL_PLATFORM_IOS)
-// An iPad Pro 11" took the 8192x8192 texture, but then drew nothing more (out of memory,
-// presumably: with it the game takes 1.4 GB on the desktop, 0.1 GB without the 3D cockpit)
+// The iPad's screen is no larger than the texture at 4096x4096, which loads in half the time and
+// takes 0.5 GB less (the game takes 1.4 GB on the desktop with 8192x8192, 0.1 GB without the 3D
+// cockpit), also on iPads with less memory
 const int MaxTextureSize = 4096;
 #else
 const int MaxTextureSize = 1 << 30;
