@@ -37,6 +37,8 @@ public:
     virtual void draw() = 0;
     virtual void activate() {}
     virtual void deactivate() {}
+    // the app is interrupted or goes to the background (on the iPad): a mission pauses
+    virtual void pause() {}
 
 public:
     void setWindow(Window *window);
@@ -44,6 +46,9 @@ public:
     // typing text, e.g. a new game's name: only then do keys go through the system's text input
     // (which on macOS takes held letters for its accent menu, on iOS shows the keyboard)
     virtual bool wantsTextInput() const { return false; }
+    // where the typed text shows, in the 640x480 image (on iOS the window moves it above the
+    // on-screen keyboard)
+    virtual Rect textInputArea() const { return Rect(); }
     virtual void setRect(const Rect &rect);
     Rect rect() const { return m_rect; }
     int width() const { return m_rect.width; }
@@ -60,6 +65,15 @@ public:
     virtual void mousePressEvent(input::MouseEvent *) {}
     virtual void mouseReleaseEvent(input::MouseEvent *) {}
     virtual void mouseMoveEvent(input::MouseEvent *) {}
+    // a game controller's buttons, by default the keys of input::menuKey(); and a stick, where it
+    // is now (beyond its dead zone, else 0)
+    virtual void buttonPressEvent(input::Button button);
+    virtual void buttonReleaseEvent(input::Button button);
+    virtual void stickEvent(input::Stick, const Vector2D &) {}
+    // fingers on a touch screen (taps also come as mouse clicks, isFromTouch())
+    virtual void touchPressEvent(input::TouchEvent *) {}
+    virtual void touchMoveEvent(input::TouchEvent *) {}
+    virtual void touchReleaseEvent(input::TouchEvent *) {}
 
 protected:
     void showCursor();

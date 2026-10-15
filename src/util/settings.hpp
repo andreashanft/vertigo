@@ -18,7 +18,6 @@
 #ifndef UTIL_SETTINGS_HPP
 #define UTIL_SETTINGS_HPP
 
-#include <map>
 #include <string>
 
 namespace util {
@@ -40,10 +39,6 @@ public:
     static void setValue(const std::string &key, int value);
     static void setValue(const std::string &key, float value);
 
-    // whether the file is there yet
-    static bool exists();
-    // takes these settings and writes them, as a first file
-    static void import(const std::map<std::string, std::string> &values);
 
     static std::string fileName();
 };

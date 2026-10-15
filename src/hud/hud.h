@@ -26,6 +26,8 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 
+#include <chrono>
+#include <map>
 #include <memory>
 #include "util/string.hpp"
 
@@ -45,6 +47,7 @@ class SonarMonitor;
 class MissionMenu;
 class SlaveMonitor;
 class Cockpit3D;
+class TouchControls;
 
 
 class HUD : public game::Renderer
@@ -72,6 +75,14 @@ public:
     static void setFixedStep(float seconds);
     // frames drawn of the current mission
     int frames() const { return m_frames; }
+    // the last second's frames, for the debug overlay: frames a second, the average and the
+    // longest time from one to the next and the time the game took for one (updating and drawing,
+    // without waiting for the screen), in milliseconds; 0 until a second has passed, and with a
+    // fixed step
+    struct FrameRate { float fps = 0, frame = 0, longest = 0, work = 0; };
+    const FrameRate& frameRate() const { return m_frameRate; }
+    // the touch controls are shown
+    static bool touchControls();
 
 public:
     // the player leaves the mission: accomplished (autopilot), abort the game, restart the mission, load the last save
@@ -91,6 +102,7 @@ public:
     fight::Scenario* scenario() const { return m_scenario; }
     int navPoint() const { return m_navPoint; }
     bool isPaused() const { return m_paused; }
+    void pause();
 
     bool wide() const { return m_wide; }
     const RectF& rectHUD() const { return m_rectHUD; }
@@ -111,6 +123,7 @@ public:
 
     void setRect(const Rect &rect);
     void draw();
+    void drawFrame();
     // advances the mission without drawing (draw() calls it with the time since the last frame)
     void step(float elapsedTime);
 
@@ -121,6 +134,15 @@ protected:
     void mousePressEvent(input::MouseEvent *);
     void mouseReleaseEvent(input::MouseEvent *);
     void mouseMoveEvent(input::MouseEvent *);
+    // a game controller: the buttons stand for keys (a second set with LB held), the d-pad and A
+    // and B work the menus; the left stick steers, the right one turns the head in the 3D cockpit
+    void buttonPressEvent(input::Button button);
+    void buttonReleaseEvent(input::Button button);
+    void stickEvent(input::Stick stick, const Vector2D &position);
+    // a touch screen: the touch controls, taps on the menus' options
+    void touchPressEvent(input::TouchEvent *);
+    void touchMoveEvent(input::TouchEvent *);
+    void touchReleaseEvent(input::TouchEvent *);
 
 private:
     Rect readRect(const txt::DesFile &file);
@@ -129,6 +151,20 @@ private:
     void leave(util::event<> &event);
     bool drawModel(double pixelRatio);
     void updateLook(float elapsedTime);
+    void menuAction(int action);
+    input::KeyEvent buttonKey(input::Button button);
+    // keys from any source; the keyboard's also hide the touch controls
+    void press(input::KeyEvent *);
+    void release(input::KeyEvent *);
+    // keys held by a controller's button or a touch button (source: the button)
+    void pressKey(input::KeyEvent key, int source);
+    void releaseKey(int source);
+    void updateStick();
+    void startLook(const PointD &position);
+    void moveLook(const PointD &position);
+    int menuOption(const PointD &position);
+    void drawTouchControls(double pixelRatio);
+    void countFrame(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
     // the pilot's head turned by the mouse look, in the boat's camera frame
     Matrix lookTransform() const;
 
@@ -144,6 +180,12 @@ private:
     fight::Scenario *m_scenario;
     int m_lastTicks;
     int m_frames = 0;
+    FrameRate m_frameRate;
+    std::chrono::steady_clock::time_point m_frameBegin;     // of the last frame
+    std::chrono::steady_clock::time_point m_countBegin;     // of the second being counted
+    int m_countFrames = 0;
+    double m_countLongest = 0;
+    double m_countWork = 0;
     int m_navPoint;
 
     bool m_wide;
@@ -159,6 +201,15 @@ private:
     bool m_looking;         // a mouse button is held
     PointD m_lookStart;     // where the drag started
     Vector2D m_lookFrom;    // and the look direction then
+    Vector2D m_lookStick = Vector2D(0);    // the right stick
+    Vector2D m_padStick = Vector2D(0);     // the left stick
+    Vector2D m_touchStick = Vector2D(0);   // the touch screen's
+    bool m_shoulder = false;               // LB held: the buttons' second set
+    std::map<int, input::KeyEvent> m_heldKeys;  // the keys the buttons held stand for
+    int m_repeat = -1;      // the button that changes the speed again and again while held
+    float m_repeatWait = 0;
+    std::unique_ptr<TouchControls> m_touch;
+    int m_weaponPage = 0;   // the next of F1-F4 for LB+Up
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;
     Matrix m_integerScaleProjectionMatrixInverted;

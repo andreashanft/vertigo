@@ -21,6 +21,7 @@
 #include "chapter.h"
 #include "mainmenu.h"
 #include "movie.h"
+#include "training.h"
 #include "window.h"
 
 #include "gfx/fontmanager.h"
@@ -31,6 +32,7 @@
 #include <memory>
 
 union SDL_Event;
+struct SDL_Joystick;
 namespace fight { class Scenario; }
 namespace hud { class HUD; }
 
@@ -44,7 +46,7 @@ public:
         String scenario;                               // start this mission directly (test mode)
         int boat = 0;                                   // test mode boat type, 0 = chapter 1 boat
         std::vector<std::pair<String, int>> equipment; // test mode items: mounting, model
-        int timeout = 0;                                // test mode time limit in seconds
+        float timeout = 0;                              // test mode time limit in seconds
         bool debugOverlay = false;
         bool headless = false;                          // test mode: no window and no sound, simulated time
         bool fixedStep = false;                         // test mode: 20 ms of mission time per frame
@@ -58,6 +60,13 @@ public:
         int near = 0;                                   // test mode: enable this unit and start next to it
         struct Screenshot { float time; std::string file; };        // the file is a path in UTF-8
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
+        // buttons pressed together, or a stick's axis (0 left x, 1 left y, 2 right x, 3 right y)
+        // moved; held for this long (< 0: buttons 0.1 s, an axis for good)
+        struct Pad { float time; std::vector<input::Button> buttons; int axis; float value; float hold; bool down = false; };
+        std::vector<Pad> pad;                           // work a virtual game controller at these times
+        // a finger from a point to another (fractions of the window), for this long
+        struct Touch { float time; PointD from; PointD to; float hold; bool down = false; float start = 0; long long id = 0; };
+        std::vector<Touch> touch;                       // touch the screen at these times
         struct Click { float time; PointD pos; };
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
         bool check = false;                             // report what the mission loader ignores
@@ -98,6 +107,8 @@ private:
     void startGame(const String &name);
     void loadGame(const String &name);
     void endGame();
+    void startTraining(int index);
+    void endTraining();
     void introFinished();
     void createMainMenu(bool skipToTitle);
     void createChapter();
@@ -110,6 +121,7 @@ private:
     MainMenu m_mainMenu;
     std::unique_ptr<Movie> m_intro;
     std::unique_ptr<Chapter> m_chapter;
+    std::unique_ptr<Training> m_training;
     String m_name;
 
     // test mode, and the main menu's --keys, --click and --screenshot
@@ -123,6 +135,9 @@ private:
     std::vector<Options::Screenshot> m_screenshots;
     std::vector<Options::Key> m_keys;
     std::vector<Options::Click> m_clicks;
+    std::vector<Options::Pad> m_pad;
+    std::vector<Options::Touch> m_touch;
+    SDL_Joystick *m_virtualPad = nullptr;
     util::ElapsedTimer m_timer;
     float m_simulatedTime = 0;
     float m_fixedStep = 0;

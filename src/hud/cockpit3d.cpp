@@ -46,6 +46,33 @@ namespace {
 // triangles closer than this to the eye's plane get no HUD texture (it would be mirrored behind)
 const float DecalNear = 0.03f;
 
+#if defined(SDL_PLATFORM_IOS)
+// The iPad's screen is no larger than the texture at 4096x4096, which loads in half the time and
+// takes 0.5 GB less (the game takes 1.4 GB on the desktop with 8192x8192, 0.1 GB without the 3D
+// cockpit), also on iPads with less memory
+const int MaxTextureSize = 4096;
+#else
+const int MaxTextureSize = 1 << 30;
+#endif
+
+
+// half the size, each pixel the mean of four (the baked textures are squares of powers of two)
+gfx::Image halved(const gfx::Image &image)
+{
+    gfx::Image half(image.width()/2, image.height()/2, gfx::Image::RGB888);
+    for (int y = 0; y < half.height(); y++)
+    {
+        const std::uint8_t *a = image.constScanLine(2*y), *b = image.constScanLine(2*y + 1);
+        std::uint8_t *out = half.scanLine(y);
+        for (int i = 0; i < 3*half.width(); i++)
+        {
+            const int x = 6*(i/3) + i%3;
+            out[i] = std::uint8_t((a[x] + a[x + 3] + b[x] + b[x + 3] + 2)/4);
+        }
+    }
+    return half;
+}
+
 }
 
 
@@ -183,12 +210,19 @@ bool Cockpit3D::create()
     base.insert(base.end(), decal.begin(), decal.end());
     m_mesh.create(int(positions.size()), positions.data(), nullptr, texCoords.data(), int(base.size()), base.data());
 
-    // the baked texture: trilinear and anisotropic, as most surfaces are seen at an angle
-    gfx::Image texture = model.images()[image].convertToFormat(gfx::Image::RGB888);
+    // the baked texture: trilinear and anisotropic, as most surfaces are seen at an angle; halved
+    // until it fits (without copies of the full size, which take hundreds of MB)
+    const gfx::Image &baked = model.images()[image];
+    gfx::Image texture = baked.format() == gfx::Image::RGB888 ? gfx::Image() : baked.convertToFormat(gfx::Image::RGB888);
+    const gfx::Image *pixels = texture.isNull() ? &baked : &texture;
     GLint maxSize = 0;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
-    if (maxSize > 0 && (texture.width() > maxSize || texture.height() > maxSize))
-        texture = texture.scaled(std::min(texture.width(), int(maxSize)), std::min(texture.height(), int(maxSize)), true);
+    maxSize = maxSize > 0 ? std::min(int(maxSize), MaxTextureSize) : MaxTextureSize;
+    while (pixels->width() > maxSize || pixels->height() > maxSize)
+    {
+        texture = halved(*pixels);
+        pixels = &texture;
+    }
     glGenTextures(1, &m_texture);
     glBindTexture(GL_TEXTURE_2D, m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -202,14 +236,19 @@ bool Cockpit3D::create()
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(8.0f, anisotropy));
     }
     // the rows follow each other without padding to 4 bytes, GL's default
+    // (errors from before, at most a few)
+    for (int i = 0; i < 8 && glGetError() != GL_NO_ERROR; i++)
+        ;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, texture.width(), texture.height(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture.constBits());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, pixels->width(), pixels->height(), 0, GL_RGB, GL_UNSIGNED_BYTE, pixels->constBits());
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
+    if (const GLenum error = glGetError())
+        std::cerr << "3D cockpit: OpenGL error 0x" << std::hex << error << std::dec << " with the texture" << std::endl;
 
     std::cout << "3D cockpit: " << util::fileName(m_fileName) << ", " << m_baseCount/3 << " triangles, "
-              << texture.width() << "x" << texture.height() << " texture, loaded in " << timer.elapsed() << " ms" << std::endl;
+              << pixels->width() << "x" << pixels->height() << " texture, loaded in " << timer.elapsed() << " ms" << std::endl;
     m_state = State::Ready;
     return true;
 }
@@ -236,6 +275,12 @@ bool Cockpit3D::draw(const Matrix &projection, const Matrix &view)
     gfx::Pipeline::setColor(Vector4D(1));
     m_mesh.draw(0, m_baseCount);
     gfx::Pipeline::setColor(color);
+    if (!m_drawn)
+    {
+        m_drawn = true;
+        if (const GLenum error = glGetError())
+            std::cerr << "3D cockpit: OpenGL error 0x" << std::hex << error << std::dec << " in the first frame" << std::endl;
+    }
     return true;
 }
 

@@ -13,7 +13,7 @@ nix run github:pnordhus/vertigo
 
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
 or OpenGL ES 3. The build also has tests of the game's own types for text,
-data values, images and JSON (`ctest`).
+data values, images, JSON and CD images (`ctest`).
 
 ```
 mkdir build
@@ -32,6 +32,57 @@ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
 
+## iPad
+
+The iPad version needs Xcode, CMake 3.24 or newer and GLM's headers
+(`brew install cmake glm`), and runs on iPadOS 18.6 or later. CMake downloads
+SDL's source release (checked against its SHA-256) and builds it for iOS;
+OpenAL and OpenGL ES are the system's.
+
+```
+cmake -S . -B build-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS
+cmake --build build-ios --config Release -- -sdk iphonesimulator
+xcrun simctl install booted build-ios/Release/Vertigo.app
+```
+
+builds the app for the simulator and installs it there. For an iPad, open
+`build-ios/vertigo.xcodeproj` in Xcode and choose a team for signing, or pass
+`-DVERTIGO_DEVELOPMENT_TEAM=<team ID>` (and if needed
+`-DVERTIGO_BUNDLE_ID=<identifier>`) to the first command and build with
+`-sdk iphoneos -allowProvisioningUpdates`. Xcode's `vertigo` scheme runs the
+optimised RelWithDebInfo build: a Debug build manages only about 20 frames a
+second on an iPad Pro from 2018, against 120.
+
+The game data goes into Vertigo's folder in the Files app (On My iPad ›
+Vertigo), which the Finder also shows when the iPad is connected to a Mac.
+Copy a GOG installation of the game there, and Vertigo builds the game data
+from its CD image `game.gog` and the installed files, in the folder `Game Data`
+(580 MB, kept out of iCloud backups); then the installation can go. The game
+data itself (see below) works too, directly in Vertigo's folder or in a folder
+of its own. In the simulator, copy it into the app's container:
+
+```
+cp -R <GOG installation or game data> "$(xcrun simctl get_app_container booted com.vertigo.Vertigo data)/Documents/"
+```
+
+Test mode takes its options there too, e.g.
+`xcrun simctl launch booted com.vertigo.Vertigo s00101 --timeout 60`. The
+simulator renders OpenGL ES in software: the 3D cockpit is too slow there, and
+now and then a triangle close to the camera goes missing.
+
+Missions are played by touch, with a hardware keyboard or with a game
+controller (see below). On keyboards without Esc and function keys, Cmd+. is
+Esc and Cmd with the number row's 1 to 0, - and = is F1 to F12 (on
+every system; Ctrl on Windows and Linux); iPadOS can also make Caps Lock an
+Esc key (Settings › General › Keyboard › Hardware Keyboard › Modifier Keys).
+The on-screen keyboard comes up for a new game's name, which moves above it.
+
+When the app is interrupted (a call, Siri, the app switcher) or goes to the
+background, a mission pauses; P, or continuing from the mission menu, goes
+on. The game's sound
+mixes with other apps' audio, such as music, and is silent with the silent
+switch.
+
 ## Game data
 
 Vertigo needs the complete game data, including the movies. A GOG installation
@@ -41,15 +92,76 @@ only contains part of it; the rest is in the CD image (`game.gog`, a raw
 copied on top. The case of the file names doesn't matter, also on file systems
 that tell upper and lower case apart. Vertigo asks for the directory at the
 first start, and again whenever the remembered one lacks part of the data.
-`--data <directory>` uses another directory for one run, without remembering it.
+Given a GOG installation, or a directory with a CD image of the game (`.iso`,
+or `.bin` of a `MODE1/2352` track), it offers to build that directory itself,
+as `Game Data` next to the saved games. `--data <directory>` uses another
+directory for one run, without remembering it.
+
+## Game controllers
+
+Missions can be played with a game controller (Xbox, PlayStation, Switch Pro
+or MFi controllers, through SDL), on the desktop and on the iPad. The buttons
+are named after an Xbox controller's here. The left stick steers as far as it
+is pushed; as with the original's joystick, forward lowers the nose. The
+buttons stand for the keys in brackets, and LB held gives a second set:
+
+| Control | In a mission | With LB held |
+|---|---|---|
+| Left stick | steer | |
+| Right stick | look around in the 3D cockpit | |
+| RT | fire the gun (Space) | |
+| LT | fire a torpedo (Tab) | |
+| RB | lock the target in the reticle (L) | |
+| A | lock the nearest enemy (U) | autopilot (Alt+A) |
+| B | drop a buzzer (D) | engine on or off (the key left of 1) |
+| X | next torpedo (Enter) | debug overlay (Ctrl+D) |
+| Y | next nav point (N) | lock the nav point (Alt+N) |
+| D-pad up | 10 km/h faster, again and again while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
+| D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
+| D-pad left | stop (C) | |
+| D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
+| L3, R3 (press a stick) | full ahead, full astern while held (A, Z) | |
+| Start | mission menu (Esc) | pause (P) |
+| Back | turret menu (O) | 2D or 3D cockpit (Alt+V) |
+
+In the mission and turret menus the d-pad highlights an option, A takes it and
+B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a
+mission after its briefing, B or Start skips a movie, A confirms a new game's
+name. Menus and stations take the mouse, or touch on the iPad.
+
+## Touch controls
+
+On a touch screen (the iPad) missions show controls of their own over the
+cockpit: from the start when neither a keyboard nor a game controller is
+connected, otherwise once the screen is touched. A key or a controller's
+button hides them again.
+
+- A finger on the left part of the screen brings up a stick where it comes
+  down; it steers as far as it is pushed (up lowers the nose).
+- Under the right thumb: FIRE (held), TORP (fire a torpedo), LOCK (the
+  nearest enemy), NEXT (the next torpedo) and BUZZ (drop a buzzer); above
+  them + and - change the speed by 10 km/h (again and again while held), and
+  STOP stops.
+- In the corners: MENU (the mission menu, when the finger is lifted; held for
+  a second it shows or hides the debug overlay instead), NAV (the next nav
+  point), AUTO (autopilot), SONAR (on or off), TURR (turret menu) and VIEW
+  (2D or 3D cockpit).
+- A tap on an option of the mission and turret menus takes it.
+- In the 3D cockpit a finger dragged elsewhere turns the head.
 
 ## Saved games and settings
 
 Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
 `~/Library/Application Support/Vertigo/Vertigo` on macOS,
 `%LOCALAPPDATA%\Vertigo\Vertigo` on Windows and
-`~/.local/share/Vertigo/Vertigo` on Linux. The first start of a version with
-`settings.ini` takes over the settings of the versions before.
+`~/.local/share/Vertigo/Vertigo` on Linux, and in the app's own folder on the
+iPad.
+
+## Training
+
+The main menu's Training has the original's four training missions, each with
+its briefing and its own boat, outside the story. Afterwards the game goes back
+to the menu.
 
 ## Testing
 
@@ -63,8 +175,14 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   `--equip` installs items (`--list-items` lists them). Otherwise the
   chapter 1 boat is used.
 - `--overlay` shows the debug overlay with player state and a label for every
-  object (toggle with Ctrl+D, Cmd+D on macOS). Yellow labels are detected by
-  the sonar, green ones are enabled but not detected, red ones not enabled yet.
+  object (toggle with Ctrl+D, Cmd+D on macOS and the iPad, LB+X on a game
+  controller, or by holding MENU on the touch screen). Yellow labels are
+  detected by the sonar, green ones are enabled but not detected, red ones not
+  enabled yet. Its FPS line tells the frames per second of the last second,
+  the average and the longest time between frames, and the CPU time the game
+  took per frame (updating and drawing, without waiting for the screen or the
+  GPU), in milliseconds; not with `--fixed-step`. It ends in DEBUG BUILD for
+  an unoptimised build, which draws several times slower.
 - `--destroy 2064,2068` destroys these units (scenario ids, shown by the
   overlay) one second into the mission, to test objectives and conditions.
   The player's id destroys the player; for areas and nav points it counts as
@@ -80,6 +198,13 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
   Esc menu (here: restart the mission). `5=Space/0.1` holds a key for 0.1 s;
   keys like Space (fire) or the arrows need that to have an effect.
+- `--pad 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2` works a virtual game
+  controller at the given seconds: buttons by the names above (A, B, X, Y, LB,
+  RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or
+  the given seconds, several at once with `+` (pressed in that order); a
+  stick's axis (`LeftX`, `LeftY`, `RightX`, `RightY`, y down) at a value from
+  -1 to 1, for good or for the given seconds. Real controllers are ignored
+  then, and automated runs without `--pad` don't look for them.
 - `--fire 2050` lets units fire their guns; towers and tanks aim at the
   player.
 - `--near 2050` enables this unit and starts the player 40 m from it, looking
@@ -95,6 +220,11 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   by pixel this way, e.g. after changes to the renderer.
 - `--click 2=320,300` clicks at the given seconds at a point of the 640×480
   screen (the mouse moves there first).
+- `--touch 2=0.9,0.8/1` puts a finger on the touch screen at the given
+  seconds, at a point given as fractions of the window's width and height,
+  for 0.1 s or the given seconds; `--touch 3=0.2,0.7>0.2,0.6/2` moves it to a
+  second point within 0.1 s (e.g. the stick). Repeat the option for more
+  fingers at once.
 - Without a mission, `--timeout`, `--keys`, `--click` and `--screenshot`
   work in the main menu and the game it starts, in seconds since the start,
   e.g. `vertigo --click 1=320,240 --screenshot 3=menu.png --timeout 4`.
@@ -112,8 +242,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   s01805: timeout after 5.006 s, 43/51 units enabled, 2 radio messages
   ```
 
-In a mission, Esc opens the mission menu (continue, abort the game, restart
-the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
+In a mission, Esc opens the mission menu (continue, which also ends a pause,
+abort the game, restart the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
 skips the mission as if it had been accomplished, for debugging.
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
@@ -137,6 +267,8 @@ directory (or the folder set as `cockpit/directory`).
 - `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
   mission and saves the choice (setting `cockpit/mode`). Without a model for
   the boat's cockpit the 2D art is shown.
+- On the iPad the texture is halved to 4096x4096, which its screen doesn't
+  need more than; it loads in half the time and takes 0.5 GB less.
 - In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
   cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
   window. The instruments are projected onto the model's screens.

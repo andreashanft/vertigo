@@ -16,8 +16,8 @@
  ***************************************************************************/
 
 #include "json.hpp"
+#include "string.hpp"
 
-#include <charconv>
 #include <cmath>
 #include <limits>
 
@@ -261,11 +261,11 @@ private:
     bool number(Json &value)
     {
         const char *first = m_text.data() + m_position;
-        const std::from_chars_result result = std::from_chars(first, m_text.data() + m_text.size(), value.m_number);
-        if (result.ec != std::errc() || result.ptr == first)
+        const char *end = readDouble(first, m_text.data() + m_text.size(), value.m_number);
+        if (!end)
             return fail("an illegal number");
         value.m_type = Number;
-        m_position += std::size_t(result.ptr - first);
+        m_position += std::size_t(end - first);
         return true;
     }
 

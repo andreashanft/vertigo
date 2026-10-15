@@ -398,7 +398,7 @@ void Chapter::startMission()
 
     if (m_briefing)
         m_briefing->deleteLater();
-    m_briefing = new Briefing();
+    m_briefing = new Briefing(*m_mission, m_area->map(), m_HUD.get());
     m_briefing->eventInit() += [this]() { m_scenario = new fight::Scenario(m_mission->scenario()); };
     m_briefing->eventStart() += [this]() { startScenario(); };
     m_funcSetRenderer(m_briefing);

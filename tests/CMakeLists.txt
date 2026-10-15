@@ -1,5 +1,5 @@
-# Tests of the types the game has in place of Qt's: strings, data values and dates, images and
-# colours, the parsers of the text formats, and JSON
+# Tests of the game's own types: strings, data values and dates, images and colours, the parsers
+# of the text formats, JSON and CD images
 
 # util::String, txt::Value and util::DateTime
 add_executable(stringtest
@@ -40,6 +40,16 @@ add_test(NAME parse COMMAND parsetest)
 add_executable(jsontest
     jsontest.cpp
     ${PROJECT_SOURCE_DIR}/src/util/json.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/string.cpp
 )
 target_include_directories(jsontest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME json COMMAND jsontest)
+
+# util::CdImage
+add_executable(cdimagetest
+    cdimagetest.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/cdimage.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/path.cpp
+)
+target_include_directories(cdimagetest PRIVATE ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME cdimage COMMAND cdimagetest)

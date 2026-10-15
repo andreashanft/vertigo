@@ -45,7 +45,7 @@ Key parseKey(const String &text, int &modifiers)
     const String name = parts.isEmpty() ? String() : parts.last().trimmed();
     if (name.size() == 1) {
         const char c = name.toUpper()[0];
-        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == ' ' || c == '`')
+        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == ' ' || c == '`' || c == '-' || c == '=' || c == '.')
             return Key(c);
         return Key_None;
     }
@@ -65,6 +65,58 @@ Key parseKey(const String &text, int &modifiers)
         if (lower == entry.name)
             return entry.key;
     return Key_None;
+}
+
+
+KeyEvent alternative(const KeyEvent &event)
+{
+    if (!(event.modifiers() & ControlModifier) || (event.modifiers() & KeypadModifier))
+        return event;
+    const int modifiers = event.modifiers() & ~ControlModifier;
+    const Key key = event.key();
+    if (key == Key_Period)
+        return KeyEvent(Key_Escape, modifiers);
+    if (key >= Key_1 && key <= Key_9)
+        return KeyEvent(Key(Key_F1 + (key - Key_1)), modifiers);
+    if (key == Key_0)
+        return KeyEvent(Key_F10, modifiers);
+    if (key == Key_Minus)
+        return KeyEvent(Key_F11, modifiers);
+    if (key == Key_Equal)
+        return KeyEvent(Key_F12, modifiers);
+    return event;
+}
+
+
+Button parseButton(const String &text)
+{
+    static const struct { const char *name; Button button; } names[] = {
+        { "a", Button_South }, { "b", Button_East }, { "x", Button_West }, { "y", Button_North },
+        { "back", Button_Back }, { "start", Button_Start }, { "l3", Button_LeftStick }, { "r3", Button_RightStick },
+        { "lb", Button_LeftShoulder }, { "rb", Button_RightShoulder },
+        { "up", Button_Up }, { "down", Button_Down }, { "left", Button_Left }, { "right", Button_Right },
+        { "lt", Button_LeftTrigger }, { "rt", Button_RightTrigger },
+    };
+    const String lower = text.trimmed().toLower();
+    for (const auto &entry : names)
+        if (lower == entry.name)
+            return entry.button;
+    return Button_None;
+}
+
+
+KeyEvent menuKey(Button button)
+{
+    switch (button) {
+    case Button_South: return KeyEvent(Key_Return);
+    case Button_East:
+    case Button_Start: return KeyEvent(Key_Escape);
+    case Button_Up: return KeyEvent(Key_Up);
+    case Button_Down: return KeyEvent(Key_Down);
+    case Button_Left: return KeyEvent(Key_Left);
+    case Button_Right: return KeyEvent(Key_Right);
+    default: return KeyEvent();
+    }
 }
 
 

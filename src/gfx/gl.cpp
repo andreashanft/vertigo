@@ -21,12 +21,14 @@
 #include <cstring>
 #include <type_traits>
 
+#if !defined(SDL_PLATFORM_IOS)
 // (decltype of the declarations: the gl* names are the pointers by now)
 #define GFX_GL_DEFINE_1_1(name) decltype(gfx_##name) gfx_##name = nullptr;
 #define GFX_GL_DEFINE(name, type) decltype(gfx_##name) gfx_##name = nullptr;
 GFX_GL_FUNCTIONS_1_1(GFX_GL_DEFINE_1_1)
 GFX_GL_FUNCTIONS(GFX_GL_DEFINE)
 GFX_GL_OPTIONAL_FUNCTIONS(GFX_GL_DEFINE)
+#endif
 
 namespace gfx::gl {
 
@@ -41,6 +43,7 @@ bool s_es = false;
 bool load(std::string *missing)
 {
     bool ok = true;
+#if !defined(SDL_PLATFORM_IOS)
     auto fetch = [&](auto &pointer, const char *name, bool required) {
         pointer = reinterpret_cast<std::remove_reference_t<decltype(pointer)>>(SDL_GL_GetProcAddress(name));
         if (!pointer && required && ok) {
@@ -55,6 +58,9 @@ bool load(std::string *missing)
     GFX_GL_FUNCTIONS_1_1(GFX_GL_FETCH_1_1)
     GFX_GL_FUNCTIONS(GFX_GL_FETCH)
     GFX_GL_OPTIONAL_FUNCTIONS(GFX_GL_FETCH_OPTIONAL)
+#else
+    (void)missing;
+#endif
     if (ok) {
         const char *version = reinterpret_cast<const char *>(glGetString(GL_VERSION));
         s_es = version && std::strncmp(version, "OpenGL ES", 9) == 0;

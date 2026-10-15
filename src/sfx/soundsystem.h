@@ -64,6 +64,11 @@ public:
     // where positional sounds are heard from: position, forward and up
     void setListener(float x, float y, float z, float fx, float fy, float fz, float ux, float uy, float uz);
 
+    // OpenAL rests while the app is in the background (on the iPad) or the system interrupts
+    // the sound (a call, Siri, an alarm), and goes on when neither is the case any more
+    enum Interruption { Background = 1, AudioSession = 2 };
+    void interrupt(Interruption reason, bool interrupted);
+
 public:
     static SoundSystem *get() { assert(m_singleton); return m_singleton; }
 
@@ -76,6 +81,7 @@ private:
     static SoundSystem *m_singleton;
     SoundSystemPrivate *d;
     bool m_silent;
+    int m_interruptions = 0;
     std::map<StandardSound, Sound*> m_standardSounds;
     std::map<std::uint32_t, Sound*> m_sources;
 };

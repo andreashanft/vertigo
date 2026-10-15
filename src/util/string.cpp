@@ -17,10 +17,16 @@
 
 #include "string.hpp"
 #include <algorithm>
+#include <cerrno>
 #include <charconv>
+#include <clocale>
 #include <cmath>
 #include <cstring>
 #include <ostream>
+#include <type_traits>
+#if defined(__APPLE__)
+#include <xlocale.h>
+#endif
 
 namespace util {
 
@@ -46,8 +52,14 @@ bool parseNumber(const String &text, T &value)
         last--;
     if (last - first > 1 && first[0] == '+' && first[1] != '-')
         first++;
-    const std::from_chars_result result = std::from_chars(first, last, value);
-    return first < last && result.ec == std::errc() && result.ptr == last;
+    const char *end = nullptr;
+    if constexpr (std::is_floating_point<T>::value) {
+        end = readDouble(first, last, value);
+    } else {
+        const std::from_chars_result result = std::from_chars(first, last, value);
+        end = result.ec == std::errc() ? result.ptr : nullptr;
+    }
+    return first < last && end == last;
 }
 
 
@@ -576,6 +588,33 @@ String String::multiArg(std::initializer_list<const String *> args) const
     }
     result.m_data.append(m_data, size_t(position), std::string::npos);
     return result;
+}
+
+
+const char *readDouble(const char *first, const char *last, double &value)
+{
+    // as std::from_chars: no whitespace or '+' first, and of "0x…" only the 0 (strtod() would
+    // read hexadecimal numbers); strtod() needs the end marked
+    std::string text(first, last);
+    if (text.empty() || isSpace(text[0]) || text[0] == '+')
+        return nullptr;
+    const std::size_t digits = text[0] == '-' ? 1 : 0;
+    if (text.compare(digits, 2, "0x") == 0 || text.compare(digits, 2, "0X") == 0)
+        text.resize(digits + 1);
+    char *end = nullptr;
+    errno = 0;
+#if defined(_WIN32)
+    static const _locale_t c = _create_locale(LC_NUMERIC, "C");
+    value = _strtod_l(text.c_str(), &end, c);
+#else
+    static const locale_t c = newlocale(LC_NUMERIC_MASK, "C", locale_t(0));
+    value = strtod_l(text.c_str(), &end, c);
+#endif
+    // (too large, or too small for even the smallest double; strtod() also flags those smaller
+    // than normal ones)
+    if (end == text.c_str() || (errno == ERANGE && (value == 0 || std::isinf(value))))
+        return nullptr;
+    return first + (end - text.c_str());
 }
 
 

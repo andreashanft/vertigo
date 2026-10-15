@@ -25,6 +25,8 @@
 #include "util/settings.hpp"
 
 #include <SDL3/SDL.h>
+#include <glm/geometric.hpp>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -33,9 +35,15 @@ namespace game {
 namespace {
 
 // SDL's keys as ours: by the character the layout gives them, the number pad's digits as
-// digits (with KeypadModifier)
-input::Key key(SDL_Keycode code, int &modifiers)
+// digits (with KeypadModifier); minus, equal and period by their place
+input::Key key(SDL_Keycode code, SDL_Scancode place, int &modifiers)
 {
+    switch (place) {
+    case SDL_SCANCODE_MINUS: return input::Key_Minus;
+    case SDL_SCANCODE_EQUALS: return input::Key_Equal;
+    case SDL_SCANCODE_PERIOD: return input::Key_Period;
+    default: break;
+    }
     if (code >= SDLK_0 && code <= SDLK_9)
         return input::Key(input::Key_0 + int(code - SDLK_0));
     if (code >= SDLK_A && code <= SDLK_Z)
@@ -97,6 +105,35 @@ input::MouseButton button(Uint8 button)
     }
 }
 
+
+// SDL's gamepad buttons as ours (the Guide button, the paddles and the touchpad aren't used)
+input::Button padButton(Uint8 button)
+{
+    switch (button) {
+    case SDL_GAMEPAD_BUTTON_SOUTH: return input::Button_South;
+    case SDL_GAMEPAD_BUTTON_EAST: return input::Button_East;
+    case SDL_GAMEPAD_BUTTON_WEST: return input::Button_West;
+    case SDL_GAMEPAD_BUTTON_NORTH: return input::Button_North;
+    case SDL_GAMEPAD_BUTTON_BACK: return input::Button_Back;
+    case SDL_GAMEPAD_BUTTON_START: return input::Button_Start;
+    case SDL_GAMEPAD_BUTTON_LEFT_STICK: return input::Button_LeftStick;
+    case SDL_GAMEPAD_BUTTON_RIGHT_STICK: return input::Button_RightStick;
+    case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: return input::Button_LeftShoulder;
+    case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: return input::Button_RightShoulder;
+    case SDL_GAMEPAD_BUTTON_DPAD_UP: return input::Button_Up;
+    case SDL_GAMEPAD_BUTTON_DPAD_DOWN: return input::Button_Down;
+    case SDL_GAMEPAD_BUTTON_DPAD_LEFT: return input::Button_Left;
+    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: return input::Button_Right;
+    default: return input::Button_None;
+    }
+}
+
+// a stick counts from this part of its way on (worn sticks don't quite come back to the middle);
+// a trigger is pressed when pulled this far and released when let go to the second
+const float StickDeadZone = 0.2f;
+const float TriggerPress = 0.5f;
+const float TriggerRelease = 0.3f;
+
 } // namespace
 
 
@@ -117,9 +154,17 @@ Window::Window(bool focusable)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 #endif
+#if defined(SDL_PLATFORM_IOS)
+    // the screen, in landscape either way round
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+#endif
     SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN;
     if (!focusable)
         flags |= SDL_WINDOW_NOT_FOCUSABLE;
+#if defined(SDL_PLATFORM_IOS)
+    // (without the status bar)
+    flags |= SDL_WINDOW_FULLSCREEN;
+#endif
     m_window = SDL_CreateWindow("Vertigo", 1280, 960, flags);
     if (!m_window)
         util::fatal((std::string("Cannot create the window: ") + SDL_GetError()).c_str());
@@ -139,7 +184,10 @@ Window::Window(bool focusable)
     }
     if (m_cursor)
         SDL_SetCursor(m_cursor);
+#if !defined(SDL_PLATFORM_IOS)
+    // (on iOS the window is the screen)
     loadSettings();
+#endif
 }
 
 Window::~Window()
@@ -162,7 +210,9 @@ void Window::close()
 {
     if (m_closed)
         return;
+#if !defined(SDL_PLATFORM_IOS)
     saveSettings();
+#endif
     m_closed = true;
     SDL_HideWindow(m_window);
 }
@@ -198,12 +248,16 @@ void Window::setRenderer(Renderer *renderer)
     if (m_renderer) {
         m_renderer->setWindow(this);
         m_renderer->activate();
+        // a stick held through the change
+        for (int stick = input::LeftStick; stick <= input::RightStick; stick++)
+            if (m_sticks[stick] != Vector2D(0))
+                m_renderer->stickEvent(input::Stick(stick), m_sticks[stick]);
     }
 }
 
 void Window::render()
 {
-    if (!isVisible())
+    if (!isVisible() || m_background)
         return;
 
     int viewportWidth = 0, viewportHeight = 0;
@@ -225,10 +279,16 @@ void Window::render()
         }
         const bool textInput = m_renderer->wantsTextInput();
         if (textInput != SDL_TextInputActive(m_window)) {
-            if (textInput)
+            if (textInput) {
+                const Rect area = m_renderer->textInputArea();
+                const PointD topLeft = m_renderer->imageToScreen(PointD(area.x, area.y));
+                const PointD bottomRight = m_renderer->imageToScreen(PointD(area.x + area.width, area.y + area.height));
+                const SDL_Rect rect = { int(topLeft.x), int(topLeft.y), int(bottomRight.x - topLeft.x), int(bottomRight.y - topLeft.y) };
+                SDL_SetTextInputArea(m_window, &rect, 0);
                 SDL_StartTextInput(m_window);
-            else
+            } else {
                 SDL_StopTextInput(m_window);
+            }
         }
 
         m_renderer->setRect(Rect(0, 0, width(), height()));
@@ -252,7 +312,7 @@ void Window::render()
 
 void Window::swapBuffers()
 {
-    if (isVisible())
+    if (isVisible() && !m_background)
         SDL_GL_SwapWindow(m_window);
 }
 
@@ -268,6 +328,19 @@ void Window::handle(const SDL_Event &event)
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
         close();
         break;
+    // on the iPad: interrupted (a call, Siri, the app switcher), a mission pauses; in the
+    // background nothing draws until the app comes back
+    case SDL_EVENT_WILL_ENTER_BACKGROUND:
+        if (m_renderer)
+            m_renderer->pause();
+        break;
+    case SDL_EVENT_DID_ENTER_BACKGROUND:
+        glFinish();
+        m_background = true;
+        break;
+    case SDL_EVENT_WILL_ENTER_FOREGROUND:
+        m_background = false;
+        break;
     case SDL_EVENT_WINDOW_MOVED:
     case SDL_EVENT_WINDOW_RESIZED:
         if (!(SDL_GetWindowFlags(m_window) & SDL_WINDOW_FULLSCREEN)) {
@@ -278,10 +351,10 @@ void Window::handle(const SDL_Event &event)
     case SDL_EVENT_KEY_DOWN:
     case SDL_EVENT_KEY_UP: {
         int mods = modifiers(event.key.mod);
-        const input::Key k = key(event.key.key, mods);
+        const input::Key k = key(event.key.key, event.key.scancode, mods);
         if (k == input::Key_None)
             break;
-        input::KeyEvent keyEvent(k, mods);
+        input::KeyEvent keyEvent = input::alternative(input::KeyEvent(k, mods));
         if (event.type == SDL_EVENT_KEY_DOWN)
             keyPressEvent(&keyEvent);
         else if (m_renderer)
@@ -301,7 +374,7 @@ void Window::handle(const SDL_Event &event)
             m_buttons |= b;
         else
             m_buttons &= ~b;
-        input::MouseEvent mouse(PointD(event.button.x, event.button.y), b, m_buttons);
+        input::MouseEvent mouse(PointD(event.button.x, event.button.y), b, m_buttons, event.button.which == SDL_TOUCH_MOUSEID);
         if (m_renderer) {
             if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
                 m_renderer->mousePressEvent(&mouse);
@@ -310,8 +383,39 @@ void Window::handle(const SDL_Event &event)
         }
         break;
     }
+    // game controllers: all of them at once, each from when it is connected
+    case SDL_EVENT_GAMEPAD_ADDED:
+        if (!m_onlyGamepad || event.gdevice.which == m_onlyGamepad)
+            SDL_OpenGamepad(event.gdevice.which);
+        break;
+    case SDL_EVENT_GAMEPAD_REMOVED:
+        if (SDL_Gamepad *gamepad = SDL_GetGamepadFromID(event.gdevice.which)) {
+            SDL_CloseGamepad(gamepad);
+            releaseGamepad();
+        }
+        break;
+    case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+    case SDL_EVENT_GAMEPAD_BUTTON_UP:
+        if (!m_onlyGamepad || event.gbutton.which == m_onlyGamepad)
+            buttonEvent(padButton(event.gbutton.button), event.gbutton.down);
+        break;
+    case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+        if ((!m_onlyGamepad || event.gaxis.which == m_onlyGamepad) && event.gaxis.axis < SDL_GAMEPAD_AXIS_COUNT)
+            axisEvent(event.gaxis.axis, std::max(event.gaxis.value/32767.0f, -1.0f));
+        break;
+    // a touch screen's fingers (macOS also reports a trackpad's, which only move the mouse)
+    case SDL_EVENT_FINGER_DOWN:
+    case SDL_EVENT_FINGER_MOTION:
+    case SDL_EVENT_FINGER_UP:
+    case SDL_EVENT_FINGER_CANCELED:
+        if (SDL_GetTouchDeviceType(event.tfinger.touchID) == SDL_TOUCH_DEVICE_DIRECT) {
+            input::TouchEvent touch((long long)event.tfinger.fingerID, PointD(event.tfinger.x*width(), event.tfinger.y*height()));
+            touchEvent(event.type == SDL_EVENT_FINGER_DOWN ? EventType::TouchPress :
+                       event.type == SDL_EVENT_FINGER_MOTION ? EventType::TouchMove : EventType::TouchRelease, &touch);
+        }
+        break;
     case SDL_EVENT_MOUSE_MOTION: {
-        input::MouseEvent mouse(PointD(event.motion.x, event.motion.y), input::NoButton, m_buttons);
+        input::MouseEvent mouse(PointD(event.motion.x, event.motion.y), input::NoButton, m_buttons, event.motion.which == SDL_TOUCH_MOUSEID);
         if (m_renderer)
             m_renderer->mouseMoveEvent(&mouse);
         break;
@@ -321,14 +425,77 @@ void Window::handle(const SDL_Event &event)
     }
 }
 
+void Window::buttonEvent(input::Button button, bool pressed)
+{
+    if (button == input::Button_None || m_padButtons[button] == pressed)
+        return;
+    m_padButtons[button] = pressed;
+    if (!m_renderer)
+        return;
+    if (pressed)
+        m_renderer->buttonPressEvent(button);
+    else
+        m_renderer->buttonReleaseEvent(button);
+}
+
+void Window::axisEvent(int axis, float value)
+{
+    m_axes[axis] = value;
+    if (axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER || axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+        const input::Button trigger = axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER ? input::Button_LeftTrigger : input::Button_RightTrigger;
+        if (value >= TriggerPress)
+            buttonEvent(trigger, true);
+        else if (value <= TriggerRelease)
+            buttonEvent(trigger, false);
+        return;
+    }
+    // the dead zone is round, and beyond it the stick goes from 0 to 1 (also on the diagonals of
+    // sticks that reach further there)
+    const int stick = axis < SDL_GAMEPAD_AXIS_RIGHTX ? input::LeftStick : input::RightStick;
+    Vector2D position(m_axes[2*stick], m_axes[2*stick + 1]);
+    const float length = glm::length(position);
+    position = length <= StickDeadZone ? Vector2D(0) : position*((std::min(length, 1.0f) - StickDeadZone)/(1 - StickDeadZone)/length);
+    if (position == m_sticks[stick])
+        return;
+    m_sticks[stick] = position;
+    if (m_renderer)
+        m_renderer->stickEvent(input::Stick(stick), position);
+}
+
+// a controller is gone: nothing of it is held any more
+void Window::releaseGamepad()
+{
+    for (int button = 0; button < input::ButtonCount; button++)
+        buttonEvent(input::Button(button), false);
+    for (int axis = 0; axis < SDL_GAMEPAD_AXIS_COUNT; axis++)
+        axisEvent(axis, 0);
+}
+
+void Window::touchEvent(EventType type, input::TouchEvent *event)
+{
+    if (!m_renderer)
+        return;
+    if (type == EventType::TouchPress)
+        m_renderer->touchPressEvent(event);
+    else if (type == EventType::TouchMove)
+        m_renderer->touchMoveEvent(event);
+    else
+        m_renderer->touchReleaseEvent(event);
+}
+
 void Window::post(EventType type, const input::KeyEvent &event)
 {
-    m_posted.push_back({ type, event, input::MouseEvent() });
+    m_posted.push_back({ type, event, input::MouseEvent(), input::TouchEvent() });
 }
 
 void Window::post(EventType type, const input::MouseEvent &event)
 {
-    m_posted.push_back({ type, input::KeyEvent(), event });
+    m_posted.push_back({ type, input::KeyEvent(), event, input::TouchEvent() });
+}
+
+void Window::post(EventType type, const input::TouchEvent &event)
+{
+    m_posted.push_back({ type, input::KeyEvent(), input::MouseEvent(), event });
 }
 
 void Window::deliverPosted()
@@ -338,9 +505,11 @@ void Window::deliverPosted()
         m_posted.pop_front();
         switch (posted.type) {
         case EventType::KeyPress:
+            posted.key = input::alternative(posted.key);
             keyPressEvent(&posted.key);
             break;
         case EventType::KeyRelease:
+            posted.key = input::alternative(posted.key);
             if (m_renderer)
                 m_renderer->keyReleaseEvent(&posted.key);
             break;
@@ -355,6 +524,11 @@ void Window::deliverPosted()
         case EventType::MouseMove:
             if (m_renderer)
                 m_renderer->mouseMoveEvent(&posted.mouse);
+            break;
+        case EventType::TouchPress:
+        case EventType::TouchMove:
+        case EventType::TouchRelease:
+            touchEvent(posted.type, &posted.touch);
             break;
         }
     }

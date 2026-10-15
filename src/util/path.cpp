@@ -106,15 +106,31 @@ bool makeDirectory(const std::string &path)
 }
 
 
-std::vector<std::string> files(const std::string &directory)
+namespace {
+
+std::vector<std::string> entries(const std::string &directory, bool directories)
 {
     std::vector<std::string> names;
     std::error_code error;
     for (std::filesystem::directory_iterator it(toPath(directory), error), end; !error && it != end; it.increment(error))
-        if (it->is_regular_file(error))
+        if (directories ? it->is_directory(error) : it->is_regular_file(error))
             names.push_back(fromPath(it->path().filename()));
     std::sort(names.begin(), names.end());
     return names;
+}
+
+} // namespace
+
+
+std::vector<std::string> files(const std::string &directory)
+{
+    return entries(directory, false);
+}
+
+
+std::vector<std::string> directories(const std::string &directory)
+{
+    return entries(directory, true);
 }
 
 

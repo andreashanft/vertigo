@@ -35,9 +35,48 @@
 #include "util/path.hpp"
 
 #include "util/timer.hpp"
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_init.h>
 #include <iostream>
 
 namespace game {
+
+namespace {
+
+// --pad: a button of the virtual game controller (the triggers are axes, at their minimum when
+// let go)
+void setPadButton(SDL_Joystick *pad, input::Button button, bool down)
+{
+    if (button == input::Button_LeftTrigger || button == input::Button_RightTrigger) {
+        SDL_SetJoystickVirtualAxis(pad, button == input::Button_LeftTrigger ? SDL_GAMEPAD_AXIS_LEFT_TRIGGER : SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,
+                                   down ? SDL_JOYSTICK_AXIS_MAX : SDL_JOYSTICK_AXIS_MIN);
+        SDL_UpdateJoysticks();
+        return;
+    }
+    static const SDL_GamepadButton buttons[] = {
+        SDL_GAMEPAD_BUTTON_SOUTH, SDL_GAMEPAD_BUTTON_EAST, SDL_GAMEPAD_BUTTON_WEST, SDL_GAMEPAD_BUTTON_NORTH,
+        SDL_GAMEPAD_BUTTON_BACK, SDL_GAMEPAD_BUTTON_START, SDL_GAMEPAD_BUTTON_LEFT_STICK, SDL_GAMEPAD_BUTTON_RIGHT_STICK,
+        SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
+        SDL_GAMEPAD_BUTTON_DPAD_UP, SDL_GAMEPAD_BUTTON_DPAD_DOWN, SDL_GAMEPAD_BUTTON_DPAD_LEFT, SDL_GAMEPAD_BUTTON_DPAD_RIGHT,
+    };
+    SDL_SetJoystickVirtualButton(pad, buttons[button], down);
+    // its event now, so the buttons of LB+A come in this order and not in SDL's
+    SDL_UpdateJoysticks();
+}
+
+// a mission of test mode by its scenario file's name (s00101, in any case); an error message if
+// there is none
+bool knownScenario(const String &name)
+{
+    if (util::exists(util::DataPath::resolve(String("vfx:scenario/%1.des").arg(name))))
+        return true;
+    std::cerr << "Unknown mission " << name << " (a scenario file of vfx/scenario, e.g. s00101)" << std::endl;
+    return false;
+}
+
+} // namespace
 
 Vertigo::Vertigo(const Options &options) :
     m_options(options),
@@ -48,6 +87,7 @@ Vertigo::Vertigo(const Options &options) :
     m_mainMenu(
        [this](String name) { startGame(name); },
        [this](String name) { loadGame(name); },
+       [this](int index) { startTraining(index); },
        [this]() { m_window.close(); }
     )
 {
@@ -59,6 +99,11 @@ Vertigo::~Vertigo()
     m_window.setRenderer(nullptr);
     m_scenario.reset();
     m_hud.reset();
+    if (m_virtualPad) {
+        const SDL_JoystickID id = SDL_GetJoystickID(m_virtualPad);
+        SDL_CloseJoystick(m_virtualPad);
+        SDL_DetachVirtualJoystick(id);
+    }
 }
 
 int Vertigo::start()
@@ -73,6 +118,8 @@ int Vertigo::start()
     if (m_options.scenario.isEmpty()) {
         m_window.setRenderer(&m_mainMenu);
     } else {
+        if (!knownScenario(m_options.scenario))
+            return ExitUsage;
         txt::DesFile desfile("dat:story/ch1.des");
         m_boat.reset(new game::Boat(desfile));
         if (m_options.boat != 0) {
@@ -116,6 +163,29 @@ int Vertigo::start()
     }
     m_keys = m_options.keys;
     m_clicks = m_options.clicks;
+    m_pad = m_options.pad;
+    m_touch = m_options.touch;
+    for (size_t i = 0; i < m_touch.size(); i++)
+        m_touch[i].id = (long long)i + 1;
+    if (!m_pad.empty()) {
+        // a virtual game controller, the only one that counts, whose input also comes without the
+        // focus (as automated runs don't take it)
+        SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+        SDL_VirtualJoystickDesc desc;
+        SDL_INIT_INTERFACE(&desc);
+        desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+        desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+        desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+        desc.name = "Vertigo --pad";
+        const SDL_JoystickID id = SDL_InitSubSystem(SDL_INIT_GAMEPAD) ? SDL_AttachVirtualJoystick(&desc) : 0;
+        m_virtualPad = id ? SDL_OpenJoystick(id) : nullptr;
+        if (m_virtualPad) {
+            m_window.setOnlyGamepad(id);
+        } else {
+            std::cerr << "--pad: no virtual game controller: " << SDL_GetError() << std::endl;
+            m_pad.clear();
+        }
+    }
     m_timer.start();
     // test times are mission seconds: simulated without a window, real time with one, unless the
     // mission advances by a fixed step per frame
@@ -180,6 +250,9 @@ float Vertigo::elapsed() const
 void Vertigo::event(const SDL_Event &event)
 {
     m_window.handle(event);
+    // the sound rests in the background (on the iPad)
+    if (event.type == SDL_EVENT_DID_ENTER_BACKGROUND || event.type == SDL_EVENT_WILL_ENTER_FOREGROUND)
+        m_soundSystem.interrupt(sfx::SoundSystem::Background, event.type == SDL_EVENT_DID_ENTER_BACKGROUND);
 }
 
 int Vertigo::iterate()
@@ -256,6 +329,54 @@ void Vertigo::testFrame()
         } else {
             it->time += it->hold;
             it->hold = -1;
+            ++it;
+        }
+    }
+    // the fingers, each with its own id, as the platform's would come
+    for (size_t i = 0; i < m_touch.size(); ) {
+        Options::Touch &touch = m_touch[i];
+        if (elapsed() < touch.time) {
+            i++;
+            continue;
+        }
+        const long long id = touch.id;
+        const PointD size(m_window.width(), m_window.height());
+        if (!touch.down) {
+            touch.down = true;
+            touch.start = touch.time;
+            m_window.post(Window::EventType::TouchPress, input::TouchEvent(id, touch.from*size));
+        }
+        const float moved = std::min((elapsed() - touch.start)/0.1f, 1.0f);
+        if (touch.to != touch.from)
+            m_window.post(Window::EventType::TouchMove, input::TouchEvent(id, (touch.from + (touch.to - touch.from)*double(moved))*size));
+        if (elapsed() >= touch.start + touch.hold) {
+            m_window.post(Window::EventType::TouchRelease, input::TouchEvent(id, touch.to*size));
+            m_touch.erase(m_touch.begin() + i);
+            continue;
+        }
+        i++;
+    }
+    // the virtual controller's input reaches the game with SDL's next events, before the next frame
+    for (auto it = m_pad.begin(); it != m_pad.end(); ) {
+        if (elapsed() < it->time) {
+            ++it;
+            continue;
+        }
+        const bool down = !it->down;
+        if (it->axis >= 0)
+            SDL_SetJoystickVirtualAxis(m_virtualPad, it->axis, Sint16(down ? it->value*SDL_JOYSTICK_AXIS_MAX : 0));
+        else if (down)
+            for (const input::Button button : it->buttons)
+                setPadButton(m_virtualPad, button, true);
+        else
+            for (auto button = it->buttons.rbegin(); button != it->buttons.rend(); ++button)
+                setPadButton(m_virtualPad, *button, false);
+        const float hold = it->hold >= 0 ? it->hold : it->axis >= 0 ? -1 : 0.1f;
+        if (!down || hold < 0) {
+            it = m_pad.erase(it);
+        } else {
+            it->time += hold;
+            it->down = true;
             ++it;
         }
     }
@@ -354,6 +475,9 @@ int Vertigo::check(const StringList &names)
                 scenarios << name.left(name.lastIndexOf('.')).toLower();
         }
     }
+    for (const String &name : scenarios)
+        if (!knownScenario(name))
+            return ExitUsage;
 
     std::ostream &out = std::cout;
     std::map<String, int> totals;
@@ -423,6 +547,20 @@ void Vertigo::endGame()
 {
     m_chapter.release()->deleteLater();
     m_window.setRenderer(&m_mainMenu);
+}
+
+void Vertigo::startTraining(int index)
+{
+    m_training.reset(new Training(index,
+        [this](Renderer *renderer) { m_window.setRenderer(renderer); },
+        [this]() { endTraining(); }
+    ));
+}
+
+void Vertigo::endTraining()
+{
+    m_window.setRenderer(&m_mainMenu);
+    m_training.release()->deleteLater();
 }
 
 void Vertigo::introFinished()

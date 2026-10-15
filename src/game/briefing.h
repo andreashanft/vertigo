@@ -27,16 +27,26 @@
 #include "util/timer.hpp"
 
 
+namespace hud { class HUD; }
+
+
 namespace game {
 
 
+class Mission;
+
+
+// A mission's briefing over the dimmed cockpit: its text, targets and hints line by line, the
+// area map with the mission's place, then a key starts it
 class Briefing : public Renderer
 {
 private:
     enum State { Init, Text, Targets, Hints, Arrow, PressKey };
 
 public:
-    Briefing();
+    // map: the area's map ("ar23", gfx/pic/area/ar23.r16); the mission and the HUD outlive the
+    // briefing
+    Briefing(const Mission &mission, const String &map, hud::HUD *hud);
 
 public:
     util::event<>& eventInit() { return m_eventInit; }
@@ -48,8 +58,11 @@ private:
     void setRect(const Rect &rect);
     void draw();
     void keyPressEvent(input::KeyEvent *);
+    void mousePressEvent(input::MouseEvent *);
 
 private:
+    const Mission &m_mission;
+    hud::HUD *m_hud;
     gfx::Font m_font;
     sfx::Sound m_backgroundSound;
     sfx::Sound m_openSound;

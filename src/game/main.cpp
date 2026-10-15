@@ -15,9 +15,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
+#include "gamedata.h"
 #include "vertigo.h"
 
-#include "txt/stringtable.h"
 #include "util/commandline.hpp"
 #include "util/datapath.h"
 #include "util/path.hpp"
@@ -100,21 +100,18 @@ std::unique_ptr<game::Vertigo> g_vertigo;
 int g_exitCode = game::Vertigo::ExitSuccess;
 
 
-// The first of these the data directory lacks, empty if it has them all: files the game reads
-// at the start, from both the installed part of the game data and the CD's (a GOG installation
-// lacks the latter)
-std::string missingGameData()
+// a folder for game data built in the directory: "Game Data", or "Game Data 2" and so on if that
+// is taken
+std::string importTarget(const std::string &directory)
 {
-    static const char *const files[] = { "txt:deeptext.des", "txt:fightext.des", "dat:story/ch1.des", "vfx:scenario",
-                                         "gfx:pal/gui/cursor.pal", "gfx:img/desktop/gui/cur_norm.img", "gfx:mvi/film/d02.mvi",
-                                         "gfx:pic/title/title.pcx", "sfx:snd/bground/b02.pcl" };
-    for (const char *file : files)
-        if (!util::exists(util::DataPath::resolve(file)))
-            return std::string(file).replace(3, 1, "/");
-    return std::string();
+    std::string target = util::joinPath(directory, "Game Data");
+    for (int i = 2; util::exists(target); i++)
+        target = util::joinPath(directory, "Game Data " + std::to_string(i));
+    return target;
 }
 
 
+#if !defined(SDL_PLATFORM_IOS)
 // SDL's folder dialog, waited for; empty if the player cancels it
 std::string chooseDirectory(const std::string &start)
 {
@@ -154,6 +151,93 @@ bool chooseAgain(const std::string &directory, const std::string &missing)
 }
 
 
+// offers to build the game data from the directory's CD image: 0 to quit, 1 to choose another
+// folder, 2 to import
+int offerImport(const std::string &directory, const std::string &image, const std::string &target)
+{
+    const std::string message = directory + " has a CD image of the game (" + util::fileName(image) + "), but not the "
+        "complete game data.\n\nVertigo can copy the game data from the CD image, with the installed files next to it "
+        "on top, into " + target + ".";
+    const SDL_MessageBoxButtonData buttons[] = {
+        { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Quit" },
+        { 0, 1, "Choose Another Folder" },
+        { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 2, "Import" },
+    };
+    const SDL_MessageBoxData data = { SDL_MESSAGEBOX_INFORMATION, nullptr, "Import the game data?", message.c_str(), 3, buttons, nullptr };
+    int button = 0;
+    return SDL_ShowMessageBox(&data, &button) ? button : 0;
+}
+#else
+// a message box with one button, waited for
+void tell(SDL_MessageBoxFlags flags, const char *title, const std::string &message, const char *button)
+{
+    const SDL_MessageBoxButtonData buttons[] = { { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, button } };
+    const SDL_MessageBoxData data = { flags, nullptr, title, message.c_str(), 1, buttons, nullptr };
+    int choice = 0;
+    SDL_ShowMessageBox(&data, &choice);
+}
+
+
+// The game data in the app's Documents folder, which the Files app shows as On My iPad › Vertigo:
+// right there or in a folder in it, or else built from a GOG installation or CD image in one of
+// them (into "Game Data"). Asked for until it is there, as iPad apps don't quit.
+void findGameData()
+{
+    const char *folder = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+    const std::string documents = util::DataPath::cleanPath(folder ? folder : ".");
+    for (;;) {
+        std::vector<std::string> directories = { documents };
+        for (const std::string &name : util::directories(documents))
+            if (name[0] != '.')
+                directories.push_back(util::joinPath(documents, name));
+        const auto where = [&](const std::string &directory) {
+            return directory == documents ? std::string("The Vertigo folder") : "\u201c" + util::fileName(directory) + "\u201d";
+        };
+
+        std::string incomplete;
+        for (const std::string &directory : directories) {
+            util::DataPath::set(directory);
+            const std::string missing = game::GameData::missing();
+            if (missing.empty())
+                return;
+            if (incomplete.empty() && util::exists(util::DataPath::resolve("gfx:")))
+                incomplete = where(directory) + " lacks " + missing + ".\n\n";
+        }
+
+        std::string image;
+        for (const std::string &directory : directories) {
+            image = game::GameData::findImage(directory);
+            if (image.empty())
+                continue;
+            const std::string target = importTarget(documents);
+            tell(SDL_MESSAGEBOX_INFORMATION, "Import the game data", where(directory) + " has a CD image of the game (" +
+                 util::fileName(image) + "). Vertigo copies the game data from it, with the installed files next to it on "
+                 "top, into the folder \u201c" + util::fileName(target) + "\u201d, which takes a moment. Afterwards Vertigo "
+                 "no longer needs the CD image and the installation.", "Import");
+            std::string error;
+            if (!game::GameData::import(image, target, error))
+                tell(SDL_MESSAGEBOX_ERROR, "Import failed", error, "OK");
+            break;
+        }
+        if (image.empty()) {
+            // the Files app only shows the folder with something in it
+            if (directories.size() == 1 && util::files(documents).empty()) {
+                util::writeFile(util::joinPath(documents, "Copy the game data here.txt"),
+                    "Vertigo needs the game data of Archimedean Dynasty or Schleichfahrt. Copy into this folder either\n\n"
+                    "- a GOG installation of the game, with its CD image game.gog: Vertigo builds the game data from it, "
+                    "in the folder \"Game Data\"; or\n"
+                    "- DAT, GFX, SFX, TXT and VFX from the CD's SF directory, with the installed files on top.\n");
+            }
+            tell(SDL_MESSAGEBOX_WARNING, "Game data missing", incomplete + "Vertigo needs the game data of Archimedean Dynasty "
+                 "or Schleichfahrt. In the Files app, copy into On My iPad \u203a Vertigo a GOG installation of the game (with "
+                 "game.gog), or DAT, GFX, SFX, TXT and VFX from the CD's SF directory with the installed files on top.",
+                 "Check Again");
+        }
+    }
+}
+#endif
+
+
 // ends before the first frame with this exit code
 SDL_AppResult end(int code)
 {
@@ -178,6 +262,8 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     parser.addOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
     parser.addOption("keys", "Press keys at the given seconds (test mode, or since the start), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
+    parser.addOption("pad", "Work a virtual game controller at the given seconds (test mode, or since the start): buttons by an Xbox controller's names (A, B, X, Y, LB, RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or the given seconds, together with +; sticks as LeftX, LeftY, RightX or RightY with a value from -1 to 1 (y down), held for good or the given seconds, e.g. 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2.", "time=control[/seconds]");
+    parser.addOption("touch", "Touch the screen at the given seconds (test mode, or since the start) at a point given as fractions of the window's width and height, for 0.1 s or the given seconds; with a second point the finger moves there in 0.1 s. Repeatable, for several fingers, e.g. --touch 2=0.9,0.8/1 --touch 3=0.2,0.7>0.2,0.5/2.", "time=x,y[>x,y][/seconds]");
     parser.addOption("drive", "Let boats move at a speed in km/h, optionally turning (-1 to 1), in test mode, e.g. 2064=40,2068=60:0.5.", "id=speed[:turn]");
     parser.addOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     parser.addOption("fire", "Let these units fire their guns (test mode); towers and tanks aim at the player.", "ids");
@@ -204,13 +290,27 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         return end(game::Vertigo::ExitSuccess);
     }
 
+    // the time limit, decimals too; a value that isn't one would leave an automated run without
+    // it, as a normal game that takes the focus and plays its sound
+    float timeout = 0;
+    if (parser.isSet("timeout")) {
+        const String value = text(parser.value("timeout")).trimmed();
+        timeout = isNumber(value) ? value.toFloat() : 0;
+        if (timeout <= 0) {
+            std::cerr << "Invalid --timeout value " << parser.value("timeout") << ", expected seconds above 0" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+    }
+
     // Automated runs with a window (with a time limit) shouldn't take the focus: on macOS, as a
     // background app (without a Dock icon, and no keyboard input other than --keys), and the
     // window isn't focusable either
-    if (!parser.isSet("check") && !parser.isSet("headless") && text(parser.value("timeout")).toInt() > 0)
+    if (!parser.isSet("check") && !parser.isSet("headless") && timeout > 0)
         SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "1");
     SDL_SetAppMetadata("Vertigo", nullptr, "com.vertigo.Vertigo");
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    // game controllers, except in automated runs (where --pad brings a virtual one)
+    const bool automated = parser.isSet("check") || parser.isSet("headless") || timeout > 0;
+    if (!SDL_Init(SDL_INIT_VIDEO | (automated ? 0 : SDL_INIT_GAMEPAD))) {
         std::cerr << "Cannot start SDL: " << SDL_GetError() << std::endl;
         return SDL_APP_FAILURE;
     }
@@ -226,7 +326,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         options.scenario = text(parser.arguments()[0]);
     }
     options.boat = text(parser.value("boat")).toInt();
-    options.timeout = text(parser.value("timeout")).toInt();
+    options.timeout = timeout;
     options.debugOverlay = parser.isSet("overlay");
     options.headless = parser.isSet("headless");
     options.fixedStep = parser.isSet("fixed-step");
@@ -301,6 +401,63 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         }
         options.keys.push_back({ time, key, modifiers, hold.toFloat() });
     }
+    for (const std::string &item : items(parser.values("pad"))) {
+        // time=buttons or time=axis:value, then optionally /hold
+        float time = 0;
+        std::string rest;
+        const bool format = timed(item, time, rest);
+        const String controlHold = text(rest);
+        const int slash = controlHold.indexOf('/');
+        const String control = controlHold.left(slash);
+        const String hold = slash < 0 ? String() : controlHold.mid(slash + 1);
+        game::Vertigo::Options::Pad pad = { time, {}, -1, 0, slash < 0 ? -1 : hold.toFloat() };
+        bool ok = format && (slash < 0 || isNumber(hold));
+        if (control.contains(':')) {
+            static const char *axes[] = { "leftx", "lefty", "rightx", "righty" };
+            const String name = control.section(':', 0, 0).trimmed().toLower();
+            const String value = control.section(':', 1).trimmed();
+            for (int axis = 0; axis < 4; axis++)
+                if (name == axes[axis])
+                    pad.axis = axis;
+            ok = ok && pad.axis >= 0 && isNumber(value, true) && std::abs(value.toFloat()) <= 1;
+            pad.value = value.toFloat();
+        } else {
+            for (const String &name : control.split('+')) {
+                pad.buttons.push_back(input::parseButton(name));
+                ok = ok && pad.buttons.back() != input::Button_None;
+            }
+        }
+        if (!ok) {
+            std::cerr << "Invalid --pad value " << item << ", expected time=buttons[/seconds] or time=stick axis:value[/seconds]" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.pad.push_back(pad);
+    }
+    for (const std::string &item : parser.values("touch")) {
+        // time=x,y or time=x,y>x,y, then optionally /hold
+        float time = 0;
+        std::string rest;
+        const bool format = timed(item, time, rest);
+        const String pointsHold = text(rest);
+        const int slash = pointsHold.indexOf('/');
+        const String hold = slash < 0 ? String() : pointsHold.mid(slash + 1);
+        const StringList points = pointsHold.left(slash).split('>');
+        game::Vertigo::Options::Touch touch = { time, PointD(0), PointD(0), slash < 0 ? 0.1f : hold.toFloat() };
+        bool ok = format && (slash < 0 || isNumber(hold)) && points.size() >= 1 && points.size() <= 2;
+        for (int i = 0; ok && i < points.size(); i++) {
+            const StringList xy = points[i].split(',');
+            ok = xy.size() == 2 && isNumber(xy[0].trimmed()) && isNumber(xy[1].trimmed());
+            if (ok)
+                (i == 0 ? touch.from : touch.to) = PointD(xy[0].toFloat(), xy[1].toFloat());
+        }
+        if (points.size() == 1)
+            touch.to = touch.from;
+        if (!ok) {
+            std::cerr << "Invalid --touch value " << item << ", expected time=x,y[>x,y][/seconds]" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.touch.push_back(touch);
+    }
     if (parser.isSet("near")) {
         bool ok = false;
         options.near = text(parser.value("near")).toInt(&ok);
@@ -334,21 +491,50 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         options.equipment.emplace_back(parts[0].toUpper(), model);
     }
 
+#if defined(SDL_PLATFORM_IOS)
+    if (!parser.isSet("data")) {
+        findGameData();
+    } else {
+        util::DataPath::set(parser.value("data"));
+        const std::string missing = game::GameData::missing();
+        if (!missing.empty()) {
+            std::cerr << parser.value("data") << " lacks " << missing << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+    }
+#else
     util::DataPath::set(parser.isSet("data") ? parser.value("data") : util::Settings::value("datadir"));
-    // the Schleichfahrt / Archimedean Dynasty directory, asked for until one has the game data;
-    // remembered once it has
+    // the Schleichfahrt / Archimedean Dynasty directory, asked for until one has the game data,
+    // which can also be built from a GOG installation's CD image; remembered once it has
     bool chosen = false;
-    for (std::string missing = missingGameData(); !missing.empty() || !txt::StringTable::load(); missing = missingGameData()) {
-        if (!util::DataPath::directory().empty() && !chooseAgain(util::DataPath::directory(), missing.empty() ? "the text of txt/deeptext.des" : missing))
+    for (std::string missing = game::GameData::missing(); !missing.empty(); missing = game::GameData::missing()) {
+        const std::string directory = util::DataPath::directory();
+        const std::string image = directory.empty() ? std::string() : game::GameData::findImage(directory);
+        if (!image.empty()) {
+            const std::string target = importTarget(util::appDataLocation());
+            const int choice = offerImport(directory, image, target);
+            if (choice == 0)
+                return end(game::Vertigo::ExitSuccess);
+            std::string error;
+            if (choice == 2 && game::GameData::import(image, target, error)) {
+                util::DataPath::set(target);
+                chosen = true;
+                continue;
+            }
+            if (choice == 2)
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Import failed", error.c_str(), nullptr);
+        } else if (!directory.empty() && !chooseAgain(directory, missing)) {
             return end(game::Vertigo::ExitSuccess);
-        const std::string directory = chooseDirectory(util::DataPath::directory());
-        if (directory.empty())
+        }
+        const std::string chosenDirectory = chooseDirectory(directory);
+        if (chosenDirectory.empty())
             return end(game::Vertigo::ExitSuccess);
-        util::DataPath::set(directory);
+        util::DataPath::set(chosenDirectory);
         chosen = true;
     }
     if (chosen)
         util::Settings::setValue("datadir", util::DataPath::directory());
+#endif
 
     if (parser.isSet("list-items")) {
         static const char *types[] = { "torpedo", "magazine", "gun", "engine", "booster", "silator", "armor", "nrskin", "sensor", "software", "buzzer", "fixer" };

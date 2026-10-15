@@ -111,6 +111,8 @@ set(SOURCES
     game/dialogframe.h
     game/encom.cpp
     game/encom.h
+    game/gamedata.cpp
+    game/gamedata.h
     game/input.cpp
     game/input.hpp
     game/items.cpp
@@ -136,6 +138,8 @@ set(SOURCES
     game/station.h
     game/task.cpp
     game/task.h
+    game/training.cpp
+    game/training.h
     game/vertigo.cpp
     game/vertigo.h
     game/window.cpp
@@ -214,11 +218,14 @@ set(SOURCES
     hud/debugoverlay.h
     hud/missionmenu.cpp
     hud/missionmenu.h
+    hud/touchcontrols.cpp
+    hud/touchcontrols.h
     hud/pause.cpp
     hud/pause.h
     hud/horizon.cpp
     hud/horizon.h
 
+    sfx/openal.hpp
     sfx/sound.cpp
     sfx/sound.h
     sfx/soundsystem.cpp
@@ -253,6 +260,8 @@ set(SOURCES
     ui/widget.h
 
     util/bytereader.hpp
+    util/cdimage.cpp
+    util/cdimage.hpp
     util/commandline.cpp
     util/commandline.hpp
     util/containers.hpp
@@ -286,9 +295,43 @@ set(SOURCES
     util/string.hpp
 )
 
-add_executable(vertigo WIN32 ${SOURCES})
+if(IOS)
+    # an app bundle; the identifier and the team that signs it for an iPad can be set with
+    # -DVERTIGO_BUNDLE_ID=… and -DVERTIGO_DEVELOPMENT_TEAM=… (the simulator needs neither)
+    set(VERTIGO_BUNDLE_ID "com.vertigo.Vertigo" CACHE STRING "The app's bundle identifier")
+    set(VERTIGO_DEVELOPMENT_TEAM "" CACHE STRING "The team that signs the app for devices")
+    set(ASSETS ${PROJECT_SOURCE_DIR}/ios/Assets.xcassets)
+    add_executable(vertigo MACOSX_BUNDLE ${SOURCES} ${ASSETS})
+    set_source_files_properties(${ASSETS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set_target_properties(vertigo PROPERTIES
+        OUTPUT_NAME Vertigo
+        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/ios/Info.plist
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${VERTIGO_BUNDLE_ID}
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${VERTIGO_DEVELOPMENT_TEAM}"
+        XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic
+        # iPad only: the game is 4:3
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY 2
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
+        XCODE_ATTRIBUTE_MARKETING_VERSION 0.1
+        XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION 1
+        # Xcode runs it optimised: a Debug build draws several times slower (20 instead of 120
+        # frames a second on an iPad Pro from 2018)
+        XCODE_GENERATE_SCHEME ON
+        XCODE_SCHEME_LAUNCH_CONFIGURATION RelWithDebInfo)
+    # (Apple deprecated OpenGL ES, but it is in the SDK)
+    target_compile_definitions(vertigo PRIVATE GLES_SILENCE_DEPRECATION)
+    target_link_libraries(vertigo "-framework OpenGLES")
+    # the audio session, in Objective-C++
+    target_sources(vertigo PRIVATE sfx/audiosession.hpp sfx/audiosession.mm)
+    set_source_files_properties(sfx/audiosession.mm PROPERTIES COMPILE_OPTIONS -fobjc-arc)
+    target_link_libraries(vertigo "-framework AVFoundation")
+else()
+    add_executable(vertigo WIN32 ${SOURCES})
+endif()
 target_link_libraries(vertigo SDL3::SDL3 ${OPENAL_LIBRARY})
 if(APPLE)
+    # Apple deprecated its OpenAL, but it is in the SDKs
+    set_source_files_properties(sfx/sound.cpp sfx/soundsystem.cpp sfx/stream.cpp PROPERTIES COMPILE_OPTIONS -Wno-deprecated-declarations)
     # the region's date format for the saved games
     target_link_libraries(vertigo "-framework CoreFoundation")
 endif()
@@ -296,7 +339,12 @@ if(WIN32)
     # CommandLineToArgvW() for the arguments in UTF-8
     target_link_libraries(vertigo shell32)
 endif()
-if (TARGET glm::glm)
+# (GLM 1.0 also has a library, which the game doesn't need)
+if(TARGET glm::glm-header-only)
+    target_link_libraries(vertigo glm::glm-header-only)
+elseif(TARGET glm::glm)
     target_link_libraries(vertigo glm::glm)
 endif()
-install(TARGETS vertigo DESTINATION bin)
+if(NOT IOS)
+    install(TARGETS vertigo DESTINATION bin)
+endif()

@@ -19,6 +19,7 @@
 #define GAME_WINDOW_H
 
 #include "input.hpp"
+#include "util/geometry3d.h"
 
 #include <deque>
 #include <string>
@@ -60,10 +61,13 @@ public:
     void handle(const SDL_Event &event);
     // input that test runs make up, delivered before the next frame as if it came from the
     // platform
-    enum class EventType { KeyPress, KeyRelease, MousePress, MouseRelease, MouseMove };
+    enum class EventType { KeyPress, KeyRelease, MousePress, MouseRelease, MouseMove, TouchPress, TouchMove, TouchRelease };
     void post(EventType type, const input::KeyEvent &event);
     void post(EventType type, const input::MouseEvent &event);
+    void post(EventType type, const input::TouchEvent &event);
     void deliverPosted();
+    // test runs with a virtual game controller: only it counts, not those of the player
+    void setOnlyGamepad(unsigned int id) { m_onlyGamepad = id; }
 
     // draws a frame (when shown)
     void render();
@@ -74,6 +78,10 @@ public:
 
 private:
     void keyPressEvent(input::KeyEvent *event);
+    void buttonEvent(input::Button button, bool pressed);
+    void axisEvent(int axis, float value);
+    void releaseGamepad();
+    void touchEvent(EventType type, input::TouchEvent *event);
     void saveSettings();
     void loadSettings();
     void toggleFullScreen();
@@ -84,6 +92,7 @@ private:
         EventType type;
         input::KeyEvent key;
         input::MouseEvent mouse;
+        input::TouchEvent touch;
     };
 
     SDL_Window *m_window = nullptr;
@@ -91,10 +100,19 @@ private:
     SDL_Cursor *m_cursor = nullptr;
     bool m_shown = false;
     bool m_closed = false;
+    // the app in the background (on the iPad), where nothing may draw: iOS ends apps that use
+    // OpenGL there
+    bool m_background = false;
     bool m_cursorVisible = true;
     int m_viewportWidth = 0;
     int m_viewportHeight = 0;
     int m_buttons = input::NoButton;
+    // the game controllers' buttons held, their axes (SDL's order: the sticks' x and y, the
+    // triggers; from -1 to 1) and the sticks beyond their dead zone
+    bool m_padButtons[input::ButtonCount] = {};
+    float m_axes[6] = {};
+    Vector2D m_sticks[2] = { Vector2D(0), Vector2D(0) };
+    unsigned int m_onlyGamepad = 0;
     // the last geometry outside full screen: x, y, width, height
     int m_geometry[4] = { 0, 0, 0, 0 };
     Renderer *m_renderer = nullptr;

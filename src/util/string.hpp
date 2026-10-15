@@ -217,6 +217,11 @@ public:
     StringList withPrefix(const String &prefix) const;
 };
 
+// A decimal number at the start of [first, last) ("-1.5e3", also "inf" and "nan"), in the C locale
+// whatever the program's: where it ends, or nullptr if there is none or it is out of range. (In
+// place of std::from_chars, which reads doubles only from iOS and macOS 26 on.)
+const char *readDouble(const char *first, const char *last, double &value);
+
 } // namespace util
 
 namespace std {

@@ -34,12 +34,14 @@ private:
     enum State { Invalid, Presents, Title, Loading };
 
 public:
-    MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void()> funcQuit);
+    MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void(int)> funcStartTraining,
+             std::function<void()> funcQuit);
 
 private:
     void showMain();
     void showNew();
     void showLoad();
+    void showTraining();
     void showLoading();
     void updateDifficulty();
 
@@ -50,6 +52,7 @@ private:
     void mousePressEvent(input::MouseEvent *);
     void keyPressEvent(input::KeyEvent *);
     bool wantsTextInput() const { return m_lblNew.isVisible(); }
+    Rect textInputArea() const;
 
 private:
     State m_state;
@@ -63,6 +66,7 @@ private:
     ui::Button m_btnMainNew;
     ui::Button m_btnMainLoad;
     ui::Button m_btnMainDifficulty;
+    ui::Button m_btnMainTraining;
     ui::Button m_btnMainQuit;
     ui::Label m_lblNew;
     ui::Label m_lblNewTitle;
@@ -72,6 +76,10 @@ private:
     ui::Button m_btnLoadBack;
     std::list<ui::Label> m_lblLoadSave;
     std::list<ui::Button> m_btnLoadSave;
+    ui::Label m_lblTraining;
+    ui::Label m_lblTrainingTitle;
+    ui::Button m_btnTrainingBack;
+    std::list<ui::Button> m_btnTrainingMissions;
     ui::Label m_lblLoading;
     ui::Label m_lblLoadingTitle;
     ui::Label m_lblLoadingWait;
@@ -82,6 +90,7 @@ private:
     util::ElapsedTimer m_time;
     std::function<void(String)> m_funcStartGame;
     std::function<void(String)> m_funcLoadGame;
+    std::function<void(int)> m_funcStartTraining;
     String m_loadingGame;
 };
 
