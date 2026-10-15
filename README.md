@@ -102,7 +102,8 @@ also copies them out of the image (or, for a rip with a file for each track,
 by its `.cue`), as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV` (98 MB); a directory
 put together by hand can have them there too. Game data built before this
 version lacks them: delete `Game Data` and build it again. The notebook's
-Options › Sound turns the music off and on, as the original's "CD Musik" did.
+Options › Sound, or the main menu's Options, turns the music off and on, as
+the original's "CD Musik" did.
 
 ## Game controllers
 
@@ -145,16 +146,21 @@ button hides them again.
 
 - A finger on the left part of the screen brings up a stick where it comes
   down; it steers as far as it is pushed (up lowers the nose).
-- Under the right thumb: FIRE (held), TORP (fire a torpedo), LOCK (the
-  nearest enemy), NEXT (the next torpedo) and BUZZ (drop a buzzer); above
-  them + and - change the speed by 10 km/h (again and again while held), and
-  STOP stops.
+- Under the right thumb: FIRE (held), and around it TORP (fire a torpedo),
+  BUZZ (drop a buzzer), NEXT (the next torpedo) and LOCK (the nearest enemy);
+  above them + and - change the speed by 10 km/h (again and again while held),
+  and STOP stops.
 - In the corners: MENU (the mission menu, when the finger is lifted; held for
   a second it shows or hides the debug overlay instead), NAV (the next nav
   point), AUTO (autopilot), SONAR (on or off), TURR (turret menu) and VIEW
   (2D or 3D cockpit).
 - A tap on an option of the mission and turret menus takes it.
 - In the 3D cockpit a finger dragged elsewhere turns the head.
+
+The controls keep the size they have on an 11-inch iPad, in the corners of a
+larger screen. The main menu's Options, and the notebook's Options › Input
+devices, put the stick on the right and the buttons on the left (Touch stick:
+RIGHT), and let up raise the nose (Touch stick vertical: INVERTED).
 
 ## Saved games and settings
 

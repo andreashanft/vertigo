@@ -1146,7 +1146,7 @@ void HUD::drawTouchControls(double pixelRatio)
         return;
     glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
     setupGL(false);
-    gfx::Pipeline::setProjection(glm::ortho(0.0f, m_touch->width(), 480.0f, 0.0f));
+    gfx::Pipeline::setProjection(glm::ortho(0.0f, m_touch->width(), m_touch->height(), 0.0f));
     m_touch->draw();
 }
 

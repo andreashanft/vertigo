@@ -75,5 +75,16 @@ String StringTable::get(StringFight string)
     return m_tableFight.at(string);
 }
 
+String StringTable::get(StringVertigo string)
+{
+    static const char *const texts[][2] = {
+        { "Touch-Stick: LINKS", "Touch stick: LEFT" },
+        { "Touch-Stick: RECHTS", "Touch stick: RIGHT" },
+        { "Touch-Stick vertikal: NORMAL", "Touch stick vertical: NORMAL" },
+        { "Touch-Stick vertikal: UMGEKEHRT", "Touch stick vertical: INVERTED" },
+    };
+    return texts[string][m_language == "English" ? 1 : 0];
+}
+
 
 } // namespace txt

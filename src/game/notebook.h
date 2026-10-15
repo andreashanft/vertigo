@@ -41,12 +41,15 @@ private:
     void hideSound();
     void showMovies();
     void hideMovies();
+    void showInput();
+    void hideInput();
     void showMoviePlayer();
     void hideMoviePlayer();
     void showMap();
     void hideMap();
     void updateSound();
     void updateMovies();
+    void updateInput();
 
 private:
     void createLabel(ui::Widget *parent, txt::StringId text, float posY);
@@ -67,12 +70,15 @@ private:
     ui::Label m_lblOptions;
     ui::Label m_lblSound;
     ui::Label m_lblMovies;
+    ui::Label m_lblInput;
     ui::Label m_lblMoviePlayer;
     ui::Label m_lblMap;
     ui::Button m_btnSoundCdMusic;
     ui::Button m_btnMoviesAutopilot;
     ui::Button m_btnMoviesApproach;
     ui::Button m_btnMoviesHarbour;
+    ui::Button m_btnInputTouchSide;
+    ui::Button m_btnInputTouchStick;
     ui::Button m_btnMoviePlayerHide;
     ui::Button m_btnMissionsBack;
     ui::List m_listMissions;

@@ -21,6 +21,7 @@
 #include "gfx/image.h"
 #include "gfx/pipeline.h"
 #include "gfx/rgb.h"
+#include "util/settings.hpp"
 
 #include <glm/geometric.hpp>
 #include <algorithm>
@@ -44,6 +45,8 @@ const Vector2D StickHint(100, -110);
 const float ButtonSlop = 1.2f;
 // how long a button with a second key has to be held for it
 const float HoldTime = 0.8f;
+// window coordinates (points) per view unit at most: an 11-inch iPad's, 834 high
+const float MaxScale = 834/480.0f;
 
 const Vector4D Green(0.35f, 1.0f, 0.35f, 1.0f);
 
@@ -75,17 +78,17 @@ TouchControls::TouchControls(gfx::Font &font, gfx::Font &fontPressed, const Hand
     m_ring(circle(true))
 {
     using namespace input;
-    // the weapons and the target under the right thumb, the speed above them; the rarer orders
-    // in the top corners
+    // the weapons and the target under the right thumb, in an arc around FIRE (76 from it, from
+    // left to top), the speed above them; the rarer orders in the top corners
     m_buttons = {
         { "FIRE", KeyEvent(Key_Space), Vector2D(-75, -75), 40, -1 },
-        { "TORP", KeyEvent(Key_Tab), Vector2D(-172, -46), 28, -1 },
-        { "LOCK", KeyEvent(Key_U), Vector2D(-48, -162), 28, -1 },
-        { "NEXT", KeyEvent(Key_Return), Vector2D(-150, -140), 22, -1 },
-        { "BUZZ", KeyEvent(Key_D), Vector2D(-252, -34), 22, -1 },
-        { "+", KeyEvent(Key_S), Vector2D(-40, 192), 24, -1 },
-        { "-", KeyEvent(Key_X), Vector2D(-40, 252), 24, -1 },
-        { "STOP", KeyEvent(Key_C), Vector2D(-100, 222), 22, -1 },
+        { "TORP", KeyEvent(Key_Tab), Vector2D(-148, -53), 26, -1 },
+        { "BUZZ", KeyEvent(Key_D), Vector2D(-142, -111), 22, -1 },
+        { "NEXT", KeyEvent(Key_Return), Vector2D(-104, -146), 22, -1 },
+        { "LOCK", KeyEvent(Key_U), Vector2D(-49, -146), 26, -1 },
+        { "+", KeyEvent(Key_S), Vector2D(-46, -258), 24, -1 },
+        { "-", KeyEvent(Key_X), Vector2D(-46, -204), 24, -1 },
+        { "STOP", KeyEvent(Key_C), Vector2D(-106, -231), 22, -1 },
         // held: the debug overlay (Ctrl+D)
         { "MENU", KeyEvent(Key_Escape), Vector2D(30, 30), 22, -1, KeyEvent(Key_D, ControlModifier) },
         { "NAV", KeyEvent(Key_N), Vector2D(30, 82), 22, -1 },
@@ -97,19 +100,44 @@ TouchControls::TouchControls(gfx::Font &font, gfx::Font &fontPressed, const Hand
 }
 
 
+bool TouchControls::isMirrored()
+{
+    return util::Settings::boolValue("Touch/mirrored", false);
+}
+
+
+void TouchControls::setMirrored(bool mirrored)
+{
+    util::Settings::setValue("Touch/mirrored", mirrored);
+}
+
+
+bool TouchControls::isStickInverted()
+{
+    return util::Settings::boolValue("Touch/stickInverted", false);
+}
+
+
+void TouchControls::setStickInverted(bool inverted)
+{
+    util::Settings::setValue("Touch/stickInverted", inverted);
+}
+
+
 void TouchControls::setSize(double width, double height)
 {
     if (height <= 0)
         return;
-    m_scale = float(height/480);
+    m_scale = std::min(float(height/480), MaxScale);
     m_width = float(width/m_scale);
+    m_height = float(height/m_scale);
 }
 
 
 Vector2D TouchControls::center(const Button &button) const
 {
-    return Vector2D(button.place.x >= 0 ? button.place.x : m_width + button.place.x,
-                    button.place.y >= 0 ? button.place.y : 480 + button.place.y);
+    const float x = m_mirrored ? -button.place.x : button.place.x;
+    return Vector2D(x >= 0 ? x : m_width + x, button.place.y >= 0 ? button.place.y : m_height + button.place.y);
 }
 
 
@@ -141,7 +169,7 @@ void TouchControls::press(long long finger, const PointD &position)
             m_handlers.press(pressed->key, int(pressed - m_buttons.data()));
         return;
     }
-    if (m_stickFinger < 0 && at.x < m_width*StickArea) {
+    if (m_stickFinger < 0 && (m_mirrored ? at.x > m_width*(1 - StickArea) : at.x < m_width*StickArea)) {
         m_stickFinger = finger;
         m_stickBase = m_stickAt = at;
         m_handlers.stick(Vector2D(0));
@@ -217,13 +245,17 @@ void TouchControls::reset()
     }
     m_stickFinger = -1;
     m_lookFinger = -1;
+    m_mirrored = isMirrored();
+    m_stickInverted = isStickInverted();
 }
 
 
 // beyond the dead zone the stick goes from 0 to 1, in proportion
 Vector2D TouchControls::stick() const
 {
-    const Vector2D offset = (m_stickAt - m_stickBase)/StickRadius;
+    Vector2D offset = (m_stickAt - m_stickBase)/StickRadius;
+    if (m_stickInverted)
+        offset.y = -offset.y;
     const float length = glm::length(offset);
     if (length <= StickDeadZone)
         return Vector2D(0);
@@ -255,7 +287,7 @@ void TouchControls::draw()
         drawCircle(m_ring, m_stickBase, StickRadius, Vector4D(Vector3D(Green), 0.6f));
         drawCircle(m_disc, m_stickBase + knob, KnobRadius, Vector4D(Vector3D(Green), 0.5f));
     } else {
-        drawCircle(m_ring, Vector2D(StickHint.x, 480 + StickHint.y), StickRadius, Vector4D(Vector3D(Green), 0.25f));
+        drawCircle(m_ring, Vector2D(m_mirrored ? m_width - StickHint.x : StickHint.x, m_height + StickHint.y), StickRadius, Vector4D(Vector3D(Green), 0.25f));
     }
 
     gfx::Pipeline::setColor(Vector4D(1));

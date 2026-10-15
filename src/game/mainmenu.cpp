@@ -17,6 +17,8 @@
 
 #include "chapter.h"
 #include "fight/scenario.h"
+#include "hud/touchcontrols.h"
+#include "sfx/music.hpp"
 #include "mainmenu.h"
 #include "training.h"
 #include "gfx/colortable.h"
@@ -27,6 +29,7 @@
 #include "util/error.h"
 #include "gfx/gl.hpp"
 #include "util/datetimetext.hpp"
+#include "util/settings.hpp"
 #include <algorithm>
 
 namespace game {
@@ -43,6 +46,7 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnMainLoad([this]() { showLoad(); }, &m_lblMain),
     m_btnMainDifficulty([this]() { fight::Scenario::setDifficulty((fight::Scenario::difficulty() + 1)%3); updateDifficulty(); }, &m_lblMain),
     m_btnMainTraining([this]() { showTraining(); }, &m_lblMain),
+    m_btnMainOptions([this]() { showOptions(); }, &m_lblMain),
     m_btnMainQuit(funcQuit, &m_lblMain),
     m_lblNew(&m_title, false),
     m_lblNewTitle(&m_lblNew),
@@ -53,6 +57,9 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_lblTraining(&m_title, false),
     m_lblTrainingTitle(&m_lblTraining),
     m_btnTrainingBack([this]() { showMain(); }, &m_lblTraining),
+    m_lblOptions(&m_title, false),
+    m_lblOptionsTitle(&m_lblOptions),
+    m_btnOptionsBack([this]() { showMain(); }, &m_lblOptions),
     m_lblLoading(&m_title, false),
     m_lblLoadingTitle(&m_lblLoading),
     m_lblLoadingWait(&m_lblLoading),
@@ -130,6 +137,51 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnTrainingBack.setAlignment(ui::Button::AlignHCenter);
     m_btnTrainingBack.setFont(fontLarge);
     m_btnTrainingBack.setText(txt::StringTable::get(txt::MainMenu));
+
+    // as in the original, below the training (where it had CREDITS between them)
+    m_btnMainOptions.setFont(fontLarge);
+    m_btnMainOptions.setPosition(0, 368);
+    m_btnMainOptions.setWidth(640);
+    m_btnMainOptions.setAlignment(ui::Label::AlignHCenter);
+    m_btnMainOptions.setText(txt::StringTable::get(txt::Notebook_Options));
+
+    // the notebook's sound and movie options (which a chapter takes when it starts) and the
+    // touch screen's, on one page
+    m_lblOptionsTitle.setFont(fontMedium);
+    m_lblOptionsTitle.setPosition(145, 256 - fontMedium.height() - 2);
+    m_lblOptionsTitle.setText(txt::StringTable::get(txt::Notebook_Options));
+    auto setting = [](const char *key) {
+        return Option{ [key]() { return util::Settings::boolValue(key, true); }, [key](bool value) { util::Settings::setValue(key, value); } };
+    };
+    m_options = {
+        { []() { return sfx::Music::isEnabled(); }, [](bool value) { sfx::Music::setEnabled(value); },
+          txt::StringTable::get(txt::Notebook_Sound_CdMusic_On), txt::StringTable::get(txt::Notebook_Sound_CdMusic_Off) },
+        setting("Movie/autopilot"), setting("Movie/approach"), setting("Movie/harbour"),
+        { []() { return hud::TouchControls::isMirrored(); }, [](bool value) { hud::TouchControls::setMirrored(value); },
+          txt::StringTable::get(txt::Touch_Stick_Right), txt::StringTable::get(txt::Touch_Stick_Left) },
+        { []() { return hud::TouchControls::isStickInverted(); }, [](bool value) { hud::TouchControls::setStickInverted(value); },
+          txt::StringTable::get(txt::Touch_Stick_Inverted), txt::StringTable::get(txt::Touch_Stick_Normal) },
+    };
+    const txt::StringId movies[][2] = { { txt::Notebook_Movies_Autopilot_Yes, txt::Notebook_Movies_Autopilot_No },
+                                        { txt::Notebook_Movies_Approach_Yes, txt::Notebook_Movies_Approach_No },
+                                        { txt::Notebook_Movies_Harbour_Yes, txt::Notebook_Movies_Harbour_No } };
+    for (int i = 0; i < 3; i++) {
+        m_options[1 + i].on = txt::StringTable::get(movies[i][0]);
+        m_options[1 + i].off = txt::StringTable::get(movies[i][1]);
+    }
+    for (std::size_t i = 0; i < m_options.size(); i++) {
+        m_btnOptions.emplace_back([this, i]() { m_options[i].setValue(!m_options[i].value()); updateOptions(); }, &m_lblOptions);
+        ui::Button &button = m_btnOptions.back();
+        button.setFont(fontLarge);
+        button.setPosition(0, 288 + 20*int(i));
+        button.setWidth(640);
+        button.setAlignment(ui::Label::AlignHCenter);
+    }
+    m_btnOptionsBack.setPosition(0, 428);
+    m_btnOptionsBack.setWidth(640);
+    m_btnOptionsBack.setAlignment(ui::Button::AlignHCenter);
+    m_btnOptionsBack.setFont(fontLarge);
+    m_btnOptionsBack.setText(txt::StringTable::get(txt::MainMenu));
 
     m_btnMainQuit.setFont(fontLarge);
     m_btnMainQuit.setPosition(0, 408);
@@ -290,6 +342,7 @@ void MainMenu::showMain()
     m_lblNew.hide();
     m_lblLoad.hide();
     m_lblTraining.hide();
+    m_lblOptions.hide();
     m_lblLoading.hide();
 }
 
@@ -342,6 +395,22 @@ void MainMenu::showTraining()
 {
     m_lblMain.hide();
     m_lblTraining.show();
+}
+
+
+void MainMenu::showOptions()
+{
+    m_lblMain.hide();
+    m_lblOptions.show();
+    updateOptions();
+}
+
+
+void MainMenu::updateOptions()
+{
+    auto button = m_btnOptions.begin();
+    for (const Option &option : m_options)
+        (button++)->setText(option.value() ? option.on : option.off);
 }
 
 

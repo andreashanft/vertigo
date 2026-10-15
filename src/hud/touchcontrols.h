@@ -37,7 +37,9 @@ namespace hud {
 // The controls of a mission on a touch screen, over the whole window: a stick that appears where
 // a finger touches the left part, and buttons that stand for keys, along the edges and in the
 // corners (where the cockpit art has its frame and the thumbs reach). A finger elsewhere turns
-// the head in the 3D cockpit. Laid out in units of a view 480 high, the size of the HUD's text.
+// the head in the 3D cockpit. Laid out in units of a view at least 480 high, the size of the
+// HUD's text; on a larger screen they keep the size they have on an 11-inch iPad, in the
+// corners. Mirrored, the stick is on the right and the buttons are the other way round.
 class TouchControls
 {
 public:
@@ -58,19 +60,26 @@ public:
     TouchControls(gfx::Font &font, gfx::Font &fontPressed, const Handlers &handlers);
 
 public:
+    // the options, kept in the settings: mirrored, and the stick pushed up for down
+    static bool isMirrored();
+    static void setMirrored(bool mirrored);
+    static bool isStickInverted();
+    static void setStickInverted(bool inverted);
+
     // the window's size in its coordinates
     void setSize(double width, double height);
     void press(long long finger, const PointD &position);
     void move(long long finger, const PointD &position);
     void release(long long finger);
-    // lets go of everything without telling, for a new mission
+    // lets go of everything without telling, and takes the options, for a new mission
     void reset();
     // the time passed since the last call, for the buttons held
     void update(float seconds);
-    // with the projection set to the window and the view 480 high
+    // with the projection set to the window and the view's size
     void draw();
-    // the view's width (480 high)
+    // the view's size
     float width() const { return m_width; }
+    float height() const { return m_height; }
 
 private:
     struct Button
@@ -101,6 +110,9 @@ private:
     gfx::Texture m_ring;
     float m_scale = 1;      // window coordinates per view unit
     float m_width = 640;
+    float m_height = 480;
+    bool m_mirrored = false;
+    bool m_stickInverted = false;
     long long m_stickFinger = -1;
     Vector2D m_stickBase = Vector2D(0);
     Vector2D m_stickAt = Vector2D(0);
