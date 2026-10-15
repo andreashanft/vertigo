@@ -74,6 +74,8 @@ public:
     int shockShield() const { return m_shockShield; };
     int kineticShieldMax() const { return m_kineticShieldMax; };
     int shockShieldMax() const { return m_shockShieldMax; };
+    // the scenario's armour (inte) and energy defence (eint) of the unit, in percent of its type's
+    void setDefence(int armour, int energy);
 
     const Vector3D& velocity() const { return m_velocity; }
 

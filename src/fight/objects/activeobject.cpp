@@ -26,6 +26,7 @@
 #include "util/random.h"
 #include <glm/geometric.hpp>
 #include <algorithm>
+#include <limits>
 
 
 namespace fight {
@@ -54,6 +55,17 @@ ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 
 ActiveObject::~ActiveObject()
 {
+}
+
+
+void ActiveObject::setDefence(int armour, int energy)
+{
+    // (10000000, which makes a type indestructible or immune, stays at least a million)
+    auto scale = [](int value, int percent) {
+        return int(std::min<long long>(std::numeric_limits<int>::max(), (long long)value*percent/100));
+    };
+    m_kineticShield = m_kineticShieldMax = scale(m_kineticShieldMax, armour);
+    m_shockShield = m_shockShieldMax = scale(m_shockShieldMax, energy);
 }
 
 

@@ -382,6 +382,9 @@ Scenario::Scenario(const String &name) :
             if (activeObject)
             {
                 activeObject->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                // armour and energy defence in percent (the AD Augmented Mod's changelog calls them PD
+                // and ED and changes them with these keys)
+                activeObject->setDefence(m_file.value("inte", 100).toInt(), m_file.value("eint", 100).toInt());
                 // torpedoes for units with tubes: boats, bombers and torpedo towers
                 const int torpedoes = m_file.value("ntor", 0).toInt();
                 const int torpedoType = m_file.value("tor", -1).toInt();
