@@ -21,12 +21,13 @@
 #include "element.h"
 #include "tesselator.h"
 #include "gfx/image.h"
+#include "gfx/pipeline.h"
 
 #include <map>
 #include <vector>
 #include "util/string.hpp"
 
-namespace gfx { class Texture; }
+namespace gfx { class ColorTable; class Texture; }
 
 namespace fight {
 
@@ -41,6 +42,11 @@ public:
     float heightAt(float x, float y);
     float heightAt(float x, float y, Vector3D &normal);
     const Vector3D& scale() const { return m_scale; }
+    // the water's fog as the map's shading tables have it, for everything in the scene: a
+    // blend by distance from the colours themselves into the fog's colour, a blue that takes
+    // the red away. The terrain is drawn with it at twice its textures' brightness, as the
+    // tables' nearest row is twice the palette
+    const gfx::Pipeline::Fog& fog() const { return m_fog; }
     float height(int x, int y) const;
     // false if the texture couldn't be loaded
     bool bindTexture(int textureId);
@@ -49,6 +55,7 @@ public:
 
 private:
     Element& getElement(int x, int y);
+    static Vector3D fogColor(const gfx::ColorTable &palette, const std::vector<gfx::Rgb> &table);
 
 private:
     std::vector<gfx::Texture> m_textures;
@@ -58,6 +65,7 @@ private:
     std::vector<char> m_textureDir;
     Vector3D m_scale;
     int m_mapping;
+    gfx::Pipeline::Fog m_fog;
 
 private:
     static const int Level = 3;

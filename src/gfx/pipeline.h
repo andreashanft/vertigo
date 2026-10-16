@@ -52,12 +52,15 @@ public:
         float quadraticAttenuation;
     };
 
-    // linear in the distance along the view direction
+    // linear in the distance along the view direction: the colour, multiplied with the gain,
+    // blends into the fog's colour from start to end and the result is clamped. So a colour
+    // with negative channels is a fog that takes a channel away, like water takes the red
     struct Fog
     {
         Vector3D color;
         float start;
         float end;
+        float gain = 1;
     };
 
 public:

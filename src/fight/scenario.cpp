@@ -731,8 +731,9 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     light.quadraticAttenuation = 0.0002f;
     gfx::Pipeline::setLight(light);
 
+    // the water's fog from the map's shading tables, on the terrain and everything else
     gfx::Pipeline::setFog(true);
-    gfx::Pipeline::setFog(gfx::Pipeline::Fog{ Vector3D(0.0f, 0.0f, 0.15f), 100.0f, 200.0f });
+    gfx::Pipeline::setFog(m_surface.fog());
 
     m_surface.draw(m_position, m_player->dir());
 

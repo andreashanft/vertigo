@@ -96,6 +96,7 @@ uniform bool alphaTest;
 uniform bool fog;
 uniform vec3 fogColor;
 uniform vec2 fogRange;
+uniform float fogGain;
 
 out vec4 fragColor;
 
@@ -115,7 +116,7 @@ void main()
     if (alphaTest && c.a <= 0.0)
         discard;
     if (fog)
-        c.rgb = mix(fogColor, c.rgb, clamp((fogRange.y - vDepth)/(fogRange.y - fogRange.x), 0.0, 1.0));
+        c.rgb = clamp(mix(fogColor, c.rgb*fogGain, clamp((fogRange.y - vDepth)/(fogRange.y - fogRange.x), 0.0, 1.0)), 0.0, 1.0);
     fragColor = c;
 }
 )";
@@ -135,7 +136,7 @@ struct State
     Vector3D ambient = Vector3D(0.2f);
     Pipeline::Light light = { Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0), Vector3D(1), 180, 0, 1, 0 };
     bool fog = false;
-    Pipeline::Fog fogParameters = { Vector3D(0), 0, 1 };
+    Pipeline::Fog fogParameters = { Vector3D(0), 0, 1, 1 };
     bool alphaTest = false;
     bool textureProjection = false;
     Matrix textureMatrix = Matrix(1);
@@ -155,7 +156,7 @@ struct Uniforms
 {
     int modelView, projection, normalMatrix, color, lighting, sceneColor;
     int lightPosition, lightDirection, lightAmbient, lightDiffuse, lightCosCutoff, lightExponent, lightAttenuation;
-    int textureProjection, textureMatrix, textureNear, alphaTest, fog, fogColor, fogRange;
+    int textureProjection, textureMatrix, textureNear, alphaTest, fog, fogColor, fogRange, fogGain;
 };
 
 // the shader and the buffers for drawing from client memory, made for the current context
@@ -249,6 +250,7 @@ Gpu& gpu()
     u.fog = location("fog");
     u.fogColor = location("fogColor");
     u.fogRange = location("fogRange");
+    u.fogGain = location("fogGain");
     glUseProgram(program);
     glUniform1i(location("tex"), 0);
 
@@ -455,6 +457,7 @@ void Pipeline::apply(bool textured)
         glUniform2f(u.lightAttenuation, light.constantAttenuation, light.quadraticAttenuation);
         glUniform3fv(u.fogColor, 1, glm::value_ptr(s.fogParameters.color));
         glUniform2f(u.fogRange, s.fogParameters.start, s.fogParameters.end);
+        glUniform1f(u.fogGain, s.fogParameters.gain);
         s.parametersChanged = false;
     }
 
