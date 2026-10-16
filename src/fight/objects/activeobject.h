@@ -21,6 +21,7 @@
 
 #include "object.h"
 #include <memory>
+#include <algorithm>
 #include "util/string.hpp"
 
 
@@ -124,6 +125,16 @@ public:
     void sleep();
     void wake();
 
+    // Energy (docs/ROADMAP.md, appendix K): one pool per unit, 0 to 1, full at the start. The engine
+    // model (a unit's eng key, the boat's engine) sets the seconds it takes to refill from empty:
+    // 5, 3, 1, 1, 1 and 0.01 for engines 0 to 5. Energy guns draw from it, so does the booster.
+    void setEngine(int model);
+    int engine() const { return m_engine; }
+    float energy() const { return m_energy; }
+    void drawEnergy(float amount) { m_energy = std::max(0.0f, m_energy - amount); }
+    void rechargeEnergy(float elapsedTime);
+    static float rechargeTime(int engine);
+
 protected:
     // the explosion, debris and disabling shared by destroy() and explode()
     void blowUp(int explosions);
@@ -140,6 +151,8 @@ protected:
     float m_noise;
     bool m_identified;
     bool m_asleep = false;
+    int m_engine = 0;
+    float m_energy = 1.0f;
 
     int m_kineticShield;
     int m_shockShield;

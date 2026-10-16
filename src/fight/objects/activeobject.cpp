@@ -207,6 +207,27 @@ void ActiveObject::wake()
 }
 
 
+void ActiveObject::setEngine(int model)
+{
+    m_engine = std::clamp(model, 0, 5);
+    m_energy = 1.0f;
+}
+
+
+float ActiveObject::rechargeTime(int engine)
+{
+    static const float seconds[6] = { 5.0f, 3.0f, 1.0f, 1.0f, 1.0f, 0.01f };
+    return seconds[std::clamp(engine, 0, 5)];
+}
+
+
+void ActiveObject::rechargeEnergy(float elapsedTime)
+{
+    if (m_energy < 1.0f)
+        m_energy = std::min(1.0f, m_energy + elapsedTime/rechargeTime(m_engine));
+}
+
+
 void ActiveObject::identify()
 {
     m_eventIdentify.complete();

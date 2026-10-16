@@ -399,7 +399,7 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
                 const Vector3D current = m_scenario->current(pos);
                 const fight::Player *player = m_scenario->player();
                 const fight::HeadMotion &head = m_scenario->headMotion();
-                std::cout << String("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg attackers %17%14")
+                std::cout << String("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg attackers %17 energy %18%14")
                     .arg(m_options.scenario).arg(int(m_scenario->time()))
                     .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
                     .arg(int(m_scenario->height())).arg(int(m_scenario->player()->speed()))
@@ -407,7 +407,7 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
                     .arg(player->shield(0)).arg(player->shield(1)).arg(player->shield(2)).arg(player->shield(3))
                     .arg(m_scenario->playerDestroyed() ? " destroyed" : "")
                     .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1)
-                    .arg(m_scenario->playerAttackers()) << std::endl;
+                    .arg(m_scenario->playerAttackers()).arg(int(player->energy()*100)) << std::endl;
             }
             for (const auto &record : m_scenario->objectRecords()) {
                 if (record.id != id)

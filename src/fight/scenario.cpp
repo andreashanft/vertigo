@@ -389,6 +389,7 @@ Scenario::Scenario(const String &name) :
             if (activeObject)
             {
                 activeObject->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                activeObject->setEngine(m_file.value("eng", 0).toInt());
                 // armour and energy defence in percent (the AD Augmented Mod's changelog calls them PD
                 // and ED and changes them with these keys)
                 activeObject->setDefence(m_file.value("inte", 100).toInt(), m_file.value("eint", 100).toInt());
@@ -688,6 +689,8 @@ void Scenario::update(float elapsedTime)
                 }
             }
         }
+        if (ActiveObject *unit = dynamic_cast<ActiveObject *>(object.get()))
+            unit->rechargeEnergy(elapsedTime);
         object->update(elapsedTime);
     }
 

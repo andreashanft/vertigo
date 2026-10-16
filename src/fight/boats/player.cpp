@@ -105,6 +105,8 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     if (boat->nrskin() == 5126)
         m_noise -= 1;
 
+    // the boat's engine: Small, Medium or Big Block as engine 0, 1 or 2 (appendix K)
+    setEngine(boat->engine() - 4097);
     m_gun.addMuzzles(Vector3D(0, 3.0f, 0), boat->gun());
     m_gun.setDefect(boat->defects()[game::Boat::DefectGun]);
     if (boat->tur1() != 0)
@@ -286,6 +288,7 @@ bool Player::update(float elapsedTime)
         m_roll = glm::dot(glm::normalize(Vector3D(dir().y, -dir().x, 0)), up());
 
     updateVelocity(elapsedTime);
+    rechargeEnergy(elapsedTime);
 
     if (m_engineState == EngineStartup && m_engineTime < m_scenario->time())
     {
