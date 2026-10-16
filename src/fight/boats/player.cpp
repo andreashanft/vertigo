@@ -22,6 +22,7 @@
 #include "fight/scenario.h"
 #include "game/boat.h"
 #include "util/random.h"
+#include "util/settings.hpp"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -107,6 +108,9 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
 
     // the boat's engine: Small, Medium or Big Block as engine 0, 1 or 2 (appendix K)
     setEngine(boat->engine() - 4097);
+    // settings.ini [Fight] turnticks: the relaxation rate of the turn rates, to be tuned against
+    // the original (appendix L)
+    TurnTickRate = util::Settings::floatValue("Fight/turnticks", 30.0f);
     m_gun.addMuzzles(Vector3D(0, 3.0f, 0), boat->gun());
     m_gun.setDefect(boat->defects()[game::Boat::DefectGun]);
     if (boat->tur1() != 0)
@@ -245,23 +249,29 @@ void Player::destroy()
 }
 
 
+float Player::TurnTickRate = 30.0f;
+
+
+float Player::pitch() const
+{
+    return glm::degrees(std::asin(glm::clamp(dir().z, -1.0f, 1.0f)));
+}
+
+
 bool Player::update(float elapsedTime)
 {
-    // the turn rates go towards their maximum, or a part of it as far as a stick is pushed
-    const Vector3D turnRate = glm::abs(m_turnVelocity)*m_maxAngleVelocity;
-    m_angleVelocity.x += m_angleVelocity.x*m_angleFriction.x*64*elapsedTime;
-    m_angleVelocity.x -= 0.64f*dir().z*m_maxAngleVelocity.x*elapsedTime;
-    if (m_turnVelocity.x > 0 && m_angleVelocity.x < turnRate.x)
-        m_angleVelocity.x -= turnRate.x*m_angleFriction.x*64*elapsedTime;
-    else if (m_turnVelocity.x < 0 && m_angleVelocity.x > -turnRate.x)
-        m_angleVelocity.x += turnRate.x*m_angleFriction.x*64*elapsedTime;
-
-    m_angleVelocity.y += m_angleVelocity.y*m_angleFriction.y*64*elapsedTime;
-    m_angleVelocity.y += m_roll*m_rollCenterVelocity*64*m_maxAngleVelocity.y*elapsedTime;
-    if (m_turnVelocity.y > 0 && m_angleVelocity.y < turnRate.y)
-        m_angleVelocity.y -= turnRate.y*m_angleFriction.y*64*elapsedTime;
-    if (m_turnVelocity.y < 0 && m_angleVelocity.y > -turnRate.y)
-        m_angleVelocity.y += turnRate.y*m_angleFriction.y*64*elapsedTime;
+    // The pitch and yaw rates relax towards the stick's share of the maximum by the boat's
+    // AngleFriction fraction per tick (docs/ROADMAP.md, appendix L), so they carry on for a
+    // while after the key is released; the nose also drops by its own angle and the roll turns
+    // the boat (RollCenterVelocity), both per tick. The rotation itself uses the frame time.
+    const Vector3D stick = m_turnVelocity*m_maxAngleVelocity;
+    for (m_turnTicks += TurnTickRate*elapsedTime; m_turnTicks >= 1.0f; m_turnTicks -= 1.0f)
+    {
+        m_angleVelocity.x += (stick.x - m_angleVelocity.x)*-m_angleFriction.x;
+        m_angleVelocity.x -= 0.01f*dir().z*m_maxAngleVelocity.x;
+        m_angleVelocity.y += (stick.y - m_angleVelocity.y)*-m_angleFriction.y;
+        m_angleVelocity.y += m_roll*m_rollCenterVelocity*m_maxAngleVelocity.y;
+    }
 
     m_angleVelocity.z = m_roll*m_bottomAlphaSupport*m_maxAngleVelocity.z;
 

@@ -298,6 +298,7 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | Whether an order slot with a break condition also ends by itself (its time, arrival or docking), or only when the condition comes true (G5) | In the original both end a slot (appendix J): the break condition is checked every frame, and the orders also finish on their own, GotoWithInfiltrate after it has docked for `dur`. Still to watch in s00705, as the AD Augmented Mod says Schwartz stays at the first control unit: does he infiltrate the second one (2052, south of the first) while Marquez lives? |
 | Whether Explode (order 11) counts as "destroyed" for conditions | **Settled** (appendix J): it doesn't. The original raises "destroyed" only when a unit's armour reaches zero; an Explode order puts the unit through the same tumbling explosion as a collapsed energy defence, which leaves the armour alone, so "not destroyed" (39) stays true, as the AD Augmented Mod found. Vertigo does the same now (**done**) |
 | How energy guns recharge, and what the engine (`eng`, the boat's engine) does | **Settled** (appendix K): every armed unit has one energy pool, refilled from empty in 5, 3, 1 or 0.01 s by engine 0, 1, 2–4 or 5; a shot costs the gun's `energydemand`, and the gun is ready again once its rearming time is over and the pool is above the demand. The booster draws from the same pool. In Vertigo since October 2026 (**done**) |
+| How the boat's pitch and yaw carry on after the key is released | Rule **settled** (appendix L): the rates relax towards the stick's share of the maximum by the boat's `AngleFriction` fraction once per update of the original, and the frame time only turns the boat. Its update rate, which sets the momentum, is still to be measured: `turnticks` in `settings.ini` (default 30 per second) is the knob, compared by hand in the booster setup of docs/reverse-engineering.md |
 | Whether active buildings turn with `card` (0, 2, 4 or 6 on 51 of 424; buildings turn by card·45°) (G3) | Look at one in the original, e.g. s00401's hydrogen tank 2066 (`card` 6) |
 | What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | **Settled** (appendix J): a unit with `sle` 1 (or no `sle`) sleeps while it is out of the player's sonar range, a unit with 0 keeps running its orders anywhere on the map. Vertigo does the same now (**done**) |
 
@@ -892,3 +893,26 @@ seeded idle runs are compared at the end of this section.
   as the units with engine 0 or 1 now fire their energy guns more slowly once
   their pool is down. An idle player is rarely shot at with an energy gun
   for long, so the fights the player joins are where the change shows.
+
+### L. How the original turns the boat
+
+Read off in October 2026, after the comparison by hand showed the original's
+pitch carrying on when the key is released. The player's pitch and yaw rates
+relax towards the stick's share of `MaxAngleVelocity` by the boat's
+`AngleFriction` fraction (0.4 for pitch and 0.7 for yaw on the Hiob) once
+per update: rate += (target − rate) × friction. The frame time enters only
+where the rate turns the boat. Two more terms join the rates each update: the
+nose drops by 0.01 × its own `dir.z` × the pitch maximum, and the roll turns
+the boat by roll × `RollCenterVelocity` × the yaw maximum. A fully pressed
+key reaches the maximum rate only asymptotically (60 % of the way per update
+for pitch) and the rate dies the same way after the release, which is the
+momentum felt in the original. Vertigo used the same fractions but applied
+them 64 times a second and pushed the rate only while it was below the
+target, so a release stopped the turn within a few frames.
+
+Vertigo relaxes the rates per tick now, at `turnticks` ticks per second from
+`settings.ini` (`[Fight]`, default 30, the one number still to be measured:
+the original's update rate under DOSBox-X). `--trace` prints the player's
+pitch every second. Whether the original's keyboard ramps the stick value
+rather than setting it to ±1 at once is not known either; a joystick's value
+goes in as it is.

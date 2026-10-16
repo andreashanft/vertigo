@@ -59,6 +59,9 @@ public:
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
     float roll() const { return m_roll; };
+    float pitch() const; // the nose's angle above the horizon in degrees
+    // the ticks per second at which the turn rates relax towards the stick (appendix L)
+    static float TurnTickRate;
     // mission time of the last hit, -1 if never hit
     // a side's armor is below 10 %: ALERT, with the "system collapse" voice when it starts
     bool isCritical() const;
@@ -106,6 +109,7 @@ private:
     bool m_boosting = false;
 
     float m_roll;
+    float m_turnTicks = 0;  // ticks due since the last relaxation
     float m_rollCenterVelocity;
     float m_bottomAlphaSupport;
 
