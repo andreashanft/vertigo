@@ -717,6 +717,12 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     gfx::Pipeline::setProjection(projection);
     gfx::Pipeline::setModelView(camera);
 
+    // the water's fog from the map's shading tables, on the terrain and everything else
+    gfx::Pipeline::setFog(true);
+    gfx::Pipeline::setFog(m_surface.fog());
+
+    m_surface.draw(m_position, m_player->dir());
+
     // the boat's headlight, a spot light from just behind it, and a blue ambient light
     gfx::Pipeline::setLighting(true);
     gfx::Pipeline::setAmbient(Vector3D(0.5f, 0.5f, 1.0f));
@@ -730,12 +736,6 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     light.constantAttenuation = 0.1f;
     light.quadraticAttenuation = 0.0002f;
     gfx::Pipeline::setLight(light);
-
-    // the water's fog from the map's shading tables, on the terrain and everything else
-    gfx::Pipeline::setFog(true);
-    gfx::Pipeline::setFog(m_surface.fog());
-
-    m_surface.draw(m_position, m_player->dir());
 
     for (const auto &object : m_objects)
         if (object->isEnabled())

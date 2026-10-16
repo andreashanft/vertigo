@@ -38,6 +38,7 @@ public:
     void load(const String &name, int maxheightscale, int mapping);
 
 public:
+    // sets the terrain's own light and ambient; the caller sets its own afterwards
     void draw(const Vector3D &position, const Vector3D &direction);
     float heightAt(float x, float y);
     float heightAt(float x, float y, Vector3D &normal);
@@ -45,7 +46,7 @@ public:
     // the water's fog as the map's shading tables have it, for everything in the scene: a
     // blend by distance from the colours themselves into the fog's colour, a blue that takes
     // the red away. The terrain is drawn with it at twice its textures' brightness, as the
-    // tables' nearest row is twice the palette
+    // tables' nearest row is twice the palette, lit by how much it faces the boat
     const gfx::Pipeline::Fog& fog() const { return m_fog; }
     float height(int x, int y) const;
     // false if the texture couldn't be loaded

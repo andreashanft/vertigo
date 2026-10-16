@@ -34,10 +34,14 @@ namespace {
 
 // the terrain's textures hold half the brightness the shading tables' nearest row gives them
 const float TextureGain = 2;
-// the distances at which the tables' nearest and farthest rows are left and reached, from
-// the original's picture (docs/ROADMAP.md, "Differences to the original's cockpit")
-const float FogStart = 12;
-const float FogEnd = 76;
+// the distances at which the tables' nearest and farthest rows are left and reached, and the
+// light that shades the slopes: ground facing the boat is lit in full, ground seen at a
+// grazing angle keeps two fifths; from the original's pictures (docs/ROADMAP.md,
+// "Differences to the original's cockpit")
+const float FogStart = 30;
+const float FogEnd = 140;
+const float LightAmbient = 0.4f;
+const float LightDiffuse = 1.0f;
 
 }
 
@@ -205,12 +209,22 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
     int x0 = position.x / m_scale.x / 8;
     int y0 = position.y / m_scale.y / 8;
 
-    // the terrain's colours come from the tables alone: no light, the textures at the
-    // nearest row's brightness, fading with the distance
+    // the textures at the nearest row's brightness, shaded per vertex by how much the ground
+    // faces the boat (a light at the eye with no falloff: the fog takes the distance) and
+    // fading with the distance. The caller sets its own light and ambient afterwards
     const bool lighting = gfx::Pipeline::lighting();
-    const Vector4D color = gfx::Pipeline::color();
-    gfx::Pipeline::setLighting(false);
-    gfx::Pipeline::setColor(Vector4D(1));
+    gfx::Pipeline::setLighting(true);
+    gfx::Pipeline::setAmbient(Vector3D(LightAmbient/0.2f));
+    gfx::Pipeline::Light light;
+    light.position = Vector3D(0);
+    light.direction = Vector3D(0, 0, -1);
+    light.ambient = Vector3D(0);
+    light.diffuse = Vector3D(LightDiffuse/0.8f);
+    light.cutoff = 180;
+    light.exponent = 0;
+    light.constantAttenuation = 1;
+    light.quadraticAttenuation = 0;
+    gfx::Pipeline::setLight(light);
     gfx::Pipeline::Fog fog = m_fog;
     fog.gain = TextureGain;
     gfx::Pipeline::setFog(fog);
@@ -226,7 +240,6 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
         }
 
     gfx::Pipeline::setFog(m_fog);
-    gfx::Pipeline::setColor(color);
     gfx::Pipeline::setLighting(lighting);
 }
 
