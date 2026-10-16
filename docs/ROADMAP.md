@@ -222,10 +222,9 @@ biont engine, cargo ships the big-ship engine), pitch rising with speed.
    idle chapter-1 boat, 14 of 213 runs end with the player destroyed within
    60 s, down from 20. The remaining ones are a tower at the start (S00704),
    torpedo runs, and chapter-22 warships (S02204) that need a late-game boat.
-   Still open, and only measurable in the original: the energy pool and its
-   recharge for energy guns (`EnergyDemand` and the gun state "EnergyDelay"
-   exist, the pool doesn't), tower accuracy, and cargo-ship placement and
-   turret size.)
+   Still open: tower accuracy, and cargo-ship placement and turret size. The
+   energy pool and its recharge, which decide how fast energy guns fire, are
+   settled (appendix K) and wait to be implemented.)
 6. **Loose ends:** what earlier milestones left out: voxel radar, dust
    clouds and the particle pool, the slave monitor's F1–F4 pages and lamps,
    turrets that turn at their rates (player and tanks), collisions between
@@ -281,7 +280,7 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 |---|---|---|---|
 | G1 | Mission music | S–M | Each scenario's `[CD] Track` (1–4; 0 only in s02005) presumably picks one of the CD's audio tracks 2–5 (`game.ins`: track 1 is data). Vertigo plays no music in missions, and the data directory doesn't contain these tracks. They are plain 44.1 kHz 16-bit stereo PCM in `game.gog` (2,352-byte sectors), so they can be copied out once (or on import, see the [iPad port](#ipad-port)) and streamed like the other sounds. Whether 0 means silence, and whether the stations use CD music too, is to be checked (**done**: `Track` n plays the CD's track n+1, so 1–4 are its four audio tracks (3:30, 3:11, 1:34 and 1:00) and 0 would be the data track, i.e. none. Building `Game Data` from a CD image also copies the audio tracks out: `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`, 98 MB, 16-bit stereo at 44.1 kHz. They are the sounding stretches after the data track, apart by a second or more of digital silence (the CD has two), so the image is enough; GOG's `game.ins` has each track 167 sectors (2.2 s) later than its sound starts in `game.gog`, so a track by it would lack its first 2.2 s and end in the next one's. A cue sheet is used only for a rip with a file for each track; the samples are little-endian (the neighbouring samples correlate at 0.993, read big-endian at 0). `sfx::Music` streams the mission's track from the disk through four OpenAL buffers, round and round, pauses with the mission and stops when it ends; at half the volume, as the CD audio (−11 dBFS) is louder than the game's sounds (−13 dBFS in the median). The notebook's Options › Sound has the original's CD Musik: AN/AUS (DEEPTEXT 58–64), remembered as `Sound/cdMusic`. Automated runs, which are silent, play no music, so traces and screenshots are unchanged; `tests/cdimagetest` covers the silences, the cue sheets and the WAV files, and the stream was checked against stubbed OpenAL calls. Listened to by hand: not yet. Stations have background sounds of their own (`Sound = b05`, SFX/SND/BGROUND). Whether `DESKTOP.EXE` plays CD tracks too, and whether the original loops a mission's track, pauses it in the menu and plays it as loud as the effects, is to be compared) |
 | G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 19 scenarios are missing. How the original lays them out is to be compared (**done**: an entry is a column of `num` mines, `dis` height units apart, the lowest at `hei` above the ground. Rows don't fit the data: the 202 entries with more than one mine sit in neighbouring cells, 16 m apart, and in s00201 two rows of five-mine columns (from 10 to 50) close a canyon whose walls rise about 50 height units, where single mines would leave it open above. The mines of an entry appear together; the entry is attacked when one of them is and destroyed when all of them are, which matters for s02205, whose objectives 2 and 3 are to destroy such columns. The 407 mines are added in 10 of the 19 scenarios with mines (one of them a training mission); elsewhere every entry has one mine and `dis` is just set for the whole scenario. In the traces of all 71 missions only the added mines differ, and the exit codes are the same; s02205 is won when every target is destroyed, but not with one mine column left, or with only the lowest mine of each column destroyed. Whether the original stacks them upwards is to be compared) |
-| G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing (**partly done**: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod)'s changelog names them, and its changes match: "PD & ED decreased from 150% to 100%" for s02006's Biont bombers is `inte` and `eint` from 150 to 100, "better engines (#3 instead of #2)" is `eng` from 2 to 3. So `inte` is a unit's armour and `eint` its energy defence in percent of its type's `KineticShield0` and `ShockShield0`, which Vertigo now applies: 718 of the 2,345 units differ from 100, from 10 % (the weakened Bionts and Shogunate units of chapters 20–22, some with no energy defence at all) to 1,000 %, and the indestructible types (10,000,000) stay above a million. Seeded idle runs of all missions end as before (3 seeds × 71: 13 destroyed, 3 failed), as only fights see the difference; the traces show the new armour. Still open: `eng` needs the energy pool (appendix H); `card` on 424 active buildings (51 of them not 0) may turn them as it does buildings (in the [open questions](#open-questions-and-how-to-settle-them)), and `sle` lets a unit sleep out of the player's sonar range (appendix J, not in Vertigo yet); `ai` is never read by `FIGHT.EXE` (appendix B)) |
+| G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing (**partly done**: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod)'s changelog names them, and its changes match: "PD & ED decreased from 150% to 100%" for s02006's Biont bombers is `inte` and `eint` from 150 to 100, "better engines (#3 instead of #2)" is `eng` from 2 to 3. So `inte` is a unit's armour and `eint` its energy defence in percent of its type's `KineticShield0` and `ShockShield0`, which Vertigo now applies: 718 of the 2,345 units differ from 100, from 10 % (the weakened Bionts and Shogunate units of chapters 20–22, some with no energy defence at all) to 1,000 %, and the indestructible types (10,000,000) stay above a million. Seeded idle runs of all missions end as before (3 seeds × 71: 13 destroyed, 3 failed), as only fights see the difference; the traces show the new armour. `sle` lets a unit sleep out of the player's sonar range (appendix J, **done**). Still open: `eng` is the unit's engine, which sets how fast its energy guns recharge (appendix K, not in Vertigo yet); `card` on 424 active buildings (51 of them not 0) may turn them as it does buildings (in the [open questions](#open-questions-and-how-to-settle-them)); `ai` is never read by `FIGHT.EXE` (appendix B)) |
 | G4 | Unresolved conditions | S each | `--check` reports an empty faction in s00402 and objectives that don't exist in s00404 (objective 14, 8 times), s01802 (24), s02003 (32, 36) and s02006 (21). Check whether these missions can still be won, and what the original makes of such references (**done**: the numbers are condition codes; they stand for objectives 4 (achieved), 9, 13 and 15 (achieved) and 7 (failed), which `--check` now names. A reference to an objective or faction without units never comes true, as before, and all five missions can be won (with their targets destroyed by `--destroy`). s00402: "every unit of faction 1 destroyed" never happens, so its negation holds and the pirates' threat of revenge plays when 2091 is destroyed, as the text suggests. s00404: the tanks and scouts wait for area 2087 *or* objective 4. The area is enabled with objective 1, when a radio message announces them; if a missing objective were achieved from the start, they would be on their way before that. s01802 was made from s01801, where objective 9 is the enabling of area 2184; it dropped the area, so 2 of the 7 tanks the transport brings (2191 and 2197) never come. They aren't objectives. s02003: area 2049 waits for objective 13 *or* unit 2071 destroyed, and the other reference is the stop condition of an order that waits forever, so neither changes anything. s02006 was made from s02005, whose objective 7 protects the power plant; it dropped the objective but kept its radio message ("direct hit"), which never plays. The original agrees for s01802: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) 1.2, a community mod for the English version, "fixed 'appear' triggers" of two ATL buggies (2191 and 2197) "so these units actually appear on map". The mod also gives s02006 its power plant objective back, rebuilds s02003's objectives and replaces s00402's faction 1; s00404's references stay, and it adds one of its own to s00701) |
 | G5 | s00705 | S | Ended with success after 33 s while the player did nothing (seed 1, with `qrand()`); with other seeds the player died or the time ran out, and with `util::random()` (P2) seeds 1–4 run out of time. Find out which units can fulfil the objectives without the player and whether that is right (October 2026: no longer happens. With the torpedoes and the balancing since, the idle player is destroyed after 62–95 s in each of 12 seeds; only the player can destroy Marquez (2067), the one objective, as everyone else is in his faction. Left to compare: the AD Augmented Mod's changelog says that in the original Schwartz (2066) infiltrates only the first control unit and waits with the others until Marquez is dead. In Vertigo he infiltrates all three in turn (2061 after about 35 s, 2052 after 75 s), and each wakes two turrets. His four slots after the first wait all have "Marquez destroyed" as their break condition; that the original keeps him in the first suggests that a slot with a break condition doesn't also end by itself there, after its time or its docking. See [open questions](#open-questions-and-how-to-settle-them)) |
 | G6 | Station after a mission | S | When several stations are enabled after a mission, the first one is taken (`TODO` in `Chapter`); the player should choose (**done**: FIGHTEXT has the original's autopilot menu, unused until now: AUTOPILOT, ZIEL AUSWÄHLEN (choose the destination), 0 - ABBRUCH, ZIEL BESTÄTIGEN : with 0 - NEIN and 1 - JA, laid out like the turret menu. Alt+A after the mission is accomplished (and Ctrl+K) now opens it with the area's open stations, numbered 1 to 9 in their order, or, after a mission met on the way to a station, that station alone; the boat docks at the one confirmed. Like the turret menu it doesn't pause the mission and takes digits, the d-pad and taps. Test missions and training, which have no stations, still end at once. Tested in a story game from a save with all four stations of area 2 open: after "Trümmer beseitigen", the menu offered Magellan, Vespucci, Topo's Asylum and Entropoint II, and choosing Vespucci docked there instead of at Magellan, the first. Whether the original lists the station the mission started from, and what it shows with no open station (KEINE ZIELE VERFÜGBAR), is to be compared. After the user's comparison with the original: with one destination the autopilot goes there at once, without the menu; and the menus (mission, game over, turret, autopilot) show on the master monitor in place of the target and the voxel radar, in its middle and closer together (nine destinations fit), also in the 3D cockpit, whose screen gets the instruments' texture; taps still take their options. Notices stay in the box in the middle of the view) |
@@ -298,6 +297,7 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | Cluster burst, alert trigger, which dust sprite, debris units | Watch the original (e.g. `s01804`) |
 | Whether an order slot with a break condition also ends by itself (its time, arrival or docking), or only when the condition comes true (G5) | In the original both end a slot (appendix J): the break condition is checked every frame, and the orders also finish on their own, GotoWithInfiltrate after it has docked for `dur`. Still to watch in s00705, as the AD Augmented Mod says Schwartz stays at the first control unit: does he infiltrate the second one (2052, south of the first) while Marquez lives? |
 | Whether Explode (order 11) counts as "destroyed" for conditions | **Settled** (appendix J): it doesn't. The original raises "destroyed" only when a unit's armour reaches zero; an Explode order puts the unit through the same tumbling explosion as a collapsed energy defence, which leaves the armour alone, so "not destroyed" (39) stays true, as the AD Augmented Mod found. Vertigo does the same now (**done**) |
+| How energy guns recharge, and what the engine (`eng`, the boat's engine) does | **Settled** (appendix K): every armed unit has one energy pool, refilled from empty in 5, 3, 1 or 0.01 s by engine 0, 1, 2–4 or 5; a shot costs the gun's `energydemand`, and the gun is ready again once its rearming time is over and the pool is above the demand. The booster draws from the same pool. Not in Vertigo yet |
 | Whether active buildings turn with `card` (0, 2, 4 or 6 on 51 of 424; buildings turn by card·45°) (G3) | Look at one in the original, e.g. s00401's hydrogen tank 2066 (`card` 6) |
 | What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | **Settled** (appendix J): a unit with `sle` 1 (or no `sle`) sleeps while it is out of the player's sonar range, a unit with 0 keeps running its orders anywhere on the map. Vertigo does the same now (**done**) |
 
@@ -715,9 +715,8 @@ OpenAL sources and one shared instance per sample.
   `[VolleyGun]` (State{i} a/p, Duration, Tolerance), `[TorpedoMagazine]`
   (Relative{i}XYZ; TORTUR0 has 6 tubes), `[BuzzerMagazine]` (Type, Eject*),
   scenario keys `gun`, `tor`, `ntor`, `eng` ("Armament"). `eng` is the
-  engine model (0–5; the object files have a default in `[Engine] Type`),
-  which by the AD Augmented Mod's changelog makes energy guns recharge
-  faster; it needs the energy pool.
+  unit's engine model (0–5), which sets how fast its energy pool refills
+  (appendix K); the object files' `[Engine] Type` is never read.
 - `GLOBWEAP.DES` has 14 gun models: 0–10 for boats (0 Plasma Gun I to 10
   Vendetta III, 0–5 energy guns), 11–13 for turrets and vehicles. The AD
   Augmented Mod's changelog says a turret given a boat gun fires that gun's
@@ -827,3 +826,53 @@ idle runs of all missions are compared at the end of this section.
   differently, as fights far from the player now sleep and fewer units attack
   the player at once (s00303 and s00402 seed 1 now survive, s00304 seed 1 and
   s00705 seed 3 don't).
+
+### K. What the original does with the engine, the energy guns and the booster
+
+Read off the original's behaviour in October 2026. None of it is in Vertigo
+yet: Vertigo's guns know their `energydemand` and the state "EnergyDelay",
+but there is no energy pool, so energy guns fire at their rearming rate like
+the others, the HUD's energy bar is always full, and neither a unit's `eng`
+nor the boat's engine has any effect in a mission.
+
+- **The energy pool.** The player's boat and every unit with a `gun` key have
+  one engine with an energy level from 0 to 1, full when the mission starts.
+  The engine's model sets how fast the level refills: every frame it rises by
+  the frame time divided by the model's recharge time, up to 1. The recharge
+  times (from empty to full) are 5 s for engine 0, 3 s for engine 1, 1 s for
+  engines 2, 3 and 4, and 0.01 s for engine 5, which is as good as instant.
+  The player's model is the boat's engine (saved with the ship's mountings as
+  `engine` 0–5), a unit's is its `eng` key (all 1,625 units with a `gun` have
+  one). The HUD's energy bar shows the level: its filled width is the level
+  times the bar's width, never less than 4 pixels.
+- **Energy guns.** Gun models 0–5 (Plasma Gun I to Doom Mortar, the ones with
+  `energydemand` above 0) draw from the pool; models 6–13 use rounds, and
+  where their counter stands the energy guns show "ENER". A shot from an
+  energy gun takes `energydemand` off the level (down to 0; a shot is never
+  refused for lack of energy) and puts the gun into "EnergyDelay". The gun is
+  ready again once its `rearmingtime` has passed *and* the level is above
+  `energydemand` again. So a full pool allows a burst at the rearming rate,
+  after which the gun settles to one shot per `energydemand` × recharge time:
+  a Plasma Gun I (0.1, 0.15 s) on engine 0 fires about 13 shots in 2 s and
+  then one every 0.5 s; on engines 2–4 the pool refills faster than the gun
+  can fire (0.1 s a shot), so it never slows down; a Doom Mortar (0.5,
+  0.3 s) fires every 0.5 s on engine 2 and every 2.5 s on engine 0. Engine 5
+  removes the limit for every gun. The guns with rounds go to "Rearming"
+  after a shot and to "Empty" when their rounds are gone, as in Vertigo.
+- **The booster** (the boat's `booster` mounting) draws from the same pool.
+  It can be switched on only while the level is at least 0.8; switching it on
+  costs 0.15 at once, and while it runs it drains 1.2 per second, the engine
+  recharging meanwhile (so a boost lasts about 0.8 s on engine 0, about 4 s
+  on engines 2–4, and as long as you like on engine 5). It doubles the boat's
+  top speed and raises a second movement limit, probably the acceleration,
+  2.5-fold, and switches itself off when the level falls below 0.05.
+- **Jams**, read on the way, as Vertigo's formula carries a "check" note. The
+  original decides once per trigger pull, before any barrel fires. The gun's
+  condition (1 when new, the boat's `Defect` value from the saved game, taken
+  as 0.2 at the least) is compared with a random number from 0 to 1 times the
+  gun's `defectdamping`: the gun jams when the random product reaches the
+  condition, so the chance is 1 − condition / `defectdamping`, nothing while
+  the condition is at or above the damping (0.2–0.8 in `GLOBWEAP.DES`). A jam
+  lasts `defectdelay` × 0.5 to 1.5, then the gun is ready at once. Vertigo
+  rolls per barrel, divides the chance by the number of barrels, and ends a
+  jam with a rearming period.
