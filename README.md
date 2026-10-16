@@ -239,6 +239,10 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   player.
 - `--near 2050` enables this unit and starts the player 40 m from it, looking
   at it, e.g. to watch it with `--screenshot`.
+- `--start 76,76` starts the player at this cell of the map, at the
+  scenario's height above the ground and heading; `--start 198,126,10,6` sets
+  those too, in the scenario's units (card 0 north, 2 east, 4 south, 6 west),
+  e.g. to take a screenshot where one of the original was taken.
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
   at a fraction of their maximum turn rate (the sign picks the direction),
   instead of following their orders.

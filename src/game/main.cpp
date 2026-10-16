@@ -268,6 +268,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     parser.addOption("fire", "Let these units fire their guns (test mode); towers and tanks aim at the player.", "ids");
     parser.addOption("near", "Enable this unit and start 40 m from it, looking at it (test mode).", "id");
+    parser.addOption("start", "Start at this cell of the map (test mode), optionally hei height units above the ground and heading card (0 north, 2 east, 4 south, 6 west) as in the scenario's player record, e.g. 76,76 or 76,76,10,4.", "x,y[,hei[,card]]");
     parser.addOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
     parser.addOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     parser.addOption("list-items", "List the item models for --equip.");
@@ -457,6 +458,17 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
             return end(game::Vertigo::ExitUsage);
         }
         options.touch.push_back(touch);
+    }
+    if (parser.isSet("start")) {
+        const StringList parts = text(parser.value("start")).split(',');
+        bool ok = parts.size() >= 2 && parts.size() <= 4;
+        for (const String &part : parts)
+            ok = ok && isNumber(part);
+        if (!ok) {
+            std::cerr << "Invalid --start value " << parser.value("start") << ", expected x,y[,hei[,card]]" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.start = { parts[0].toInt(), parts[1].toInt(), parts.value(2, "-1").toInt(), parts.value(3, "-1").toInt() };
     }
     if (parser.isSet("near")) {
         bool ok = false;

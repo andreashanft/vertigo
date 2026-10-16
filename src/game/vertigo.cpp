@@ -24,9 +24,12 @@
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/simpleboat.h"
+#include "fight/boats/player.h"
+#include "fight/surface/surface.h"
 #include "fight/orders.h"
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include <glm/gtc/constants.hpp>
 #include <cmath>
 #include <algorithm>
 #include "txt/desfile.h"
@@ -214,6 +217,19 @@ void Vertigo::startScenario()
         unit->setOrders(nullptr);
         unit->setVelocityTarget(drive.speed/3.6f);
         unit->setTurnVelocity(Vector3D(0, 0, drive.turn));
+    }
+    if (m_options.start.x >= 0) {
+        // at the cell's centre, as the scenario places the player; the scenario's height
+        // above the ground and heading unless given
+        const Options::Start &start = m_options.start;
+        fight::Player *player = m_scenario->player();
+        fight::Surface &surface = m_scenario->surface();
+        const Vector3D scale = surface.scale();
+        const float above = start.hei >= 0 ? start.hei*scale.z : player->position().z - surface.heightAt(player->position().x, player->position().y);
+        Vector3D position((start.x + 0.5f)*scale.x, (start.y + 0.5f)*scale.y, 0);
+        position.z = surface.heightAt(position.x, position.y) + above;
+        const float yaw = start.card*glm::quarter_pi<float>();
+        player->place(position, start.card >= 0 ? Vector3D(std::sin(yaw), std::cos(yaw), 0) : player->dir());
     }
     if (m_options.near) {
         fight::ActiveObject *unit = nullptr;
