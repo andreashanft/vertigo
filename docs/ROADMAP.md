@@ -297,9 +297,9 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | Radiation trigger (**measured**, appendix D: less than 100 m below the surface on every map, the ALERT below 60 m) | Done by setting the boat's height in the original under DOSBox-X |
 | Cluster burst, alert trigger, which dust sprite, debris units | Watch the original (e.g. `s01804`) |
 | Whether an order slot with a break condition also ends by itself (its time, arrival or docking), or only when the condition comes true (G5) | In the original both end a slot (appendix J): the break condition is checked every frame, and the orders also finish on their own, GotoWithInfiltrate after it has docked for `dur`. Still to watch in s00705, as the AD Augmented Mod says Schwartz stays at the first control unit: does he infiltrate the second one (2052, south of the first) while Marquez lives? |
-| Whether Explode (order 11) counts as "destroyed" for conditions | **Settled** (appendix J): it doesn't. The original raises "destroyed" only when a unit's armour reaches zero; an Explode order puts the unit through the same tumbling explosion as a collapsed energy defence, which leaves the armour alone, so "not destroyed" (39) stays true, as the AD Augmented Mod found. Vertigo treats it as destroyed; to change |
+| Whether Explode (order 11) counts as "destroyed" for conditions | **Settled** (appendix J): it doesn't. The original raises "destroyed" only when a unit's armour reaches zero; an Explode order puts the unit through the same tumbling explosion as a collapsed energy defence, which leaves the armour alone, so "not destroyed" (39) stays true, as the AD Augmented Mod found. Vertigo does the same now (**done**) |
 | Whether active buildings turn with `card` (0, 2, 4 or 6 on 51 of 424; buildings turn by card·45°) (G3) | Look at one in the original, e.g. s00401's hydrogen tank 2066 (`card` 6) |
-| What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | **Settled** (appendix J): a unit with `sle` 1 (or no `sle`) sleeps while it is out of the player's sonar range, a unit with 0 keeps running its orders anywhere on the map. Vertigo runs every unit everywhere; to add |
+| What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | **Settled** (appendix J): a unit with `sle` 1 (or no `sle`) sleeps while it is out of the player's sonar range, a unit with 0 keeps running its orders anywhere on the map. Vertigo does the same now (**done**) |
 
 [reverse-engineering.md](reverse-engineering.md) maps each question to an
 instrument: the original under DOSBox-X's debugger on the Mac first, a static
@@ -758,7 +758,9 @@ autopilot menu (restart, abort, the autosave, or one of the open stations).
 ### J. What the original does with `sle`, `diff`, `car`, `con` and the difficulty
 
 Read off the original's behaviour in October 2026, for the open questions
-above. Vertigo does none of it yet unless noted.
+above. All of it is in Vertigo since October 2026 (the sleep, the attacker
+cap, `car`, `con` and the explosion that isn't a destruction); the seeded
+idle runs of all missions are compared at the end of this section.
 
 - **Sleeping units (`sle`).** Every unit carries a flag set from `sle`: 1
   when the key is 1 or missing, 0 when it is 0. Each frame the game keeps two
@@ -773,9 +775,11 @@ above. Vertigo does none of it yet unless noted.
   patrolling, not while it is attacking. A unit with `sle` 0 never sleeps and
   runs its orders anywhere on the map. In the data `sle` is 0 on 800 of 949
   scouts, 195 of 244 bombers and 72 of 135 tanks (units that have to travel
-  across the map), and 1 on nearly all towers, mines and turrets. Vertigo
-  updates every unit everywhere; adding the sleep would change what happens
-  far from the player (units reaching their goals, fights among AI units).
+  across the map), and 1 on nearly all towers, mines and turrets. In Vertigo
+  the radius is the sonar's passive range for that unit plus 3 cells, a
+  sleeping boat's engine is silent, a boat in an Explode order and a tower
+  whose turret tracks a target stay awake, and `--trace` and the debug
+  overlay say `asleep`.
 - **`diff`** on a unit is the lowest difficulty (0 easy, 1 normal, 2 hard; the
   main menu's setting, `[Global] Difficulty` in `fightin.des`) at which the
   unit exists; a missing key is 0. Vertigo does the same (milestone 5).
@@ -784,7 +788,9 @@ above. Vertigo does none of it yet unless noted.
   attackers, which holds 4 units on easy, 6 on normal and 8 on hard; when the
   list is full the unit gets no target. Ground plans take at most 4 attackers
   at any difficulty; attackers of a second kind (probably torpedoes) have a
-  list of their own, 8 for everyone.
+  list of their own, 8 for everyone. Vertigo keeps the player's list (every
+  order that takes the player as its target asks first; `--trace` prints the
+  count), not the ground plans' nor the second kind's.
 - **`car`** (CardinalPatrol, CardinalAttack and Ambush) is a quarter turn: 2
   turns 90° one way, 4 turns 180°, 6 turns 90° the other way, and 0, odd
   values and the frequent 10 mean straight ahead. A tower starts its patrol
@@ -792,8 +798,10 @@ above. Vertigo does none of it yet unless noted.
   0.5–2.5 s it turns the turret by a random angle of 15° to 90° in a random
   direction, for the order's `dur`; a boat in ambush points its nose that way
   while it lies in wait. Which of 2 and 6 is left remains to be checked in a
-  mission. Boats ignore CardinalPatrol and CardinalAttack orders altogether
-  (they skip to the next slot), so `car` on those only matters for towers.
+  mission (Vertigo turns 2 to the left and 6 to the right, and keeps the
+  tower's sweep within a quarter turn of its rest direction). Boats ignore
+  CardinalPatrol and CardinalAttack orders altogether (they skip to the next
+  slot), so `car` on those only matters for towers.
 - **`con`** on Explode (with `dur` in seconds) says what sets the explosion
   off: 0 explodes when `dur` is over unless the unit has been boarded by then;
   1 waits to be boarded (by a GotoWithInfiltrate) and explodes `dur` seconds
@@ -812,3 +820,10 @@ above. Vertigo does none of it yet unless noted.
   on the first hit on any of its units, "arrived" and "boarded" once every one
   of its units has arrived or been boarded, "destroyed" once every one is
   destroyed (armour at zero).
+- **Seeded idle runs** of all 71 missions (3 seeds, headless, 60 s, normal
+  difficulty) before and after: 13 destroyed, 3 failed, 197 timed out before;
+  9 destroyed, 3 failed, 201 timed out after. The same 3 runs fail; about a
+  third of the runs fire a different number of torpedoes or end a few units
+  differently, as fights far from the player now sleep and fewer units attack
+  the player at once (s00303 and s00402 seed 1 now survive, s00304 seed 1 and
+  s00705 seed 3 don't).
