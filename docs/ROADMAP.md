@@ -281,7 +281,7 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 |---|---|---|---|
 | G1 | Mission music | S–M | Each scenario's `[CD] Track` (1–4; 0 only in s02005) presumably picks one of the CD's audio tracks 2–5 (`game.ins`: track 1 is data). Vertigo plays no music in missions, and the data directory doesn't contain these tracks. They are plain 44.1 kHz 16-bit stereo PCM in `game.gog` (2,352-byte sectors), so they can be copied out once (or on import, see the [iPad port](#ipad-port)) and streamed like the other sounds. Whether 0 means silence, and whether the stations use CD music too, is to be checked (**done**: `Track` n plays the CD's track n+1, so 1–4 are its four audio tracks (3:30, 3:11, 1:34 and 1:00) and 0 would be the data track, i.e. none. Building `Game Data` from a CD image also copies the audio tracks out: `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`, 98 MB, 16-bit stereo at 44.1 kHz. They are the sounding stretches after the data track, apart by a second or more of digital silence (the CD has two), so the image is enough; GOG's `game.ins` has each track 167 sectors (2.2 s) later than its sound starts in `game.gog`, so a track by it would lack its first 2.2 s and end in the next one's. A cue sheet is used only for a rip with a file for each track; the samples are little-endian (the neighbouring samples correlate at 0.993, read big-endian at 0). `sfx::Music` streams the mission's track from the disk through four OpenAL buffers, round and round, pauses with the mission and stops when it ends; at half the volume, as the CD audio (−11 dBFS) is louder than the game's sounds (−13 dBFS in the median). The notebook's Options › Sound has the original's CD Musik: AN/AUS (DEEPTEXT 58–64), remembered as `Sound/cdMusic`. Automated runs, which are silent, play no music, so traces and screenshots are unchanged; `tests/cdimagetest` covers the silences, the cue sheets and the WAV files, and the stream was checked against stubbed OpenAL calls. Listened to by hand: not yet. Stations have background sounds of their own (`Sound = b05`, SFX/SND/BGROUND). Whether `DESKTOP.EXE` plays CD tracks too, and whether the original loops a mission's track, pauses it in the menu and plays it as loud as the effects, is to be compared) |
 | G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 19 scenarios are missing. How the original lays them out is to be compared (**done**: an entry is a column of `num` mines, `dis` height units apart, the lowest at `hei` above the ground. Rows don't fit the data: the 202 entries with more than one mine sit in neighbouring cells, 16 m apart, and in s00201 two rows of five-mine columns (from 10 to 50) close a canyon whose walls rise about 50 height units, where single mines would leave it open above. The mines of an entry appear together; the entry is attacked when one of them is and destroyed when all of them are, which matters for s02205, whose objectives 2 and 3 are to destroy such columns. The 407 mines are added in 10 of the 19 scenarios with mines (one of them a training mission); elsewhere every entry has one mine and `dis` is just set for the whole scenario. In the traces of all 71 missions only the added mines differ, and the exit codes are the same; s02205 is won when every target is destroyed, but not with one mine column left, or with only the lowest mine of each column destroyed. Whether the original stacks them upwards is to be compared) |
-| G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing (**partly done**: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod)'s changelog names them, and its changes match: "PD & ED decreased from 150% to 100%" for s02006's Biont bombers is `inte` and `eint` from 150 to 100, "better engines (#3 instead of #2)" is `eng` from 2 to 3. So `inte` is a unit's armour and `eint` its energy defence in percent of its type's `KineticShield0` and `ShockShield0`, which Vertigo now applies: 718 of the 2,345 units differ from 100, from 10 % (the weakened Bionts and Shogunate units of chapters 20–22, some with no energy defence at all) to 1,000 %, and the indestructible types (10,000,000) stay above a million. Seeded idle runs of all missions end as before (3 seeds × 71: 13 destroyed, 3 failed), as only fights see the difference; the traces show the new armour. Still open: `eng` needs the energy pool (appendix H); `card` on 424 active buildings (51 of them not 0) may turn them as it does buildings, and `sle` is unknown (both in the [open questions](#open-questions-and-how-to-settle-them)); `ai` is never read by `FIGHT.EXE` (appendix B)) |
+| G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing (**partly done**: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod)'s changelog names them, and its changes match: "PD & ED decreased from 150% to 100%" for s02006's Biont bombers is `inte` and `eint` from 150 to 100, "better engines (#3 instead of #2)" is `eng` from 2 to 3. So `inte` is a unit's armour and `eint` its energy defence in percent of its type's `KineticShield0` and `ShockShield0`, which Vertigo now applies: 718 of the 2,345 units differ from 100, from 10 % (the weakened Bionts and Shogunate units of chapters 20–22, some with no energy defence at all) to 1,000 %, and the indestructible types (10,000,000) stay above a million. Seeded idle runs of all missions end as before (3 seeds × 71: 13 destroyed, 3 failed), as only fights see the difference; the traces show the new armour. Still open: `eng` needs the energy pool (appendix H); `card` on 424 active buildings (51 of them not 0) may turn them as it does buildings (in the [open questions](#open-questions-and-how-to-settle-them)), and `sle` lets a unit sleep out of the player's sonar range (appendix J, not in Vertigo yet); `ai` is never read by `FIGHT.EXE` (appendix B)) |
 | G4 | Unresolved conditions | S each | `--check` reports an empty faction in s00402 and objectives that don't exist in s00404 (objective 14, 8 times), s01802 (24), s02003 (32, 36) and s02006 (21). Check whether these missions can still be won, and what the original makes of such references (**done**: the numbers are condition codes; they stand for objectives 4 (achieved), 9, 13 and 15 (achieved) and 7 (failed), which `--check` now names. A reference to an objective or faction without units never comes true, as before, and all five missions can be won (with their targets destroyed by `--destroy`). s00402: "every unit of faction 1 destroyed" never happens, so its negation holds and the pirates' threat of revenge plays when 2091 is destroyed, as the text suggests. s00404: the tanks and scouts wait for area 2087 *or* objective 4. The area is enabled with objective 1, when a radio message announces them; if a missing objective were achieved from the start, they would be on their way before that. s01802 was made from s01801, where objective 9 is the enabling of area 2184; it dropped the area, so 2 of the 7 tanks the transport brings (2191 and 2197) never come. They aren't objectives. s02003: area 2049 waits for objective 13 *or* unit 2071 destroyed, and the other reference is the stop condition of an order that waits forever, so neither changes anything. s02006 was made from s02005, whose objective 7 protects the power plant; it dropped the objective but kept its radio message ("direct hit"), which never plays. The original agrees for s01802: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) 1.2, a community mod for the English version, "fixed 'appear' triggers" of two ATL buggies (2191 and 2197) "so these units actually appear on map". The mod also gives s02006 its power plant objective back, rebuilds s02003's objectives and replaces s00402's faction 1; s00404's references stay, and it adds one of its own to s00701) |
 | G5 | s00705 | S | Ended with success after 33 s while the player did nothing (seed 1, with `qrand()`); with other seeds the player died or the time ran out, and with `util::random()` (P2) seeds 1–4 run out of time. Find out which units can fulfil the objectives without the player and whether that is right (October 2026: no longer happens. With the torpedoes and the balancing since, the idle player is destroyed after 62–95 s in each of 12 seeds; only the player can destroy Marquez (2067), the one objective, as everyone else is in his faction. Left to compare: the AD Augmented Mod's changelog says that in the original Schwartz (2066) infiltrates only the first control unit and waits with the others until Marquez is dead. In Vertigo he infiltrates all three in turn (2061 after about 35 s, 2052 after 75 s), and each wakes two turrets. His four slots after the first wait all have "Marquez destroyed" as their break condition; that the original keeps him in the first suggests that a slot with a break condition doesn't also end by itself there, after its time or its docking. See [open questions](#open-questions-and-how-to-settle-them)) |
 | G6 | Station after a mission | S | When several stations are enabled after a mission, the first one is taken (`TODO` in `Chapter`); the player should choose (**done**: FIGHTEXT has the original's autopilot menu, unused until now: AUTOPILOT, ZIEL AUSWÄHLEN (choose the destination), 0 - ABBRUCH, ZIEL BESTÄTIGEN : with 0 - NEIN and 1 - JA, laid out like the turret menu. Alt+A after the mission is accomplished (and Ctrl+K) now opens it with the area's open stations, numbered 1 to 9 in their order, or, after a mission met on the way to a station, that station alone; the boat docks at the one confirmed. Like the turret menu it doesn't pause the mission and takes digits, the d-pad and taps. Test missions and training, which have no stations, still end at once. Tested in a story game from a save with all four stations of area 2 open: after "Trümmer beseitigen", the menu offered Magellan, Vespucci, Topo's Asylum and Entropoint II, and choosing Vespucci docked there instead of at Magellan, the first. Whether the original lists the station the mission started from, and what it shows with no open station (KEINE ZIELE VERFÜGBAR), is to be compared. After the user's comparison with the original: with one destination the autopilot goes there at once, without the menu; and the menus (mission, game over, turret, autopilot) show on the master monitor in place of the target and the voxel radar, in its middle and closer together (nine destinations fit), also in the 3D cockpit, whose screen gets the instruments' texture; taps still take their options. Notices stay in the box in the middle of the view) |
@@ -292,14 +292,14 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | Unknown | How |
 |---|---|
 | Current speeds and directions 8/9 (**measured**, appendix D: about 41 m/s along the boat's axis and 19 m/s across it for `spd` 2, about 5 m/s for `spd` 0, no fade, coasting afterwards; 8 is up at 5 m/s, 9 down at 4.5–9 m/s). Left: why one of S00202's two 8 cells does nothing, and the exact acceleration curve | Measured with the player's drift in the original under DOSBox-X; the rest the same way, or in `FIGHT.EXE` (instrument 2) |
-| Unclear order settings (`car` for towers and ambush, `con` for Explode, `sle`, `diff`), mission end types, one objective type (`wccond 9`) | Study the relevant `FIGHT.EXE` routines one at a time with sfwin32's tools, then write our own code (no copying) |
+| Unclear order settings (`car` for towers and ambush, `con` for Explode, `sle`, `diff`), mission end types (**settled** in the original, October 2026, appendix J: `car` is a quarter turn, `con` says what sets off the explosion, `sle` lets a unit sleep out of the player's sonar range, `diff` is the lowest difficulty the unit appears at, the end types pick the destination written to `fightout.des`), one objective type (`wccond 9`, still open) | `wccond 9`: compare the 56 units that carry it (s00303, s02006 and others) with what the original does with them |
 | How engine volume and pan fall off with distance | Log the original's volume, pan and pitch calls in sfwin32's `audio.c` |
 | Radiation trigger (**measured**, appendix D: less than 100 m below the surface on every map, the ALERT below 60 m) | Done by setting the boat's height in the original under DOSBox-X |
 | Cluster burst, alert trigger, which dust sprite, debris units | Watch the original (e.g. `s01804`) |
-| Whether an order slot with a break condition also ends by itself (its time, arrival or docking), or only when the condition comes true (G5) | Watch Schwartz in the original's s00705: does he infiltrate the second control unit (2052, south of the first) while Marquez lives? The AD Augmented Mod says he doesn't |
-| Whether Explode (order 11) counts as "destroyed" for conditions | The AD Augmented Mod found that "not destroyed" (39) still holds after a unit explodes, and worked around it; check in the original (its notes on s01804), Vertigo treats it as destroyed |
+| Whether an order slot with a break condition also ends by itself (its time, arrival or docking), or only when the condition comes true (G5) | In the original both end a slot (appendix J): the break condition is checked every frame, and the orders also finish on their own, GotoWithInfiltrate after it has docked for `dur`. Still to watch in s00705, as the AD Augmented Mod says Schwartz stays at the first control unit: does he infiltrate the second one (2052, south of the first) while Marquez lives? |
+| Whether Explode (order 11) counts as "destroyed" for conditions | **Settled** (appendix J): it doesn't. The original raises "destroyed" only when a unit's armour reaches zero; an Explode order puts the unit through the same tumbling explosion as a collapsed energy defence, which leaves the armour alone, so "not destroyed" (39) stays true, as the AD Augmented Mod found. Vertigo treats it as destroyed; to change |
 | Whether active buildings turn with `card` (0, 2, 4 or 6 on 51 of 424; buildings turn by card·45°) (G3) | Look at one in the original, e.g. s00401's hydrogen tank 2066 (`card` 6) |
-| What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | Study it with sfwin32's tools |
+| What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | **Settled** (appendix J): a unit with `sle` 1 (or no `sle`) sleeps while it is out of the player's sonar range, a unit with 0 keeps running its orders anywhere on the map. Vertigo runs every unit everywhere; to add |
 
 [reverse-engineering.md](reverse-engineering.md) maps each question to an
 instrument: the original under DOSBox-X's debugger on the Mac first, a static
@@ -548,10 +548,11 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   reaches its point. "Boarded" (45/46, objective 8) completes on the `ene` of a
   GotoWithInfiltrate. "Attacked" with `bcdep` 2 refers to a faction (IFF),
   not a single unit.
-- `car` takes 0/2/4/6/10 (mostly 10) with no obvious pattern yet. Explode
-  `con=2` is used 71 times; `con=1` only once (S00202, probably "after being
-  boarded"). `sle` is read by `FIGHT.EXE` but unclear (`diff` is the
-  difficulty, see milestone 5); `ai` is never read.
+- `car` takes 0/2/4/6/10 (mostly 10): a quarter turn, see appendix J. Explode
+  `con=2` is used 71 times; `con=1` only once (S00202, "after being
+  boarded", appendix J). `sle` lets a unit sleep out of the player's sonar
+  range (appendix J); `diff` is the lowest difficulty the unit appears at
+  (milestone 5); `ai` is never read.
 - `[Attack]` in boat and bomber files drives the attack manoeuvre:
   `AlignProbabilityFront/Back/Left/Right`, `Min/MaxAlignRadius`,
   `Min/MaxAlignGamma`, `Min/MaxAlignTime`; `AttackProbabilityTurn`,
@@ -748,4 +749,66 @@ OpenAL sources and one shared instance per sample.
 `FIGHT.EXE` writes `dat\save\fightout.des` with `[Global]` completed / failed
 / primary / user / secondary, and `Destination` = AutoEnd | InstantEnd |
 <station> | RestoreAutoSave | RestartScenario | AbortGame. A sample file is in
-the GOG installation (`DAT/SAVE/FIGHTOUT.DES`).
+the GOG installation (`DAT/SAVE/FIGHTOUT.DES`). The scenario's `[End] type`
+(0 in most, 1–4 in a few) picks the destination of an accomplished mission:
+1 AutoEnd, 2 InstantEnd, 3 the station st1703, 4 the station st9901;
+otherwise the destination is what the player chose in the mission menu or the
+autopilot menu (restart, abort, the autosave, or one of the open stations).
+
+### J. What the original does with `sle`, `diff`, `car`, `con` and the difficulty
+
+Read off the original's behaviour in October 2026, for the open questions
+above. Vertigo does none of it yet unless noted.
+
+- **Sleeping units (`sle`).** Every unit carries a flag set from `sle`: 1
+  when the key is 1 or missing, 0 when it is 0. Each frame the game keeps two
+  sets of units, awake and asleep. An awake unit whose flag is set and whose
+  horizontal distance from the player exceeds the player's sonar range plus
+  3 map cells (48 m on most maps) is put to sleep: its engine sound stops and
+  it is not updated at all (no orders, no movement, no shooting) until the
+  player comes back within that radius, when it starts its current order slot
+  again. Boats sleep only while waiting, going somewhere, patrolling,
+  attacking, lying in ambush, escorting, arriving or infiltrating, never while
+  dying, exploding or in an Explode order; a tower sleeps only while idle or
+  patrolling, not while it is attacking. A unit with `sle` 0 never sleeps and
+  runs its orders anywhere on the map. In the data `sle` is 0 on 800 of 949
+  scouts, 195 of 244 bombers and 72 of 135 tanks (units that have to travel
+  across the map), and 1 on nearly all towers, mines and turrets. Vertigo
+  updates every unit everywhere; adding the sleep would change what happens
+  far from the player (units reaching their goals, fights among AI units).
+- **`diff`** on a unit is the lowest difficulty (0 easy, 1 normal, 2 hard; the
+  main menu's setting, `[Global] Difficulty` in `fightin.des`) at which the
+  unit exists; a missing key is 0. Vertigo does the same (milestone 5).
+- **The difficulty** also limits how many units attack the player at once: a
+  unit that takes the player as its target joins the player's list of
+  attackers, which holds 4 units on easy, 6 on normal and 8 on hard; when the
+  list is full the unit gets no target. Ground plans take at most 4 attackers
+  at any difficulty; attackers of a second kind (probably torpedoes) have a
+  list of their own, 8 for everyone.
+- **`car`** (CardinalPatrol, CardinalAttack and Ambush) is a quarter turn: 2
+  turns 90° one way, 4 turns 180°, 6 turns 90° the other way, and 0, odd
+  values and the frequent 10 mean straight ahead. A tower starts its patrol
+  with the turret turned by it from the tower's own front, then sweeps: every
+  0.5–2.5 s it turns the turret by a random angle of 15° to 90° in a random
+  direction, for the order's `dur`; a boat in ambush points its nose that way
+  while it lies in wait. Which of 2 and 6 is left remains to be checked in a
+  mission. Boats ignore CardinalPatrol and CardinalAttack orders altogether
+  (they skip to the next slot), so `car` on those only matters for towers.
+- **`con`** on Explode (with `dur` in seconds) says what sets the explosion
+  off: 0 explodes when `dur` is over unless the unit has been boarded by then;
+  1 waits to be boarded (by a GotoWithInfiltrate) and explodes `dur` seconds
+  after that; 2 explodes when `dur` is over no matter what. The explosion
+  itself is three explosion effects at the unit, which then tumbles away with
+  a random spin, the same sequence as a unit whose energy defence has
+  collapsed; the armour is untouched, so the unit is not "destroyed" for the
+  mission's conditions.
+- **Order slots** end in two ways, both of which the original checks: the
+  slot's break condition is evaluated every frame, independently of the
+  order, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
+  CardinalPatrol when `dur` is over, Goto and GotoWithArrive at their point,
+  GotoWithInfiltrate once the boat has sat at its target for `dur` seconds,
+  which is when the target counts as boarded). A unit's 8 slots are taken in
+  turn, skipping empty ones, round and round. The squadron events: "attacked"
+  on the first hit on any of its units, "arrived" and "boarded" once every one
+  of its units has arrived or been boarded, "destroyed" once every one is
+  destroyed (armour at zero).
