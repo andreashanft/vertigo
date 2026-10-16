@@ -16,8 +16,17 @@
  ***************************************************************************/
 
 #include "colortable.h"
+#include "util/datapath.h"
+#include "util/path.hpp"
 
 namespace gfx {
+
+namespace {
+
+// the rows follow the header, the palette and 12 more bytes
+const int ShadingOffset = 0x31a;
+
+}
 
 ColorTable::ColorTable(const String &filename)
 {
@@ -44,6 +53,23 @@ void ColorTable::toRgb565()
     for (Rgb &color : *this)
         color = rgb(red(color) & 0xf8, green(color) & 0xfc, blue(color) & 0xf8);
 }
+
+std::vector<Rgb> ColorTable::loadShading(const String &filename)
+{
+    std::vector<Rgb> table;
+    const std::vector<char> data = util::readFile(util::DataPath::resolve(filename));
+    const int entries = ShadingRows*256;
+    if (int(data.size()) < ShadingOffset + entries*2)
+        return table;
+    table.resize(entries);
+    const std::uint8_t *colors = reinterpret_cast<const std::uint8_t *>(data.data()) + ShadingOffset;
+    for (int i = 0; i < entries; i++) {
+        const int c = colors[2*i] | (colors[2*i + 1] << 8);
+        table[i] = rgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31);
+    }
+    return table;
+}
+
 
 void ColorTable::load(util::File &file)
 {

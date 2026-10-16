@@ -58,6 +58,10 @@ public:
         std::vector<int> trace;                         // test mode: print these units' state every second
         std::vector<int> fire;                          // test mode: these units fire (towers and tanks aim at the player)
         int near = 0;                                   // test mode: enable this unit and start next to it
+        // the player's start moved to this cell of the map, hei height units above the ground
+        // (-1: the scenario's), heading card eighths of a turn from north (-1: the scenario's)
+        struct Start { int x = -1; int y = -1; int hei = -1; int card = -1; };
+        Start start;                                    // test mode: start elsewhere
         struct Screenshot { float time; std::string file; };        // the file is a path in UTF-8
         std::vector<Screenshot> screenshots;            // test mode: save the window at these times
         // buttons pressed together, or a stick's axis (0 left x, 1 left y, 2 right x, 3 right y)

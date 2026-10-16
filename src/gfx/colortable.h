@@ -41,6 +41,12 @@ public:
     bool loadFromFile(const String &filename);
     void load(util::File &file);
     void toRgb565();
+
+    // the shading table behind the palette of a .s16 file: ShadingRows rows of 256 RGB565
+    // colours, one colour per palette entry, from the farthest (the water's colour) to the
+    // nearest row. Empty if the file has no table
+    static const int ShadingRows = 32;
+    static std::vector<Rgb> loadShading(const String &filename);
 };
 
 } // namespace gfx

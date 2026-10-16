@@ -23,6 +23,7 @@
 #include "fight/objects/building.h"
 #include "fight/effects/trash.h"
 #include "fight/target.h"
+#include "gfx/colortable.h"
 #include "txt/desfile.h"
 #include "util/datapath.h"
 #include "gfx/pipeline.h"
@@ -40,10 +41,9 @@ namespace hud {
 
 namespace {
 
-// VOX_nnn.S16: 32 rows of 256 RGB565 colours from 0x31a on, from the farthest (the water's
+// VOX_nnn.S16: the shading table's 32 rows of 256 colours, from the farthest (the water's
 // colour) to the nearest; in each row 0-63 is a ramp from dark to light and 64 is orange.
-const int TableOffset = 0x31a;
-const int FogRows = 32;
+const int FogRows = gfx::ColorTable::ShadingRows;
 const int Entries = 256;
 const int LightLevels = 64;
 const int Orange = 64;
@@ -68,16 +68,9 @@ VoxelRadar::VoxelRadar(txt::DesFile &file)
     m_elevation = glm::radians(file.value("Projection", 30).toFloat());
     m_extent = file.value("WorldMaxY", 20).toFloat();
 
-    const std::vector<char> data = util::readFile(util::DataPath::resolve(String("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString())));
-    if (m_rect.width <= 0 || m_rect.height <= 0 || int(data.size()) < TableOffset + FogRows*Entries*2)
+    m_table = gfx::ColorTable::loadShading(String("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString()));
+    if (m_rect.width <= 0 || m_rect.height <= 0 || m_table.empty())
         return;
-    m_table.resize(FogRows*Entries);
-    const std::uint8_t *colors = reinterpret_cast<const std::uint8_t *>(data.data()) + TableOffset;
-    for (int i = 0; i < FogRows*Entries; i++)
-    {
-        const int c = colors[2*i] | (colors[2*i + 1] << 8);
-        m_table[i] = gfx::rgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31);
-    }
     m_image = gfx::Image(m_rect.width, m_rect.height, gfx::Image::ARGB32);
     m_valid = true;
 }

@@ -30,6 +30,17 @@
 
 namespace fight {
 
+namespace {
+
+// the terrain's textures hold half the brightness the shading tables' nearest row gives them
+const float TextureGain = 2;
+// the distances at which the tables' nearest and farthest rows are left and reached, from
+// the original's picture (docs/ROADMAP.md, "Differences to the original's cockpit")
+const float FogStart = 12;
+const float FogEnd = 76;
+
+}
+
 
 Surface::Surface() :
     m_tesselator(Level, this)
@@ -74,10 +85,46 @@ void Surface::load(const String &name, int maxheightscale, int mapping)
 
     const String sName = file.value("sname").toString();
     const String tName = file.value("tname").toString();
+    m_fog = gfx::Pipeline::Fog{ Vector3D(0.0f, 0.0f, 0.15f), FogStart, FogEnd, 1 };
     for (int i = 0; i <= 16; i++) {
-        gfx::ColorTable colorTable(String("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, '0'));
+        const String shading = String("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, '0');
+        gfx::ColorTable colorTable(shading);
+        if (i == 0)
+            m_fog.color = fogColor(colorTable, gfx::ColorTable::loadShading(shading));
         m_textures.push_back(gfx::Image::load(String("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, '0'), colorTable));
     }
+}
+
+
+// The shading table's rows are a blend from twice the palette into one colour: row r holds
+// t*2*palette + (1 - t)*colour with t = (r + 1)/32, clamped to 0..255. The colour is below
+// zero in red, so it is the mean of what each unclamped entry says it is
+Vector3D Surface::fogColor(const gfx::ColorTable &palette, const std::vector<gfx::Rgb> &table)
+{
+    const int rows = gfx::ColorTable::ShadingRows;
+    if (int(table.size()) < rows*256 || palette.size() < 256)
+        return Vector3D(0.0f, 0.0f, 0.15f);
+    Vector3D sum(0);
+    Vector3D count(0);
+    // the nearest rows are left out: their blend holds too little of the colour to tell it
+    for (int r = 0; r < rows*3/4; r++) {
+        const float t = float(r + 1)/rows;
+        for (int i = 0; i < 256; i++) {
+            const gfx::Rgb p = palette[i];
+            const gfx::Rgb c = table[r*256 + i];
+            const int value[3] = { gfx::red(c), gfx::green(c), gfx::blue(c) };
+            const int base[3] = { gfx::red(p), gfx::green(p), gfx::blue(p) };
+            for (int k = 0; k < 3; k++) {
+                if (value[k] <= 0 || value[k] >= 248)
+                    continue;
+                sum[k] += (value[k] - t*TextureGain*base[k])/(1 - t);
+                count[k] += 1;
+            }
+        }
+    }
+    for (int k = 0; k < 3; k++)
+        sum[k] = count[k] > 0 ? sum[k]/count[k]/255 : 0;
+    return sum;
 }
 
 
@@ -158,6 +205,16 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
     int x0 = position.x / m_scale.x / 8;
     int y0 = position.y / m_scale.y / 8;
 
+    // the terrain's colours come from the tables alone: no light, the textures at the
+    // nearest row's brightness, fading with the distance
+    const bool lighting = gfx::Pipeline::lighting();
+    const Vector4D color = gfx::Pipeline::color();
+    gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setColor(Vector4D(1));
+    gfx::Pipeline::Fog fog = m_fog;
+    fog.gain = TextureGain;
+    gfx::Pipeline::setFog(fog);
+
     for (int y = y0 - 2; y <= y0 + 2; y++)
         for (int x = x0 - 2; x <= x0 + 2; x++)
         {
@@ -167,6 +224,10 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
             if (QVector3D::dotProduct(dir, direction) > 0)*/
                 element.draw();
         }
+
+    gfx::Pipeline::setFog(m_fog);
+    gfx::Pipeline::setColor(color);
+    gfx::Pipeline::setLighting(lighting);
 }
 
 
