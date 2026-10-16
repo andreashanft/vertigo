@@ -299,3 +299,33 @@ start `dosbox-x -conf ad.conf` from a terminal. What was learned:
   with the HUD's km/h readout in screenshots taken alongside
   (`screencapture` every 2 s, the readout cropped). Results in the roadmap,
   appendix D.
+
+## Comparing the booster (October 2026)
+
+The same mission, boat and loadout on both sides, to watch the booster, the
+energy bar and an energy gun by hand:
+
+- Original: `dosbox-x -conf ~/Documents/Legacy/AD-dosbox/ad-play.conf` from
+  a terminal. It is `ad.conf` without the control channel; its autoexec
+  copies `DAT\SAVE\BOOSTER.DES` over `FIGHTIN.DES` and runs `FIGHT.EXE
+  solo`: training mission 3 (`strai3`, map `ar02`) in the Hiob with the
+  chapter-1 loadout, a Big Block (`engine = 2`), a booster and a Plasma
+  Death II (`model = 3`). `FIGHTIN.DES` lists a booster as `booster = 0`;
+  the line's presence is what counts, so remove it for a boat without one.
+  Engines are `engine = 0`, 1 or 2 for the Small, Medium and Big Block.
+  `MSS.LOG` in the game folder records the sounds, the booster's among them.
+- Vertigo, the same from the command line:
+
+  ```bash
+  build/vertigo strai3 --difficulty 1 --equip GUN=3076,GENE=4099,GENE=4100
+  ```
+
+  (`--trace 2048` prints the player's speed and energy every second; Q is the
+  booster, Space the gun.)
+- Watch, from a standstill and at full speed: the seconds the boost lasts
+  (about 4 s on the Big Block by the reading above), the speed it reaches
+  and how soon, whether the boat keeps the speed or falls back once the
+  energy is gone, the energy bar's fall and refill (1 s to full), the gun's
+  "ENE" delay while the pool is down, and the engine sound's pitch. Vertigo
+  has the acceleration raised 2.5-fold while boosting, which is a reading of
+  a second movement limit and the first thing to correct.
