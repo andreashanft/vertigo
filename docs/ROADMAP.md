@@ -852,17 +852,22 @@ seeded idle runs are compared at the end of this section.
   bar's width, never less than 4 pixels.
 - **Energy guns.** Gun models 0–5 (Plasma Gun I to Doom Mortar, the ones with
   `energydemand` above 0) draw from the pool; models 6–13 use rounds, and
-  where their counter stands the energy guns show "ENER". A shot from an
-  energy gun takes `energydemand` off the level (down to 0; a shot is never
-  refused for lack of energy) and puts the gun into "EnergyDelay". The gun is
-  ready again once its `rearmingtime` has passed *and* the level is above
-  `energydemand` again. So a full pool allows a burst at the rearming rate,
-  after which the gun settles to one shot per `energydemand` × recharge time:
-  a Plasma Gun I (0.1, 0.15 s) on engine 0 fires about 13 shots in 2 s and
-  then one every 0.5 s; on engines 2–4 the pool refills faster than the gun
-  can fire (0.1 s a shot), so it never slows down; a Doom Mortar (0.5,
-  0.3 s) fires every 0.5 s on engine 2 and every 2.5 s on engine 0. Engine 5
-  removes the limit for every gun. The guns with rounds go to "Rearming"
+  where their counter stands the energy guns show "ENER". A gun fires its
+  barrels in turn, one per trigger pull with the rearming time between:
+  models 0 to 5 have 1, 2, 1, 2, 4 and 1 barrels, models 6 to 13 have 2, 2,
+  2, 3, 4, 2, 2 and 2 (the muzzle counts Vertigo already used). A barrel's
+  shot takes `energydemand` divided by the barrels off the level (down to 0;
+  a shot is never refused for lack of energy) and puts the gun into
+  "EnergyDelay". The gun is ready again once its `rearmingtime` has passed
+  *and* the level is above the whole `energydemand` again. So a full pool
+  allows a burst at the rearming rate, after which the gun settles to one
+  shot per (`energydemand` / barrels) × recharge time: a Plasma Gun I (0.1,
+  1 barrel, 0.15 s) on engine 0 fires about 13 shots in 2 s and then one
+  every 0.5 s; a Plasma Death II (0.3, 2 barrels, 0.075 s) on engine 2 keeps
+  firing at its rearming rate for about 4 s and then one shot every 0.15 s,
+  on engine 0 one every 0.75 s; a Doom Mortar (0.5, 1 barrel, 0.3 s) fires
+  every 0.5 s on engine 2 and every 2.5 s on engine 0. Engine 5 removes the
+  limit for every gun. The guns with rounds go to "Rearming"
   after a shot and to "Empty" when their rounds are gone, as in Vertigo.
 - **The booster** (the boat's `booster` mounting) draws from the same pool.
   It can be switched on only while the level is at least 0.8; switching it on

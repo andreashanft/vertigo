@@ -320,8 +320,8 @@ energy bar and an energy gun by hand:
   build/vertigo strai3 --difficulty 1 --equip GUN=3076,GENE=4099,GENE=4100
   ```
 
-  (`--trace 2048` prints the player's speed and energy every second; Q is the
-  booster, Space the gun.)
+  (`--trace 2048` prints the player's speed, energy and shots every second;
+  Q is the booster, Space the gun.)
 - Watch, from a standstill and at full speed: the seconds the boost lasts
   (about 4 s on the Big Block by the reading above), the speed it reaches
   and how soon, whether the boat keeps the speed or falls back once the
