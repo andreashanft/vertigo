@@ -52,8 +52,11 @@ struct OrderSlot
     int esc = -1;      // escorted unit
     Vector3D offset;   // escort offset in metres (xof, yof, zof)
     int ene = -1;      // enemy, used by the combat orders
-    int car = 0;
-    int con = 0;
+    int car = 0;       // a quarter turn (2, 4, 6; anything else is straight ahead), see yaw()
+    int con = 0;       // Explode: 0 timer unless boarded, 1 boarded then timer, 2 timer
+
+    // the heading car stands for, in radians (0 is +y, increasing to the right)
+    float yaw() const;
 
     // the order ends early once this is met ("stop when", o<N>bccond...)
     int cond1 = 0, dep1 = 0, ref1 = -1, op = 0, cond2 = 0, dep2 = 0, ref2 = -1, del = 0;
@@ -108,7 +111,7 @@ private:
     // the unit's gun points at the target (within a few degrees) and the target is in range
     bool aligned(const Vector3D &aim, const Vector3D &target, float range) const;
 
-    void updateTurret(ActiveObject *target, float range, int sector);
+    void updateTurret(ActiveObject *target, float range, bool sweep);
     void updateAttack(ActiveObject *target, float speed);
     void startAttackState(Attack state, ActiveObject *target);
 
@@ -132,6 +135,8 @@ private:
     float m_nextScan;        // when the sensor looks for hostiles next
     float m_dockStart;   // GotoWithInfiltrate: when the unit docked at its target, -1 while on its way
     bool m_turretBusy;   // towers: the turret tracks a target
+    float m_sweepYaw;    // CardinalPatrol: where the turret rests while it has no target
+    float m_nextSweep;   // when it turns next
 };
 
 

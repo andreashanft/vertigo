@@ -25,6 +25,7 @@
 
 #include <glm/geometric.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/trigonometric.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -71,6 +72,20 @@ bool OrderSlot::isImplemented(int type)
 }
 
 
+// docs/ROADMAP.md, appendix J: 2 and 6 are the two quarter turns, 4 is about; 0, odd values and
+// the frequent 10 are straight ahead. Which of 2 and 6 is left is still to be checked.
+float OrderSlot::yaw() const
+{
+    switch (car)
+    {
+    case 2: return -glm::half_pi<float>();
+    case 4: return glm::pi<float>();
+    case 6: return glm::half_pi<float>();
+    default: return 0;
+    }
+}
+
+
 Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSlot> &orderSlots) :
     m_scenario(scenario),
     m_unit(unit),
@@ -87,7 +102,9 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_engaged(nullptr),
     m_nextScan(0),
     m_dockStart(-1),
-    m_turretBusy(false)
+    m_turretBusy(false),
+    m_sweepYaw(0),
+    m_nextSweep(0)
 {
     if (!m_slots.empty())
         start(0);
@@ -107,6 +124,11 @@ void Orders::start(int slot)
     m_scenario->disengagePlayer(m_unit);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
         pickPatrolPoint();
+    if (m_current >= 0)
+    {
+        m_sweepYaw = m_slots[m_current].yaw();
+        m_nextSweep = m_scenario->time() + random(0.5f, 2.5f);
+    }
 }
 
 
@@ -297,8 +319,10 @@ bool Orders::aligned(const Vector3D &aim, const Vector3D &target, float range) c
 }
 
 
-// towers: turn to the target and fire once the turret points at it
-void Orders::updateTurret(ActiveObject *target, float range, int sector)
+// towers: turn to the target and fire once the turret points at it; without one the turret rests
+// turned by car, and on patrol it sweeps: every 0.5-2.5 s it turns by 15-90 degrees either way,
+// staying within a quarter turn of its rest direction
+void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
 {
     TurretBase *turret = dynamic_cast<TurretBase *>(m_unit);
     if (!turret)
@@ -307,9 +331,17 @@ void Orders::updateTurret(ActiveObject *target, float range, int sector)
     if (!target)
     {
         m_unit->setTrigger(false);
-        // rest towards the side to cover
-        if (sector >= 0 && sector < 8)
-            turret->aimAt(sector*glm::quarter_pi<float>());
+        const float rest = m_slots[m_current].yaw();
+        if (sweep && m_scenario->time() >= m_nextSweep)
+        {
+            const float step = random(glm::radians(15.0f), glm::radians(90.0f))*(random() < 0.5f ? -1.0f : 1.0f);
+            float turn = std::remainder(m_sweepYaw - rest, glm::two_pi<float>()) + step;
+            if (std::abs(turn) > glm::half_pi<float>())
+                turn = glm::sign(turn)*glm::pi<float>() - turn;
+            m_sweepYaw = rest + turn;
+            m_nextSweep = m_scenario->time() + random(0.5f, 2.5f);
+        }
+        turret->aimAt(sweep ? m_sweepYaw : rest);
         return;
     }
     const Vector3D point = lead(target);
@@ -531,14 +563,14 @@ void Orders::update()
         return;
 
     case OrderSlot::CardinalPatrol:
-        updateTurret(engage(nearestHostile(slot.rad, slot.car)), slot.rad, slot.car);
+        updateTurret(engage(nearestHostile(slot.rad, -1)), slot.rad, true);
         return;
 
     case OrderSlot::CardinalAttack:
         {
             ActiveObject *target = findUnit(slot.ene);
             const bool inRange = isAlive(target) && glm::length(target->position() - m_unit->position()) < slot.rad;
-            updateTurret(engage(inRange ? target : nullptr), slot.rad, slot.car);
+            updateTurret(engage(inRange ? target : nullptr), slot.rad, false);
         }
         return;
     }
@@ -636,7 +668,9 @@ void Orders::update()
             Vector3D point = cellCentre(slot.refx, slot.refy);
             if (glm::length(Vector2D(point) - Vector2D(m_unit->position())) < ArriveDistance)
             {
-                m_boat->hold();
+                // lie in wait pointing the way car says
+                const float yaw = slot.yaw();
+                m_boat->steerTo(m_unit->position() + Vector3D(std::sin(yaw), std::cos(yaw), 0)*50.0f, 0);
                 break;
             }
             point.z = altitude(point, slot.mih);
