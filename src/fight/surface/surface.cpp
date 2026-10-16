@@ -36,8 +36,8 @@ namespace {
 const float TextureGain = 2;
 // the distances at which the tables' nearest and farthest rows are left and reached, from
 // the original's picture (docs/ROADMAP.md, "Differences to the original's cockpit")
-const float FogStart = 80;
-const float FogEnd = 230;
+const float FogStart = 12;
+const float FogEnd = 76;
 
 }
 
