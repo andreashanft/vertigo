@@ -300,6 +300,7 @@ bool Player::update(float elapsedTime)
     {
         m_boosting = true;
         drawEnergy(0.15f);
+        sfx::SampleMap::get(sfx::Sample::Booster).play();
     }
     if (m_boosting)
         drawEnergy(1.2f*elapsedTime);
@@ -315,9 +316,10 @@ bool Player::update(float elapsedTime)
         m_engineState = EngineOff;
     if (m_engineState == EngineRunning)
     {
+        // the engine's pitch rises with the speed, and further while the booster runs
         float pitch = glm::length(m_velocity)*0.036f;
-        if (pitch > 1.0f)
-            pitch = 1.0f;
+        if (pitch > (m_boosting ? 1.5f : 1.0f))
+            pitch = m_boosting ? 1.5f : 1.0f;
         if (pitch < -0.5f)
             pitch = -0.5f;
         sfx::SampleMap::get(sfx::Sample::Engine).setPitch(1.0f + pitch);

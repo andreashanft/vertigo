@@ -243,7 +243,8 @@ void SimpleBoat::updateVelocity(float elapsedTime)
     Vector3D velocity = m_orientation * m_velocity;
     Vector3D acceleration = velocity*m_orientationFriction;
 
-    const float target = m_velocityTarget*m_speedBoost;
+    // the booster pushes the boat to twice its top speed whatever the throttle says
+    const float target = m_speedBoost > 1.0f ? m_maxVelocity*m_speedBoost : m_velocityTarget;
     float orientationAcceleration = 0;
     if (target > velocity.y + 0.1f)
         orientationAcceleration = m_maxOrientationAcceleration*(m_fullThrottle ? 2 : 1)*m_accelerationBoost;

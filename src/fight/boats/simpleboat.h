@@ -97,7 +97,7 @@ protected:
     glm::mat3 m_orientationInverted;
 
     float m_velocityTarget;
-    float m_speedBoost = 1.0f;        // the booster's factors on the top speed and the acceleration
+    float m_speedBoost = 1.0f;        // the booster's factors on the top speed (1: off) and the acceleration
     float m_accelerationBoost = 1.0f;
     bool m_fullThrottle;
 
