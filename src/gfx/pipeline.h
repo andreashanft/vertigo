@@ -25,7 +25,8 @@ namespace gfx {
 
 // What the game used of OpenGL's fixed-function pipeline, drawn with one shader that runs on
 // OpenGL 3.2 core and OpenGL ES 3: the model-view matrix stack, a colour, per-vertex lighting
-// with one spot light, linear fog, the alpha test and projective texture coordinates. Depth,
+// with one spot light, linear fog, the alpha test and projective texture coordinates, plus a few
+// point lights of a short reach, lit per fragment so that they show between the vertices. Depth,
 // culling and blending are still set with plain OpenGL calls. Everything is drawn with the
 // texture bound to unit 0, unless the vertices have no texture coordinates or the caller has no
 // texture (OpenGL 1 drew in the colour alone without a texture image); then a white texture is
@@ -51,6 +52,16 @@ public:
         float constantAttenuation;
         float quadraticAttenuation;
     };
+
+    // a glow of a short reach: the colour, faded with the square of the distance to nothing at
+    // the radius, and lit per fragment, so a radius below the vertex spacing still shows
+    struct PointLight
+    {
+        Vector3D position;      // in eye space
+        Vector3D color;
+        float radius;
+    };
+    static const int MaxPointLights = 4;
 
     // linear in the distance along the view direction
     struct Fog
@@ -84,6 +95,8 @@ public:
     // the global ambient light, multiplied with the material's 0.2
     static void setAmbient(const Vector3D &ambient);
     static void setLight(const Light &light);
+    // up to MaxPointLights, added to the lit colour; none by default and with a count of 0
+    static void setPointLights(const PointLight *lights, int count);
     static void setFog(bool enabled);
     static void setFog(const Fog &fog);
     // drops fragments without alpha

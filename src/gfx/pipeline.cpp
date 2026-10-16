@@ -33,7 +33,8 @@ namespace gfx {
 namespace {
 
 // Per-vertex lighting as in OpenGL 1.x: the scene colour (global ambient times the material's
-// ambient) plus one spot light, attenuated and clamped. The fog uses the distance along the view
+// ambient) plus one spot light, attenuated and clamped. The point lights are added per fragment,
+// from the eye-space position and normal passed on. The fog uses the distance along the view
 // direction, as most fixed-function implementations did.
 const char *VertexShader = R"(
 in vec3 position;
@@ -59,12 +60,16 @@ uniform mat4 textureMatrix;
 out vec4 vColor;
 out vec3 vTexCoord;
 out float vDepth;
+out vec3 vEye;
+out vec3 vNormal;
 
 void main()
 {
     vec4 eye = modelView*vec4(position, 1.0);
     gl_Position = projection*eye;
     vDepth = -eye.z;
+    vEye = eye.xyz;
+    vNormal = vec3(0.0);
     vTexCoord = textureProjection ? (textureMatrix*vec4(position, 1.0)).xyw : vec3(texCoord, 1.0);
     if (lighting)
     {
@@ -72,6 +77,7 @@ void main()
         vec3 n = normalMatrix*normal;
         float size = length(n);
         n = size > 0.0 ? n/size : n;
+        vNormal = n;
         vec3 toLight = lightPosition - eye.xyz;
         float d = max(length(toLight), 1e-6);
         vec3 l = toLight/d;
@@ -88,6 +94,8 @@ const char *FragmentShader = R"(
 in vec4 vColor;
 in vec3 vTexCoord;
 in float vDepth;
+in vec3 vEye;
+in vec3 vNormal;
 
 uniform sampler2D tex;
 uniform bool textureProjection;
@@ -96,12 +104,31 @@ uniform bool alphaTest;
 uniform bool fog;
 uniform vec3 fogColor;
 uniform vec2 fogRange;
+uniform int pointLights;
+uniform vec4 pointLightPosition[4];     // eye space, w = 1/radius^2
+uniform vec3 pointLightColor[4];
 
 out vec4 fragColor;
 
 void main()
 {
     vec4 c = vColor;
+    if (pointLights > 0)
+    {
+        // faded with the square of the distance; a third of it regardless of the surface's
+        // direction, the rest by the angle (a zero normal takes only that third)
+        for (int i = 0; i < 4; i++)
+        {
+            if (i >= pointLights)
+                break;
+            vec3 toLight = pointLightPosition[i].xyz - vEye;
+            float d2 = dot(toLight, toLight);
+            float fade = max(1.0 - d2*pointLightPosition[i].w, 0.0);
+            float facing = max(dot(vNormal, toLight*inversesqrt(max(d2, 1e-6))), 0.0);
+            c.rgb += pointLightColor[i]*(fade*fade*(0.35 + 0.65*facing));
+        }
+        c.rgb = min(c.rgb, vec3(1.0));
+    }
     if (textureProjection)
     {
         vec2 st = vTexCoord.xy/vTexCoord.z;
@@ -134,6 +161,8 @@ struct State
     // OpenGL's defaults
     Vector3D ambient = Vector3D(0.2f);
     Pipeline::Light light = { Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0), Vector3D(1), 180, 0, 1, 0 };
+    Pipeline::PointLight pointLights[Pipeline::MaxPointLights];
+    int pointLightCount = 0;
     bool fog = false;
     Pipeline::Fog fogParameters = { Vector3D(0), 0, 1 };
     bool alphaTest = false;
@@ -155,6 +184,7 @@ struct Uniforms
 {
     int modelView, projection, normalMatrix, color, lighting, sceneColor;
     int lightPosition, lightDirection, lightAmbient, lightDiffuse, lightCosCutoff, lightExponent, lightAttenuation;
+    int pointLights, pointLightPosition, pointLightColor;
     int textureProjection, textureMatrix, textureNear, alphaTest, fog, fogColor, fogRange;
 };
 
@@ -242,6 +272,9 @@ Gpu& gpu()
     u.lightCosCutoff = location("lightCosCutoff");
     u.lightExponent = location("lightExponent");
     u.lightAttenuation = location("lightAttenuation");
+    u.pointLights = location("pointLights");
+    u.pointLightPosition = location("pointLightPosition");
+    u.pointLightColor = location("pointLightColor");
     u.textureProjection = location("textureProjection");
     u.textureMatrix = location("textureMatrix");
     u.textureNear = location("textureNear");
@@ -404,6 +437,15 @@ void Pipeline::setLight(const Light &light)
 }
 
 
+void Pipeline::setPointLights(const PointLight *lights, int count)
+{
+    State &s = state();
+    s.pointLightCount = std::clamp(count, 0, MaxPointLights);
+    std::copy(lights, lights + s.pointLightCount, s.pointLights);
+    s.parametersChanged = true;
+}
+
+
 void Pipeline::setFog(bool enabled)
 {
     state().fog = enabled;
@@ -453,6 +495,20 @@ void Pipeline::apply(bool textured)
         glUniform1f(u.lightCosCutoff, light.cutoff >= 180 ? -2.0f : std::cos(glm::radians(light.cutoff)));
         glUniform1f(u.lightExponent, light.exponent);
         glUniform2f(u.lightAttenuation, light.constantAttenuation, light.quadraticAttenuation);
+        if (s.pointLightCount > 0)
+        {
+            Vector4D positions[MaxPointLights];
+            Vector3D colors[MaxPointLights];
+            for (int i = 0; i < s.pointLightCount; i++)
+            {
+                const PointLight &point = s.pointLights[i];
+                const float radius = std::max(point.radius, 1e-3f);
+                positions[i] = Vector4D(point.position, 1.0f/(radius*radius));
+                colors[i] = point.color;
+            }
+            glUniform4fv(u.pointLightPosition, s.pointLightCount, glm::value_ptr(positions[0]));
+            glUniform3fv(u.pointLightColor, s.pointLightCount, glm::value_ptr(colors[0]));
+        }
         glUniform3fv(u.fogColor, 1, glm::value_ptr(s.fogParameters.color));
         glUniform2f(u.fogRange, s.fogParameters.start, s.fogParameters.end);
         s.parametersChanged = false;
@@ -463,6 +519,8 @@ void Pipeline::apply(bool textured)
     glUniformMatrix4fv(u.projection, 1, GL_FALSE, glm::value_ptr(s.projection));
     glUniform4fv(u.color, 1, glm::value_ptr(s.color));
     glUniform1i(u.lighting, s.lighting);
+    // the point lights only where lit; with none the fragment shader skips them
+    glUniform1i(u.pointLights, s.lighting ? s.pointLightCount : 0);
     if (s.lighting)
     {
         const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelView)));

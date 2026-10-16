@@ -1,16 +1,24 @@
 # Vertigo
+In November 1996, „[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)“ - or better known under its original German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)" - was released by *Massive Development*.
+This repository contains an open-source clone with the goal to faithfully recreate this 30 year old classic. It is based on the original work from [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had already been reimplemented years ago but then abandoned mid-finished.
+With the help of Claude Code, most open TODOs and missing features could finally be implemented, bringing the codebase closer to its original. In addition, an iPad version was created as well as a feasibility study to enable real 3D cockpits for an eventual VR port. 
+The game is now portable and playable on current hard and software in modern resolutions, improving the look (eg. by upscaling) but keeping its style and oldschool graphics.  For copyright reasons, the repository does not contain any old game data or binaries, the game assets from an original version of the game (either English or German), from an old CD or GOG installation, are required.
+This implementation in its current form can be considered **90% done**:
+* Modern codebase and renderer that support compiling for multiple platforms (macOS, iOS (iPad), Windows, Linux - the latter two untested)
+* Import of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data 
+* Menus, stations and interactions (dialogs, dock, upgrades), notebook, movies, music all work
+* Missions are playable and story can be progressed
+* For input, Keyboard and Controllers are supported (as well as touch on the iPad)
+* Experimental: 3D cockpits, also making true support for widescreen aspect ratios possible
 
-An open-source clone of the *Massive Development* video game [Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty), also known as [Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29).
-
-This implementation requires the game assets from an original version of the game (either English or German).
-
-If you use Nix with flakes enabled, you can build and start Vertigo by running:
-```
-nix run github:pnordhus/vertigo
-```
+What's missing are the details:
+* HUD behaviour and sound/voice lines for different situations (radioactive etc.)
+* Game behaviour that couldn't be derived from the game data (currents, engine/power, ...)
+* Weapons effects as in the original
+* 3rd person and external view when destroyed
+* Minor screens like ingame log and help
 
 # Compiling
-
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
 or OpenGL ES 3. The build also has tests of the game's own types for text,
 data values, images, JSON and CD images (`ctest`).
@@ -20,6 +28,13 @@ mkdir build
 cd build
 cmake ..
 make
+```
+
+## Linux (Nix)
+
+If you use Nix with flakes enabled, you can build and start Vertigo by running:
+```
+nix run github:pnordhus/vertigo
 ```
 
 ## macOS (Homebrew)
@@ -33,6 +48,8 @@ make
 ```
 
 ## iPad
+
+![Screenshot from the iPad version showing a battle](docs/iPad-Schleichfahrt.jpg)
 
 The iPad version needs Xcode, CMake 3.24 or newer and GLM's headers
 (`brew install cmake glm`), and runs on iPadOS 18.6 or later. CMake downloads
@@ -50,8 +67,8 @@ builds the app for the simulator and installs it there. For an iPad, open
 `-DVERTIGO_DEVELOPMENT_TEAM=<team ID>` (and if needed
 `-DVERTIGO_BUNDLE_ID=<identifier>`) to the first command and build with
 `-sdk iphoneos -allowProvisioningUpdates`. Xcode's `vertigo` scheme runs the
-optimised RelWithDebInfo build: a Debug build manages only about 20 frames a
-second on an iPad Pro from 2018, against 120.
+optimised RelWithDebInfo build: a pure Debug build runs significantly slower and is not 
+recommended to run the game.
 
 The game data goes into Vertigo's folder in the Files app (On My iPad ›
 Vertigo), which the Finder also shows when the iPad is connected to a Mac.
