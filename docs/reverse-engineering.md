@@ -198,7 +198,8 @@ sound falloff (one unit, the player approaching), the mine column spacing
 | Current speeds, directions 8 and 9 (**done**, roadmap appendix D) | 1 (drift per second from a memory trace, or the HUD's readouts in screenshots), 2 for the constant | s01801, s00704, s00405, s01306, s00202 |
 | `car` (towers, ambush), `con` (Explode), `diff`, `sle`, end types, `wccond 9` | 2, confirmed by 1 | s00401 (`card`), any with `sle` |
 | Engine volume and pan over distance | 1 (`MSS_DEBUG` log + distance trace) | s00101 |
-| Radiation trigger, cluster burst, alert, dust sprite, debris units | 1 (video) | s00701, s01804 |
+| Radiation trigger (**done**, roadmap appendix D: a depth rule, 100 m and 60 m below the surface) | 1 (the boat set to a height through the control channel, HUD in screenshots) | s00701, s01801, s00202 |
+| Cluster burst, alert, dust sprite, debris units | 1 (video) | s01804 |
 | Slot with a break condition ending by itself (G5) | 1 (watch Schwartz 2066's order index; `FIGHTOUT`) | s00705 |
 | Explode counts as destroyed | 1 (`FIGHTOUT`, mod's notes) | s01804 |
 | Active buildings turning with `card` | 1 (screenshot) | s00401 tank 2066 |
@@ -217,6 +218,9 @@ sound falloff (one unit, the player approaching), the mine column spacing
 3. Measure the current (**done**, roadmap appendix D: the horizontal cells
    from memory dumps, the vertical ones from the HUD's depth and height in
    screenshots), then work down the table.
+4. Radiation (**done**, roadmap appendix D): the boat set to heights through
+   the control channel, the HUD's symbol block, alert block and readouts
+   cropped from screenshots twice a second, the sounds from the Miles log.
 
 ## The DOSBox-X workflow as set up (October 2026)
 
@@ -258,6 +262,37 @@ start `dosbox-x -conf ad.conf` from a terminal. What was learned:
   armed units (`cellmap.py`), not in doctored ones. With the player moved
   into a current the mission runs as usual; with it moved into s00406's
   base it is shot within 20 s.
+- Moving the boat: the position record (three floats, x and y in map units
+  of 1/32 m, z the height above the map's zero, also in 1/32 m) exists in
+  five copies, which the differential dump finds again in every run (their
+  places change with the scenario); `SM DS:<address> <4 bytes>` on all five
+  between `BREAK` and `RUN` teleports the boat, and it then stays at rest
+  there. The HUD's depth readout is `[Surface] depth` minus that height.
+  Used for the radiation measurement (`seq2.py` in the scratch directory of
+  that session: a list of height:stay:shot-after steps).
+- Screenshots: capture the window by its id (`screencapture -x -l <id>`; a
+  12-line Swift program using `CGWindowListCopyWindowInfo` prints it), not
+  a screen region. The default window placement left the right 100 pixels
+  of the game off the screen, which hid the symbol block (x 510–606) in a
+  whole evening's screenshots, and a region capture shows whatever window is
+  in front. `windowposition=0,0` in `[sdl]` is only honoured partly.
+  Blinking HUD items need two shots half a second apart. Cropping the
+  readouts, the symbol block and the alert block from each shot into one
+  montage (numpy on a `sips`-converted BMP) makes a run readable at a
+  glance.
+- Sounds: `AIL_set_sample_address(handle, address, length)` in the Miles
+  log gives each started sample's length, and the `.PCM` files are that
+  length plus a 31-byte header, so the lengths name the samples (28131 is
+  `COCKPIT/COC09.PCM`, "system collapse"; 2954 is `VFX/CO_07.PCM`, the
+  alert beep). The log's clock stops while the debugger holds the game, so
+  it runs behind the wall clock by the sum of the breaks.
+- Two more ways to lose a run: a `BREAK` now and then leaves the emulator
+  logging "Illegal Unhandled Interrupt Called 1" forever, or FIGHT.EXE dies
+  with CauseWay exception 0D after a few dozen breaks, so keep the number of
+  breaks small and expect to restart DOSBox-X (about 40 s to the mission).
+  And a player start that is attacked within the first minute (S00202's own
+  start, S01801's after two minutes) ends the run; `cellmap.py` shows the
+  armed units.
 - The drift measurement: dumps every 1–2 s with the boat at rest in a cell,
   the position found by diffing dumps (three floats, map cells × 512), the
   speed as the position's derivative over the game clock, cross-checked

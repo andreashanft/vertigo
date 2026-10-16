@@ -2,8 +2,8 @@
 
 This plan started out covering the items of the former `todo.txt`: currents,
 the 11 AI orders, the HUD items, effects and engine sounds. All of them are
-done (phases 1–6) except the radiation icon, which waits for the comparison
-with the original. What is still open is collected in
+done (phases 1–6) except the radiation icon, whose trigger is now measured
+in the original (appendix D) and waits for its implementation. What is still open is collected in
 [gaps found after milestone 6](#gaps-found-after-milestone-6) and the
 [iPad port](#ipad-port). The plan is based on a code review of this
 repository and on an analysis of the original German game data (CD release)
@@ -139,7 +139,7 @@ crawlers, towers, buildings, cargo ships: "orders not run").
 | Pause | P key stops mission time and sounds, shows the PAUSE image (**done**) | S | – |
 | Voxel radar | 120×100 terrain view inside the master monitor (**done** in milestone 6, as in the original's screenshots: always shown, below the target's picture; a square patch of the height map reaching `WorldMaxY` cells to each side of the boat, turning with it, seen in perspective from behind at `Projection` degrees down, drawn with a depth buffer (so nearer ground hides what lies behind it) onto no background and fitted above the cargo line; shaded by height (low ground dark, peaks bright) with `VOX_000.S16` (32 fog rows of 256 RGB565 colours from offset 0x31a; 0–63 a light ramp, 64 orange); drawn with the height map's own grid and rendered at three times the resolution, then averaged down, so the ground moves smoothly without flickering against the lines; buildings as orange blocks, water currents as blue boxes, the boat as an orange line up from the ground, sonar contacts as lines in red (hostile), green (friendly), blue (neutral) or grey (the locked target), debris (trash) as green lines. `WorldMinY` and `FlightY` are still unused. Later, after a screenshot of the original next to a big station whose radar showed no block at all, only a few orange spots on the ground: buildings are their models (the modules' triangles, with each cluster's transform) in orange, in 16 shades by how much a face turns to a light from above and behind, cut at the patch's edges; about 0.6 ms a frame more next to the Asylum in s00101 on an M1 Pro, the terrain taking 2.4 ms. Whether the original shows small buildings as blocks and big ones not, or as orange ground, is to be compared) |
 | Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages (**done**; F1–F4 and the lamps since milestone 6: as in the original, the first monitor shows a weapon page (the magazine by default; F1–F4 pick gun, magazine or a turret: name, state written out, the selected torpedo or the turret's software, and the picture of the gun or torpedo) and the second the armor page (`ARMOR STATE`, each side's percentage around the silhouette), which I switches to the systems table; a single monitor steps through all three with I. The lamps (`*.D16`, two RGB565 frames lighting the lower or the upper slot) show the monitor's mode: armor page, target locked, active sonar; what they show in the original is to be compared. Armor page from the four side images per damage level, laid out as a 64×64 silhouette; systems page with ARMO/GUN/TORP/TUR1/TUR2, ammunition and the gun states RDY/ARM/FIR/JAM/EMP/ENE; with two monitors one shows each page, I switches) | M | Full rows need 1.8 |
-| Icons | Current, radiation (probably shallow depth; unverified), locked (**lock and current done**; radiation open) | S each | Phase 2, 1.8 |
+| Icons | Current, radiation, locked (**lock and current done**; radiation open, its rule **measured** in appendix D: the symbol blinks in the first slot of the symbol block while the boat is less than 100 m below the surface, the depth readout turns red and the monitors flicker; below 60 m the ALERT with its voice and beep comes on top. Seen in the original but not placed yet: a red ring with a cross in the block's second slot while the player is under fire, where Vertigo draws the lock symbol) | S each | Phase 2, 1.8 |
 | Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice (**done**: ALERT blinks for 3 s after a hit, with the alert beep; THREAT blinks while homing torpedoes follow the player, with the threat beep and the voice for each new one) | S | 1.4, 1.8 |
 | Friendly fire | Escalating radio warnings; the third friendly kill fails the mission (**done**: friends are units not hostile to the player's faction 8 that aren't destroy objectives or mines; warnings 67–70 at most every 3 s, kills 71, the third kill 89 and failure; `~` texts are red) | M | 1.4, 1.5 |
 | Torpedo lock + countdown | Lock ring, countdown from the torpedo's lock time, beep and "torpedo ready" voice (**done**: the target must stay locked and within 40° of the nose; the ring turns yellow when complete) | S | 1.8 |
@@ -294,7 +294,8 @@ headless for 60 s with the idle chapter-1 boat crashed none of them.
 | Current speeds and directions 8/9 (**measured**, appendix D: about 41 m/s along the boat's axis and 19 m/s across it for `spd` 2, about 5 m/s for `spd` 0, no fade, coasting afterwards; 8 is up at 5 m/s, 9 down at 4.5–9 m/s). Left: why one of S00202's two 8 cells does nothing, and the exact acceleration curve | Measured with the player's drift in the original under DOSBox-X; the rest the same way, or in `FIGHT.EXE` (instrument 2) |
 | Unclear order settings (`car` for towers and ambush, `con` for Explode, `sle`, `diff`), mission end types, one objective type (`wccond 9`) | Study the relevant `FIGHT.EXE` routines one at a time with sfwin32's tools, then write our own code (no copying) |
 | How engine volume and pan fall off with distance | Log the original's volume, pan and pitch calls in sfwin32's `audio.c` |
-| Radiation trigger, cluster burst, alert trigger, which dust sprite, debris units | Watch the original (e.g. `s00701` for radiation) |
+| Radiation trigger (**measured**, appendix D: less than 100 m below the surface on every map, the ALERT below 60 m) | Done by setting the boat's height in the original under DOSBox-X |
+| Cluster burst, alert trigger, which dust sprite, debris units | Watch the original (e.g. `s01804`) |
 | Whether an order slot with a break condition also ends by itself (its time, arrival or docking), or only when the condition comes true (G5) | Watch Schwartz in the original's s00705: does he infiltrate the second control unit (2052, south of the first) while Marquez lives? The AD Augmented Mod says he doesn't |
 | Whether Explode (order 11) counts as "destroyed" for conditions | The AD Augmented Mod found that "not destroyed" (39) still holds after a unit explodes, and worked around it; check in the original (its notes on s01804), Vertigo treats it as destroyed |
 | Whether active buildings turn with `card` (0, 2, 4 or 6 on 51 of 424; buildings turn by card·45°) (G3) | Look at one in the original, e.g. s00401's hydrogen tank 2066 (`card` 6) |
@@ -631,9 +632,33 @@ no unit has (S00404, S01802, S02003, S02006); they never come true (G4).
 - Affected: the player (`[Kinematics] Current`), AI boats (`[Fluid] Current`
   0–1; possibly ignored by the original). Not affected: torpedoes, mines, gun
   projectiles.
-- Radiation has no data key. All radiation warnings (M00701/02/03/05, M01801)
-  belong to maps with `[Surface] depth` 200 or 300, where the player starts
-  124–167 m below the surface, so it is probably "too close to the surface".
+- Radiation has no data key: it is a depth rule. Measured in the original
+  (October 2026, FIGHT.EXE under DOSBox-X): the boat was set to a height
+  through the debugger's control channel and the HUD watched in screenshots
+  twice a second, on S00701 (`[Surface] depth` 200), S01801 (300) and S00202
+  (4,000); all three behave the same, so the rule holds on every map, and the
+  briefings only mention it where the player can reach it.
+  - Less than 100 m below the surface (the readout `100M` is still green,
+    `98M` red): the red radiation symbol (`HUDSYM2`) blinks at 1 Hz (0.5 s
+    on, 0.5 s off) in the first slot of `[HUDSymbolBlock1]`, at the lower
+    right of the HUD, and the depth readout turns red. The cockpit's three
+    monitors (weapon page, master monitor, armor page) blank out for single
+    frames at random, each on its own, a few times a second. No sound, no
+    damage (armor still 100 % after 40 s), no push downward: a boat at rest
+    stays where it is.
+  - Less than 60 m below the surface (`58M` yes, `60M` no): additionally
+    `ALERT` blinks in the alert block, out of phase with the symbol, the
+    voice "system collapse" (SMPMAP 72, the one D15 uses) plays on entry and
+    again about every 15 s, and the alert beep (SMPMAP 10) repeats every
+    0.8 s. Both stop within a few seconds of rising above 60 m (one run on
+    S01801 had one more voice and a few beeps about 20 s later at 70 m, not
+    reproduced on S00202).
+  - The same `ALERT`, voice and beep are also the combat alert: on S00202 the
+    player was attacked at its start cell and got them together with a red
+    ring with a cross in the symbol block's second slot (which image that is
+    is to be checked; it is not `HUDTHREA`, whose block is at the top right).
+  - Vertigo draws neither the radiation symbol nor the red depth readout nor
+    the monitor flicker; its ALERT comes only from a critical armor side.
 
 ### E. HUD data not used yet
 
