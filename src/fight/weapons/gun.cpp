@@ -33,6 +33,7 @@ Gun::GunState* Gun::GunStates = nullptr;
 Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
     m_scenario(scenario),
     m_owner(owner),
+    m_model(model),
     m_defect(1.0f),
     m_state(StateReady)
 {
@@ -68,6 +69,13 @@ Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
 
     static sfx::Sample samples[14] = { sfx::Sample::Shoot_PlasmaGun, sfx::Sample::Shoot_PlasmaGun, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_PlasmaDeath, sfx::Sample::Shoot_DoomMortar, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_Vendetta, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_MaximumImpact, sfx::Sample::Shoot_Vendetta };
     m_sample = samples[model];
+}
+
+
+int Gun::barrels(int model)
+{
+    static const int counts[14] = { 1, 2, 1, 2, 4, 1, 2, 2, 2, 3, 4, 2, 2, 2 };
+    return model >= 0 && model < 14 ? counts[model] : 1;
 }
 
 
@@ -138,21 +146,26 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
         m_stateTime = m_scenario->time() + m_defectDelay*(0.5f + random());
         return;
     }
-    for (size_t i = 0; i < m_muzzles.size(); i++)
+    // one barrel fires per pull, the barrels in turn (appendix K)
+    if (!m_muzzles.empty())
     {
-        m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir, m_owner);
-        if (usesAmmo())
-            m_ammo--;
-        // the player's guns sound in the cockpit, others where they fire
-        if (m_owner && m_owner != m_scenario->player())
-            sfx::SampleMap::playAt(m_sample, pos.x, pos.y, pos.z);
-        else
-            sfx::SampleMap::get(m_sample).playInstance();
+        const Vector3D &muzzle = m_muzzles[m_nextMuzzle % m_muzzles.size()];
+        m_nextMuzzle = (m_nextMuzzle + 1) % m_muzzles.size();
+        m_scenario->effectManager().addProjectile(m_projectile, pos + right*muzzle.x + dir*muzzle.y + up*muzzle.z, dir, m_owner);
     }
-    // a shot takes energydemand off the owner's pool, however little is left; the gun then waits
-    // for its rearming time and for the pool (appendix K)
+    m_shots++;
+    if (usesAmmo())
+        m_ammo--;
+    // the player's guns sound in the cockpit, others where they fire
+    if (m_owner && m_owner != m_scenario->player())
+        sfx::SampleMap::playAt(m_sample, pos.x, pos.y, pos.z);
+    else
+        sfx::SampleMap::get(m_sample).playInstance();
+    // a barrel's shot takes energydemand divided by the model's barrels off the owner's pool,
+    // however little is left; the gun then waits for its rearming time and for the pool to hold
+    // more than the whole demand again (appendix K)
     if (!usesAmmo() && m_owner)
-        m_owner->drawEnergy(m_energyDemand);
+        m_owner->drawEnergy(m_energyDemand/barrels(m_model));
     m_state = usesAmmo() ? StateRearming : StateEnergyDelay;
     m_stateTime = m_scenario->time() + m_rearmingTime;
 }
