@@ -103,6 +103,9 @@ public:
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
+    // an Explode order: the unit blows up and is gone, but as its armour was never taken down it
+    // doesn't count as destroyed for the mission's conditions (docs/ROADMAP.md, appendix J)
+    void explode();
     virtual void identify();
     // whether the sonar shows it (a cargo ship shows its blocks instead)
     virtual bool isContact() const { return true; }
@@ -120,6 +123,10 @@ public:
     virtual bool canSleep() const;
     void sleep();
     void wake();
+
+protected:
+    // the explosion, debris and disabling shared by destroy() and explode()
+    void blowUp(int explosions);
 
 protected:
     ConditionEvent m_eventDestroy;

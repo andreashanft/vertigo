@@ -116,13 +116,33 @@ void ActiveObject::destroy()
 {
     if (m_eventDestroy.isCompleted())
         return;
+    blowUp(1);
+    m_eventDestroy.complete();
+}
 
+
+void ActiveObject::explode()
+{
+    if (!m_enabled || m_eventDestroy.isCompleted())
+        return;
+    blowUp(3);
+}
+
+
+void ActiveObject::blowUp(int explosions)
+{
     // explosion sized to the object: small, medium or large flash
     const Vector3D dim = m_box.dim();
     const float size = std::max(dim.x, std::max(dim.y, dim.z));
     const Effects explosion = size < 8.0f ? Effects::Explosion_0 : size < 20.0f ? Effects::Explosion_1 : Effects::Explosion_2;
-    m_scenario->effectManager().addEffect(explosion, center());
     const Vector3D at = center();
+    m_scenario->effectManager().addEffect(explosion, at);
+    // more of them spread over the object
+    for (int i = 1; i < explosions; i++)
+    {
+        const Vector3D spread(util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f);
+        m_scenario->effectManager().addEffect(explosion, at + spread*size);
+    }
     sfx::SampleMap::playAt(size < 20.0f ? sfx::Sample::Explosion_Small : sfx::Sample::Explosion_Big, at.x, at.y, at.z);
     m_scenario->explosionAt(at, size < 8.0f ? 0.3f : size < 20.0f ? 0.6f : 1.0f);
 
@@ -149,7 +169,6 @@ void ActiveObject::destroy()
     }
 
     disable();
-    m_eventDestroy.complete();
     if (m_scenario->target().locked() == this)
     {
         m_scenario->target().lockReset();

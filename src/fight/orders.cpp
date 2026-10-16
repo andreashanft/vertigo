@@ -549,16 +549,21 @@ void Orders::update()
     switch (slot.type)
     {
     case OrderSlot::Explode:
-        // con 1: the countdown starts once the unit has been boarded (S00202's control unit); otherwise when the slot starts
-        if (slot.con == 1 && !m_unit->eventBoard()->isCompleted())
         {
-            m_startTime = m_scenario->time();
-            return;
-        }
-        if (m_scenario->time() - m_startTime >= slot.dur)
-        {
-            m_unit->destroy();
-            m_current = -1;
+            // con says what sets it off (docs/ROADMAP.md, appendix J): 0 when dur is over unless the unit has
+            // been boarded by then, 1 dur seconds after it has been boarded (S00202's control unit), 2 when dur
+            // is over no matter what
+            const bool boarded = m_unit->eventBoard()->isCompleted();
+            if (slot.con == 1 && !boarded)
+            {
+                m_startTime = m_scenario->time();
+                return;
+            }
+            if (m_scenario->time() - m_startTime >= slot.dur && !(slot.con == 0 && boarded))
+            {
+                m_unit->explode();
+                m_current = -1;
+            }
         }
         return;
 
