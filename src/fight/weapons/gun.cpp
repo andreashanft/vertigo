@@ -21,6 +21,7 @@
 #include "fight/effects/effectmanager.h"
 #include "fight/effects/billboard.h"
 #include "util/random.h"
+#include <algorithm>
 
 
 namespace fight {
@@ -107,10 +108,7 @@ void Gun::addMuzzles(const Vector3D &muzzle, int model)
 bool Gun::update(float elapsedTime)
 {
     if (m_state == StateJammed && m_stateTime < m_scenario->time())
-    {
-        m_state = StateRearming;
-        m_stateTime = m_scenario->time() + m_rearmingTime;
-    }
+        m_state = StateReady;
     if (m_state == StateRearming && m_stateTime < m_scenario->time())
         m_state = StateReady;
     // an energy gun is ready again once its rearming time is over and the owner's pool holds more
@@ -128,38 +126,35 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
     if (m_state != StateReady)
         return;
     m_state = StateFiring;
-    bool jammed = false;
-    float defect = (1.0f - (m_defect < 0.2f ? 0.2f : m_defect)/m_defectDamping)/m_muzzles.size(); // TODO: check formula
-    for (int i = 0; i < m_muzzles.size() && !jammed; i++)
-    {
-        if (defect > 0 && defect > static_cast<float>(util::random())/RAND_MAX)
-            jammed = true;
-        else
-        {
-            m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir, m_owner);
-            if (usesAmmo())
-                m_ammo--;
-            // the player's guns sound in the cockpit, others where they fire
-            if (m_owner && m_owner != m_scenario->player())
-                sfx::SampleMap::playAt(m_sample, pos.x, pos.y, pos.z);
-            else
-                sfx::SampleMap::get(m_sample).playInstance();
-        }
-    }
-    if (jammed)
+    // a jam is decided once per trigger pull, before any barrel fires (docs/ROADMAP.md, appendix
+    // K): the gun's condition (1 when new, taken as 0.2 at the least) against a random share of its
+    // defectdamping, so the chance is 1 - condition/defectdamping, and the jam lasts defectdelay
+    // times 0.5 to 1.5
+    auto random = []() { return static_cast<float>(util::random())/RAND_MAX; };
+    const float condition = std::max(m_defect, 0.2f);
+    if (condition < m_defectDamping && random()*m_defectDamping >= condition)
     {
         m_state = StateJammed;
-        m_stateTime = m_scenario->time() + m_defectDelay;
+        m_stateTime = m_scenario->time() + m_defectDelay*(0.5f + random());
+        return;
     }
-    else
+    for (size_t i = 0; i < m_muzzles.size(); i++)
     {
-        // a shot takes energydemand off the owner's pool, however little is left; the gun then waits
-        // for its rearming time and for the pool (appendix K)
-        if (!usesAmmo() && m_owner)
-            m_owner->drawEnergy(m_energyDemand);
-        m_state = usesAmmo() ? StateRearming : StateEnergyDelay;
-        m_stateTime = m_scenario->time() + m_rearmingTime;
+        m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir, m_owner);
+        if (usesAmmo())
+            m_ammo--;
+        // the player's guns sound in the cockpit, others where they fire
+        if (m_owner && m_owner != m_scenario->player())
+            sfx::SampleMap::playAt(m_sample, pos.x, pos.y, pos.z);
+        else
+            sfx::SampleMap::get(m_sample).playInstance();
     }
+    // a shot takes energydemand off the owner's pool, however little is left; the gun then waits
+    // for its rearming time and for the pool (appendix K)
+    if (!usesAmmo() && m_owner)
+        m_owner->drawEnergy(m_energyDemand);
+    m_state = usesAmmo() ? StateRearming : StateEnergyDelay;
+    m_stateTime = m_scenario->time() + m_rearmingTime;
 }
 
 
