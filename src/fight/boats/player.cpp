@@ -47,7 +47,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     SimpleBoat(scenario, boat->boatFile(), playerInfo(), yaw),
     m_engineState(EngineRunning),
     m_speed(0),
-    m_debugBoost(0),
+    m_hasBooster(boat->booster() != 0),
     m_roll(0),
     m_currentTime(10.0f),
     m_currentNoise1(0),
@@ -290,6 +290,22 @@ bool Player::update(float elapsedTime)
     updateVelocity(elapsedTime);
     rechargeEnergy(elapsedTime);
 
+    // the booster (docs/ROADMAP.md, appendix K) draws from the same pool: held, it starts (again)
+    // once the pool is at 0.8, costing 0.15 at once and 1.2 per second while the engine keeps
+    // recharging, doubles the top speed and raises the acceleration 2.5-fold, and stops when the
+    // pool is below 0.05
+    if (m_boosting && (!m_boostKey || m_energy < 0.05f))
+        m_boosting = false;
+    if (!m_boosting && m_boostKey && m_hasBooster && m_energy >= 0.8f)
+    {
+        m_boosting = true;
+        drawEnergy(0.15f);
+    }
+    if (m_boosting)
+        drawEnergy(1.2f*elapsedTime);
+    m_speedBoost = m_boosting ? 2.0f : 1.0f;
+    m_accelerationBoost = m_boosting ? 2.5f : 1.0f;
+
     if (m_engineState == EngineStartup && m_engineTime < m_scenario->time())
     {
         m_engineState = EngineRunning;
@@ -307,7 +323,7 @@ bool Player::update(float elapsedTime)
         sfx::SampleMap::get(sfx::Sample::Engine).setPitch(1.0f + pitch);
     }
 
-    Vector3D vel = m_velocity + dir()*m_debugBoost + m_scenario->current(m_position)*m_current;
+    Vector3D vel = m_velocity + m_scenario->current(m_position)*m_current;
     Vector3D delta = vel*elapsedTime;
     float path = 0;
 

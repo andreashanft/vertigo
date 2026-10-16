@@ -243,10 +243,11 @@ void SimpleBoat::updateVelocity(float elapsedTime)
     Vector3D velocity = m_orientation * m_velocity;
     Vector3D acceleration = velocity*m_orientationFriction;
 
+    const float target = m_velocityTarget*m_speedBoost;
     float orientationAcceleration = 0;
-    if (m_velocityTarget > velocity.y + 0.1f)
-        orientationAcceleration = m_maxOrientationAcceleration*(m_fullThrottle ? 2 : 1);
-    if (m_velocityTarget < velocity.y - 0.1f)
+    if (target > velocity.y + 0.1f)
+        orientationAcceleration = m_maxOrientationAcceleration*(m_fullThrottle ? 2 : 1)*m_accelerationBoost;
+    if (target < velocity.y - 0.1f)
         orientationAcceleration = m_maxOrientationRetardation*(m_fullThrottle ? 2 : 1);
     acceleration.y += orientationAcceleration;
 

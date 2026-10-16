@@ -66,7 +66,9 @@ public:
     float noise() const;
     float range() const;
 
-    void setDebugBoost(float debugBoost) { m_debugBoost = debugBoost; }
+    // the booster (appendix K): while Q is held it runs as long as the energy lasts
+    void setBoostKey(bool held) { m_boostKey = held; }
+    bool boosting() const { return m_boosting; }
 
 public:
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
@@ -99,7 +101,9 @@ private:
     float m_engineTime;
 
     float m_speed;
-    float m_debugBoost;
+    bool m_hasBooster;
+    bool m_boostKey = false;
+    bool m_boosting = false;
 
     float m_roll;
     float m_rollCenterVelocity;

@@ -126,7 +126,7 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 | Y | next nav point (N) | lock the nav point (Alt+N) |
 | D-pad up | 10 km/h faster, again and again while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
-| D-pad left | stop (C) | |
+| D-pad left | stop (C) | the booster, while held (Q) |
 | D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
 | L3, R3 (press a stick) | full ahead, full astern while held (A, Z) | |
 | Start | mission menu (Esc) | pause (P) |

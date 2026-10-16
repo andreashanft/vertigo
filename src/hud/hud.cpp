@@ -957,7 +957,7 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_North: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
     case Button_Up: return second ? KeyEvent(Key(Key_F1 + m_weaponPage)) : KeyEvent(Key_S);
     case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
-    case Button_Left: return second ? KeyEvent() : KeyEvent(Key_C);
+    case Button_Left: return second ? KeyEvent(Key_Q) : KeyEvent(Key_C);
     case Button_Right: return second ? KeyEvent(Key_R, AltModifier) : KeyEvent(Key_R);
     case Button_LeftStick: return KeyEvent(Key_A);
     case Button_RightStick: return KeyEvent(Key_Z);

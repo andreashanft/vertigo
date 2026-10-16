@@ -811,9 +811,7 @@ void Scenario::keyPressEvent(input::KeyEvent *e)
     if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 1.0f;
     if (e->key() == input::Key_Q)
-        m_player->setDebugBoost(100);
-    if (e->key() == input::Key_W)
-        m_player->setDebugBoost(-100);
+        m_player->setBoostKey(true);
     if (e->key() == input::Key_A)
     {
         m_forwards = m_backwards + 1;
@@ -906,9 +904,7 @@ void Scenario::keyReleaseEvent(input::KeyEvent *e)
     if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 0.0f;
     if (e->key() == input::Key_Q)
-        m_player->setDebugBoost(0);
-    if (e->key() == input::Key_W)
-        m_player->setDebugBoost(0);
+        m_player->setBoostKey(false);
     if (e->key() == input::Key_A)
     {
         m_forwards = 0;
