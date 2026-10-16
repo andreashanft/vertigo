@@ -113,6 +113,10 @@ bool Gun::update(float elapsedTime)
     }
     if (m_state == StateRearming && m_stateTime < m_scenario->time())
         m_state = StateReady;
+    // an energy gun is ready again once its rearming time is over and the owner's pool holds more
+    // than a shot takes (docs/ROADMAP.md, appendix K)
+    if (m_state == StateEnergyDelay && m_stateTime < m_scenario->time() && (!m_owner || m_owner->energy() > m_energyDemand))
+        m_state = StateReady;
     if (m_state == StateReady && m_energyDemand == 0.0f && m_ammo == 0)
         m_state = StateEmpty;
     return false;
@@ -133,7 +137,7 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
         else
         {
             m_scenario->effectManager().addProjectile(m_projectile, pos + right*m_muzzles[i].x + dir*m_muzzles[i].y + up*m_muzzles[i].z, dir, m_owner);
-            if (m_energyDemand == 0.0f)
+            if (usesAmmo())
                 m_ammo--;
             // the player's guns sound in the cockpit, others where they fire
             if (m_owner && m_owner != m_scenario->player())
@@ -149,7 +153,11 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
     }
     else
     {
-        m_state = StateRearming;
+        // a shot takes energydemand off the owner's pool, however little is left; the gun then waits
+        // for its rearming time and for the pool (appendix K)
+        if (!usesAmmo() && m_owner)
+            m_owner->drawEnergy(m_energyDemand);
+        m_state = usesAmmo() ? StateRearming : StateEnergyDelay;
         m_stateTime = m_scenario->time() + m_rearmingTime;
     }
 }
