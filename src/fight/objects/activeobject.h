@@ -45,8 +45,9 @@ public:
         String cargo;
         int sensor;
         int sensorRange;
+        bool sleeps;     // may sleep out of the player's sonar range (sle)
 
-        ObjectInfo() : iff(0), name(""), cargo(""), sensor(0), sensorRange(0) { }
+        ObjectInfo() : iff(0), name(""), cargo(""), sensor(0), sensorRange(0), sleeps(true) { }
     };
 
 public:
@@ -110,6 +111,16 @@ public:
     // the unit isn't in the mission at this difficulty: it never appears (see ConditionEntry::absent)
     void leaveMission();
 
+    // Sleep (docs/ROADMAP.md, appendix J): a unit with sle 1 (or no sle) stops altogether while its
+    // horizontal distance from the player exceeds the player's sonar range plus 3 map cells, and
+    // starts its current order slot again when the player comes back within that radius.
+    bool sleeps() const { return m_info.sleeps; }
+    bool isAsleep() const { return m_asleep; }
+    // whether the unit may go to sleep right now (boats not while exploding, towers not while attacking)
+    virtual bool canSleep() const;
+    void sleep();
+    void wake();
+
 protected:
     ConditionEvent m_eventDestroy;
     ConditionEvent m_eventAttack;
@@ -121,6 +132,7 @@ protected:
     ObjectInfo m_info;
     float m_noise;
     bool m_identified;
+    bool m_asleep = false;
 
     int m_kineticShield;
     int m_shockShield;

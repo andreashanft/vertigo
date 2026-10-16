@@ -81,6 +81,10 @@ public:
     txt::StringFight activity() const;
     // the unit it is docking on (GotoWithInfiltrate), which it mustn't bump into
     ActiveObject* dockingTarget() const;
+    // the unit may be put to sleep: boats always but in an Explode order, towers while they have no target
+    bool mayPause() const;
+    // begins the current slot again (after the unit has slept)
+    void restart() { if (m_current >= 0) start(m_current); }
     void update();
 
 private:
@@ -124,6 +128,7 @@ private:
     ActiveObject *m_engaged; // Patrol and Escort: the hostile unit being attacked
     float m_nextScan;        // when the sensor looks for hostiles next
     float m_dockStart;   // GotoWithInfiltrate: when the unit docked at its target, -1 while on its way
+    bool m_turretBusy;   // towers: the turret tracks a target
 };
 
 

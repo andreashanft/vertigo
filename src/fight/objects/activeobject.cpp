@@ -165,6 +165,29 @@ void ActiveObject::leaveMission()
 }
 
 
+bool ActiveObject::canSleep() const
+{
+    return !m_orders || m_orders->mayPause();
+}
+
+
+void ActiveObject::sleep()
+{
+    m_asleep = true;
+    m_trigger = false;
+}
+
+
+void ActiveObject::wake()
+{
+    if (!m_asleep)
+        return;
+    m_asleep = false;
+    if (m_orders)
+        m_orders->restart();
+}
+
+
 void ActiveObject::identify()
 {
     m_eventIdentify.complete();

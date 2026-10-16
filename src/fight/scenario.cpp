@@ -214,6 +214,9 @@ Scenario::Scenario(const String &name) :
             info.sensor = m_file.value("sen").toInt();
         if (m_file.contains("senr"))
             info.sensorRange = m_file.value("senr").toInt();
+        // sle 0 keeps the unit running anywhere on the map; 1 (or no key) lets it sleep out of the
+        // player's sonar range (docs/ROADMAP.md, appendix J)
+        info.sleeps = !m_file.contains("sle") || m_file.value("sle").toInt() == 1;
 
         switch (placeholder ? 0 : type) {
         case TypeBoat:
@@ -654,9 +657,34 @@ void Scenario::update(float elapsedTime)
 
     m_conditionManager.testSpace(m_position.x, m_position.y, m_height);
 
+    // sleeping units (docs/ROADMAP.md, appendix J): beyond the player's sonar range plus 3 cells a unit
+    // with sle stops altogether, and starts its order slot again when the player comes back
+    const float sleepMargin = 3.0f*m_surface.scale().x;
     for (const auto &object : m_objects)
-        if (object->isEnabled())
-            object->update(elapsedTime);
+    {
+        if (!object->isEnabled())
+            continue;
+        if (ActiveObject *unit = dynamic_cast<ActiveObject *>(object.get()))
+        {
+            if (unit->sleeps())
+            {
+                const float distance = glm::length(Vector2D(unit->position()) - Vector2D(m_position));
+                const float radius = m_sonar.passiveRange(unit) + sleepMargin;
+                if (unit->isAsleep())
+                {
+                    if (distance > radius)
+                        continue;
+                    unit->wake();
+                }
+                else if (distance > radius && unit->canSleep())
+                {
+                    unit->sleep();
+                    continue;
+                }
+            }
+        }
+        object->update(elapsedTime);
+    }
 
     m_effectManager.update(elapsedTime);
 

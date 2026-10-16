@@ -424,6 +424,8 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
                         line += " attacked";
                     if (unit->eventDestroy()->isCompleted())
                         line += " destroyed";
+                    if (unit->isAsleep())
+                        line += " asleep";
                 }
                 if (const fight::ActiveObject *unit = dynamic_cast<const fight::ActiveObject *>(record.object)) {
                     if (unit->orders() && unit->orders()->currentSlot())

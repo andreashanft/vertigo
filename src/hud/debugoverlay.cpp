@@ -182,6 +182,8 @@ void DebugOverlay::drawLabels()
                 text += String(" V%1").arg(int(speed*3.6f));
             if (active->orders() && active->orders()->currentSlot())
                 text += String(" O%1 %2").arg(active->orders()->current()).arg(active->orders()->state());
+            if (active->isAsleep())
+                text += " ASLEEP";
             if (detected.count(object))
                 font = &m_hud->fontYellow();
         }

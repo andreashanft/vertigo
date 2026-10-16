@@ -65,6 +65,10 @@ void EngineSounds::update()
         const Object *object = record.object;
         if (!object->isEnabled())
             continue;
+        // a sleeping unit's engine is silent
+        if (const ActiveObject *unit = dynamic_cast<const ActiveObject *>(object))
+            if (unit->isAsleep())
+                continue;
         sfx::Sample sample;
         if (record.type == 2063)
             sample = sfx::Sample::Engine_BigShip; // cargo ships

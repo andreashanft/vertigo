@@ -86,7 +86,8 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_torpedoRun(false),
     m_engaged(nullptr),
     m_nextScan(0),
-    m_dockStart(-1)
+    m_dockStart(-1),
+    m_turretBusy(false)
 {
     if (!m_slots.empty())
         start(0);
@@ -149,6 +150,15 @@ ActiveObject* Orders::dockingTarget() const
 {
     const OrderSlot *slot = currentSlot();
     return slot && slot->type == OrderSlot::GotoWithInfiltrate ? findUnit(slot->ene) : nullptr;
+}
+
+
+bool Orders::mayPause() const
+{
+    const OrderSlot *slot = currentSlot();
+    if (slot && slot->type == OrderSlot::Explode)
+        return false;
+    return !m_turretBusy;
 }
 
 
@@ -283,6 +293,7 @@ void Orders::updateTurret(ActiveObject *target, float range, int sector)
     TurretBase *turret = dynamic_cast<TurretBase *>(m_unit);
     if (!turret)
         return;
+    m_turretBusy = target != nullptr;
     if (!target)
     {
         m_unit->setTrigger(false);
