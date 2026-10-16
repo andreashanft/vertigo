@@ -657,6 +657,11 @@ void Scenario::update(float elapsedTime)
 
     m_conditionManager.testSpace(m_position.x, m_position.y, m_height);
 
+    // attackers that are gone or asleep leave the player's list
+    m_playerAttackers.erase(std::remove_if(m_playerAttackers.begin(), m_playerAttackers.end(), [](ActiveObject *unit) {
+        return !unit->isEnabled() || unit->isAsleep() || unit->eventDestroy()->isCompleted();
+    }), m_playerAttackers.end());
+
     // sleeping units (docs/ROADMAP.md, appendix J): beyond the player's sonar range plus 3 cells a unit
     // with sle stops altogether, and starts its order slot again when the player comes back
     const float sleepMargin = 3.0f*m_surface.scale().x;
@@ -707,6 +712,24 @@ void Scenario::update(float elapsedTime)
     if (!m_engineSounds)
         m_engineSounds.reset(new EngineSounds(this));
     m_engineSounds->update();
+}
+
+
+bool Scenario::engagePlayer(ActiveObject *unit)
+{
+    if (std::find(m_playerAttackers.begin(), m_playerAttackers.end(), unit) != m_playerAttackers.end())
+        return true;
+    static const int limits[] = { 4, 6, 8 };
+    if (int(m_playerAttackers.size()) >= limits[difficulty()])
+        return false;
+    m_playerAttackers.push_back(unit);
+    return true;
+}
+
+
+void Scenario::disengagePlayer(ActiveObject *unit)
+{
+    m_playerAttackers.erase(std::remove(m_playerAttackers.begin(), m_playerAttackers.end(), unit), m_playerAttackers.end());
 }
 
 

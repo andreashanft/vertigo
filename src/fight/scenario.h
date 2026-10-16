@@ -104,6 +104,12 @@ public:
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
     Player* player() const { return m_player.get(); }
+    // The difficulty caps how many units attack the player at once: 4 on easy, 6 on normal, 8 on
+    // hard (docs/ROADMAP.md, appendix J). A unit asks before it takes the player as its target and
+    // gets no target while the list is full; it lets go when it turns to something else.
+    bool engagePlayer(ActiveObject *unit);
+    void disengagePlayer(ActiveObject *unit);
+    int playerAttackers() const { return int(m_playerAttackers.size()); }
 
     Surface& surface() { return m_surface; }
 
@@ -213,6 +219,7 @@ private:
     std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<NavPoint*> m_navPoints;
+    std::vector<ActiveObject*> m_playerAttackers;
 
     char m_attitudeMatrix[9][9];
     int m_endType;

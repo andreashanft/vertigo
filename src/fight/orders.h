@@ -99,6 +99,9 @@ private:
 
     ActiveObject* findUnit(int id) const;
     bool isAlive(const ActiveObject *unit) const;
+    // takes the target, or nullptr if it is the player and the difficulty's attacker list is full;
+    // lets go of the player when the target is someone else (or nobody)
+    ActiveObject* engage(ActiveObject *target);
     ActiveObject* nearestHostile(float range, int sector) const;
     // where to aim at a moving target so that the shot meets it
     Vector3D lead(const ActiveObject *target) const;

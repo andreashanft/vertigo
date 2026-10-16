@@ -104,8 +104,18 @@ void Orders::start(int slot)
     m_engaged = nullptr;
     m_dockStart = -1;
     m_unit->setTrigger(false);
+    m_scenario->disengagePlayer(m_unit);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
         pickPatrolPoint();
+}
+
+
+ActiveObject* Orders::engage(ActiveObject *target)
+{
+    if (target == m_scenario->player())
+        return m_scenario->engagePlayer(m_unit) ? target : nullptr;
+    m_scenario->disengagePlayer(m_unit);
+    return target;
 }
 
 
@@ -521,14 +531,14 @@ void Orders::update()
         return;
 
     case OrderSlot::CardinalPatrol:
-        updateTurret(nearestHostile(slot.rad, slot.car), slot.rad, slot.car);
+        updateTurret(engage(nearestHostile(slot.rad, slot.car)), slot.rad, slot.car);
         return;
 
     case OrderSlot::CardinalAttack:
         {
             ActiveObject *target = findUnit(slot.ene);
             const bool inRange = isAlive(target) && glm::length(target->position() - m_unit->position()) < slot.rad;
-            updateTurret(inRange ? target : nullptr, slot.rad, slot.car);
+            updateTurret(engage(inRange ? target : nullptr), slot.rad, slot.car);
         }
         return;
     }
@@ -545,6 +555,7 @@ void Orders::update()
         if (m_engaged && (!isAlive(m_engaged) || glm::length(m_engaged->position() - m_unit->position()) > EngageLeash*sensorRange))
         {
             m_engaged = nullptr;
+            m_scenario->disengagePlayer(m_unit);
             m_attackEnd = 0;
             m_unit->setTrigger(false);
             if (slot.type == OrderSlot::Patrol)
@@ -553,7 +564,7 @@ void Orders::update()
         if (!m_engaged && m_scenario->time() >= m_nextScan)
         {
             m_nextScan = m_scenario->time() + 1.0f;
-            m_engaged = nearestHostile(sensorRange, -1);
+            m_engaged = engage(nearestHostile(sensorRange, -1));
         }
         if (m_engaged)
         {
@@ -595,7 +606,7 @@ void Orders::update()
     case OrderSlot::Attack:
         {
             ActiveObject *target = findUnit(slot.ene);
-            if (isAlive(target))
+            if (isAlive(target) && (target = engage(target)))
             {
                 updateAttack(target, speed);
                 break;
@@ -616,7 +627,7 @@ void Orders::update()
             if (!m_ambushed && isAlive(target) &&
                 (glm::length(target->position() - m_unit->position()) < AmbushDistance || m_unit->eventAttack()->isCompleted()))
                 m_ambushed = true;
-            if (m_ambushed && isAlive(target))
+            if (m_ambushed && isAlive(target) && (target = engage(target)))
             {
                 updateAttack(target, speed);
                 break;
