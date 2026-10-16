@@ -316,10 +316,10 @@ bool Player::update(float elapsedTime)
         m_engineState = EngineOff;
     if (m_engineState == EngineRunning)
     {
-        // the engine's pitch rises with the speed, and further while the booster runs
+        // the engine's pitch follows the speed alone, up to 150 km/h (a boost reaches about 140)
         float pitch = glm::length(m_velocity)*0.036f;
-        if (pitch > (m_boosting ? 1.5f : 1.0f))
-            pitch = m_boosting ? 1.5f : 1.0f;
+        if (pitch > 1.5f)
+            pitch = 1.5f;
         if (pitch < -0.5f)
             pitch = -0.5f;
         sfx::SampleMap::get(sfx::Sample::Engine).setPitch(1.0f + pitch);
