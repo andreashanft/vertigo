@@ -730,6 +730,12 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     light.constantAttenuation = 0.1f;
     light.quadraticAttenuation = 0.0002f;
     gfx::Pipeline::setLight(light);
+    // the nearest energy shots light the ground and the objects around them
+    gfx::Pipeline::PointLight shots[gfx::Pipeline::MaxPointLights];
+    const int shotLights = m_effectManager.pointLights(m_position, shots, gfx::Pipeline::MaxPointLights);
+    for (int i = 0; i < shotLights; i++)
+        shots[i].position = Vector3D(camera*Vector4D(shots[i].position, 1));
+    gfx::Pipeline::setPointLights(shots, shotLights);
 
     gfx::Pipeline::setFog(true);
     gfx::Pipeline::setFog(gfx::Pipeline::Fog{ Vector3D(0.0f, 0.0f, 0.15f), 100.0f, 200.0f });
@@ -742,6 +748,8 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     for (const auto &torpedo : m_torpedoes)
         torpedo->draw();
 
+    // the sprites glow by themselves
+    gfx::Pipeline::setPointLights(nullptr, 0);
     m_effectManager.draw();
 }
 

@@ -38,11 +38,15 @@ public:
     void setPosition(const Vector3D &pos);
     void setDirection(const Vector3D &direction);
     void setOwner(ActiveObject *owner) { m_owner = owner; }
+    // the light an energy shot gives off; black for a shell
+    void setLightColor(const Vector3D &color) { m_lightColor = color; }
+    const Vector3D& lightColor() const { return m_lightColor; }
     bool update(float elapsedTime);
 
 private:
     Vector3D m_originPos;
     Vector3D m_direction;
+    Vector3D m_lightColor = Vector3D(0);
     CollisionCache m_collisionCache;
     ActiveObject *m_owner = nullptr; // never hit by its own shots
 };
