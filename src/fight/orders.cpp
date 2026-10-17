@@ -113,7 +113,17 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
 
 void Orders::start(int slot)
 {
-    m_current = slot < int(m_slots.size()) ? slot : -1;
+    // the 8 slots are taken in turn, skipping empty ones, round and round; boats skip
+    // CardinalPatrol and CardinalAttack too (docs/ROADMAP.md, appendix J)
+    m_current = -1;
+    for (int tried = 0; tried < int(m_slots.size()) && m_current < 0; tried++, slot++)
+    {
+        const int candidate = slot % int(m_slots.size());
+        const int type = m_slots[candidate].type;
+        if (type == OrderSlot::None || (m_boat && (type == OrderSlot::CardinalPatrol || type == OrderSlot::CardinalAttack)))
+            continue;
+        m_current = candidate;
+    }
     m_startTime = m_scenario->time();
     m_attack = Attack::Approach;
     m_attackEnd = 0;

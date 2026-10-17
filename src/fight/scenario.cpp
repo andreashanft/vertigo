@@ -451,7 +451,7 @@ Scenario::Scenario(const String &name) :
 
         // order orderSlots; all of them are read, so the load report only lists what is really ignored
         std::vector<OrderSlot> orderSlots;
-        bool slotsEnded = false;
+        bool anySlot = false;
         for (int n = 0; n < 8; n++)
         {
             auto value = [this, n](const char *name, int defaultValue) {
@@ -481,12 +481,11 @@ Scenario::Scenario(const String &name) :
             slot.dep2 = value("bcdep2", 0);
             slot.ref2 = value("bcref2", -1);
             slot.del = value("bcdel", 0);
-            if (slot.type == OrderSlot::None)
-                slotsEnded = true;
-            if (!slotsEnded)
-                orderSlots.push_back(slot);
+            // empty slots stay, the orders skip them when they go round
+            anySlot = anySlot || slot.type != OrderSlot::None;
+            orderSlots.push_back(slot);
         }
-        if (!orderSlots.empty())
+        if (anySlot)
         {
             ActiveObject *unit = dynamic_cast<ActiveObject *>(object);
             if (unit)
