@@ -203,6 +203,9 @@ void ConditionRadio::complete()
     if (m_scenario->radio().size() > 0 && m_time < m_scenario->radio().back()->time() + 5.0f)
         m_time = m_scenario->radio().back()->time() + 5.0f;
     m_scenario->radio().push_back(this);
+    // '#' and '~' mark a hostile sender
+    const bool hostile = !m_text.isEmpty() && (m_text[0] == '#' || m_text[0] == '~');
+    m_scenario->log(hostile ? m_text.mid(1) : m_text, hostile);
 }
 
 

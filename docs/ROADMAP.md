@@ -53,7 +53,8 @@ something, escorts fly in formation and fight within 150 m of their place.
 Sleeping units, the attacker lists, `car` and `con` follow the original too.
 
 **HUD (phase 4).** Pause, the voxel radar, both slave monitor pages with
-F1–F4 and I, the lamps, the under-fire, current and radiation symbols, ALERT and
+F1–F4 and I, the key help (H) and the radio log (M) laid over the view, the
+Fixer's repairs (appendix O), the lamps, the under-fire, current and radiation symbols, ALERT and
 THREAT with their beeps and voices, friendly-fire warnings, the torpedo lock
 and countdown, the turret menu and brackets, the armor symbol, the aim help,
 the master monitor's activity and weapon lines, `u` to lock the nearest
@@ -89,7 +90,7 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
 | O2 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | How a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
+| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -139,8 +140,8 @@ implementing the behaviour independently. Settled this way so far: the
 currents (appendix D), the radiation (D), `sle`, `diff`, the attacker lists,
 `car`, `con`, Explode, the order slots, the sensors and the boats' and tanks'
 fighting (J), the energy pool, the energy guns, the booster and the jams (K),
-the boat's turning (L), the terrain's shading (M) and the ground under
-buildings (N).
+the boat's turning (L), the terrain's shading (M), the ground under
+buildings (N) and the Fixer (O).
 
 ## Appendix: reference data
 
@@ -296,6 +297,20 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   blinks on its own clock from the moment it is switched on, half a second
   shown and half a second hidden. The torpedo lock has no symbol there: the
   lock ring and the voices (appendix G) announce it.
+- Two pages lie over the view, the mission going on underneath: the key help
+  (H; `VFX/COCKPIT/HELP0-2.TXT` in capitals, four columns at 63, 142, 357
+  and 436 of the 640×480 art, H turns the three pages, Esc closes) and the
+  radio log (M; Esc or M closes). Both are a dimmed box from 54 to 577 across
+  and 92 to 406 down between two dotted lines, the title (FIGHTEXT 21/60)
+  spaced out below the top line, up to twenty rows of 12 px from 142 down,
+  the footer (FIGHTEXT 20/59) right-aligned at the bottom right. The log
+  lists each radio message at the time it was shown (`mm:ss :` and the
+  text, red when the sender's text starts with `#` or `~`) and the named
+  units' events ("<name> wurde angegriffen / zerstört / identifiziert /
+  paralysiert / infiltriert", "ist angekommen", FIGHTEXT 5–10), oldest
+  first, the latest twenty when there are more. Whether the original also
+  shows the events as they happen, and whether it logs a unit that starts at
+  its arrival point, is not compared.
 - Turret states from GLOBWEAP `TurretState0–8`: ARM, SCA, FIR, JAM, EMP, LOC,
   STP, SYN, VOL.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
@@ -606,3 +621,20 @@ two cells apart therefore flatten a four-by-four area together, but a single
 cluster leaves its western and northern neighbours alone. `p` and `l` also
 scale sixteen values of the patch's shading by 0.35, a darkening as far as
 read, which Vertigo does not do yet; `o` does neither.
+
+### O. What the original's Fixer does
+
+Read off in October 2026. The Fixer (item 9218) works one step a second on
+one system at a time: the armour, the gun, the torpedo magazine, turret 1 or
+turret 2, in that order. It starts on the armour. Left to itself it takes
+the first system below a quarter of its full state, else the first below a
+half, else the first below three quarters (the armour counting by the side
+it is mending, or as whole while it mends none); Alt+I forces one (the
+cycle automatic, armour, gun, torpedo, the turrets the boat has) and the
+status page marks the mended and the forced system. Each step adds a 160th
+of the full state: to the weakest armour side (a 160th of that side's
+armour), or to the gun's, magazine's or turret's condition. A system at
+three quarters or more is left alone and the Fixer moves on to the next;
+the armour hands over once every side is at three quarters. The forced
+system is forced only until it reaches that mark. Vertigo keeps the
+magazine's condition for the Fixer alone; nothing else wears it down yet.

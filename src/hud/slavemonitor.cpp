@@ -202,7 +202,12 @@ void SlaveMonitor::drawSystems(const Rect &rect)
     const fight::Player *player = m_hud->scenario()->player();
     gfx::Font &font = m_hud->fontGreen();
     int y = rect.y + m_tableTopLeft.y;
+    int system = 0;
     auto row = [&](const String &name, const String &ammo, const String &status) {
+        // the Fixer: '*' at the system it mends, '!' at the one the pilot forced (appendix O)
+        system++;
+        if (player->hasFixer() && (player->fixerSystem() == system || player->fixerForced() == system))
+            m_hud->fontYellow().draw(player->fixerForced() == system ? "!" : "*", rect.x + m_nameX - 6, y);
         font.draw(name, rect.x + m_nameX, y);
         font.draw(ammo, rect.x + m_ammoX, y);
         font.draw(status, rect.x + m_statusX, y);

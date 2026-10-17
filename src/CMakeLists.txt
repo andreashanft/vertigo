@@ -210,6 +210,7 @@ set(SOURCES
     hud/slavemonitor.h
     hud/sonarmonitor.cpp
     hud/symbols.cpp
+    hud/pages.cpp
     hud/symbols.h
     hud/sonarmonitor.h
     hud/autopilot.cpp

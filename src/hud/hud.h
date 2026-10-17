@@ -46,6 +46,7 @@ namespace hud {
 
 class SonarMonitor;
 class MissionMenu;
+class Pages;
 class SlaveMonitor;
 class Cockpit3D;
 class TouchControls;
@@ -238,6 +239,7 @@ private:
     ui::Widget* m_debugOverlay;
     bool m_debugOverlayVisible;
     MissionMenu* m_menu;
+    Pages* m_pages;
     std::vector<SlaveMonitor*> m_slaveMonitors;
 
     bool m_paused;

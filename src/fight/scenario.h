@@ -28,6 +28,7 @@
 #include "gfx/texturemanager.h"
 #include "game/input.hpp"
 #include "txt/desfile.h"
+#include "txt/stringtable.h"
 #include "boats/player.h"
 #include "surface/surface.h"
 #include "effects/effectmanager.h"
@@ -141,6 +142,17 @@ public:
     CollisionManager& collisionManager() { return m_collisionManager; }
     ConditionManager& conditionManager() { return m_conditionManager; }
     std::vector<ConditionRadio*>& radio() { return m_radio; }
+    // the radio messages and the units' events as the log (the M key) lists them, oldest first
+    struct LogEntry
+    {
+        float time;     // mission seconds
+        String text;
+        bool hostile;   // shown in red
+    };
+    const std::vector<LogEntry>& log() const { return m_log; }
+    void log(const String &text, bool hostile);
+    // "<name> wurde angegriffen" and the like for a named unit (FIGHTEXT 5-10)
+    void logEvent(const String &name, txt::StringFight what);
     Sonar& sonar() { return m_sonar; }
     Target& target() { return m_target; }
     // the pilot's head in the cockpit (shown by the 3D cockpit only)
@@ -212,6 +224,7 @@ private:
     CollisionManager m_collisionManager;
     ConditionManager m_conditionManager;
     std::vector<ConditionRadio*> m_radio;
+    std::vector<LogEntry> m_log;
     Sonar m_sonar;
     Target m_target;
     HeadMotion m_headMotion;
