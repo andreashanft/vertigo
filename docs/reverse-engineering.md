@@ -329,3 +329,29 @@ energy bar and an energy gun by hand:
   "ENE" delay while the pool is down, and the engine sound's pitch. Vertigo
   has the acceleration raised 2.5-fold while boosting, which is a reading of
   a second movement limit and the first thing to correct.
+
+## Comparing the terrain shading (October 2026)
+
+The original's pictures: `s00701` started in DOSBox-X as in `ad-play.conf`
+with `FIGHTIN.DES` set to Dramaturgy s00701, Map ar17 and Mission m00701 and
+the player's start moved to cell 198,126 at 10 and 20 height units, facing
+west (card 6), east (2) and north (0); the mission is up about 55 s after
+launch, then capture the window. Vertigo renders the same four views with
+
+```bash
+build/vertigo s00701 --timeout 1.5 --start 198,126,10,6 --screenshot 1.0=h10.png
+```
+
+and `--start 198,126,10,2`, `198,126,10,0` and `198,126,20,6`. The game's
+640×480 window maps to a 2140×1692 capture by (46 + 3.2·x, 92 + 3.2·y), a
+2272×1824 one adds (66, 44), and to Vertigo's 1772×1516 screenshot by
+(2.769·x, 93 + 2.769·y); re-derive the offsets from the HUD's top-left
+bracket when the window size differs. Compared by the mean green and blue of
+each 8-line band of ground between lines 120 and 376, with the cockpit, the
+HUD's green and the water left out, the rule of the roadmap's appendix M
+differs from the original by 12.5 units RMS over the four pictures (9.3,
+4.6, 16.0 and 13.5 for west, west from 22 m, east and north), with the
+mountain wall of the east view bluish with its bright veins and the flat
+ground of the west views dark beyond 60 m on both sides. The brightness
+itself can be checked in the same way with the grey of a debug render; the
+captures stay outside the repository.

@@ -63,7 +63,6 @@ public:
     };
     static const int MaxPointLights = 4;
 
-    // linear in the distance along the view direction
     // linear in the distance along the view direction: the colour, multiplied with the gain,
     // blends into the fog's colour from start to end and the result is clamped. So a colour
     // with negative channels is a fog that takes a channel away, like water takes the red
@@ -73,6 +72,26 @@ public:
         float start;
         float end;
         float gain = 1;
+    };
+
+    // the game's shading tables: a brightness per vertex, an ambient part that falls off to
+    // nothing at ambientEnd plus a light at the origin that falls off from lightFront to
+    // lightBack, raised to lightPower, times the cosine between the normal and the direction to
+    // the origin (not clamped, so a slope turned away takes from the ambient part). In the
+    // fragment, the brightness interpolated between the vertices picks one of the rows, 0 at
+    // nothing and rows - 1 at one and above, and row r blends the fog's colour into the colour
+    // times the fog's gain by (r + 1)/rows, in place of the fog by distance. Point lights raise
+    // the brightness by their strength instead of adding their colour
+    struct TableShading
+    {
+        Vector3D origin;        // in eye space
+        float ambient;
+        float ambientEnd;
+        float light;
+        float lightFront;
+        float lightBack;
+        float lightPower;
+        int rows;
     };
 
 public:
@@ -103,6 +122,9 @@ public:
     static void setPointLights(const PointLight *lights, int count);
     static void setFog(bool enabled);
     static void setFog(const Fog &fog);
+    // replaces the fog's blend by distance while enabled; the fog's colour and gain still apply
+    static void setTableShading(bool enabled);
+    static void setTableShading(const TableShading &shading);
     // drops fragments without alpha
     static void setAlphaTest(bool enabled);
     // texture coordinates s/q and t/q from the model position: rows 0, 1 and 3 of the matrix give

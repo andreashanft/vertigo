@@ -56,12 +56,17 @@ uniform float lightExponent;
 uniform vec2 lightAttenuation;
 uniform bool textureProjection;
 uniform mat4 textureMatrix;
+uniform bool tableShading;
+uniform vec3 shadeOrigin;       // eye space
+uniform vec2 shadeAmbient;      // brightness, end distance
+uniform vec4 shadeLight;        // brightness, front and back distance, power
 
 out vec4 vColor;
 out vec3 vTexCoord;
 out float vDepth;
 out vec3 vEye;
 out vec3 vNormal;
+out float vShade;
 
 void main()
 {
@@ -87,6 +92,21 @@ void main()
     }
     else
         vColor = color;
+    vShade = 0.0;
+    if (tableShading)
+    {
+        vec3 n = normalMatrix*normal;
+        float size = length(n);
+        n = size > 0.0 ? n/size : n;
+        vNormal = n;
+        vec3 toOrigin = shadeOrigin - eye.xyz;
+        float d = length(toOrigin);
+        float facing = d > 0.0 ? dot(n, toOrigin)/d : 0.0;
+        float ambient = shadeAmbient.x*max(1.0 - d/shadeAmbient.y, 0.0);
+        float reach = (shadeLight.z - d)/(shadeLight.z - shadeLight.y);
+        float light = reach > 0.0 ? shadeLight.x*pow(reach, shadeLight.w)*facing : 0.0;
+        vShade = ambient + light;
+    }
 }
 )";
 
@@ -96,6 +116,7 @@ in vec3 vTexCoord;
 in float vDepth;
 in vec3 vEye;
 in vec3 vNormal;
+in float vShade;
 
 uniform sampler2D tex;
 uniform bool textureProjection;
@@ -108,16 +129,20 @@ uniform int pointLights;
 uniform vec4 pointLightPosition[4];     // eye space, w = 1/radius^2
 uniform vec3 pointLightColor[4];
 uniform float fogGain;
+uniform bool tableShading;
+uniform float shadeRows;
 
 out vec4 fragColor;
 
 void main()
 {
     vec4 c = vColor;
+    float glow = 0.0;
     if (pointLights > 0)
     {
         // faded with the square of the distance; a third of it regardless of the surface's
         // direction, the rest by the angle (a zero normal takes only that third)
+        vec3 added = vec3(0.0);
         for (int i = 0; i < 4; i++)
         {
             if (i >= pointLights)
@@ -126,9 +151,13 @@ void main()
             float d2 = dot(toLight, toLight);
             float fade = max(1.0 - d2*pointLightPosition[i].w, 0.0);
             float facing = max(dot(vNormal, toLight*inversesqrt(max(d2, 1e-6))), 0.0);
-            c.rgb += pointLightColor[i]*(fade*fade*(0.35 + 0.65*facing));
+            added += pointLightColor[i]*(fade*fade*(0.35 + 0.65*facing));
         }
-        c.rgb = min(c.rgb, vec3(1.0));
+        // with the shading table the lights brighten the row instead of colouring
+        if (tableShading)
+            glow = max(added.r, max(added.g, added.b));
+        else
+            c.rgb = min(c.rgb + added, vec3(1.0));
     }
     if (textureProjection)
     {
@@ -142,7 +171,13 @@ void main()
         c *= texture(tex, vTexCoord.xy);
     if (alphaTest && c.a <= 0.0)
         discard;
-    if (fog)
+    if (tableShading)
+    {
+        // the brightness in multiples of the texture, the last row holding the fog's gain
+        float row = clamp(floor((vShade + glow)/fogGain*shadeRows), 0.0, shadeRows - 1.0);
+        c.rgb = clamp(mix(fogColor, c.rgb*fogGain, (row + 1.0)/shadeRows), 0.0, 1.0);
+    }
+    else if (fog)
         c.rgb = clamp(mix(fogColor, c.rgb*fogGain, clamp((fogRange.y - vDepth)/(fogRange.y - fogRange.x), 0.0, 1.0)), 0.0, 1.0);
     fragColor = c;
 }
@@ -166,6 +201,8 @@ struct State
     int pointLightCount = 0;
     bool fog = false;
     Pipeline::Fog fogParameters = { Vector3D(0), 0, 1, 1 };
+    bool tableShading = false;
+    Pipeline::TableShading tableParameters = { Vector3D(0), 1, 1, 0, 0, 1, 1, 32 };
     bool alphaTest = false;
     bool textureProjection = false;
     Matrix textureMatrix = Matrix(1);
@@ -187,6 +224,7 @@ struct Uniforms
     int lightPosition, lightDirection, lightAmbient, lightDiffuse, lightCosCutoff, lightExponent, lightAttenuation;
     int pointLights, pointLightPosition, pointLightColor;
     int textureProjection, textureMatrix, textureNear, alphaTest, fog, fogColor, fogRange, fogGain;
+    int tableShading, shadeOrigin, shadeAmbient, shadeLight, shadeRows;
 };
 
 // the shader and the buffers for drawing from client memory, made for the current context
@@ -284,6 +322,11 @@ Gpu& gpu()
     u.fogColor = location("fogColor");
     u.fogRange = location("fogRange");
     u.fogGain = location("fogGain");
+    u.tableShading = location("tableShading");
+    u.shadeOrigin = location("shadeOrigin");
+    u.shadeAmbient = location("shadeAmbient");
+    u.shadeLight = location("shadeLight");
+    u.shadeRows = location("shadeRows");
     glUseProgram(program);
     glUniform1i(location("tex"), 0);
 
@@ -462,6 +505,20 @@ void Pipeline::setFog(const Fog &fog)
 }
 
 
+void Pipeline::setTableShading(bool enabled)
+{
+    state().tableShading = enabled;
+}
+
+
+void Pipeline::setTableShading(const TableShading &shading)
+{
+    State &s = state();
+    s.tableParameters = shading;
+    s.parametersChanged = true;
+}
+
+
 void Pipeline::setAlphaTest(bool enabled)
 {
     state().alphaTest = enabled;
@@ -514,6 +571,12 @@ void Pipeline::apply(bool textured)
         glUniform3fv(u.fogColor, 1, glm::value_ptr(s.fogParameters.color));
         glUniform2f(u.fogRange, s.fogParameters.start, s.fogParameters.end);
         glUniform1f(u.fogGain, s.fogParameters.gain);
+        const TableShading &t = s.tableParameters;
+        glUniform3fv(u.shadeOrigin, 1, glm::value_ptr(t.origin));
+        glUniform2f(u.shadeAmbient, t.ambient, std::max(t.ambientEnd, 1e-3f));
+        const Vector4D light4(t.light, t.lightFront, std::max(t.lightBack, t.lightFront + 1e-3f), t.lightPower);
+        glUniform4fv(u.shadeLight, 1, glm::value_ptr(light4));
+        glUniform1f(u.shadeRows, float(std::max(t.rows, 1)));
         s.parametersChanged = false;
     }
 
@@ -523,8 +586,9 @@ void Pipeline::apply(bool textured)
     glUniform4fv(u.color, 1, glm::value_ptr(s.color));
     glUniform1i(u.lighting, s.lighting);
     // the point lights only where lit; with none the fragment shader skips them
-    glUniform1i(u.pointLights, s.lighting ? s.pointLightCount : 0);
-    if (s.lighting)
+    glUniform1i(u.pointLights, s.lighting || s.tableShading ? s.pointLightCount : 0);
+    glUniform1i(u.tableShading, s.tableShading);
+    if (s.lighting || s.tableShading)
     {
         const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelView)));
         glUniformMatrix3fv(u.normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));

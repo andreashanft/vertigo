@@ -34,14 +34,17 @@ namespace {
 
 // the terrain's textures hold half the brightness the shading tables' nearest row gives them
 const float TextureGain = 2;
-// the distances at which the tables' nearest and farthest rows are left and reached, and the
-// light that shades the slopes: ground facing the boat is lit in full, ground seen at a
-// grazing angle keeps two fifths; from the original's pictures (docs/ROADMAP.md,
-// "Differences to the original's cockpit")
+// the fog for everything but the terrain, which has the shading tables' own rule: the
+// distances at which the tables' nearest and farthest rows are left and reached, from the
+// original's pictures (docs/ROADMAP.md, "Differences to the original's cockpit")
 const float FogStart = 30;
 const float FogEnd = 140;
-const float LightAmbient = 0.4f;
-const float LightDiffuse = 1.0f;
+// the game's length unit, in which the cockpit description gives the camera's distances
+const float UnitsPerMetre = 32;
+// the point the terrain is shaded from, relative to the eye: above it and a little ahead, as
+// the game places it (256 and 128 of its units)
+const float ShadeOriginUp = 8;
+const float ShadeOriginAhead = 4;
 
 }
 
@@ -90,6 +93,7 @@ void Surface::load(const String &name, int maxheightscale, int mapping)
     const String sName = file.value("sname").toString();
     const String tName = file.value("tname").toString();
     m_fog = gfx::Pipeline::Fog{ Vector3D(0.0f, 0.0f, 0.15f), FogStart, FogEnd, 1 };
+    loadShading();
     for (int i = 0; i <= 16; i++) {
         const String shading = String("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, '0');
         gfx::ColorTable colorTable(shading);
@@ -97,6 +101,28 @@ void Surface::load(const String &name, int maxheightscale, int mapping)
             m_fog.color = fogColor(colorTable, gfx::ColorTable::loadShading(shading));
         m_textures.push_back(gfx::Image::load(String("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, '0'), colorTable));
     }
+}
+
+
+// The row of the shading table a vertex of the terrain gets comes from the cockpit's camera
+// description: an ambient brightness that falls off to nothing at the cueing back plane plus
+// the light's brightness, falling off from its front to its back plane, raised to its power
+// and times how much the ground faces the eye. The distances are in the game's units
+void Surface::loadShading()
+{
+    txt::DesFile file("vfx:cockpit/000.des");
+    file.setSection("camera");
+    auto value = [&file](const char *key, float fallback) {
+        return file.contains(key) ? file.value(key).toFloat() : fallback;
+    };
+    m_shading.origin = Vector3D(0, ShadeOriginUp, -ShadeOriginAhead);
+    m_shading.ambient = value("AmbientBrightness", 2.0f);
+    m_shading.ambientEnd = value("CueingBackPlane", 1000.0f)/UnitsPerMetre;
+    m_shading.light = value("LightBrightness", 5.0f);
+    m_shading.lightFront = value("LightFrontPlane", 0.0f)/UnitsPerMetre;
+    m_shading.lightBack = value("LightBackPlane", 3650.0f)/UnitsPerMetre;
+    m_shading.lightPower = value("LightPower", 1.0f);
+    m_shading.rows = gfx::ColorTable::ShadingRows;
 }
 
 
@@ -209,22 +235,12 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
     int x0 = position.x / m_scale.x / 8;
     int y0 = position.y / m_scale.y / 8;
 
-    // the textures at the nearest row's brightness, shaded per vertex by how much the ground
-    // faces the boat (a light at the eye with no falloff: the fog takes the distance) and
-    // fading with the distance. The caller sets its own light and ambient afterwards
+    // the textures at the nearest row's brightness, each vertex's row from the game's rule
+    // (loadShading), instead of the fog by distance everything else gets
     const bool lighting = gfx::Pipeline::lighting();
-    gfx::Pipeline::setLighting(true);
-    gfx::Pipeline::setAmbient(Vector3D(LightAmbient/0.2f));
-    gfx::Pipeline::Light light;
-    light.position = Vector3D(0);
-    light.direction = Vector3D(0, 0, -1);
-    light.ambient = Vector3D(0);
-    light.diffuse = Vector3D(LightDiffuse/0.8f);
-    light.cutoff = 180;
-    light.exponent = 0;
-    light.constantAttenuation = 1;
-    light.quadraticAttenuation = 0;
-    gfx::Pipeline::setLight(light);
+    gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setTableShading(m_shading);
+    gfx::Pipeline::setTableShading(true);
     gfx::Pipeline::Fog fog = m_fog;
     fog.gain = TextureGain;
     gfx::Pipeline::setFog(fog);
@@ -240,6 +256,7 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
         }
 
     gfx::Pipeline::setFog(m_fog);
+    gfx::Pipeline::setTableShading(false);
     gfx::Pipeline::setLighting(lighting);
 }
 
