@@ -27,6 +27,7 @@
 #include "util/random.h"
 #include "gfx/pipeline.h"
 #include <glm/gtx/transform.hpp>
+#include <cmath>
 #include <glm/gtx/norm.hpp>
 #include <algorithm>
 

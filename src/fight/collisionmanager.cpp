@@ -19,6 +19,7 @@
 #include "objects/object.h"
 
 #include <glm/geometric.hpp>
+#include <algorithm>
 
 
 namespace fight {

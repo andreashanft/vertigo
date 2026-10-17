@@ -25,6 +25,7 @@
 #include "gfx/gl.hpp"
 #include "gfx/image.h"
 #include <algorithm>
+#include <cmath>
 #include <glm/gtx/norm.hpp>
 #include <glm/trigonometric.hpp>
 

@@ -20,6 +20,7 @@
 
 
 #include "util/string.hpp"
+#include <cstdint>
 #include <vector>
 
 

@@ -64,8 +64,9 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$HOME/sdl3"
 
+      # (on past errors, so that a run shows them all)
       - name: Build
-        run: cmake --build build
+        run: cmake --build build -- -k 0
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
