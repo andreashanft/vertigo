@@ -771,6 +771,14 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     gfx::Pipeline::setProjection(projection);
     gfx::Pipeline::setModelView(camera);
 
+    // the nearest energy shots light the ground and the objects around them,
+    // so they are set before the terrain is drawn
+    gfx::Pipeline::PointLight shots[gfx::Pipeline::MaxPointLights];
+    const int shotLights = m_effectManager.pointLights(m_position, shots, gfx::Pipeline::MaxPointLights);
+    for (int i = 0; i < shotLights; i++)
+        shots[i].position = Vector3D(camera*Vector4D(shots[i].position, 1));
+    gfx::Pipeline::setPointLights(shots, shotLights);
+
     // the water's fog from the map's shading tables, on the terrain and everything else
     gfx::Pipeline::setFog(true);
     gfx::Pipeline::setFog(m_surface.fog());
@@ -790,13 +798,6 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     light.constantAttenuation = 0.1f;
     light.quadraticAttenuation = 0.0002f;
     gfx::Pipeline::setLight(light);
-    // the nearest energy shots light the ground and the objects around them
-    gfx::Pipeline::PointLight shots[gfx::Pipeline::MaxPointLights];
-    const int shotLights = m_effectManager.pointLights(m_position, shots, gfx::Pipeline::MaxPointLights);
-    for (int i = 0; i < shotLights; i++)
-        shots[i].position = Vector3D(camera*Vector4D(shots[i].position, 1));
-    gfx::Pipeline::setPointLights(shots, shotLights);
-
     for (const auto &object : m_objects)
         if (object->isEnabled())
             object->draw();
