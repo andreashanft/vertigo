@@ -93,6 +93,7 @@ private:
     bool m_lockAnnounced;
     int m_threats;
     bool m_threatBlink;
+    int m_attackers = 0;     // how many units fought the player last frame
     bool m_critical = false;
     bool m_alertBlink = false;
     bool m_radiation = false;

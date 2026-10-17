@@ -424,6 +424,13 @@ bool Player::update(float elapsedTime)
     m_threatBlink = blink;
     m_threats = threats;
 
+    // the voice "lock-on located" when the first unit turns on the player; the symbol block
+    // shows the marker under fire as long as any does
+    const int attackers = m_scenario->playerAttackers();
+    if (attackers > 0 && m_attackers == 0)
+        sfx::SampleMap::get(sfx::Sample::Voice_LockOn).play();
+    m_attackers = attackers;
+
     // critical: the voice once, then the alert beep with each blink of ALERT
     const bool critical = isCritical();
     if (critical && !m_critical)
