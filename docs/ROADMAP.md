@@ -52,8 +52,9 @@ range. Patrols wander their area, ambushers lie silent until the sensor finds
 something, escorts fly in formation and fight within 150 m of their place.
 Sleeping units, the attacker lists, `car` and `con` follow the original too.
 
-**HUD (phase 4).** Pause, the voxel radar, both slave monitor pages with
-F1–F4 and I, the key help (H) and the radio log (M) laid over the view, the
+**HUD (phase 4).** Pause, the voxel radar, the slave monitors' weapon, armor
+and system state pages with F1–F4 and I, the key help (H) and the radio log
+(M) laid over the view, the
 Fixer's repairs (appendix O), the lamps, the under-fire, current and radiation symbols, ALERT and
 THREAT with their beeps and voices, friendly-fire warnings, the torpedo lock
 and countdown, the turret menu and brackets, the armor symbol, the aim help,
@@ -103,7 +104,7 @@ Succubus cockpits). All are done.
 | # | Area | Original, and what Vertigo does now |
 |---|---|---|
 | D1–D3 | Voxel radar | Always shown in the lower part of the master monitor, the target's picture above it: a patch of terrain from 5 cells behind the boat (`WorldMinY`) to 20 ahead (`WorldMaxY`) and 15 to each side, turning with the heading, seen in perspective from behind at `Projection` 30° so that the far edge is about half as wide as the near one and the boat sits in the lower third (`FlightY`); no background, so the monitor's grid shows through; light grey ground, low ground dark, with `VOX_000.S16`; buildings as their models in orange, units as vertical lines from the ground (red hostile, green friendly, blue neutral, grey the locked target), debris green, the boat orange, water currents as one turquoise sheet over their cells |
-| D4–D6 | Slave monitors | The first monitor shows a weapon page (item name, state as a word, the torpedo's long name, its picture; F1–F4 pick gun, magazine or a turret), the second the armor page (`ARMOR STATE`, the silhouette with each side's percentage); Hiob's single monitor shows the weapon page; I switches to the systems table |
+| D4–D6 | Slave monitors | The first monitor shows a weapon page (item name, state as a word, the torpedo's long name, its picture; F1–F4 pick gun, magazine or a turret), the second the armor page (`ARMOR STATE`, the silhouette with each side's percentage); Hiob's single monitor shows the weapon page; I switches between the armor page and the system state page (appendix O), never back to the weapon page |
 | D7–D8 | Master monitor | The second line shows what the target does (`GOTO`, `PATROLLING`, `ATTACKING`), `G:` its gun's short name and `T:` its torpedoes |
 | D9 | Aim help | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame |
 | D10 | Cargo ships | Each block is a sonar contact and target of its own |
@@ -303,14 +304,18 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   radio log (M; Esc or M closes). Both are a dimmed box from 54 to 577 across
   and 92 to 406 down between two dotted lines, the title (FIGHTEXT 21/60)
   spaced out below the top line, up to twenty rows of 12 px from 142 down,
-  the footer (FIGHTEXT 20/59) right-aligned at the bottom right. The log
+  the footer (FIGHTEXT 20/59) right-aligned at the bottom right; the help's
+  footer has the game's version and date to the left of the text (Vertigo
+  shows its commit and its date). The log keeps the last 24 entries and
   lists each radio message at the time it was shown (`mm:ss :` and the
-  text, red when the sender's text starts with `#` or `~`) and the named
-  units' events ("<name> wurde angegriffen / zerstört / identifiziert /
-  paralysiert / infiltriert", "ist angekommen", FIGHTEXT 5–10), oldest
-  first, the latest twenty when there are more. Whether the original also
-  shows the events as they happen, and whether it logs a unit that starts at
-  its arrival point, is not compared.
+  text; a leading `#` shows it in red, a `~` in amber) and the units'
+  events ("<name> wurde angegriffen / zerstört / identifiziert /
+  paralysiert / infiltriert", "ist angekommen", FIGHTEXT 5–10) in amber.
+  An event is logged only for a unit with a name, when the mission uses
+  that event for it (something depends on it) and its count is reached;
+  the mission's end lines (FIGHTEXT 11–13) are logged the same way (not in
+  Vertigo yet). Whether the original also shows the events as they happen
+  is not compared.
 - Turret states from GLOBWEAP `TurretState0–8`: ARM, SCA, FIR, JAM, EMP, LOC,
   STP, SYN, VOL.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
@@ -631,10 +636,23 @@ the first system below a quarter of its full state, else the first below a
 half, else the first below three quarters (the armour counting by the side
 it is mending, or as whole while it mends none); Alt+I forces one (the
 cycle automatic, armour, gun, torpedo, the turrets the boat has) and the
-status page marks the mended and the forced system. Each step adds a 160th
+system state page marks the mended and the forced system. Each step adds a 160th
 of the full state: to the weakest armour side (a 160th of that side's
 armour), or to the gun's, magazine's or turret's condition. A system at
 three quarters or more is left alone and the Fixer moves on to the next;
 the armour hands over once every side is at three quarters. The forced
 system is forced only until it reaches that mark. Vertigo keeps the
 magazine's condition for the Fixer alone; nothing else wears it down yet.
+
+The system state page (I, in turn with the armor page): `SYSTEM STATE`
+centred at the top, then a row of 10 px for each system, `ARMO`, `GUN`,
+`TORP` and the turrets the boat has, the rows centred as a whole (a
+five-letter name and a 30 px bar). The bar is 15 ticks 2 px apart: the
+condition's share of the 30 px, in pairs, as 6 px ticks in a bright colour,
+the rest as 2 px ticks in a dim one. Name and bar are green above half the
+full state, yellow above a quarter, red below (bright/dim green 66,214,58 /
+66,130,58, yellow 239,214,0 / 173,134,0, red 255,32,0 / 165,12,0). The
+armor counts by its weakest side. With a Fixer a green `*` (an × in the
+cockpit font) stands 8 px left of the system it mends and a yellow one
+16 px left of the forced system, and a centred `AUTOMATIC` line follows two
+pixels below the rows, with the yellow mark when nothing is forced.

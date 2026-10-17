@@ -23,9 +23,28 @@
 #include "txt/desfile.h"
 #include "game/boat.h"
 #include "game/items.h"
+#include "gfx/image.h"
+
+#include <algorithm>
+#include <cmath>
 
 
 namespace hud {
+
+
+namespace {
+
+// the system state page's rows and bars
+const int RowHeight = 10;
+const int BarWidth = 30;
+// the bars' colours by band (green, yellow, red), bright and dim
+const int BarColors[3][2][3] = {
+    { { 66, 214, 58 }, { 66, 130, 58 } },
+    { { 239, 214, 0 }, { 173, 134, 0 } },
+    { { 255, 32, 0 }, { 165, 12, 0 } },
+};
+
+} // namespace
 
 
 SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
@@ -35,9 +54,6 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
     m_page(page),
     m_lamp(hud, file),
     m_tableTopLeft(file.value("WS_TopLeftX").toInt(), file.value("WS_TopLeftY").toInt()),
-    m_nameX(file.value("WS_NameX").toInt()),
-    m_ammoX(file.value("WS_AmmoX").toInt()),
-    m_statusX(file.value("WS_StatusX").toInt()),
     m_spacingY(file.value("WS_SpacingY").toInt())
 {
     // e.g. GATO1F: Gator, damage level 1 (intact) to 4, front
@@ -46,6 +62,13 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
     for (int level = 0; level < 4; level++)
         for (int side = 0; side < 4; side++)
             m_armor[level][side] = gfx::Texture(hud->getImage(String("%1%2%3").arg(prefix).arg(level + 1).arg(sides[side])), true);
+    for (int band = 0; band < 3; band++)
+        for (int i = 0; i < 2; i++)
+        {
+            gfx::Image pixel(1, 1, gfx::Image::ARGB32);
+            pixel.setPixel(0, 0, gfx::rgba(BarColors[band][i][0], BarColors[band][i][1], BarColors[band][i][2], 255));
+            m_bar[band][i] = gfx::Texture(pixel, false);
+        }
 }
 
 
@@ -197,49 +220,66 @@ void SlaveMonitor::drawArmor(const Rect &rect)
 }
 
 
+// the system state page (docs/ROADMAP.md, appendix O): a bar for each system, the Fixer's marks
+// ('*' in green at the system it mends, in yellow at the one the pilot forced) and, with a Fixer,
+// the AUTOMATIC line
 void SlaveMonitor::drawSystems(const Rect &rect)
 {
     const fight::Player *player = m_hud->scenario()->player();
-    gfx::Font &font = m_hud->fontGreen();
-    int y = rect.y + m_tableTopLeft.y;
+    gfx::Font &green = m_hud->fontGreen();
+    green.draw("SYSTEM STATE", Rect(rect.x, rect.y + 2, rect.width, -1), true, false);
+    // the rows are centred as a whole: a five-letter name and the bar
+    const int nameWidth = green.width("xxx: ");
+    const int x = rect.x + (rect.width - nameWidth - BarWidth)/2;
+    int y = rect.y + 14;
     int system = 0;
-    auto row = [&](const String &name, const String &ammo, const String &status) {
-        // the Fixer: '*' at the system it mends, '!' at the one the pilot forced (appendix O)
+    auto row = [&](const String &name, float condition) {
         system++;
-        if (player->hasFixer() && (player->fixerSystem() == system || player->fixerForced() == system))
-            m_hud->fontYellow().draw(player->fixerForced() == system ? "!" : "*", rect.x + m_nameX - 6, y);
-        font.draw(name, rect.x + m_nameX, y);
-        font.draw(ammo, rect.x + m_ammoX, y);
-        font.draw(status, rect.x + m_statusX, y);
-        y += m_spacingY;
-    };
-    auto gunRow = [&](const String &name, const fight::Gun *gun) {
-        if (gun)
-            row(name, gun->usesAmmo() ? String::number(gun->ammo()) : String("ENER"), gun->stateName());
-        else
-            row(name, "--", "---");
+        // green above a half, yellow above a quarter, red below
+        const int band = condition > 0.5f ? 0 : condition > 0.25f ? 1 : 2;
+        gfx::Font &font = band == 0 ? green : band == 1 ? m_hud->fontYellow() : m_hud->fontRed();
+        font.draw(name, x, y);
+        drawBar(x + nameWidth, y, condition, band);
+        if (player->hasFixer())
+        {
+            if (player->fixerSystem() == system)
+                green.draw("*", x - 8, y);
+            if (player->fixerForced() == system)
+                m_hud->fontYellow().draw("*", x - 16, y);
+        }
+        y += RowHeight;
     };
 
-    int armor = 0;
+    // the armour counts by its weakest side
+    float armor = 1;
     for (int side = 0; side < 4; side++)
-        armor += player->shieldMax(side) > 0 ? std::max(0, 100*player->shield(side)/player->shieldMax(side)) : 0;
-    row("ARMO", "--", String("%1%").arg(armor/4));
-    gunRow("GUN", &player->playerGun());
-    // the selected torpedo, how many are left, ready or rearming
-    const fight::TorpedoType *torpedo = player->selectedTorpedo() >= 0 ? fight::TorpedoType::get(player->torpedoes()[player->selectedTorpedo()] - 1) : nullptr;
-    if (torpedo)
-        row(torpedo->shortName, String::number(player->torpedoes().size()), player->torpedoReady() ? "RDY" : "ARM");
-    else
-        row("TORP", "--", "EMP");
-    // turrets: their state (SYN, SCA, LOC, FIR, VOL, STP, ...)
+        if (player->shieldMax(side) > 0)
+            armor = std::min(armor, float(player->shield(side))/player->shieldMax(side));
+    row("ARMO", armor);
+    row("GUN", player->playerGun().defect());
+    row("TORP", player->magazineCondition());
     for (int i = 0; i < 2; i++)
+        if (const fight::PlayerTurret *turret = player->turret(i))
+            row(String("TUR%1").arg(i + 1), turret->gun().defect());
+    if (player->hasFixer())
     {
-        const fight::PlayerTurret *turret = player->turret(i);
-        const String name = String("TUR%1").arg(i + 1);
-        if (turret)
-            row(name, turret->gun().usesAmmo() ? String::number(turret->gun().ammo()) : String("ENER"), turret->stateName());
-        else
-            row(name, "--", "---");
+        y += 2;
+        green.draw("AUTOMATIC", Rect(rect.x, y, rect.width, -1), true, false);
+        if (player->fixerForced() == 0)
+            m_hud->fontYellow().draw("*", x - 16, y);
+    }
+}
+
+
+// 15 ticks two pixels apart: the filled ones (the condition's share of the 30 pixels, in pairs)
+// six pixels tall in the band's bright colour, the rest two pixels tall in its dim one
+void SlaveMonitor::drawBar(int x, int y, float condition, int band)
+{
+    const int filled = int(std::lround(BarWidth*condition))/2;
+    for (int i = 0; i < BarWidth/2; i++)
+    {
+        const bool full = i < filled;
+        m_bar[band][full ? 0 : 1].draw(RectF(x + 2*i, y + (full ? 0 : 2), 1, full ? 6 : 2));
     }
 }
 

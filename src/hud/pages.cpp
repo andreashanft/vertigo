@@ -28,6 +28,10 @@
 #include <fstream>
 #include <sstream>
 
+#ifndef VERTIGO_VERSION
+#define VERTIGO_VERSION "V0.1"
+#endif
+
 
 namespace hud {
 
@@ -179,7 +183,8 @@ void Pages::drawHelp(const Rect &box)
             if (!lines[i].column[c].isEmpty())
                 font.draw(lines[i].column[c], place(box, HelpColumns[c], FirstLineY + int(i)*LineHeight));
     }
-    drawFooter(box, fightText(TextHelpFooter));
+    // the version to the left of the footer, as the original shows its own
+    drawFooter(box, String(VERTIGO_VERSION).toUpper() + "   " + fightText(TextHelpFooter));
 }
 
 
@@ -191,7 +196,8 @@ void Pages::drawRadio(const Rect &box)
     const int first = std::max(0, int(log.size()) - Rows);
     for (int i = first; i < int(log.size()); i++) {
         const fight::Scenario::LogEntry &entry = log[i];
-        gfx::Font &font = entry.hostile ? m_hud->fontRed() : m_hud->fontGreen();
+        gfx::Font &font = entry.color == fight::Scenario::LogColor::Red ? m_hud->fontRed()
+                        : entry.color == fight::Scenario::LogColor::Amber ? m_hud->fontYellow() : m_hud->fontGreen();
         const int y = FirstLineY + (i - first)*LineHeight;
         const int seconds = std::max(0, int(entry.time));
         const String time = String("%1:%2 :").arg(seconds/60, 2, 10, '0').arg(seconds%60, 2, 10, '0');

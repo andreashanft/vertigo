@@ -203,9 +203,10 @@ void ConditionRadio::complete()
     if (m_scenario->radio().size() > 0 && m_time < m_scenario->radio().back()->time() + 5.0f)
         m_time = m_scenario->radio().back()->time() + 5.0f;
     m_scenario->radio().push_back(this);
-    // '#' and '~' mark a hostile sender
-    const bool hostile = !m_text.isEmpty() && (m_text[0] == '#' || m_text[0] == '~');
-    m_scenario->log(hostile ? m_text.mid(1) : m_text, hostile);
+    // a leading '#' shows the message in red (a hostile sender), a '~' in amber
+    const char mark = m_text.isEmpty() ? 0 : m_text[0];
+    const Scenario::LogColor color = mark == '#' ? Scenario::LogColor::Red : mark == '~' ? Scenario::LogColor::Amber : Scenario::LogColor::Green;
+    m_scenario->log(color == Scenario::LogColor::Green ? m_text : m_text.mid(1), color);
 }
 
 

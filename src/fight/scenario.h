@@ -143,16 +143,18 @@ public:
     ConditionManager& conditionManager() { return m_conditionManager; }
     std::vector<ConditionRadio*>& radio() { return m_radio; }
     // the radio messages and the units' events as the log (the M key) lists them, oldest first
+    enum class LogColor { Green, Red, Amber };
     struct LogEntry
     {
         float time;     // mission seconds
         String text;
-        bool hostile;   // shown in red
+        LogColor color;
     };
     const std::vector<LogEntry>& log() const { return m_log; }
-    void log(const String &text, bool hostile);
-    // "<name> wurde angegriffen" and the like for a named unit (FIGHTEXT 5-10)
-    void logEvent(const String &name, txt::StringFight what);
+    void log(const String &text, LogColor color);
+    // "<name> wurde angegriffen" and the like (FIGHTEXT 5-10), in amber: the original logs a
+    // unit's event only when the unit has a name and the mission uses that event
+    void logEvent(const String &name, const ConditionEvent *event, txt::StringFight what);
     Sonar& sonar() { return m_sonar; }
     Target& target() { return m_target; }
     // the pilot's head in the cockpit (shown by the 3D cockpit only)

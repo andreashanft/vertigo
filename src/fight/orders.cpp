@@ -1090,7 +1090,7 @@ void Orders::update()
             {
                 if (slot.type == OrderSlot::GotoWithArrive)
                     m_unit->eventFinish()->complete();
-                    m_scenario->logEvent(m_unit->name(), txt::Fight9);
+                    m_scenario->logEvent(m_unit->name(), m_unit->eventFinish(), txt::Fight9);
                 next();
                 m_boat->hold();
                 return;
@@ -1158,7 +1158,7 @@ void Orders::update()
                 if (m_scenario->time() - m_dockStart >= slot.dur)
                 {
                     target->eventBoard()->complete();
-                    m_scenario->logEvent(target->name(), txt::Fight10);
+                    m_scenario->logEvent(target->name(), target->eventBoard(), txt::Fight10);
                     next();
                 }
                 break;

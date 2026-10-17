@@ -108,7 +108,7 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
     if (attacker && attacker != this)
     {
         if (!m_eventAttack.isCompleted())
-            m_scenario->logEvent(name(), txt::Fight6);
+            m_scenario->logEvent(name(), &m_eventAttack, txt::Fight6);
         m_eventAttack.complete();
         m_hitTime = m_scenario->time();
     }
@@ -120,7 +120,7 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
     else if (m_shockShield < 0 && !m_eventParalyze.isCompleted())
     {
         m_eventParalyze.complete();
-        m_scenario->logEvent(name(), txt::Fight8);
+        m_scenario->logEvent(name(), &m_eventParalyze, txt::Fight8);
         explode();
     }
 
@@ -156,7 +156,7 @@ void ActiveObject::destroy()
     blowUp(1);
     vanish();
     m_eventDestroy.complete();
-    m_scenario->logEvent(name(), txt::Fight5);
+    m_scenario->logEvent(name(), &m_eventDestroy, txt::Fight5);
 }
 
 
@@ -276,7 +276,7 @@ void ActiveObject::rechargeEnergy(float elapsedTime)
 void ActiveObject::identify()
 {
     m_eventIdentify.complete();
-    m_scenario->logEvent(name(), txt::Fight7);
+    m_scenario->logEvent(name(), &m_eventIdentify, txt::Fight7);
     sfx::SampleMap::get(sfx::Sample::TargetIdentified).play();
 }
 

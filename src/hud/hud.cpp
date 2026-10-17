@@ -282,8 +282,8 @@ void HUD::load(game::Boat *boat)
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
 
-    // status monitors: with two, the first shows a weapon and the second the armor (I switches it
-    // to the systems and back); a single one shows a weapon (I steps through all three pages)
+    // status monitors: with two, the first shows a weapon and the second the armor; I switches
+    // between the armor and the system state (a single one starts on a weapon; F1-F4 bring it back)
     m_slaveMonitors.clear();
     for (int i = 0; i < 2; i++)
     {
@@ -912,9 +912,7 @@ void HUD::press(input::KeyEvent *e)
         {
         case SlaveMonitor::Page::Weapon: monitor->setPage(SlaveMonitor::Page::Armor); break;
         case SlaveMonitor::Page::Armor: monitor->setPage(SlaveMonitor::Page::Systems); break;
-        case SlaveMonitor::Page::Systems:
-            monitor->setPage(m_slaveMonitors.size() > 1 ? SlaveMonitor::Page::Armor : SlaveMonitor::Page::Weapon);
-            break;
+        case SlaveMonitor::Page::Systems: monitor->setPage(SlaveMonitor::Page::Armor); break;
         }
     }
     // F1-F4: the gun, the magazine or a turret on the weapon page

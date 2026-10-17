@@ -723,16 +723,16 @@ void Scenario::update(float elapsedTime)
 }
 
 
-void Scenario::log(const String &text, bool hostile)
+void Scenario::log(const String &text, LogColor color)
 {
-    m_log.push_back({ m_time, text, hostile });
+    m_log.push_back({ m_time, text, color });
 }
 
 
-void Scenario::logEvent(const String &name, txt::StringFight what)
+void Scenario::logEvent(const String &name, const ConditionEvent *event, txt::StringFight what)
 {
-    if (!name.isEmpty())
-        log(name + " " + txt::StringTable::get(what), false);
+    if (!name.isEmpty() && event->isUsed())
+        log(name + " " + txt::StringTable::get(what), LogColor::Amber);
 }
 
 
