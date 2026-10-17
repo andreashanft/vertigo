@@ -185,16 +185,16 @@ float Surface::height(int x, int y) const
 }
 
 
-void Surface::setHeight(int x, int y, int refx, int refy, int offset)
+void Surface::setHeight(int x, int y, int refx, int refy)
 {
-    // a reference off the map, or a height past the colour table's, changes nothing
+    // a reference off the map changes nothing
     if (!m_heightMap.valid(refx, refy))
         return;
     const int i = m_heightMap.pixelIndex(refx, refy);
 
-    for (int dy = -1; dy < 3; dy++) {
-        for (int dx = -1; dx < 3; dx++) {
-            m_heightMap.setPixel(x + dx, y + dy, i + offset);
+    for (int dy = 0; dy < 2; dy++) {
+        for (int dx = 0; dx < 2; dx++) {
+            m_heightMap.setPixel(x + dx, y + dy, i);
         }
     }
 }
