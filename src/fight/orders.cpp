@@ -536,9 +536,15 @@ void Orders::updateAttack(ActiveObject *target, float speed)
 
 void Orders::update()
 {
-    // finish slots whose break condition is met or whose time is up
-    while (m_current >= 0)
+    // finish slots whose break condition is met or whose time is up; when every slot ends at
+    // once (all break conditions met), the unit holds instead of going round forever
+    for (int ended = 0; m_current >= 0; ended++)
     {
+        if (ended > int(m_slots.size()))
+        {
+            m_current = -1;
+            break;
+        }
         const OrderSlot &slot = m_slots[m_current];
         if (slot.breakCondition && slot.breakCondition->isCompleted())
         {
