@@ -88,9 +88,11 @@ void Scenario::overrideDifficulty(int difficulty)
 
 namespace {
 
-// current speeds in m/s for spd 0 and spd 2; estimates, to be measured in the original
-const float CurrentSpeedSlow = 5.0f;
-const float CurrentSpeedFast = 12.0f;
+// how hard a current pushes a boat (m/s²) for spd 0 and spd 2, from the original's measured
+// drifts (docs/ROADMAP.md, appendix D): the boat's own drag across and the cap of twice its top
+// speed along its axis set the speeds reached, about 19 m/s across and 41 m/s along for spd 2
+const float CurrentPushSlow = 3.1f;
+const float CurrentPushFast = 9.0f;
 
 }
 
@@ -515,7 +517,7 @@ Scenario::Scenario(const String &name) :
         }
     }
 
-    // currents: each cell covers a 2x2 block of map cells; speeds aren't in the data (docs/ROADMAP.md, appendix D)
+    // currents: each cell covers a 2x2 block of map cells; their strength isn't in the data (docs/ROADMAP.md, appendix D)
     for (const String &section : m_file.sections().withPrefix("current")) {
         m_file.setSection(section);
         m_file.value("id");
@@ -523,19 +525,19 @@ Scenario::Scenario(const String &name) :
             loadIssue(String("unhandled: current typ %1 pz %2").arg(m_file.value("typ").toInt()).arg(m_file.value("pz").toInt()));
 
         const int card = m_file.value("card").toInt();
-        const float speed = m_file.value("spd").toInt() == 0 ? CurrentSpeedSlow : CurrentSpeedFast;
+        const float push = m_file.value("spd").toInt() == 0 ? CurrentPushSlow : CurrentPushFast;
         Vector3D direction;
         if (card == 8)
-            direction = Vector3D(0, 0, -1);
-        else if (card == 9)
             direction = Vector3D(0, 0, 1);
+        else if (card == 9)
+            direction = Vector3D(0, 0, -1);
         else
             direction = Vector3D(glm::sin(card*glm::quarter_pi<float>()), glm::cos(card*glm::quarter_pi<float>()), 0);
 
         const int x = m_file.value("px").toInt();
         const int y = m_file.value("py").toInt();
-        m_currentCells.push_back({ x, y, direction*speed });
-        m_currentGrid[std::make_pair(x/2, y/2)] = direction*speed;
+        m_currentCells.push_back({ x, y, direction*push });
+        m_currentGrid[std::make_pair(x/2, y/2)] = direction*push;
     }
 
     for (const String &section : m_file.sections().withPrefix("radio")) {
@@ -1045,19 +1047,10 @@ Vector3D Scenario::current(const Vector3D &position) const
     if (m_currentGrid.empty())
         return Vector3D(0);
 
-    // bilinear between the centres of the 2x2 blocks, so the current fades in and out at the edges
+    // the block the position is in, with no fade at its edges: a boat half a cell outside doesn't move
     const Vector3D &scale = m_surface.scale();
-    const float u = position.x/scale.x/2 - 0.5f;
-    const float v = position.y/scale.y/2 - 0.5f;
-    const int i = int(glm::floor(u));
-    const int j = int(glm::floor(v));
-    const float fu = u - i;
-    const float fv = v - j;
-    auto at = [this](int x, int y) {
-        const auto it = m_currentGrid.find(std::make_pair(x, y));
-        return it != m_currentGrid.end() ? it->second : Vector3D(0);
-    };
-    return glm::mix(glm::mix(at(i, j), at(i + 1, j), fu), glm::mix(at(i, j + 1), at(i + 1, j + 1), fu), fv);
+    const auto it = m_currentGrid.find(std::make_pair(int(glm::floor(position.x/scale.x/2)), int(glm::floor(position.y/scale.y/2))));
+    return it != m_currentGrid.end() ? it->second : Vector3D(0);
 }
 
 

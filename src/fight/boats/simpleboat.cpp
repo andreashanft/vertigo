@@ -158,8 +158,7 @@ bool SimpleBoat::update(float elapsedTime)
         m_orders->update();
     updateOrientation(elapsedTime);
     updateVelocity(elapsedTime);
-    // the current drifts the boat without changing its own velocity
-    move((m_velocity + m_scenario->current(m_position)*m_currentFactor)*elapsedTime);
+    move(m_velocity*elapsedTime);
     if (m_unitGun)
         m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
 
@@ -241,7 +240,9 @@ bool SimpleBoat::intersect(const Vector3D &start, const Vector3D &dir, float rad
 void SimpleBoat::updateVelocity(float elapsedTime)
 {
     Vector3D velocity = m_orientation * m_velocity;
-    Vector3D acceleration = velocity*m_orientationFriction;
+    // the water's drag, and a current's push: a steady push is held by the drag across the boat
+    // and by the cap along its axis (docs/ROADMAP.md, appendix D)
+    Vector3D acceleration = velocity*m_orientationFriction + m_orientation*(m_scenario->current(m_position)*m_currentFactor);
 
     // the booster pushes the boat to twice its top speed whatever the throttle says
     const float target = m_speedBoost > 1.0f ? m_maxVelocity*m_speedBoost : m_velocityTarget;
@@ -253,6 +254,8 @@ void SimpleBoat::updateVelocity(float elapsedTime)
     acceleration.y += orientationAcceleration;
 
     velocity += acceleration*elapsedTime;
+    // nothing pushes the boat past twice its top speed along its axis
+    velocity.y = glm::clamp(velocity.y, 2*m_minVelocity, 2*m_maxVelocity);
     m_velocity = m_orientationInverted * velocity;
 }
 

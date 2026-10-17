@@ -117,7 +117,6 @@ private:
     Vector3D m_currentNoise1;
     Vector3D m_currentNoise2;
     Vector3D m_currentAmplitude;
-    float m_current;
 
     bool m_firing;
     Gun m_gun;

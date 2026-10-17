@@ -80,7 +80,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_rollCenterVelocity = file.value("RollCenterVelocity").toFloat();
     m_bottomAlphaSupport = file.value("BottomAlphaSupport").toFloat();
     m_currentAmplitude = Vector3D(file.value("CurrentAmplitudeB").toFloat(), file.value("CurrentAmplitudeC").toFloat(), file.value("CurrentAmplitudeA").toFloat());
-    m_current = file.value("Current").toFloat();
+    m_currentFactor = file.value("Current").toFloat();
 
     file.setSection("defense");
     for (i = 0; i < 4; i++)
@@ -335,7 +335,7 @@ bool Player::update(float elapsedTime)
         sfx::SampleMap::get(sfx::Sample::Engine).setPitch(1.0f + pitch);
     }
 
-    Vector3D vel = m_velocity + m_scenario->current(m_position)*m_current;
+    Vector3D vel = m_velocity;
     Vector3D delta = vel*elapsedTime;
     float path = 0;
 

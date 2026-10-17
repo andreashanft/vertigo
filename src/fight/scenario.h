@@ -122,9 +122,9 @@ public:
     void addDecoy(const Vector3D &position, float seconds);
     bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
 
-    // the water current at a position (m/s), blended between the current cells
+    // the water current's push at a position (m/s²), that of the cell the position is in
     Vector3D current(const Vector3D &position) const;
-    struct CurrentCell { int x; int y; Vector3D velocity; }; // x, y: first map cell of the 2x2 block
+    struct CurrentCell { int x; int y; Vector3D push; };     // x, y: first map cell of the 2x2 block; the push in m/s²
     const std::vector<CurrentCell>& currentCells() const { return m_currentCells; }
     gfx::TextureManager& textureManager() { return m_textureManager; }
     ModuleManager& moduleManager() { return m_moduleManager; }
