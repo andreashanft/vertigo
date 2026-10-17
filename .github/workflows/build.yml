@@ -26,7 +26,8 @@ jobs:
     env:
       # Ubuntu 24.04 has no SDL 3, so it is built from the release the iPad build uses (see
       # CMakeLists.txt), linked in statically: the game then runs wherever OpenAL is installed.
-      # SDL opens X11, Wayland and the rest at run time if the system has them.
+      # SDL opens X11, Wayland and the rest at run time if the system has them; its audio is
+      # left out, as the game plays its sounds with OpenAL.
       SDL_VERSION: 3.4.18
       SDL_SHA256: 9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
     steps:
@@ -41,13 +42,14 @@ jobs:
             libxtst-dev libxkbcommon-dev libwayland-dev libdecor-0-dev libegl1-mesa-dev \
             libgl1-mesa-dev libgles2-mesa-dev libdbus-1-dev libudev-dev
 
-      # (with other packages above, raise the last number so that SDL is built again)
+      # (with other packages above or other options below, raise the last number so that SDL is
+      # built again)
       - name: Restore SDL
         id: sdl
         uses: actions/cache@v6
         with:
           path: ~/sdl3
-          key: sdl3-${{ env.SDL_VERSION }}-ubuntu-24.04-1
+          key: sdl3-${{ env.SDL_VERSION }}-ubuntu-24.04-2
 
       - name: Build SDL
         if: steps.sdl.outputs.cache-hit != 'true'
@@ -57,7 +59,8 @@ jobs:
           tar -xzf sdl.tar.gz
           cmake -S "SDL3-$SDL_VERSION" -B sdl-build -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX="$HOME/sdl3" -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF \
+            -DSDL_AUDIO=OFF
           cmake --build sdl-build
           cmake --install sdl-build
 
@@ -71,12 +74,13 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
-      # the program starts (without data and window: --help only) and needs no SDL library
+      # the program starts (without data and window: --help only) and needs no SDL library (nor
+      # ALSA's or sndio's)
       - name: Start
         run: |
           build/vertigo --help
           ldd build/vertigo
-          if ldd build/vertigo | grep libSDL3; then exit 1; fi
+          if ldd build/vertigo | grep -E "libSDL3|libasound|libsndio"; then exit 1; fi
 
       - name: Pack
         run: |
