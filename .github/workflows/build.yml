@@ -106,8 +106,10 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
+      # (as many compilers at once as the runner has cores; without a number make starts one for
+      # every file, more than its memory takes)
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel "$(sysctl -n hw.ncpu)"
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
