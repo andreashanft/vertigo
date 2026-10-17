@@ -53,6 +53,8 @@ public:
     bool intersect(const Vector3D &start, const Vector3D &dir, float &distance);
     
     float duration() const { return m_stages.size()*m_displayTime; }
+    // the [Size] Scale, the sprite's size in multiples of its frame's pixels at 1/32 m
+    float sizeScale() const { return m_scale; }
     float range() const { return m_range; }
     float velocity() const { return m_velocity; }
     // debris: how long a piece lasts, how it slows down and sinks, and its start speed (m/s)

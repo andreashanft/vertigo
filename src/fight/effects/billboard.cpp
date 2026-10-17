@@ -67,8 +67,6 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
 
 
     file.setSection(String("anim%1").arg(index));
-    float scale = file.value("scale").toFloat();
-
     m_displayTime = file.value("displaytime").toFloat() + 0.02f;
     int numOfStages = file.value("numofstages").toInt();
     int numInX = 0;
@@ -121,7 +119,9 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
             center -= t0;
         }
 
-        stage.scale = Vector2D(width, height)*scale*2.0f; // TODO: test scale
+        // the frame's pixels are the sprite's size: each is 1/32 m at a [Size] Scale of 1, and
+        // the quad runs from -1 to 1 (the [Anim] Scale is not used)
+        stage.scale = Vector2D(width, height)*(255.0f/64.0f);
         stage.offset = Vector2D(1, -1) - Vector2D(center.x/width, -center.y/height)*2.0f;
     }
 

@@ -87,7 +87,25 @@ Billboard* EffectManager::getBillboard(Effects effect)
 
 void EffectManager::addEffect(Effects effect, const Vector3D &position, float angle, float scale)
 {
-    m_particles.add(getBillboard(effect), Particles::Motion::Animation, position, Vector3D(0), angle, scale);
+    // the explosions differ from one to the next: the size by up to 30 % and the speed of the
+    // animation by up to 25 %, and all but the ones on the ground are rolled at random; the
+    // torpedoes' bubbles keep their frames' size whatever their [Size] Scale
+    const int index = int(effect) - int(Effects::Explosion_0);
+    float rate = 1;
+    if (index >= 0 && index <= 26)
+    {
+        if (index >= 21 && index <= 23)
+            scale /= getBillboard(effect)->sizeScale();
+        else
+        {
+            scale *= 0.7f + 0.6f*random();
+            rate = 1/(0.75f + 0.5f*random());
+            const bool onGround = (index >= 12 && index <= 14) || (index >= 18 && index <= 20);
+            if (!onGround && angle == 0)
+                angle = 360*random();
+        }
+    }
+    m_particles.add(getBillboard(effect), Particles::Motion::Animation, position, Vector3D(0), angle, scale, 0, rate);
 }
 
 
@@ -102,7 +120,7 @@ void EffectManager::addDebris(Effects debris, const Vector3D &position, const Ve
 void EffectManager::addDust(const Vector3D &position, int size, const Vector3D &velocity)
 {
     const Effects dust = Effects(int(Effects::Explosion_18) + glm::clamp(size, 0, 2));
-    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity, util::random()%360);
+    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity);
 }
 
 

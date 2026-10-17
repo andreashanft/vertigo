@@ -58,14 +58,14 @@ int Particles::count(Motion motion) const
 }
 
 
-bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &position, const Vector3D &velocity, float angle, float scale, float time)
+bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &position, const Vector3D &velocity, float angle, float scale, float time, float rate)
 {
     const bool ambient = motion == Motion::Bubble || motion == Motion::Dust;
     if (int(m_particles.size()) >= (ambient ? AmbientCapacity : Capacity))
         return false;
     if (glm::distance2(position, m_scenario->position()) > Range*Range)
         return false;
-    m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time });
+    m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate });
     return true;
 }
 
@@ -76,7 +76,7 @@ bool Particles::update(Particle &particle, float elapsedTime) const
     switch (particle.motion)
     {
     case Motion::Animation:
-        particle.time += elapsedTime;
+        particle.time += elapsedTime*particle.rate;
         return particle.time < billboard->duration();
 
     case Motion::Debris:

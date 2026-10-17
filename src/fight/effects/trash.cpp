@@ -30,7 +30,8 @@ Effects Trash::trashCollection[9] = { Effects::Trash_0, Effects::Trash_0, Effect
 
 
 Trash::Trash(Scenario *scenario, Billboard *billboard, const Vector3D &position) :
-    Effect(scenario, billboard, static_cast<float>(util::random()%360), 1)
+    // between half and the full size
+    Effect(scenario, billboard, static_cast<float>(util::random()%360), 0.5f + (util::random()%1001)/2000.0f)
 {
     m_noise = billboard->noiseLevel();
     
