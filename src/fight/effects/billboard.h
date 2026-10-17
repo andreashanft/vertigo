@@ -45,11 +45,16 @@ public:
               Vector3D corners[4], const Vector2D *&texCoords, gfx::Texture *&texture);
     void draw(const Vector3D &position, float angle, float scale, float time, const glm::mat3 &camera);
     bool blendColor() const { return m_blendColor; }
+    // the colour of the light a glowing sprite gives off: its first frame's pixels averaged by
+    // brightness, at full brightness; read from the image on the first call
+    Vector3D lightColor();
 
     BoundingBox box();
     bool intersect(const Vector3D &start, const Vector3D &dir, float &distance);
     
     float duration() const { return m_stages.size()*m_displayTime; }
+    // the [Size] Scale, the sprite's size in multiples of its frame's pixels at 1/32 m
+    float sizeScale() const { return m_scale; }
     float range() const { return m_range; }
     float velocity() const { return m_velocity; }
     // debris: how long a piece lasts, how it slows down and sinks, and its start speed (m/s)
@@ -75,8 +80,11 @@ private:
 
     float m_displayTime;
     std::vector<Stage> m_stages;
+    String m_imageName;     // of the first stage
     float m_scale;
     bool m_blendColor;
+    bool m_lightColorKnown = false;
+    Vector3D m_lightColor = Vector3D(0);
 
     float m_range = 0;
     float m_velocity = 0;

@@ -24,6 +24,7 @@
 #include "fight/orders.h"
 #include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
+#include "util/random.h"
 #include "gfx/pipeline.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
@@ -74,16 +75,31 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     setting("AlignProbabilityRight", a.alignRight);
     setting("MinAlignRadius", a.minAlignRadius, 1/32.0f);
     setting("MaxAlignRadius", a.maxAlignRadius, 1/32.0f);
+    setting("MinAlignGamma", a.minAlignGamma);
+    setting("MaxAlignGamma", a.maxAlignGamma);
     setting("MinAlignTime", a.minAlignTime);
     setting("MaxAlignTime", a.maxAlignTime);
+    setting("AlignProbabilityTorpedoFire", a.alignTorpedo);
+    setting("AttackProbabilityTurn", a.turnProbability);
+    setting("AttackProbabilityHit", a.hitProbability);
+    setting("AttackProbabilityTorpedoFire", a.attackTorpedo);
     setting("MinAttackTime", a.minAttackTime);
     setting("MaxAttackTime", a.maxAttackTime);
-    setting("AttackProbabilityHit", a.hitProbability);
-    setting("AttackProbabilityTorpedoFire", a.torpedoProbability);
     setting("MinFlightRadius", a.minFlightRadius, 1/32.0f);
     setting("MaxFlightRadius", a.maxFlightRadius, 1/32.0f);
     setting("MinFlightTime", a.minFlightTime);
     setting("MaxFlightTime", a.maxFlightTime);
+    setting("FlightPointProbabilityUL", a.flightUL);
+    setting("FlightPointProbabilityUR", a.flightUR);
+    setting("FlightPointProbabilityDL", a.flightDL);
+    setting("FlightPointProbabilityDR", a.flightDR);
+    setting("FlightProbabilityTorpedoFire", a.flightTorpedo);
+    setting("FlightProbabilityHit", a.flightHit);
+    setting("AlignProbabilityHook", a.hook);
+    setting("AlignProbabilityCross", a.cross);
+    setting("AlignProbabilityRetain", a.retain);
+    setting("AlignProbabilityChange", a.change);
+    setting("AlignProbabilityHit", a.alignHit);
 
     // boats move, so collision results must not be cached
     m_static = false;
@@ -154,12 +170,16 @@ void SimpleBoat::arm(int model, txt::DesFile &file)
 
 bool SimpleBoat::update(float elapsedTime)
 {
+    if (m_tumbling)
+    {
+        updateTumble(elapsedTime);
+        return false;
+    }
     if (m_orders)
         m_orders->update();
     updateOrientation(elapsedTime);
     updateVelocity(elapsedTime);
-    // the current drifts the boat without changing its own velocity
-    move((m_velocity + m_scenario->current(m_position)*m_currentFactor)*elapsedTime);
+    move(m_velocity*elapsedTime);
     if (m_unitGun)
         m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
 
@@ -241,17 +261,57 @@ bool SimpleBoat::intersect(const Vector3D &start, const Vector3D &dir, float rad
 void SimpleBoat::updateVelocity(float elapsedTime)
 {
     Vector3D velocity = m_orientation * m_velocity;
-    Vector3D acceleration = velocity*m_orientationFriction;
+    // the water's drag, and a current's push: a steady push is held by the drag across the boat
+    // and by the cap along its axis (docs/ROADMAP.md, appendix D)
+    Vector3D acceleration = velocity*m_orientationFriction + m_orientation*(m_scenario->current(m_position)*m_currentFactor);
 
+    // the booster pushes the boat to twice its top speed whatever the throttle says
+    const float target = m_speedBoost > 1.0f ? m_maxVelocity*m_speedBoost : m_velocityTarget;
     float orientationAcceleration = 0;
-    if (m_velocityTarget > velocity.y + 0.1f)
-        orientationAcceleration = m_maxOrientationAcceleration*(m_fullThrottle ? 2 : 1);
-    if (m_velocityTarget < velocity.y - 0.1f)
+    if (target > velocity.y + 0.1f)
+        orientationAcceleration = m_maxOrientationAcceleration*(m_fullThrottle ? 2 : 1)*m_accelerationBoost;
+    if (target < velocity.y - 0.1f)
         orientationAcceleration = m_maxOrientationRetardation*(m_fullThrottle ? 2 : 1);
     acceleration.y += orientationAcceleration;
 
     velocity += acceleration*elapsedTime;
+    // nothing pushes the boat past twice its top speed along its axis
+    velocity.y = glm::clamp(velocity.y, 2*m_minVelocity, 2*m_maxVelocity);
     m_velocity = m_orientationInverted * velocity;
+}
+
+
+// the tumble after an Explode order or an energy defence's collapse (docs/ROADMAP.md, appendix J):
+// the boat spins at random, loses its way and sinks, until it touches the ground or half a
+// minute is over
+bool SimpleBoat::startTumbling()
+{
+    if (this == m_scenario->player() || isGroundVehicle())
+        return false;
+    auto unit = [](float scale) { return scale*(2.0f*util::random()/float(RAND_MAX) - 1.0f); };
+    m_spin = Vector3D(unit(1.5f), unit(1.5f), unit(1.5f));
+    if (glm::length(m_spin) < 0.5f)
+        m_spin = Vector3D(0, 0, 1.0f);
+    m_tumbleEnd = m_scenario->time() + 30.0f;
+    m_tumbling = true;
+    m_trigger = false;
+    m_scenario->disengagePlayer(this);
+    return true;
+}
+
+
+void SimpleBoat::updateTumble(float elapsedTime)
+{
+    m_orientation *= glm::mat3(glm::rotate(m_spin.x*elapsedTime, Vector3D(1, 0, 0))) * glm::mat3(glm::rotate(m_spin.y*elapsedTime, Vector3D(0, 1, 0)))
+                   * glm::mat3(glm::rotate(m_spin.z*elapsedTime, Vector3D(0, 0, 1)));
+    m_orientationInverted = glm::transpose(m_orientation);
+    // the way runs out and the boat sinks
+    m_velocity *= std::exp(-0.5f*elapsedTime);
+    m_velocity.z = std::max(m_velocity.z - 2.0f*elapsedTime, -4.0f);
+    move(m_velocity*elapsedTime);
+    const float ground = m_scenario->surface().heightAt(m_position.x, m_position.y);
+    if (m_position.z - m_collisionRadius <= ground + 0.5f || m_scenario->time() >= m_tumbleEnd)
+        vanish();
 }
 
 

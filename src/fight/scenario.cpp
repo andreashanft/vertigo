@@ -88,9 +88,11 @@ void Scenario::overrideDifficulty(int difficulty)
 
 namespace {
 
-// current speeds in m/s for spd 0 and spd 2; estimates, to be measured in the original
-const float CurrentSpeedSlow = 5.0f;
-const float CurrentSpeedFast = 12.0f;
+// how hard a current pushes a boat (m/s²) for spd 0 and spd 2, from the original's measured
+// drifts (docs/ROADMAP.md, appendix D): the boat's own drag across and the cap of twice its top
+// speed along its axis set the speeds reached, about 19 m/s across and 41 m/s along for spd 2
+const float CurrentPushSlow = 3.1f;
+const float CurrentPushFast = 9.0f;
 
 }
 
@@ -126,7 +128,7 @@ Scenario::Scenario(const String &name) :
     m_depth = m_file.value("depth").toInt();
     m_surface.load(m_file.value("name").toString().toLower(), m_file.value("maxheightscale").toInt(), m_file.value("patchcomb").toInt());
 
-    // dtyp -> object file, decoded from the original FIGHT.EXE (docs/ROADMAP.md, appendix A)
+    // dtyp -> object file, as the original maps them (docs/ROADMAP.md, appendix A)
     std::map<int, String> types = {
         // scouts
         { 1, "anscout2" }, { 8, "bioscout" }, { 9, "honglong" }, {10, "russcout" }, {11, "prscout1" },
@@ -214,6 +216,9 @@ Scenario::Scenario(const String &name) :
             info.sensor = m_file.value("sen").toInt();
         if (m_file.contains("senr"))
             info.sensorRange = m_file.value("senr").toInt();
+        // sle 0 keeps the unit running anywhere on the map; 1 (or no key) lets it sleep out of the
+        // player's sonar range (docs/ROADMAP.md, appendix J)
+        info.sleeps = !m_file.contains("sle") || m_file.value("sle").toInt() == 1;
 
         switch (placeholder ? 0 : type) {
         case TypeBoat:
@@ -386,6 +391,7 @@ Scenario::Scenario(const String &name) :
             if (activeObject)
             {
                 activeObject->arm(m_file.contains("gun") ? m_file.value("gun").toInt() : -1, objectDes);
+                activeObject->setEngine(m_file.value("eng", 0).toInt());
                 // armour and energy defence in percent (the AD Augmented Mod's changelog calls them PD
                 // and ED and changes them with these keys)
                 activeObject->setDefence(m_file.value("inte", 100).toInt(), m_file.value("eint", 100).toInt());
@@ -445,7 +451,7 @@ Scenario::Scenario(const String &name) :
 
         // order orderSlots; all of them are read, so the load report only lists what is really ignored
         std::vector<OrderSlot> orderSlots;
-        bool slotsEnded = false;
+        bool anySlot = false;
         for (int n = 0; n < 8; n++)
         {
             auto value = [this, n](const char *name, int defaultValue) {
@@ -465,6 +471,7 @@ Scenario::Scenario(const String &name) :
             slot.esc = value("esc", -1);
             slot.offset = Vector3D(value("xof", 0), value("yof", 0), value("zof", 0));
             slot.ene = value("ene", -1);
+            slot.ran = value("ran", 150);
             slot.car = value("car", 0);
             slot.con = value("con", 0);
             slot.cond1 = value("bccond1", 0);
@@ -475,12 +482,11 @@ Scenario::Scenario(const String &name) :
             slot.dep2 = value("bcdep2", 0);
             slot.ref2 = value("bcref2", -1);
             slot.del = value("bcdel", 0);
-            if (slot.type == OrderSlot::None)
-                slotsEnded = true;
-            if (!slotsEnded)
-                orderSlots.push_back(slot);
+            // empty slots stay, the orders skip them when they go round
+            anySlot = anySlot || slot.type != OrderSlot::None;
+            orderSlots.push_back(slot);
         }
-        if (!orderSlots.empty())
+        if (anySlot)
         {
             ActiveObject *unit = dynamic_cast<ActiveObject *>(object);
             if (unit)
@@ -511,7 +517,7 @@ Scenario::Scenario(const String &name) :
         }
     }
 
-    // currents: each cell covers a 2x2 block of map cells; speeds aren't in the data (docs/ROADMAP.md, appendix D)
+    // currents: each cell covers a 2x2 block of map cells; their strength isn't in the data (docs/ROADMAP.md, appendix D)
     for (const String &section : m_file.sections().withPrefix("current")) {
         m_file.setSection(section);
         m_file.value("id");
@@ -519,19 +525,19 @@ Scenario::Scenario(const String &name) :
             loadIssue(String("unhandled: current typ %1 pz %2").arg(m_file.value("typ").toInt()).arg(m_file.value("pz").toInt()));
 
         const int card = m_file.value("card").toInt();
-        const float speed = m_file.value("spd").toInt() == 0 ? CurrentSpeedSlow : CurrentSpeedFast;
+        const float push = m_file.value("spd").toInt() == 0 ? CurrentPushSlow : CurrentPushFast;
         Vector3D direction;
         if (card == 8)
-            direction = Vector3D(0, 0, -1);
-        else if (card == 9)
             direction = Vector3D(0, 0, 1);
+        else if (card == 9)
+            direction = Vector3D(0, 0, -1);
         else
             direction = Vector3D(glm::sin(card*glm::quarter_pi<float>()), glm::cos(card*glm::quarter_pi<float>()), 0);
 
         const int x = m_file.value("px").toInt();
         const int y = m_file.value("py").toInt();
-        m_currentCells.push_back({ x, y, direction*speed });
-        m_currentGrid[std::make_pair(x/2, y/2)] = direction*speed;
+        m_currentCells.push_back({ x, y, direction*push });
+        m_currentGrid[std::make_pair(x/2, y/2)] = direction*push;
     }
 
     for (const String &section : m_file.sections().withPrefix("radio")) {
@@ -651,12 +657,47 @@ void Scenario::update(float elapsedTime)
     m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
 
     m_conditionManager.update(elapsedTime);
+    if (m_failTime < 0 && m_conditionManager.failed())
+        m_failTime = m_time;
 
     m_conditionManager.testSpace(m_position.x, m_position.y, m_height);
 
+    // attackers that are gone or asleep leave the player's list
+    m_playerAttackers.erase(std::remove_if(m_playerAttackers.begin(), m_playerAttackers.end(), [](ActiveObject *unit) {
+        return !unit->isEnabled() || unit->isAsleep() || unit->eventDestroy()->isCompleted();
+    }), m_playerAttackers.end());
+
+    // sleeping units (docs/ROADMAP.md, appendix J): beyond the player's sonar range plus 3 cells a unit
+    // with sle stops altogether, and starts its order slot again when the player comes back
+    const float sleepMargin = 3.0f*m_surface.scale().x;
     for (const auto &object : m_objects)
-        if (object->isEnabled())
-            object->update(elapsedTime);
+    {
+        if (!object->isEnabled())
+            continue;
+        if (ActiveObject *unit = dynamic_cast<ActiveObject *>(object.get()))
+        {
+            if (unit->sleeps())
+            {
+                const float distance = glm::length(Vector2D(unit->position()) - Vector2D(m_position));
+                // the player's sonar range plus 3 cells, whatever the unit's noise (docs/ROADMAP.md, appendix J)
+                const float radius = m_sonar.passiveRange() + sleepMargin;
+                if (unit->isAsleep())
+                {
+                    if (distance > radius)
+                        continue;
+                    unit->wake();
+                }
+                else if (distance > radius && unit->canSleep())
+                {
+                    unit->sleep();
+                    continue;
+                }
+            }
+        }
+        if (ActiveObject *unit = dynamic_cast<ActiveObject *>(object.get()))
+            unit->rechargeEnergy(elapsedTime);
+        object->update(elapsedTime);
+    }
 
     m_effectManager.update(elapsedTime);
 
@@ -679,6 +720,24 @@ void Scenario::update(float elapsedTime)
     if (!m_engineSounds)
         m_engineSounds.reset(new EngineSounds(this));
     m_engineSounds->update();
+}
+
+
+bool Scenario::engagePlayer(ActiveObject *unit)
+{
+    if (std::find(m_playerAttackers.begin(), m_playerAttackers.end(), unit) != m_playerAttackers.end())
+        return true;
+    static const int limits[] = { 4, 6, 8 };
+    if (int(m_playerAttackers.size()) >= limits[difficulty()])
+        return false;
+    m_playerAttackers.push_back(unit);
+    return true;
+}
+
+
+void Scenario::disengagePlayer(ActiveObject *unit)
+{
+    m_playerAttackers.erase(std::remove(m_playerAttackers.begin(), m_playerAttackers.end(), unit), m_playerAttackers.end());
 }
 
 
@@ -717,31 +776,36 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     gfx::Pipeline::setProjection(projection);
     gfx::Pipeline::setModelView(camera);
 
-    // the boat's headlight, a spot light from just behind it, and a blue ambient light
-    gfx::Pipeline::setLighting(true);
-    gfx::Pipeline::setAmbient(Vector3D(0.5f, 0.5f, 1.0f));
-    gfx::Pipeline::Light light;
-    light.position = Vector3D(camera*Vector4D(m_player->position() - m_player->dir()*5.0f, 1));
-    light.direction = glm::mat3(camera)*m_player->dir();
-    light.ambient = Vector3D(4.0f);
-    light.diffuse = Vector3D(1.0f);
-    light.cutoff = 90.0f;
-    light.exponent = 4.0f;
-    light.constantAttenuation = 0.1f;
-    light.quadraticAttenuation = 0.0002f;
-    gfx::Pipeline::setLight(light);
+    // the nearest energy shots light the ground and the objects around them,
+    // so they are set before the terrain is drawn
+    gfx::Pipeline::PointLight shots[gfx::Pipeline::MaxPointLights];
+    const int shotLights = m_effectManager.pointLights(m_position, shots, gfx::Pipeline::MaxPointLights);
+    for (int i = 0; i < shotLights; i++)
+        shots[i].position = Vector3D(camera*Vector4D(shots[i].position, 1));
+    gfx::Pipeline::setPointLights(shots, shotLights);
 
+    // the water's fog from the map's shading tables, on the terrain and everything else
     gfx::Pipeline::setFog(true);
-    gfx::Pipeline::setFog(gfx::Pipeline::Fog{ Vector3D(0.0f, 0.0f, 0.15f), 100.0f, 200.0f });
+    gfx::Pipeline::setFog(m_surface.fog());
 
-    m_surface.draw(m_position, m_player->dir());
+    const float brightness = this->brightness();
+    m_surface.draw(m_position, m_player->dir(), brightness);
 
+    // the models take their rows of the shading tables by the terrain's rule, from the same
+    // light at the eye, without any light of their own; their tables hold the palette itself
+    // in the last row
+    gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setTableShading(m_surface.shading(brightness));
+    gfx::Pipeline::setTableShading(true);
     for (const auto &object : m_objects)
         if (object->isEnabled())
             object->draw();
     for (const auto &torpedo : m_torpedoes)
         torpedo->draw();
+    gfx::Pipeline::setTableShading(false);
 
+    // the sprites glow by themselves and fade with the distance
+    gfx::Pipeline::setPointLights(nullptr, 0);
     m_effectManager.draw();
 }
 
@@ -757,9 +821,7 @@ void Scenario::keyPressEvent(input::KeyEvent *e)
     if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 1.0f;
     if (e->key() == input::Key_Q)
-        m_player->setDebugBoost(100);
-    if (e->key() == input::Key_W)
-        m_player->setDebugBoost(-100);
+        m_player->setBoostKey(true);
     if (e->key() == input::Key_A)
     {
         m_forwards = m_backwards + 1;
@@ -852,9 +914,7 @@ void Scenario::keyReleaseEvent(input::KeyEvent *e)
     if (e->key() == input::Key_Down || e->key() == input::Key_5)
         m_down = 0.0f;
     if (e->key() == input::Key_Q)
-        m_player->setDebugBoost(0);
-    if (e->key() == input::Key_W)
-        m_player->setDebugBoost(0);
+        m_player->setBoostKey(false);
     if (e->key() == input::Key_A)
     {
         m_forwards = 0;
@@ -980,24 +1040,35 @@ bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *s
 }
 
 
+float Scenario::brightness() const
+{
+    const float fadeIn = 1.5f, fadeOut = 2.0f;
+    float brightness = glm::clamp(m_time/fadeIn, 0.0f, 1.0f);
+    if (m_failTime >= 0)
+        brightness *= glm::clamp(1.0f - (m_time - m_failTime)/fadeOut, 0.0f, 1.0f);
+    return brightness;
+}
+
+
+bool Scenario::monitorBlanked(int monitor) const
+{
+    if (depth() >= RadiationDepth)
+        return false;
+    // a hash of the frame's time, so the drawing takes nothing from the game's random numbers
+    const float noise = glm::fract(std::sin(m_time*(971.3f + 37.1f*monitor) + monitor)*43758.5f);
+    return noise < 0.06f;
+}
+
+
 Vector3D Scenario::current(const Vector3D &position) const
 {
     if (m_currentGrid.empty())
         return Vector3D(0);
 
-    // bilinear between the centres of the 2x2 blocks, so the current fades in and out at the edges
+    // the block the position is in, with no fade at its edges: a boat half a cell outside doesn't move
     const Vector3D &scale = m_surface.scale();
-    const float u = position.x/scale.x/2 - 0.5f;
-    const float v = position.y/scale.y/2 - 0.5f;
-    const int i = int(glm::floor(u));
-    const int j = int(glm::floor(v));
-    const float fu = u - i;
-    const float fv = v - j;
-    auto at = [this](int x, int y) {
-        const auto it = m_currentGrid.find(std::make_pair(x, y));
-        return it != m_currentGrid.end() ? it->second : Vector3D(0);
-    };
-    return glm::mix(glm::mix(at(i, j), at(i + 1, j), fu), glm::mix(at(i, j + 1), at(i + 1, j + 1), fu), fv);
+    const auto it = m_currentGrid.find(std::make_pair(int(glm::floor(position.x/scale.x/2)), int(glm::floor(position.y/scale.y/2))));
+    return it != m_currentGrid.end() ? it->second : Vector3D(0);
 }
 
 

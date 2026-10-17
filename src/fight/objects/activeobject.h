@@ -21,6 +21,7 @@
 
 #include "object.h"
 #include <memory>
+#include <algorithm>
 #include "util/string.hpp"
 
 
@@ -45,8 +46,9 @@ public:
         String cargo;
         int sensor;
         int sensorRange;
+        bool sleeps;     // may sleep out of the player's sonar range (sle)
 
-        ObjectInfo() : iff(0), name(""), cargo(""), sensor(0), sensorRange(0) { }
+        ObjectInfo() : iff(0), name(""), cargo(""), sensor(-1), sensorRange(0), sleeps(true) { }
     };
 
 public:
@@ -65,9 +67,17 @@ public:
     int iff() const { return m_info.iff; }
     const String& name() const { return m_info.name; }
     const String& cargo() const { return m_info.cargo; }
+    // the unit's sensor (sen, -1 if the mission gives none) and its range (senr, metres, 0 if none);
+    // what they mean to the AI is in docs/ROADMAP.md, appendix J
     int sensor() const { return m_info.sensor; }
     int sensorRange() const { return m_info.sensorRange; }
-    virtual float noise() const { return m_noise + (m_info.sensor > 1 ? 1 : 0); }
+    // the sonar noise: the object file's level, one more with an active sonar (sen 2), nothing
+    // while the unit lies silent in ambush
+    virtual float noise() const { return m_silent ? 0 : m_noise + (m_info.sensor == 2 ? 1 : 0); }
+    void setSilent(bool silent) { m_silent = silent; }
+    // the unit took a hit from another unit within the last tenth of a second: the moment the
+    // AI reacts to being fired at
+    bool hitRecently() const;
     bool isIdentified() const { return m_eventIdentify.isCompleted(); }
 
     int kineticShield() const { return m_kineticShield; };
@@ -98,10 +108,20 @@ public:
     bool hasTorpedoes() const { return m_torpedoCount > 0 && m_torpedoType >= 0; }
     int torpedoType() const { return m_torpedoType; }
     bool fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction);
+    // the units running a torpedo attack on this one: at most 8 at a time, for every target
+    // (docs/ROADMAP.md, appendix J); false if the list is full
+    bool engageTorpedo(ActiveObject *attacker);
+    void disengageTorpedo(ActiveObject *attacker);
 
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
+    // an Explode order, and an energy defence that has collapsed: three explosions, then the unit
+    // tumbles away with a random spin (a boat; anything else is simply gone) and, as its armour
+    // was never taken down, doesn't count as destroyed for the mission's conditions
+    // (docs/ROADMAP.md, appendix J)
+    void explode();
+    bool isTumbling() const { return m_tumbling; }
     virtual void identify();
     // whether the sonar shows it (a cargo ship shows its blocks instead)
     virtual bool isContact() const { return true; }
@@ -109,6 +129,33 @@ public:
     virtual String observationImage() const { return String(); }
     // the unit isn't in the mission at this difficulty: it never appears (see ConditionEntry::absent)
     void leaveMission();
+
+    // Sleep (docs/ROADMAP.md, appendix J): a unit with sle 1 (or no sle) stops altogether while its
+    // horizontal distance from the player exceeds the player's sonar range plus 3 map cells, and
+    // starts its current order slot again when the player comes back within that radius.
+    bool sleeps() const { return m_info.sleeps; }
+    bool isAsleep() const { return m_asleep; }
+    // whether the unit may go to sleep right now (boats not while exploding, towers not while attacking)
+    virtual bool canSleep() const;
+    void sleep();
+    void wake();
+
+    // Energy (docs/ROADMAP.md, appendix K): one pool per unit, 0 to 1, full at the start. The engine
+    // model (a unit's eng key, the boat's engine) sets the seconds it takes to refill from empty:
+    // 5, 3, 1, 1, 1 and 0.01 for engines 0 to 5. Energy guns draw from it, so does the booster.
+    void setEngine(int model);
+    int engine() const { return m_engine; }
+    float energy() const { return m_energy; }
+    void drawEnergy(float amount) { m_energy = std::max(0.0f, m_energy - amount); }
+    void rechargeEnergy(float elapsedTime);
+    static float rechargeTime(int engine);
+
+protected:
+    // the explosions and debris shared by destroy() and explode(), and the going
+    void blowUp(int explosions);
+    void vanish();
+    // starts the tumble; false if the unit can't (then it vanishes)
+    virtual bool startTumbling() { return false; }
 
 protected:
     ConditionEvent m_eventDestroy;
@@ -121,6 +168,12 @@ protected:
     ObjectInfo m_info;
     float m_noise;
     bool m_identified;
+    bool m_asleep = false;
+    bool m_tumbling = false;
+    bool m_silent = false;
+    float m_hitTime = -1;
+    int m_engine = 0;
+    float m_energy = 1.0f;
 
     int m_kineticShield;
     int m_shockShield;
@@ -134,6 +187,7 @@ protected:
     bool m_trigger = false;
     int m_torpedoType = -1;
     int m_torpedoCount = 0;
+    std::vector<ActiveObject*> m_torpedoAttackers;
     float m_torpedoReady = 0;
 };
 

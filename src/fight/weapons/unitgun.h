@@ -58,6 +58,8 @@ public:
     float projectileSpeed() const { return m_gun.projectileSpeed(); }
     const String& shortName() const { return m_gun.shortName(); }
     void setAmmunition(int ammunition) { m_gun.setAmmo(ammunition); }
+    // how many shots it has fired
+    int shots() const { return m_shots; }
     void update(float elapsedTime, bool trigger, const Vector3D &position, const Vector3D &dir, const Vector3D &up, const Vector3D &right);
 
 private:
@@ -71,6 +73,7 @@ private:
     std::vector<Phase> m_volley; // empty: fire whenever the gun is ready
     int m_phase;
     float m_phaseTime;
+    int m_shots = 0;
 };
 
 

@@ -23,6 +23,8 @@
 #include "gfx/pipeline.h"
 
 #include "gfx/gl.hpp"
+#include "gfx/image.h"
+#include <algorithm>
 #include <glm/gtx/norm.hpp>
 #include <glm/trigonometric.hpp>
 
@@ -65,8 +67,6 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
 
 
     file.setSection(String("anim%1").arg(index));
-    float scale = file.value("scale").toFloat();
-
     m_displayTime = file.value("displaytime").toFloat() + 0.02f;
     int numOfStages = file.value("numofstages").toInt();
     int numInX = 0;
@@ -92,6 +92,8 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
         m_stages.emplace_back();
         Stage &stage = m_stages.back();
         stage.texture = texMan.getModule(file.value("imgblockname").toString(), true);
+        if (m_stages.size() == 1)
+            m_imageName = file.value("imgblockname").toString();
 
         Vector2D t0(file.value("x1").toInt() / 255.0f, file.value("y1").toInt() / 255.0f);
         stage.texCoords[0] = t0;
@@ -117,7 +119,9 @@ Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index,
             center -= t0;
         }
 
-        stage.scale = Vector2D(width, height)*scale*2.0f; // TODO: test scale
+        // the frame's pixels are the sprite's size: each is 1/32 m at a [Size] Scale of 1, and
+        // the quad runs from -1 to 1 (the [Anim] Scale is not used)
+        stage.scale = Vector2D(width, height)*(255.0f/64.0f);
         stage.offset = Vector2D(1, -1) - Vector2D(center.x/width, -center.y/height)*2.0f;
     }
 
@@ -177,6 +181,41 @@ void Billboard::draw(const Vector3D &position, float angle, float scale, float t
     if (m_blendColor)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     gfx::Pipeline::setAlphaTest(false);
+}
+
+
+Vector3D Billboard::lightColor()
+{
+    if (m_lightColorKnown)
+        return m_lightColor;
+    m_lightColorKnown = true;
+    if (m_stages.empty())
+        return m_lightColor;
+
+    const String basename = String("vfx:texture/%1").arg(m_imageName);
+    const gfx::Image image = gfx::Image::load(basename + ".imb", gfx::ColorTable(basename + ".s16"));
+    // the frame's pixels; the texture coordinates are pixel/255, and index 0 is the colour key
+    const Stage &stage = m_stages.front();
+    const int x0 = int(stage.texCoords[0].x*255 + 0.5f), y0 = int(stage.texCoords[0].y*255 + 0.5f);
+    const int x1 = int(stage.texCoords[2].x*255 + 0.5f), y1 = int(stage.texCoords[2].y*255 + 0.5f);
+    Vector3D sum(0);
+    float weight = 0;
+    for (int y = y0; y <= y1; y++)
+        for (int x = x0; x <= x1; x++)
+        {
+            if (!image.valid(x, y) || image.pixelIndex(x, y) == 0)
+                continue;
+            const gfx::Rgb c = image.pixel(x, y);
+            const float brightness = gfx::gray(c)/255.0f;
+            sum += Vector3D(gfx::red(c), gfx::green(c), gfx::blue(c))*(brightness/255.0f);
+            weight += brightness;
+        }
+    if (weight > 0)
+    {
+        sum /= weight;
+        m_lightColor = sum/std::max({ sum.x, sum.y, sum.z });
+    }
+    return m_lightColor;
 }
 
 

@@ -38,8 +38,11 @@ const float RotationDamping = 0.4f;
 // how far the head lags behind accelerations: full throttle (about 7 m/s²) moves it 1 cm
 const float LinearLag = 0.12f;
 const float MaxAcceleration = 8.0f;     // m/s², larger ones are collisions and come as jolts
-const float AngularLag = 0.6f;
-const float MaxAngularAcceleration = 4.0f;
+// the turn rates change in steps (the boat relaxes them 30 times a second, appendix L of the
+// roadmap), so the rate is smoothed over this time before the head reacts to its change
+const float AngularLag = 0.35f;
+const float MaxAngularAcceleration = 3.0f;
+const float TurnSmoothing = 0.1f;
 
 // bouncing off something at 20 km/h (a velocity change of about 6 m/s) throws the head 3 cm
 const float JoltPosition = 0.07f;
@@ -104,8 +107,9 @@ void HeadMotion::update(float elapsedTime, const Vector3D &velocity, const glm::
 
     // the boat's turn rate from the change of its axes (camera frame)
     const glm::mat3 delta = glm::transpose(m_lastBasis)*basis;
-    const Vector3D turn = m_first ? Vector3D(0) :
+    const Vector3D rawTurn = m_first ? Vector3D(0) :
         Vector3D(delta[1][2] - delta[2][1], delta[2][0] - delta[0][2], delta[0][1] - delta[1][0])/(2*elapsedTime);
+    const Vector3D turn = m_first ? rawTurn : m_lastTurn + (rawTurn - m_lastTurn)*std::min(1.0f, elapsedTime/TurnSmoothing);
     Vector3D acceleration(0), angularAcceleration(0);
     if (!m_first)
     {

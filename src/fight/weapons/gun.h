@@ -57,6 +57,7 @@ public:
 
     float defect() const { return m_defect; }
     int ammo() const { return m_ammo; }
+    int shots() const { return m_shots; }  // fired so far
     bool usesAmmo() const { return m_energyDemand == 0.0f; }
     const String& shortName() const { return m_shortName; }
     String stateName() const { return GunStates ? GunStates[m_state].shortName : String(); }
@@ -67,6 +68,9 @@ public:
     void setAmmo(int ammo) { m_ammo = ammo; }
     void addMuzzle(const Vector3D &muzzle);
     void addMuzzles(const Vector3D &muzzle, int model);
+    // the barrels a gun model fires in turn (appendix K): 1, 2, 1, 2, 4, 1 for the energy guns,
+    // 2, 2, 2, 3, 4, 2, 2, 2 for the others
+    static int barrels(int model);
 
 public:
     bool update(float elapsedTime);
@@ -95,6 +99,8 @@ protected:
 
     Effects m_projectile;
     std::vector<Vector3D> m_muzzles;
+    size_t m_nextMuzzle = 0;  // the barrel the next pull fires from
+    int m_shots = 0;
     sfx::Sample m_sample;
 };
 

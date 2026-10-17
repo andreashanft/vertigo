@@ -51,6 +51,8 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
 
 void SlaveMonitor::draw()
 {
+    if (m_hud->scenario()->monitorBlanked(m_page == Page::Armor ? 2 : 0))
+        return;
     const Rect rect = m_hud->projectCenter(m_rect);
     m_lamp.draw(m_page == Page::Armor);
     switch (m_page)
@@ -93,7 +95,7 @@ void SlaveMonitor::drawWeapon(const Rect &rect)
     {
     case Weapon::Gun:
         lines << itemName(boat->gun()) << player->playerGun().stateText()
-              << (player->playerGun().usesAmmo() ? String::number(player->playerGun().ammo()) : String());
+              << (player->playerGun().usesAmmo() ? String::number(player->playerGun().ammo()) : String("ENER"));
         image = itemImage(boat->gun());
         break;
     case Weapon::Magazine:
@@ -208,7 +210,7 @@ void SlaveMonitor::drawSystems(const Rect &rect)
     };
     auto gunRow = [&](const String &name, const fight::Gun *gun) {
         if (gun)
-            row(name, gun->usesAmmo() ? String::number(gun->ammo()) : String("--"), gun->stateName());
+            row(name, gun->usesAmmo() ? String::number(gun->ammo()) : String("ENER"), gun->stateName());
         else
             row(name, "--", "---");
     };
@@ -230,7 +232,7 @@ void SlaveMonitor::drawSystems(const Rect &rect)
         const fight::PlayerTurret *turret = player->turret(i);
         const String name = String("TUR%1").arg(i + 1);
         if (turret)
-            row(name, turret->gun().usesAmmo() ? String::number(turret->gun().ammo()) : String("--"), turret->stateName());
+            row(name, turret->gun().usesAmmo() ? String::number(turret->gun().ammo()) : String("ENER"), turret->stateName());
         else
             row(name, "--", "---");
     }

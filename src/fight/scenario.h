@@ -89,6 +89,15 @@ public:
     float pitch() const { return m_pitch; }
     float height() const { return m_height; }
     float depth() const { return m_depth - m_position.z; }
+    // the whole picture's brightness, 0 to 1: fading in at the start and out once the mission
+    // has failed, as the original does
+    float brightness() const;
+    // less than this far below the surface the radiation symbol blinks and the monitors flicker,
+    // less than RadiationAlertDepth the alert comes too (docs/ROADMAP.md, appendix D)
+    static constexpr float RadiationDepth = 100;
+    static constexpr float RadiationAlertDepth = 60;
+    // a monitor blanks out for single frames at random in the radiation; each monitor its own
+    bool monitorBlanked(int monitor) const;
     // the CD track of the mission's music, as numbered on the CD (0: none)
     int cdTrack() const { return m_cdTrack > 0 ? m_cdTrack + 1 : 0; }
     float time() const { return m_time; }
@@ -104,6 +113,12 @@ public:
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
     Player* player() const { return m_player.get(); }
+    // The difficulty caps how many units attack the player at once: 4 on easy, 6 on normal, 8 on
+    // hard (docs/ROADMAP.md, appendix J). A unit asks before it takes the player as its target and
+    // gets no target while the list is full; it lets go when it turns to something else.
+    bool engagePlayer(ActiveObject *unit);
+    void disengagePlayer(ActiveObject *unit);
+    int playerAttackers() const { return int(m_playerAttackers.size()); }
 
     Surface& surface() { return m_surface; }
 
@@ -116,9 +131,9 @@ public:
     void addDecoy(const Vector3D &position, float seconds);
     bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
 
-    // the water current at a position (m/s), blended between the current cells
+    // the water current's push at a position (m/s²), that of the cell the position is in
     Vector3D current(const Vector3D &position) const;
-    struct CurrentCell { int x; int y; Vector3D velocity; }; // x, y: first map cell of the 2x2 block
+    struct CurrentCell { int x; int y; Vector3D push; };     // x, y: first map cell of the 2x2 block; the push in m/s²
     const std::vector<CurrentCell>& currentCells() const { return m_currentCells; }
     gfx::TextureManager& textureManager() { return m_textureManager; }
     ModuleManager& moduleManager() { return m_moduleManager; }
@@ -213,6 +228,7 @@ private:
     std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<NavPoint*> m_navPoints;
+    std::vector<ActiveObject*> m_playerAttackers;
 
     char m_attitudeMatrix[9][9];
     int m_endType;
@@ -223,6 +239,7 @@ private:
     ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;
+    float m_failTime = -1;      // when the mission failed, -1 while it hasn't
 
     float m_left;
     float m_right;

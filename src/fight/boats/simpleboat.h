@@ -53,19 +53,32 @@ public:
     void hold();
 
     // the [Attack] settings of the object file, distances in metres
+    // (docs/ROADMAP.md, appendix B and appendix J "The attack manoeuvre")
     struct AttackSettings
     {
         float alignFront = 0.5f, alignBack = 0, alignLeft = 0.25f, alignRight = 0.25f;
         float minAlignRadius = 50, maxAlignRadius = 100;
+        float minAlignGamma = 0, maxAlignGamma = 0;    // radians above the target's horizon
         float minAlignTime = 4, maxAlignTime = 8;
+        float alignTorpedo = 0;                        // chance of a torpedo while aligning
+        float turnProbability = 1;                     // chance that the run is made turning in place
+        float hitProbability = 0;                      // chance to attack at once when hit while aligning
+        float attackTorpedo = 0;                       // chance of a torpedo during the run
         float minAttackTime = 6, maxAttackTime = 12;
-        float hitProbability = 0.5f;
-        float torpedoProbability = 0;
         float minFlightRadius = 25, maxFlightRadius = 30;
         float minFlightTime = 3, maxFlightTime = 6;
+        float flightUL = 1, flightUR = 0, flightDL = 0, flightDR = 0;  // where to break off to
+        float flightTorpedo = 0;                       // chance of a torpedo when breaking off
+        float flightHit = 0;                           // chance to break off when hit after the first shot
+        // tanks: which way round the target the next align point lies
+        float hook = 0.25f, cross = 0.25f, retain = 0.25f, change = 0.25f;
+        float alignHit = 1;                            // chance to align anew when hit while aligning
     };
     const AttackSettings& attackSettings() const { return m_attackSettings; }
+    // the sphere the boat is moved by (metres)
+    float collisionRadius() const { return m_collisionRadius; }
     virtual bool isGroundVehicle() const { return false; }
+    bool startTumbling() override;
     // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)
     virtual bool engagesHostiles() const { return true; }
     // where the gun points; units with a turret turn it with aimAt()
@@ -78,6 +91,7 @@ public:
     bool update(float elapsedTime);
     void updateVelocity(float elapsedTime);
     void updateOrientation(float elapsedTime);
+    void updateTumble(float elapsedTime);
     void draw();
     void arm(int model, txt::DesFile &file);
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
@@ -97,6 +111,8 @@ protected:
     glm::mat3 m_orientationInverted;
 
     float m_velocityTarget;
+    float m_speedBoost = 1.0f;        // the booster's factors on the top speed (1: off) and the acceleration
+    float m_accelerationBoost = 1.0f;
     bool m_fullThrottle;
 
     float m_maxVelocity;
@@ -107,6 +123,8 @@ protected:
 
     Vector3D m_angleVelocity;
     Vector3D m_turnVelocity;
+    Vector3D m_spin;            // the tumble's angular velocity
+    float m_tumbleEnd = 0;      // and when it ends at the latest
 
     Vector3D m_maxAngleVelocity;
     Vector3D m_angleFriction;

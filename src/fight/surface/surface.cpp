@@ -30,6 +30,24 @@
 
 namespace fight {
 
+namespace {
+
+// the terrain's textures hold half the brightness the shading tables' nearest row gives them
+const float TextureGain = 2;
+// the fog for the sprites, which have no vertices for the shading tables' rule: the distances
+// at which the tables' nearest and farthest rows are left and reached, from the original's
+// pictures (docs/ROADMAP.md, "Differences to the original's cockpit")
+const float FogStart = 30;
+const float FogEnd = 140;
+// the game's length unit, in which the cockpit description gives the camera's distances
+const float UnitsPerMetre = 32;
+// the point the terrain is shaded from, relative to the eye: above it and a little ahead, as
+// the game places it (256 and 128 of its units)
+const float ShadeOriginUp = 8;
+const float ShadeOriginAhead = 4;
+
+}
+
 
 Surface::Surface() :
     m_tesselator(Level, this)
@@ -74,10 +92,78 @@ void Surface::load(const String &name, int maxheightscale, int mapping)
 
     const String sName = file.value("sname").toString();
     const String tName = file.value("tname").toString();
+    m_fog = gfx::Pipeline::Fog{ Vector3D(0.0f, 0.0f, 0.15f), FogStart, FogEnd, 1 };
+    loadShading();
     for (int i = 0; i <= 16; i++) {
-        gfx::ColorTable colorTable(String("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, '0'));
+        const String shading = String("vfx:texture/%1_%2.s16").arg(sName).arg(i, 3, 10, '0');
+        gfx::ColorTable colorTable(shading);
+        if (i == 0)
+            m_fog.color = fogColor(colorTable, gfx::ColorTable::loadShading(shading));
         m_textures.push_back(gfx::Image::load(String("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, '0'), colorTable));
     }
+}
+
+
+// The row of the shading table a vertex of the terrain gets comes from the cockpit's camera
+// description: an ambient brightness that falls off to nothing at the cueing back plane plus
+// the light's brightness, falling off from its front to its back plane, raised to its power
+// and times how much the ground faces the eye. The distances are in the game's units
+void Surface::loadShading()
+{
+    txt::DesFile file("vfx:cockpit/000.des");
+    file.setSection("camera");
+    auto value = [&file](const char *key, float fallback) {
+        return file.contains(key) ? file.value(key).toFloat() : fallback;
+    };
+    m_shading.origin = Vector3D(0, ShadeOriginUp, -ShadeOriginAhead);
+    m_shading.ambient = value("AmbientBrightness", 2.0f);
+    m_shading.ambientEnd = value("CueingBackPlane", 1000.0f)/UnitsPerMetre;
+    m_shading.light = value("LightBrightness", 5.0f);
+    m_shading.lightFront = value("LightFrontPlane", 0.0f)/UnitsPerMetre;
+    m_shading.lightBack = value("LightBackPlane", 3650.0f)/UnitsPerMetre;
+    m_shading.lightPower = value("LightPower", 1.0f);
+    m_shading.rows = gfx::ColorTable::ShadingRows;
+}
+
+
+gfx::Pipeline::TableShading Surface::shading(float brightness) const
+{
+    gfx::Pipeline::TableShading shading = m_shading;
+    shading.ambient *= brightness;
+    shading.light *= brightness;
+    return shading;
+}
+
+
+// The shading table's rows are a blend from twice the palette into one colour: row r holds
+// t*2*palette + (1 - t)*colour with t = (r + 1)/32, clamped to 0..255. The colour is below
+// zero in red, so it is the mean of what each unclamped entry says it is
+Vector3D Surface::fogColor(const gfx::ColorTable &palette, const std::vector<gfx::Rgb> &table)
+{
+    const int rows = gfx::ColorTable::ShadingRows;
+    if (int(table.size()) < rows*256 || palette.size() < 256)
+        return Vector3D(0.0f, 0.0f, 0.15f);
+    Vector3D sum(0);
+    Vector3D count(0);
+    // the nearest rows are left out: their blend holds too little of the colour to tell it
+    for (int r = 0; r < rows*3/4; r++) {
+        const float t = float(r + 1)/rows;
+        for (int i = 0; i < 256; i++) {
+            const gfx::Rgb p = palette[i];
+            const gfx::Rgb c = table[r*256 + i];
+            const int value[3] = { gfx::red(c), gfx::green(c), gfx::blue(c) };
+            const int base[3] = { gfx::red(p), gfx::green(p), gfx::blue(p) };
+            for (int k = 0; k < 3; k++) {
+                if (value[k] <= 0 || value[k] >= 248)
+                    continue;
+                sum[k] += (value[k] - t*TextureGain*base[k])/(1 - t);
+                count[k] += 1;
+            }
+        }
+    }
+    for (int k = 0; k < 3; k++)
+        sum[k] = count[k] > 0 ? sum[k]/count[k]/255 : 0;
+    return sum;
 }
 
 
@@ -153,10 +239,20 @@ Element& Surface::getElement(int x, int y)
 }
 
 
-void Surface::draw(const Vector3D &position, const Vector3D &direction)
+void Surface::draw(const Vector3D &position, const Vector3D &direction, float brightness)
 {
     int x0 = position.x / m_scale.x / 8;
     int y0 = position.y / m_scale.y / 8;
+
+    // the textures at the nearest row's brightness, each vertex's row from the game's rule
+    // (loadShading), instead of the fog by distance everything else gets
+    const bool lighting = gfx::Pipeline::lighting();
+    gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setTableShading(shading(brightness));
+    gfx::Pipeline::setTableShading(true);
+    gfx::Pipeline::Fog fog = m_fog;
+    fog.gain = TextureGain;
+    gfx::Pipeline::setFog(fog);
 
     for (int y = y0 - 2; y <= y0 + 2; y++)
         for (int x = x0 - 2; x <= x0 + 2; x++)
@@ -167,6 +263,10 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
             if (QVector3D::dotProduct(dir, direction) > 0)*/
                 element.draw();
         }
+
+    gfx::Pipeline::setFog(m_fog);
+    gfx::Pipeline::setTableShading(false);
+    gfx::Pipeline::setLighting(lighting);
 }
 
 

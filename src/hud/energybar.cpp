@@ -17,6 +17,9 @@
 
 #include "energybar.h"
 #include "hud.h"
+#include "fight/scenario.h"
+#include "fight/boats/player.h"
+#include <algorithm>
 
 
 namespace hud {
@@ -31,9 +34,13 @@ EnergyBar::EnergyBar(HUD *hud, Rect rect) :
 }
 
 
+// the bar fills from the bottom with the boat's energy, never less than 4 pixels (appendix K)
 void EnergyBar::draw()
 {
-    int offset = 0;
+    const fight::Player *player = m_hud->scenario() ? m_hud->scenario()->player() : nullptr;
+    const float energy = player ? player->energy() : 1.0f;
+    const int filled = std::max(4, int(energy*m_energy.height()));
+    const int offset = m_energy.height() - filled;
     Rect rect = m_hud->projectCenter(m_rect);
     m_energy.draw(rect.x, rect.y + offset, RectF(0, offset, m_energy.width(), m_energy.height() - offset));
 }

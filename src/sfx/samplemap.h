@@ -57,7 +57,7 @@ enum class Sample
     Shoot_PlasmaDeath,
     Boat_Collision,
     Sample28,
-    Sample29,
+    Booster,
     Sample30,
     Engine_Startup,
     Engine_Shutdown,

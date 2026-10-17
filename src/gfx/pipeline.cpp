@@ -33,7 +33,8 @@ namespace gfx {
 namespace {
 
 // Per-vertex lighting as in OpenGL 1.x: the scene colour (global ambient times the material's
-// ambient) plus one spot light, attenuated and clamped. The fog uses the distance along the view
+// ambient) plus one spot light, attenuated and clamped. The point lights are added per fragment,
+// from the eye-space position and normal passed on. The fog uses the distance along the view
 // direction, as most fixed-function implementations did.
 const char *VertexShader = R"(
 in vec3 position;
@@ -55,16 +56,25 @@ uniform float lightExponent;
 uniform vec2 lightAttenuation;
 uniform bool textureProjection;
 uniform mat4 textureMatrix;
+uniform bool tableShading;
+uniform vec3 shadeOrigin;       // eye space
+uniform vec2 shadeAmbient;      // brightness, end distance
+uniform vec4 shadeLight;        // brightness, front and back distance, power
 
 out vec4 vColor;
 out vec3 vTexCoord;
 out float vDepth;
+out vec3 vEye;
+out vec3 vNormal;
+out float vShade;
 
 void main()
 {
     vec4 eye = modelView*vec4(position, 1.0);
     gl_Position = projection*eye;
     vDepth = -eye.z;
+    vEye = eye.xyz;
+    vNormal = vec3(0.0);
     vTexCoord = textureProjection ? (textureMatrix*vec4(position, 1.0)).xyw : vec3(texCoord, 1.0);
     if (lighting)
     {
@@ -72,6 +82,7 @@ void main()
         vec3 n = normalMatrix*normal;
         float size = length(n);
         n = size > 0.0 ? n/size : n;
+        vNormal = n;
         vec3 toLight = lightPosition - eye.xyz;
         float d = max(length(toLight), 1e-6);
         vec3 l = toLight/d;
@@ -81,6 +92,21 @@ void main()
     }
     else
         vColor = color;
+    vShade = 0.0;
+    if (tableShading)
+    {
+        vec3 n = normalMatrix*normal;
+        float size = length(n);
+        n = size > 0.0 ? n/size : n;
+        vNormal = n;
+        vec3 toOrigin = shadeOrigin - eye.xyz;
+        float d = length(toOrigin);
+        float facing = d > 0.0 ? dot(n, toOrigin)/d : 0.0;
+        float ambient = shadeAmbient.x*max(1.0 - d/shadeAmbient.y, 0.0);
+        float reach = (shadeLight.z - d)/(shadeLight.z - shadeLight.y);
+        float light = reach > 0.0 ? shadeLight.x*pow(reach, shadeLight.w)*facing : 0.0;
+        vShade = ambient + light;
+    }
 }
 )";
 
@@ -88,6 +114,9 @@ const char *FragmentShader = R"(
 in vec4 vColor;
 in vec3 vTexCoord;
 in float vDepth;
+in vec3 vEye;
+in vec3 vNormal;
+in float vShade;
 
 uniform sampler2D tex;
 uniform bool textureProjection;
@@ -96,12 +125,40 @@ uniform bool alphaTest;
 uniform bool fog;
 uniform vec3 fogColor;
 uniform vec2 fogRange;
+uniform int pointLights;
+uniform vec4 pointLightPosition[4];     // eye space, w = 1/radius^2
+uniform vec3 pointLightColor[4];
+uniform float fogGain;
+uniform bool tableShading;
+uniform float shadeRows;
 
 out vec4 fragColor;
 
 void main()
 {
     vec4 c = vColor;
+    float glow = 0.0;
+    if (pointLights > 0)
+    {
+        // faded with the square of the distance; a third of it regardless of the surface's
+        // direction, the rest by the angle (a zero normal takes only that third)
+        vec3 added = vec3(0.0);
+        for (int i = 0; i < 4; i++)
+        {
+            if (i >= pointLights)
+                break;
+            vec3 toLight = pointLightPosition[i].xyz - vEye;
+            float d2 = dot(toLight, toLight);
+            float fade = max(1.0 - d2*pointLightPosition[i].w, 0.0);
+            float facing = max(dot(vNormal, toLight*inversesqrt(max(d2, 1e-6))), 0.0);
+            added += pointLightColor[i]*(fade*fade*(0.35 + 0.65*facing));
+        }
+        // with the shading table the lights brighten the row instead of colouring
+        if (tableShading)
+            glow = max(added.r, max(added.g, added.b));
+        else
+            c.rgb = min(c.rgb + added, vec3(1.0));
+    }
     if (textureProjection)
     {
         vec2 st = vTexCoord.xy/vTexCoord.z;
@@ -114,8 +171,14 @@ void main()
         c *= texture(tex, vTexCoord.xy);
     if (alphaTest && c.a <= 0.0)
         discard;
-    if (fog)
-        c.rgb = mix(fogColor, c.rgb, clamp((fogRange.y - vDepth)/(fogRange.y - fogRange.x), 0.0, 1.0));
+    if (tableShading)
+    {
+        // the brightness in multiples of the texture, the last row holding the fog's gain
+        float row = clamp(floor((vShade + glow)/fogGain*shadeRows), 0.0, shadeRows - 1.0);
+        c.rgb = clamp(mix(fogColor, c.rgb*fogGain, (row + 1.0)/shadeRows), 0.0, 1.0);
+    }
+    else if (fog)
+        c.rgb = clamp(mix(fogColor, c.rgb*fogGain, clamp((fogRange.y - vDepth)/(fogRange.y - fogRange.x), 0.0, 1.0)), 0.0, 1.0);
     fragColor = c;
 }
 )";
@@ -134,8 +197,12 @@ struct State
     // OpenGL's defaults
     Vector3D ambient = Vector3D(0.2f);
     Pipeline::Light light = { Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0), Vector3D(1), 180, 0, 1, 0 };
+    Pipeline::PointLight pointLights[Pipeline::MaxPointLights];
+    int pointLightCount = 0;
     bool fog = false;
-    Pipeline::Fog fogParameters = { Vector3D(0), 0, 1 };
+    Pipeline::Fog fogParameters = { Vector3D(0), 0, 1, 1 };
+    bool tableShading = false;
+    Pipeline::TableShading tableParameters = { Vector3D(0), 1, 1, 0, 0, 1, 1, 32 };
     bool alphaTest = false;
     bool textureProjection = false;
     Matrix textureMatrix = Matrix(1);
@@ -155,7 +222,9 @@ struct Uniforms
 {
     int modelView, projection, normalMatrix, color, lighting, sceneColor;
     int lightPosition, lightDirection, lightAmbient, lightDiffuse, lightCosCutoff, lightExponent, lightAttenuation;
-    int textureProjection, textureMatrix, textureNear, alphaTest, fog, fogColor, fogRange;
+    int pointLights, pointLightPosition, pointLightColor;
+    int textureProjection, textureMatrix, textureNear, alphaTest, fog, fogColor, fogRange, fogGain;
+    int tableShading, shadeOrigin, shadeAmbient, shadeLight, shadeRows;
 };
 
 // the shader and the buffers for drawing from client memory, made for the current context
@@ -242,6 +311,9 @@ Gpu& gpu()
     u.lightCosCutoff = location("lightCosCutoff");
     u.lightExponent = location("lightExponent");
     u.lightAttenuation = location("lightAttenuation");
+    u.pointLights = location("pointLights");
+    u.pointLightPosition = location("pointLightPosition");
+    u.pointLightColor = location("pointLightColor");
     u.textureProjection = location("textureProjection");
     u.textureMatrix = location("textureMatrix");
     u.textureNear = location("textureNear");
@@ -249,6 +321,12 @@ Gpu& gpu()
     u.fog = location("fog");
     u.fogColor = location("fogColor");
     u.fogRange = location("fogRange");
+    u.fogGain = location("fogGain");
+    u.tableShading = location("tableShading");
+    u.shadeOrigin = location("shadeOrigin");
+    u.shadeAmbient = location("shadeAmbient");
+    u.shadeLight = location("shadeLight");
+    u.shadeRows = location("shadeRows");
     glUseProgram(program);
     glUniform1i(location("tex"), 0);
 
@@ -404,6 +482,15 @@ void Pipeline::setLight(const Light &light)
 }
 
 
+void Pipeline::setPointLights(const PointLight *lights, int count)
+{
+    State &s = state();
+    s.pointLightCount = std::clamp(count, 0, MaxPointLights);
+    std::copy(lights, lights + s.pointLightCount, s.pointLights);
+    s.parametersChanged = true;
+}
+
+
 void Pipeline::setFog(bool enabled)
 {
     state().fog = enabled;
@@ -414,6 +501,26 @@ void Pipeline::setFog(const Fog &fog)
 {
     State &s = state();
     s.fogParameters = fog;
+    s.parametersChanged = true;
+}
+
+
+void Pipeline::setTableShading(bool enabled)
+{
+    state().tableShading = enabled;
+}
+
+
+bool Pipeline::tableShading()
+{
+    return state().tableShading;
+}
+
+
+void Pipeline::setTableShading(const TableShading &shading)
+{
+    State &s = state();
+    s.tableParameters = shading;
     s.parametersChanged = true;
 }
 
@@ -453,8 +560,29 @@ void Pipeline::apply(bool textured)
         glUniform1f(u.lightCosCutoff, light.cutoff >= 180 ? -2.0f : std::cos(glm::radians(light.cutoff)));
         glUniform1f(u.lightExponent, light.exponent);
         glUniform2f(u.lightAttenuation, light.constantAttenuation, light.quadraticAttenuation);
+        if (s.pointLightCount > 0)
+        {
+            Vector4D positions[MaxPointLights];
+            Vector3D colors[MaxPointLights];
+            for (int i = 0; i < s.pointLightCount; i++)
+            {
+                const PointLight &point = s.pointLights[i];
+                const float radius = std::max(point.radius, 1e-3f);
+                positions[i] = Vector4D(point.position, 1.0f/(radius*radius));
+                colors[i] = point.color;
+            }
+            glUniform4fv(u.pointLightPosition, s.pointLightCount, glm::value_ptr(positions[0]));
+            glUniform3fv(u.pointLightColor, s.pointLightCount, glm::value_ptr(colors[0]));
+        }
         glUniform3fv(u.fogColor, 1, glm::value_ptr(s.fogParameters.color));
         glUniform2f(u.fogRange, s.fogParameters.start, s.fogParameters.end);
+        glUniform1f(u.fogGain, s.fogParameters.gain);
+        const TableShading &t = s.tableParameters;
+        glUniform3fv(u.shadeOrigin, 1, glm::value_ptr(t.origin));
+        glUniform2f(u.shadeAmbient, t.ambient, std::max(t.ambientEnd, 1e-3f));
+        const Vector4D light4(t.light, t.lightFront, std::max(t.lightBack, t.lightFront + 1e-3f), t.lightPower);
+        glUniform4fv(u.shadeLight, 1, glm::value_ptr(light4));
+        glUniform1f(u.shadeRows, float(std::max(t.rows, 1)));
         s.parametersChanged = false;
     }
 
@@ -463,7 +591,10 @@ void Pipeline::apply(bool textured)
     glUniformMatrix4fv(u.projection, 1, GL_FALSE, glm::value_ptr(s.projection));
     glUniform4fv(u.color, 1, glm::value_ptr(s.color));
     glUniform1i(u.lighting, s.lighting);
-    if (s.lighting)
+    // the point lights only where lit; with none the fragment shader skips them
+    glUniform1i(u.pointLights, s.lighting || s.tableShading ? s.pointLightCount : 0);
+    glUniform1i(u.tableShading, s.tableShading);
+    if (s.lighting || s.tableShading)
     {
         const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelView)));
         glUniformMatrix3fv(u.normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));

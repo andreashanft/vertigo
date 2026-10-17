@@ -82,8 +82,15 @@ bool ActiveObject::fireTorpedo(ActiveObject *target, const Vector3D &position, c
         return false;
     m_scenario->launchTorpedo(m_torpedoType, position, direction, glm::length(m_velocity), this, type->lockType != 0 ? target : nullptr);
     m_torpedoCount--;
-    m_torpedoReady = m_scenario->time() + 6.0f;
+    // the next one 2 to 3.5 s later
+    m_torpedoReady = m_scenario->time() + 2.0f + 1.5f*util::random()/float(RAND_MAX);
     return true;
+}
+
+
+bool ActiveObject::hitRecently() const
+{
+    return m_hitTime >= 0 && m_scenario->time() - m_hitTime < 0.1f;
 }
 
 
@@ -98,17 +105,43 @@ bool ActiveObject::update(float elapsedTime)
 void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
     if (attacker && attacker != this)
+    {
         m_eventAttack.complete();
+        m_hitTime = m_scenario->time();
+    }
     const bool wasDestroyed = m_eventDestroy.isCompleted();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;
     if (m_kineticShield < 0)
         destroy();
-    else if (m_shockShield < 0)
+    else if (m_shockShield < 0 && !m_eventParalyze.isCompleted())
+    {
         m_eventParalyze.complete();
+        explode();
+    }
 
     if (attacker && attacker != this && attacker == m_scenario->player())
         m_scenario->playerHit(this, !wasDestroyed && m_eventDestroy.isCompleted());
+}
+
+
+bool ActiveObject::engageTorpedo(ActiveObject *attacker)
+{
+    m_torpedoAttackers.erase(std::remove_if(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), [](ActiveObject *unit) {
+        return !unit->isEnabled() || unit->isAsleep() || unit->isTumbling();
+    }), m_torpedoAttackers.end());
+    if (std::find(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), attacker) != m_torpedoAttackers.end())
+        return true;
+    if (m_torpedoAttackers.size() >= 8)
+        return false;
+    m_torpedoAttackers.push_back(attacker);
+    return true;
+}
+
+
+void ActiveObject::disengageTorpedo(ActiveObject *attacker)
+{
+    m_torpedoAttackers.erase(std::remove(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), attacker), m_torpedoAttackers.end());
 }
 
 
@@ -116,13 +149,36 @@ void ActiveObject::destroy()
 {
     if (m_eventDestroy.isCompleted())
         return;
+    blowUp(1);
+    vanish();
+    m_eventDestroy.complete();
+}
 
+
+void ActiveObject::explode()
+{
+    if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling)
+        return;
+    blowUp(3);
+    if (!startTumbling())
+        vanish();
+}
+
+
+void ActiveObject::blowUp(int explosions)
+{
     // explosion sized to the object: small, medium or large flash
     const Vector3D dim = m_box.dim();
     const float size = std::max(dim.x, std::max(dim.y, dim.z));
     const Effects explosion = size < 8.0f ? Effects::Explosion_0 : size < 20.0f ? Effects::Explosion_1 : Effects::Explosion_2;
-    m_scenario->effectManager().addEffect(explosion, center());
     const Vector3D at = center();
+    m_scenario->effectManager().addEffect(explosion, at);
+    // more of them spread over the object
+    for (int i = 1; i < explosions; i++)
+    {
+        const Vector3D spread(util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f);
+        m_scenario->effectManager().addEffect(explosion, at + spread*size);
+    }
     sfx::SampleMap::playAt(size < 20.0f ? sfx::Sample::Explosion_Small : sfx::Sample::Explosion_Big, at.x, at.y, at.z);
     m_scenario->explosionAt(at, size < 8.0f ? 0.3f : size < 20.0f ? 0.6f : 1.0f);
 
@@ -147,9 +203,12 @@ void ActiveObject::destroy()
             for (int i = random(1, 3); i > 0; i--)
                 debris(random(14, 16));
     }
+}
 
+
+void ActiveObject::vanish()
+{
     disable();
-    m_eventDestroy.complete();
     if (m_scenario->target().locked() == this)
     {
         m_scenario->target().lockReset();
@@ -162,6 +221,50 @@ void ActiveObject::leaveMission()
 {
     m_absent = true;
     disable();
+}
+
+
+bool ActiveObject::canSleep() const
+{
+    return !m_tumbling && (!m_orders || m_orders->mayPause());
+}
+
+
+void ActiveObject::sleep()
+{
+    m_asleep = true;
+    m_trigger = false;
+}
+
+
+void ActiveObject::wake()
+{
+    if (!m_asleep)
+        return;
+    m_asleep = false;
+    if (m_orders)
+        m_orders->restart();
+}
+
+
+void ActiveObject::setEngine(int model)
+{
+    m_engine = std::clamp(model, 0, 5);
+    m_energy = 1.0f;
+}
+
+
+float ActiveObject::rechargeTime(int engine)
+{
+    static const float seconds[6] = { 5.0f, 3.0f, 1.0f, 1.0f, 1.0f, 0.01f };
+    return seconds[std::clamp(engine, 0, 5)];
+}
+
+
+void ActiveObject::rechargeEnergy(float elapsedTime)
+{
+    if (m_energy < 1.0f)
+        m_energy = std::min(1.0f, m_energy + elapsedTime/rechargeTime(m_engine));
 }
 
 

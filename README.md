@@ -143,7 +143,7 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 | Y | next nav point (N) | lock the nav point (Alt+N) |
 | D-pad up | 10 km/h faster, again and again while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
-| D-pad left | stop (C) | |
+| D-pad left | stop (C) | the booster, while held (Q) |
 | D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
 | L3, R3 (press a stick) | full ahead, full astern while held (A, Z) | |
 | Start | mission menu (Esc) | pause (P) |
@@ -217,6 +217,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   overlay) one second into the mission, to test objectives and conditions.
   The player's id destroys the player; for areas and nav points it counts as
   reaching them.
+- `--collapse 2050` collapses these units' energy defence one second in: they
+  explode and tumble away, as after an Explode order.
 - `--trace 2062,2055` prints these units' map cell, height above ground,
   speed, shield and current order every second; the player's id prints the
   player with the water current at its position and the four shield sides.
@@ -239,6 +241,10 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   player.
 - `--near 2050` enables this unit and starts the player 40 m from it, looking
   at it, e.g. to watch it with `--screenshot`.
+- `--start 76,76` starts the player at this cell of the map, at the
+  scenario's height above the ground and heading; `--start 198,126,10,6` sets
+  those too, in the scenario's units (card 0 north, 2 east, 4 south, 6 west),
+  e.g. to take a screenshot where one of the original was taken.
 - `--drive 2053=60,2055=40:-0.5` lets boats move at a speed in km/h, turning
   at a fraction of their maximum turn rate (the sign picks the direction),
   instead of following their orders.

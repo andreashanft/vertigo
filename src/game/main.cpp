@@ -261,6 +261,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("timeout", "End test mode, or the game, after this many seconds; such automated runs are silent and don't take the focus.", "seconds");
     parser.addOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     parser.addOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
+    parser.addOption("collapse", "Collapse these units' energy defence one second into the mission (test mode): they explode and tumble away, as after an Explode order.", "ids");
     parser.addOption("keys", "Press keys at the given seconds (test mode, or since the start), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
     parser.addOption("pad", "Work a virtual game controller at the given seconds (test mode, or since the start): buttons by an Xbox controller's names (A, B, X, Y, LB, RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or the given seconds, together with +; sticks as LeftX, LeftY, RightX or RightY with a value from -1 to 1 (y down), held for good or the given seconds, e.g. 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2.", "time=control[/seconds]");
     parser.addOption("touch", "Touch the screen at the given seconds (test mode, or since the start) at a point given as fractions of the window's width and height, for 0.1 s or the given seconds; with a second point the finger moves there in 0.1 s. Repeatable, for several fingers, e.g. --touch 2=0.9,0.8/1 --touch 3=0.2,0.7>0.2,0.5/2.", "time=x,y[>x,y][/seconds]");
@@ -268,6 +269,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     parser.addOption("fire", "Let these units fire their guns (test mode); towers and tanks aim at the player.", "ids");
     parser.addOption("near", "Enable this unit and start 40 m from it, looking at it (test mode).", "id");
+    parser.addOption("start", "Start at this cell of the map (test mode), optionally hei height units above the ground and heading card (0 north, 2 east, 4 south, 6 west) as in the scenario's player record, e.g. 76,76 or 76,76,10,4.", "x,y[,hei[,card]]");
     parser.addOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
     parser.addOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     parser.addOption("list-items", "List the item models for --equip.");
@@ -385,6 +387,8 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     }
     if (!ids(parser, "destroy", "unit ids", options.destroy))
         return end(game::Vertigo::ExitUsage);
+    if (!ids(parser, "collapse", "unit ids", options.collapse))
+        return end(game::Vertigo::ExitUsage);
     for (const std::string &item : items(parser.values("keys"))) {
         // time=key or time=key/hold
         float time = 0;
@@ -457,6 +461,17 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
             return end(game::Vertigo::ExitUsage);
         }
         options.touch.push_back(touch);
+    }
+    if (parser.isSet("start")) {
+        const StringList parts = text(parser.value("start")).split(',');
+        bool ok = parts.size() >= 2 && parts.size() <= 4;
+        for (const String &part : parts)
+            ok = ok && isNumber(part);
+        if (!ok) {
+            std::cerr << "Invalid --start value " << parser.value("start") << ", expected x,y[,hei[,card]]" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.start = { parts[0].toInt(), parts[1].toInt(), parts.value(2, "-1").toInt(), parts.value(3, "-1").toInt() };
     }
     if (parser.isSet("near")) {
         bool ok = false;

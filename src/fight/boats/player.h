@@ -59,6 +59,9 @@ public:
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }
     float roll() const { return m_roll; };
+    float pitch() const; // the nose's angle above the horizon in degrees
+    // the ticks per second at which the turn rates relax towards the stick (appendix L)
+    static float TurnTickRate;
     // mission time of the last hit, -1 if never hit
     // a side's armor is below 10 %: ALERT, with the "system collapse" voice when it starts
     bool isCritical() const;
@@ -66,7 +69,9 @@ public:
     float noise() const;
     float range() const;
 
-    void setDebugBoost(float debugBoost) { m_debugBoost = debugBoost; }
+    // the booster (appendix K): while Q is held it runs as long as the energy lasts
+    void setBoostKey(bool held) { m_boostKey = held; }
+    bool boosting() const { return m_boosting; }
 
 public:
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
@@ -90,6 +95,9 @@ private:
     bool m_threatBlink;
     bool m_critical = false;
     bool m_alertBlink = false;
+    bool m_radiation = false;
+    float m_nextRadiationVoice = 0;
+    float m_nextRadiationBeep = 0;
 
     int m_shield[4];
     bool m_grounded = false;    // touching the ground in the last step
@@ -99,9 +107,12 @@ private:
     float m_engineTime;
 
     float m_speed;
-    float m_debugBoost;
+    bool m_hasBooster;
+    bool m_boostKey = false;
+    bool m_boosting = false;
 
     float m_roll;
+    float m_turnTicks = 0;  // ticks due since the last relaxation
     float m_rollCenterVelocity;
     float m_bottomAlphaSupport;
 
@@ -109,7 +120,6 @@ private:
     Vector3D m_currentNoise1;
     Vector3D m_currentNoise2;
     Vector3D m_currentAmplitude;
-    float m_current;
 
     bool m_firing;
     Gun m_gun;

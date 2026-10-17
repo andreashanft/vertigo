@@ -25,7 +25,8 @@ namespace gfx {
 
 // What the game used of OpenGL's fixed-function pipeline, drawn with one shader that runs on
 // OpenGL 3.2 core and OpenGL ES 3: the model-view matrix stack, a colour, per-vertex lighting
-// with one spot light, linear fog, the alpha test and projective texture coordinates. Depth,
+// with one spot light, linear fog, the alpha test and projective texture coordinates, plus a few
+// point lights of a short reach, lit per fragment so that they show between the vertices. Depth,
 // culling and blending are still set with plain OpenGL calls. Everything is drawn with the
 // texture bound to unit 0, unless the vertices have no texture coordinates or the caller has no
 // texture (OpenGL 1 drew in the colour alone without a texture image); then a white texture is
@@ -52,12 +53,45 @@ public:
         float quadraticAttenuation;
     };
 
-    // linear in the distance along the view direction
+    // a glow of a short reach: the colour, faded with the square of the distance to nothing at
+    // the radius, and lit per fragment, so a radius below the vertex spacing still shows
+    struct PointLight
+    {
+        Vector3D position;      // in eye space
+        Vector3D color;
+        float radius;
+    };
+    static const int MaxPointLights = 4;
+
+    // linear in the distance along the view direction: the colour, multiplied with the gain,
+    // blends into the fog's colour from start to end and the result is clamped. So a colour
+    // with negative channels is a fog that takes a channel away, like water takes the red
     struct Fog
     {
         Vector3D color;
         float start;
         float end;
+        float gain = 1;
+    };
+
+    // the game's shading tables: a brightness per vertex, an ambient part that falls off to
+    // nothing at ambientEnd plus a light at the origin that falls off from lightFront to
+    // lightBack, raised to lightPower, times the cosine between the normal and the direction to
+    // the origin (not clamped, so a slope turned away takes from the ambient part). In the
+    // fragment, the brightness interpolated between the vertices picks one of the rows, 0 at
+    // nothing and rows - 1 at one and above, and row r blends the fog's colour into the colour
+    // times the fog's gain by (r + 1)/rows, in place of the fog by distance. Point lights raise
+    // the brightness by their strength instead of adding their colour
+    struct TableShading
+    {
+        Vector3D origin;        // in eye space
+        float ambient;
+        float ambientEnd;
+        float light;
+        float lightFront;
+        float lightBack;
+        float lightPower;
+        int rows;
     };
 
 public:
@@ -84,8 +118,14 @@ public:
     // the global ambient light, multiplied with the material's 0.2
     static void setAmbient(const Vector3D &ambient);
     static void setLight(const Light &light);
+    // up to MaxPointLights, added to the lit colour; none by default and with a count of 0
+    static void setPointLights(const PointLight *lights, int count);
     static void setFog(bool enabled);
     static void setFog(const Fog &fog);
+    // replaces the fog's blend by distance while enabled; the fog's colour and gain still apply
+    static void setTableShading(bool enabled);
+    static void setTableShading(const TableShading &shading);
+    static bool tableShading();
     // drops fragments without alpha
     static void setAlphaTest(bool enabled);
     // texture coordinates s/q and t/q from the model position: rows 0, 1 and 3 of the matrix give

@@ -89,6 +89,7 @@ TouchControls::TouchControls(gfx::Font &font, gfx::Font &fontPressed, const Hand
         { "+", KeyEvent(Key_S), Vector2D(-46, -258), 24, -1 },
         { "-", KeyEvent(Key_X), Vector2D(-46, -204), 24, -1 },
         { "STOP", KeyEvent(Key_C), Vector2D(-106, -231), 22, -1 },
+        { "BOOST", KeyEvent(Key_Q), Vector2D(-106, -285), 22, -1 },
         // held: the debug overlay (Ctrl+D)
         { "MENU", KeyEvent(Key_Escape), Vector2D(30, 30), 22, -1, KeyEvent(Key_D, ControlModifier) },
         { "NAV", KeyEvent(Key_N), Vector2D(30, 82), 22, -1 },

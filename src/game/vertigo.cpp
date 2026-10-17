@@ -24,9 +24,12 @@
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/simpleboat.h"
+#include "fight/boats/player.h"
+#include "fight/surface/surface.h"
 #include "fight/orders.h"
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include <glm/gtc/constants.hpp>
 #include <cmath>
 #include <algorithm>
 #include "txt/desfile.h"
@@ -156,6 +159,7 @@ int Vertigo::start()
     }
 
     m_destroy = m_options.destroy;
+    m_collapse = m_options.collapse;
     m_screenshots = m_options.screenshots;
     if (m_headless && !m_screenshots.empty()) {
         std::cerr << "--screenshot needs a window, ignored with --headless" << std::endl;
@@ -214,6 +218,19 @@ void Vertigo::startScenario()
         unit->setOrders(nullptr);
         unit->setVelocityTarget(drive.speed/3.6f);
         unit->setTurnVelocity(Vector3D(0, 0, drive.turn));
+    }
+    if (m_options.start.x >= 0) {
+        // at the cell's centre, as the scenario places the player; the scenario's height
+        // above the ground and heading unless given
+        const Options::Start &start = m_options.start;
+        fight::Player *player = m_scenario->player();
+        fight::Surface &surface = m_scenario->surface();
+        const Vector3D scale = surface.scale();
+        const float above = start.hei >= 0 ? start.hei*scale.z : player->position().z - surface.heightAt(player->position().x, player->position().y);
+        Vector3D position((start.x + 0.5f)*scale.x, (start.y + 0.5f)*scale.y, 0);
+        position.z = surface.heightAt(position.x, position.y) + above;
+        const float yaw = start.card*glm::quarter_pi<float>();
+        player->place(position, start.card >= 0 ? Vector3D(std::sin(yaw), std::cos(yaw), 0) : player->dir());
     }
     if (m_options.near) {
         fight::ActiveObject *unit = nullptr;
@@ -312,6 +329,21 @@ void Vertigo::testFrame()
         }
         m_destroy.clear();
     }
+    if (m_scenario && !m_collapse.empty() && elapsed() >= 1) {
+        for (const int id : m_collapse) {
+            bool found = false;
+            for (const auto &record : m_scenario->objectRecords()) {
+                fight::ActiveObject *object = dynamic_cast<fight::ActiveObject *>(record.object);
+                if (record.id == id && object) {
+                    object->damage(0, object->shockShield() + 1, object->position(), m_scenario->player());
+                    found = true;
+                }
+            }
+            if (!found)
+                std::cerr << "--collapse: no unit " << id << std::endl;
+        }
+        m_collapse.clear();
+    }
     // keys and screenshots work in the main menu too, at seconds since the start
     for (auto it = m_keys.begin(); it != m_keys.end(); ) {
         // a key's release is due at time + hold; hold < 0 marks a key that is already pressed
@@ -399,14 +431,15 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
                 const Vector3D current = m_scenario->current(pos);
                 const fight::Player *player = m_scenario->player();
                 const fight::HeadMotion &head = m_scenario->headMotion();
-                std::cout << String("%1 t%2 player: cell %3 %4 h%5 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg%14")
+                std::cout << String("%1 t%2 player: cell %3 %4 h%5 pitch %20 %6 km/h current %7 %8 %9 shields %10 %11 %12 %13 head %15 cm %16 deg attackers %17 energy %18 shots %19%14")
                     .arg(m_options.scenario).arg(int(m_scenario->time()))
                     .arg(pos.x/scale.x, 0, 'f', 1).arg(pos.y/scale.y, 0, 'f', 1)
                     .arg(int(m_scenario->height())).arg(int(m_scenario->player()->speed()))
                     .arg(current.x, 0, 'f', 1).arg(current.y, 0, 'f', 1).arg(current.z, 0, 'f', 1)
                     .arg(player->shield(0)).arg(player->shield(1)).arg(player->shield(2)).arg(player->shield(3))
                     .arg(m_scenario->playerDestroyed() ? " destroyed" : "")
-                    .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1) << std::endl;
+                    .arg(glm::length(head.offset())*100, 0, 'f', 1).arg(glm::degrees(glm::length(head.angles())), 0, 'f', 1)
+                    .arg(m_scenario->playerAttackers()).arg(int(player->energy()*100)).arg(player->playerGun().shots()).arg(int(player->pitch())) << std::endl;
             }
             for (const auto &record : m_scenario->objectRecords()) {
                 if (record.id != id)
@@ -424,6 +457,8 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
                         line += " attacked";
                     if (unit->eventDestroy()->isCompleted())
                         line += " destroyed";
+                    if (unit->isAsleep())
+                        line += " asleep";
                 }
                 if (const fight::ActiveObject *unit = dynamic_cast<const fight::ActiveObject *>(record.object)) {
                     if (unit->orders() && unit->orders()->currentSlot())

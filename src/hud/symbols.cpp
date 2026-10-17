@@ -60,10 +60,14 @@ void Symbols::draw()
 {
     fight::Scenario *scenario = m_hud->scenario();
     const Rect rect = m_hud->projectCenter(m_rect);
-    // side by side, in the order of the images
+    // side by side: the radiation symbol in the first slot, blinking at 1 Hz less than 100 m
+    // below the surface (docs/ROADMAP.md, appendix D), the lock in the second, the current in the
+    // third
     const int width = m_lock.width();
+    if (scenario->depth() < fight::Scenario::RadiationDepth && scenario->blink())
+        m_radiation.draw(rect.x, rect.y);
     if (scenario->player()->lockProgress() >= 1)
-        m_lock.draw(rect.x, rect.y);
+        m_lock.draw(rect.x + width, rect.y);
     if (glm::length(scenario->current(scenario->position())) > 0.5f)
         m_current.draw(rect.x + 2*width, rect.y);
 }

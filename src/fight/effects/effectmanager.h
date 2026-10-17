@@ -24,6 +24,7 @@
 #include <map>
 #include <list>
 #include <memory>
+#include "gfx/pipeline.h"
 #include "util/geometry3d.h"
 #include "particles.h"
 
@@ -52,8 +53,16 @@ public:
 
     const Particles& particles() const { return m_particles; }
 
+    // the glow of up to count energy shots near the position, those close to the ground first,
+    // as lights with their positions in the world; none when no shot is within 150 m
+    int pointLights(const Vector3D &position, gfx::Pipeline::PointLight *lights, int count);
+
     void update(float elapsedTime);
     void draw();
+
+private:
+    // whether a shot glows (an energy weapon's) rather than being a shell
+    static bool glows(Effects projectile);
 
 private:
     Scenario *m_scenario;

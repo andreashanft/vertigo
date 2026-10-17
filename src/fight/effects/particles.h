@@ -57,7 +57,7 @@ public:
 
 public:
     // false if the particle wasn't added (pool full, or out of range)
-    bool add(Billboard *billboard, Motion motion, const Vector3D &position, const Vector3D &velocity = Vector3D(0), float angle = 0, float scale = 1, float time = 0);
+    bool add(Billboard *billboard, Motion motion, const Vector3D &position, const Vector3D &velocity = Vector3D(0), float angle = 0, float scale = 1, float time = 0, float rate = 1);
     int count() const { return int(m_particles.size()); }
     int count(Motion motion) const;
 
@@ -74,6 +74,7 @@ private:
         float angle;
         float scale;
         float time;
+        float rate;     // the speed of the animation
     };
 
     struct Batch

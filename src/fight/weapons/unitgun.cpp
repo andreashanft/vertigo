@@ -79,7 +79,10 @@ void UnitGun::update(float elapsedTime, bool trigger, const Vector3D &position, 
         active = m_volley[m_phase].active;
     }
     if (active && m_gun.state() == Gun::StateReady)
+    {
         m_gun.fire(position, dir, up, right);
+        m_shots++;
+    }
 }
 
 

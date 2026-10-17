@@ -22,6 +22,7 @@
 #include "fight/scenario.h"
 #include "game/boat.h"
 #include "util/random.h"
+#include "util/settings.hpp"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -47,7 +48,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     SimpleBoat(scenario, boat->boatFile(), playerInfo(), yaw),
     m_engineState(EngineRunning),
     m_speed(0),
-    m_debugBoost(0),
+    m_hasBooster(boat->booster() != 0),
     m_roll(0),
     m_currentTime(10.0f),
     m_currentNoise1(0),
@@ -79,7 +80,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_rollCenterVelocity = file.value("RollCenterVelocity").toFloat();
     m_bottomAlphaSupport = file.value("BottomAlphaSupport").toFloat();
     m_currentAmplitude = Vector3D(file.value("CurrentAmplitudeB").toFloat(), file.value("CurrentAmplitudeC").toFloat(), file.value("CurrentAmplitudeA").toFloat());
-    m_current = file.value("Current").toFloat();
+    m_currentFactor = file.value("Current").toFloat();
 
     file.setSection("defense");
     for (i = 0; i < 4; i++)
@@ -105,6 +106,11 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     if (boat->nrskin() == 5126)
         m_noise -= 1;
 
+    // the boat's engine: Small, Medium or Big Block as engine 0, 1 or 2 (appendix K)
+    setEngine(boat->engine() - 4097);
+    // settings.ini [Fight] turnticks: the relaxation rate of the turn rates, to be tuned against
+    // the original (appendix L)
+    TurnTickRate = util::Settings::floatValue("Fight/turnticks", 30.0f);
     m_gun.addMuzzles(Vector3D(0, 3.0f, 0), boat->gun());
     m_gun.setDefect(boat->defects()[game::Boat::DefectGun]);
     if (boat->tur1() != 0)
@@ -243,23 +249,29 @@ void Player::destroy()
 }
 
 
+float Player::TurnTickRate = 30.0f;
+
+
+float Player::pitch() const
+{
+    return glm::degrees(std::asin(glm::clamp(dir().z, -1.0f, 1.0f)));
+}
+
+
 bool Player::update(float elapsedTime)
 {
-    // the turn rates go towards their maximum, or a part of it as far as a stick is pushed
-    const Vector3D turnRate = glm::abs(m_turnVelocity)*m_maxAngleVelocity;
-    m_angleVelocity.x += m_angleVelocity.x*m_angleFriction.x*64*elapsedTime;
-    m_angleVelocity.x -= 0.64f*dir().z*m_maxAngleVelocity.x*elapsedTime;
-    if (m_turnVelocity.x > 0 && m_angleVelocity.x < turnRate.x)
-        m_angleVelocity.x -= turnRate.x*m_angleFriction.x*64*elapsedTime;
-    else if (m_turnVelocity.x < 0 && m_angleVelocity.x > -turnRate.x)
-        m_angleVelocity.x += turnRate.x*m_angleFriction.x*64*elapsedTime;
-
-    m_angleVelocity.y += m_angleVelocity.y*m_angleFriction.y*64*elapsedTime;
-    m_angleVelocity.y += m_roll*m_rollCenterVelocity*64*m_maxAngleVelocity.y*elapsedTime;
-    if (m_turnVelocity.y > 0 && m_angleVelocity.y < turnRate.y)
-        m_angleVelocity.y -= turnRate.y*m_angleFriction.y*64*elapsedTime;
-    if (m_turnVelocity.y < 0 && m_angleVelocity.y > -turnRate.y)
-        m_angleVelocity.y += turnRate.y*m_angleFriction.y*64*elapsedTime;
+    // The pitch and yaw rates relax towards the stick's share of the maximum by the boat's
+    // AngleFriction fraction per tick (docs/ROADMAP.md, appendix L), so they carry on for a
+    // while after the key is released; the nose also drops by its own angle and the roll turns
+    // the boat (RollCenterVelocity), both per tick. The rotation itself uses the frame time.
+    const Vector3D stick = m_turnVelocity*m_maxAngleVelocity;
+    for (m_turnTicks += TurnTickRate*elapsedTime; m_turnTicks >= 1.0f; m_turnTicks -= 1.0f)
+    {
+        m_angleVelocity.x += (stick.x - m_angleVelocity.x)*-m_angleFriction.x;
+        m_angleVelocity.x -= 0.01f*dir().z*m_maxAngleVelocity.x;
+        m_angleVelocity.y += (stick.y - m_angleVelocity.y)*-m_angleFriction.y;
+        m_angleVelocity.y += m_roll*m_rollCenterVelocity*m_maxAngleVelocity.y;
+    }
 
     m_angleVelocity.z = m_roll*m_bottomAlphaSupport*m_maxAngleVelocity.z;
 
@@ -286,6 +298,24 @@ bool Player::update(float elapsedTime)
         m_roll = glm::dot(glm::normalize(Vector3D(dir().y, -dir().x, 0)), up());
 
     updateVelocity(elapsedTime);
+    rechargeEnergy(elapsedTime);
+
+    // the booster (docs/ROADMAP.md, appendix K) draws from the same pool: held, it starts (again)
+    // once the pool is at 0.8, costing 0.15 at once and 1.2 per second while the engine keeps
+    // recharging, doubles the top speed and raises the acceleration 2.5-fold, and stops when the
+    // pool is below 0.05
+    if (m_boosting && (!m_boostKey || m_energy < 0.05f))
+        m_boosting = false;
+    if (!m_boosting && m_boostKey && m_hasBooster && m_energy >= 0.8f)
+    {
+        m_boosting = true;
+        drawEnergy(0.15f);
+        sfx::SampleMap::get(sfx::Sample::Booster).play();
+    }
+    if (m_boosting)
+        drawEnergy(1.2f*elapsedTime);
+    m_speedBoost = m_boosting ? 2.0f : 1.0f;
+    m_accelerationBoost = m_boosting ? 2.5f : 1.0f;
 
     if (m_engineState == EngineStartup && m_engineTime < m_scenario->time())
     {
@@ -296,15 +326,16 @@ bool Player::update(float elapsedTime)
         m_engineState = EngineOff;
     if (m_engineState == EngineRunning)
     {
+        // the engine's pitch follows the speed alone, up to 150 km/h (a boost reaches about 140)
         float pitch = glm::length(m_velocity)*0.036f;
-        if (pitch > 1.0f)
-            pitch = 1.0f;
+        if (pitch > 1.5f)
+            pitch = 1.5f;
         if (pitch < -0.5f)
             pitch = -0.5f;
         sfx::SampleMap::get(sfx::Sample::Engine).setPitch(1.0f + pitch);
     }
 
-    Vector3D vel = m_velocity + dir()*m_debugBoost + m_scenario->current(m_position)*m_current;
+    Vector3D vel = m_velocity;
     Vector3D delta = vel*elapsedTime;
     float path = 0;
 
@@ -401,6 +432,21 @@ bool Player::update(float elapsedTime)
         sfx::SampleMap::get(sfx::Sample::Alert).play();
     m_alertBlink = blink;
     m_critical = critical;
+
+    // the radiation less than 60 m below the surface: the voice on entry and every 15 s, the
+    // beep every 0.8 s (docs/ROADMAP.md, appendix D)
+    const bool radiation = m_scenario->depth() < Scenario::RadiationAlertDepth;
+    if (radiation && (!m_radiation || m_scenario->time() >= m_nextRadiationVoice))
+    {
+        sfx::SampleMap::get(sfx::Sample::Voice_SystemCollapse).play();
+        m_nextRadiationVoice = m_scenario->time() + 15.0f;
+    }
+    if (radiation && (!m_radiation || m_scenario->time() >= m_nextRadiationBeep))
+    {
+        sfx::SampleMap::get(sfx::Sample::Alert).play();
+        m_nextRadiationBeep = m_scenario->time() + 0.8f;
+    }
+    m_radiation = radiation;
 
     m_gun.update(elapsedTime);
     if (m_firing && m_gun.state() == Gun::StateReady)

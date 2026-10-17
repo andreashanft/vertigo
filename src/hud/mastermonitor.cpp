@@ -42,13 +42,15 @@ MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::Des
     m_lamp(hud, file),
     m_voxelRadar(file)
 {
-    // above the cargo line at the bottom
-    m_voxelRadar.limitHeight(rect.height - 14 - m_voxelRadar.rect().y);
+    // down to the cargo line, which the original draws over the patch's near edge
+    m_voxelRadar.limitHeight(rect.height - 8 - m_voxelRadar.rect().y);
 }
 
 
 void MasterMonitor::draw()
 {
+    if (m_hud->scenario()->monitorBlanked(1))
+        return;
     // a menu in place of the target and the voxel radar
     if (m_hud->menu().onScreen())
     {

@@ -87,9 +87,9 @@ void DebugOverlay::drawCurrents()
         const Vector3D centre((cell.x + 1)*scale.x, (cell.y + 1)*scale.y, scenario->position().z - 8.0f);
         if (glm::distance(centre, scenario->position()) > 200.0f)
             continue;
-        const Vector3D end = centre + glm::normalize(cell.velocity)*8.0f;
-        const Vector3D side = glm::length(Vector2D(cell.velocity)) > 0 ? glm::normalize(Vector3D(-cell.velocity.y, cell.velocity.x, 0))*2.0f : Vector3D(2.0f, 0, 0);
-        const Vector3D back = end - glm::normalize(cell.velocity)*3.0f;
+        const Vector3D end = centre + glm::normalize(cell.push)*8.0f;
+        const Vector3D side = glm::length(Vector2D(cell.push)) > 0 ? glm::normalize(Vector3D(-cell.push.y, cell.push.x, 0))*2.0f : Vector3D(2.0f, 0, 0);
+        const Vector3D back = end - glm::normalize(cell.push)*3.0f;
         Vector2D a, b, c, d;
         if (!project(centre, a) || !project(end, b) || !project(back + side, c) || !project(back - side, d))
             continue;
@@ -182,6 +182,8 @@ void DebugOverlay::drawLabels()
                 text += String(" V%1").arg(int(speed*3.6f));
             if (active->orders() && active->orders()->currentSlot())
                 text += String(" O%1 %2").arg(active->orders()->current()).arg(active->orders()->state());
+            if (active->isAsleep())
+                text += " ASLEEP";
             if (detected.count(object))
                 font = &m_hud->fontYellow();
         }

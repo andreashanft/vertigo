@@ -21,10 +21,13 @@
 #include "objects/activeobject.h"
 #include "objects/turretbase.h"
 #include "weapons/unitgun.h"
+#include "weapons/torpedo.h"
 #include "util/random.h"
 
 #include <glm/geometric.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtx/norm.hpp>
+#include <glm/trigonometric.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -34,25 +37,36 @@ namespace fight {
 
 namespace {
 
-// a unit counts as having arrived within this horizontal distance (metres)
-const float ArriveDistance = 20.0f;
-const float EngageLeash = 2.5f;     // patrols give up a target this many sensor ranges away
 // durations from this on mean "forever"
 const int Forever = 100000;
-// guns fire when they point at the target within this angle (radians)
-const float AimTolerance = 0.06f;
-// an ambush is sprung when its target comes this close (metres)
-const float AmbushDistance = 300.0f;
-
-float random()
-{
-    return util::random()/float(RAND_MAX);
-}
-
-float random(float min, float max)
-{
-    return min + random()*(max - min);
-}
+// a unit is "there" within this many map cells of a point (or its top speed in a second, or its hull)
+const float ArriveCells = 1.25f;
+// and slows down within this many cells (or its hull)
+const float SlowCells = 2.0f;
+// a unit without a senr key hears this far (metres)
+const float DefaultSensorRange = 100.0f;
+// the passive sonar: a unit is heard while its noise over the square of its distance beats this
+// over the square of the sensor's range, in the game's units of 500 per noise level
+const float HearingThreshold = 1500.0f/500.0f;
+// the sensor looks for hostiles this often (sen 3 and 4 faster)
+const float ScanInterval = 1.5f;
+const float QuickScanInterval = 0.7f;
+// guns fire while the target is within this cosine of the nose (about 14 degrees)
+const float AimCos = 0.97f;
+// torpedoes go when the nose points at the target within this, straight-running ones closer
+const float TorpedoCosStraight = 0.95f;
+const float TorpedoCosHoming = 0.7f;
+// the point a unit breaks off to, in the target's frame (metres): far to one side, ahead, up or down
+const float FlightSide = 850.0f;
+const float FlightAhead = 500.0f;
+const float FlightUp = 500.0f;
+// a unit in the target's line of fire (within this cosine of its nose) this long moves to the other side
+const float LineOfFireCos = 0.99f;
+const float LineOfFireTime = 1.5f;
+// an escort closes in at full speed from this distance (metres) and slows down inside it
+const float EscortSlowDistance = 75.0f;
+// an ambushing boat lies this many hull heights over the ground
+const float AmbushHeights = 2.0f;
 
 }
 
@@ -71,6 +85,20 @@ bool OrderSlot::isImplemented(int type)
 }
 
 
+// docs/ROADMAP.md, appendix J: 2 and 6 are the two quarter turns, 4 is about; 0, odd values and
+// the frequent 10 are straight ahead. Which of 2 and 6 is left is still to be checked.
+float OrderSlot::yaw() const
+{
+    switch (car)
+    {
+    case 2: return -glm::half_pi<float>();
+    case 4: return glm::pi<float>();
+    case 6: return glm::half_pi<float>();
+    default: return 0;
+    }
+}
+
+
 Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSlot> &orderSlots) :
     m_scenario(scenario),
     m_unit(unit),
@@ -78,33 +106,83 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_slots(orderSlots),
     m_current(-1),
     m_startTime(0),
-    m_pointHeight(0),
     m_pointTime(0),
-    m_attack(Attack::Approach),
-    m_attackEnd(0),
-    m_ambushed(false),
-    m_torpedoRun(false),
-    m_engaged(nullptr),
+    m_target(nullptr),
+    m_scanned(nullptr),
     m_nextScan(0),
-    m_dockStart(-1)
+    m_fight(Fight::None),
+    m_fightStart(0),
+    m_side(Front),
+    m_alignEnd(0),
+    m_runDistance(0),
+    m_attackEnd(0),
+    m_flightRadius(0),
+    m_attackSpeed(0),
+    m_shotsBefore(0),
+    m_breakOnHit(false),
+    m_flightEnd(0),
+    m_lastFlip(0),
+    m_targetYaw(0),
+    m_torpedo(false),
+    m_torpedoRun(false),
+    m_torpedoTarget(nullptr),
+    m_lying(false),
+    m_formation(false),
+    m_dockStart(-1),
+    m_turretBusy(false),
+    m_sweepYaw(0),
+    m_nextSweep(0)
 {
     if (!m_slots.empty())
         start(0);
 }
 
 
+float Orders::random() const
+{
+    return util::random()/float(RAND_MAX);
+}
+
+
+float Orders::random(float min, float max) const
+{
+    return min + random()*(max - min);
+}
+
+
 void Orders::start(int slot)
 {
-    m_current = slot < int(m_slots.size()) ? slot : -1;
+    // the 8 slots are taken in turn, skipping empty ones, round and round; boats skip
+    // CardinalPatrol and CardinalAttack too (docs/ROADMAP.md, appendix J)
+    m_current = -1;
+    for (int tried = 0; tried < int(m_slots.size()) && m_current < 0; tried++, slot++)
+    {
+        const int candidate = slot % int(m_slots.size());
+        const int type = m_slots[candidate].type;
+        if (type == OrderSlot::None || (m_boat && (type == OrderSlot::CardinalPatrol || type == OrderSlot::CardinalAttack)))
+            continue;
+        m_current = candidate;
+    }
     m_startTime = m_scenario->time();
-    m_attack = Attack::Approach;
-    m_attackEnd = 0;
-    m_ambushed = false;
-    m_engaged = nullptr;
+    dropTarget();
+    m_lying = false;
+    m_formation = false;
     m_dockStart = -1;
     m_unit->setTrigger(false);
+    m_unit->setSilent(false);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
-        pickPatrolPoint();
+    {
+        // the area's centre, mih over the ground, is the first point
+        const OrderSlot &s = m_slots[m_current];
+        m_point = cellCentre(s.refx, s.refy);
+        m_point.z = m_scenario->surface().heightAt(m_point.x, m_point.y) + s.mih;
+        m_pointTime = m_scenario->time();
+    }
+    if (m_current >= 0)
+    {
+        m_sweepYaw = m_slots[m_current].yaw();
+        m_nextSweep = m_scenario->time() + random(0.5f, 2.5f);
+    }
 }
 
 
@@ -118,7 +196,7 @@ txt::StringFight Orders::activity() const
 {
     if (m_current < 0)
         return txt::Fight79;
-    if (m_engaged)
+    if (m_target)
         return txt::Fight77;
     switch (m_slots[m_current].type)
     {
@@ -126,7 +204,7 @@ txt::StringFight Orders::activity() const
     case OrderSlot::CardinalAttack:
         return txt::Fight77;
     case OrderSlot::Ambush:
-        return m_ambushed ? txt::Fight77 : txt::Fight79;
+        return txt::Fight79;
     case OrderSlot::Patrol:
     case OrderSlot::CardinalPatrol:
         return txt::Fight80;
@@ -152,21 +230,34 @@ ActiveObject* Orders::dockingTarget() const
 }
 
 
+bool Orders::mayPause() const
+{
+    const OrderSlot *slot = currentSlot();
+    if (slot && slot->type == OrderSlot::Explode)
+        return false;
+    return !m_turretBusy;
+}
+
+
 String Orders::state() const
 {
     if (m_current < 0)
         return String();
     String text = OrderSlot::name(m_slots[m_current].type);
-    const int type = m_slots[m_current].type;
-    if (m_engaged)
-        text += " engaging";
-    if ((type == OrderSlot::Attack || (type == OrderSlot::Ambush && m_ambushed) || m_engaged) && m_attackEnd > 0)
-        text += m_attack == Attack::Approach ? " approach" : m_attack == Attack::Attack ? " attack" : " break";
+    if (m_target)
+    {
+        static const char *phases[] = { "", " align", " turn", " run", " flight" };
+        text += phases[int(m_fight)];
+    }
+    else if (m_lying)
+        text += " lying";
     if (m_unit->trigger())
         text += " firing";
     return text;
 }
 
+
+// --- flying
 
 Vector3D Orders::cellCentre(int x, int y) const
 {
@@ -175,7 +266,23 @@ Vector3D Orders::cellCentre(int x, int y) const
 }
 
 
-float Orders::altitude(const Vector3D &point, int height) const
+float Orders::arriveRadius(float extra) const
+{
+    const float radius = m_boat ? m_boat->collisionRadius() : 0;
+    return std::max(std::max(ArriveCells*m_scenario->surface().scale().x, radius), extra);
+}
+
+
+// a unit slows down proportionally within two cells (or its hull) of a point
+float Orders::slowSpeed(const Vector3D &point, float speed) const
+{
+    const float radius = m_boat ? m_boat->collisionRadius() : 0;
+    const float slow = std::max(SlowCells*m_scenario->surface().scale().x, radius);
+    return speed*std::min(1.0f, glm::length(point - m_unit->position())/slow);
+}
+
+
+float Orders::groundAhead(const Vector3D &point) const
 {
     Surface &surface = m_scenario->surface();
     const Vector3D &position = m_unit->position();
@@ -193,21 +300,69 @@ float Orders::altitude(const Vector3D &point, int height) const
     }
     if (distance < 60.0f)
         ground = std::max(ground, surface.heightAt(point.x, point.y));
-
-    return ground + std::max(height*surface.scale().z, 3.0f);
+    return ground;
 }
 
 
-void Orders::pickPatrolPoint()
+Vector3D Orders::inBand(Vector3D point, float minHeight, float maxHeight) const
+{
+    const float ground = groundAhead(point);
+    const float radius = m_boat ? m_boat->collisionRadius() : 0;
+    point.z = std::max(point.z, ground + minHeight + 0.6f*radius);
+    if (maxHeight > minHeight)
+        point.z = std::min(point.z, std::max(ground + maxHeight, ground + minHeight + 0.6f*radius));
+    return point;
+}
+
+
+// a random point of the area, at least minFraction of the radius from the current one (a few tries);
+// its height wanders by up to half the way, within the order's band
+void Orders::pickPatrolPoint(float minFraction)
 {
     const OrderSlot &slot = m_slots[m_current];
-    const float angle = random()*glm::two_pi<float>();
-    const float radius = slot.rad*std::sqrt(random());
-    m_point = cellCentre(slot.refx, slot.refy) + Vector3D(radius*std::cos(angle), radius*std::sin(angle), 0);
-    m_pointHeight = slot.mih + int(random()*(slot.mah - slot.mih));
+    const Vector3D centre = cellCentre(slot.refx, slot.refy);
+    const Vector3D from = m_point;
+    const float radius = std::max(1.0f, float(slot.rad));
+    Vector3D point = from;
+    float distance = 0;
+    for (int tries = 0; tries < 10; tries++)
+    {
+        const float angle = random()*glm::two_pi<float>();
+        const float r = radius*random();
+        point = Vector3D(centre.x - std::sin(angle)*r, centre.y + std::cos(angle)*r, from.z);
+        distance = glm::length(Vector2D(point) - Vector2D(from));
+        if (distance > minFraction*radius)
+            break;
+    }
+    point.z = from.z + (random() - 0.5f)*distance;
+    const float ground = m_scenario->surface().heightAt(point.x, point.y);
+    point.z = glm::clamp(point.z, ground + slot.mih, ground + std::max(float(slot.mah), float(slot.mih) + 1.0f));
+    m_point = point;
     m_pointTime = m_scenario->time();
 }
 
+
+glm::mat3 Orders::frameOf(const ActiveObject *unit)
+{
+    if (const SimpleBoat *boat = dynamic_cast<const SimpleBoat *>(unit))
+        return glm::mat3(boat->right(), boat->dir(), boat->up());
+    return glm::mat3(1.0f);
+}
+
+
+Vector3D Orders::toWorld(const ActiveObject *unit, const Vector3D &local)
+{
+    return unit->position() + frameOf(unit)*local;
+}
+
+
+Vector3D Orders::toLocal(const ActiveObject *unit, const Vector3D &world)
+{
+    return glm::transpose(frameOf(unit))*(world - unit->position());
+}
+
+
+// --- sensing
 
 ActiveObject* Orders::findUnit(int id) const
 {
@@ -227,6 +382,185 @@ bool Orders::isAlive(const ActiveObject *unit) const
     if (unit == m_scenario->player())
         return !m_scenario->playerDestroyed();
     return unit->isEnabled() && !const_cast<ActiveObject *>(unit)->eventDestroy()->isCompleted();
+}
+
+
+bool Orders::isHostile(const ActiveObject *unit) const
+{
+    return unit && unit != m_unit && m_scenario->isHostile(m_unit->iff(), unit->iff());
+}
+
+
+// a unit without a sen key has a passive sonar (sen 1)
+int Orders::sensorType() const
+{
+    return m_unit->sensor() < 0 ? 1 : m_unit->sensor();
+}
+
+
+float Orders::sensorRange() const
+{
+    return m_unit->sensorRange() > 0 ? m_unit->sensorRange() : DefaultSensorRange;
+}
+
+
+// the passive sonar hears a unit while its noise over the square of the distance beats the
+// threshold set by the sensor's range; so a unit at noise level 3 is heard right up to the range,
+// quieter ones closer (level 1 within 58 percent of it); a doubled range doesn't help
+bool Orders::hears(const ActiveObject *unit, float distance2) const
+{
+    const float range = sensorRange();
+    return unit->noise()*range*range > HearingThreshold*distance2;
+}
+
+
+// nothing of the terrain between the two hulls
+bool Orders::sees(const ActiveObject *unit) const
+{
+    const float radius = m_boat ? m_boat->collisionRadius() : 2.0f;
+    Vector3D position, normal;
+    return !m_scenario->surface().testCollision(m_unit->position() + Vector3D(0, 0, 0.5f*radius), unit->center(), 0.5f, position, normal);
+}
+
+
+bool Orders::detects(const ActiveObject *unit, float rangeFactor) const
+{
+    if (!isAlive(unit) || unit == m_unit)
+        return false;
+    const float range = sensorRange()*rangeFactor;
+    const float distance2 = glm::length2(unit->position() - m_unit->position());
+    if (distance2 >= range*range)
+        return false;
+    switch (sensorType())
+    {
+    case 0: return sees(unit);                                   // sight
+    case 1: return hears(unit, distance2);                       // passive sonar
+    case 2: return true;                                         // active sonar
+    case 3: return unit == m_scenario->player();                 // the player's boat only
+    case 4: return unit == m_scenario->player() || hears(unit, distance2);
+    default: return false;
+    }
+}
+
+
+// looks every 1.5 s (0.7 s with sen 3 and 4) and keeps what it found while that lives: the nearest
+// hostile in range (sen 0 in sight, sen 2 regardless), the loudest one heard (sen 1), the player's
+// boat (sen 3), the player if in range else the loudest (sen 4)
+ActiveObject* Orders::scan()
+{
+    if (m_scenario->time() < m_nextScan)
+        return isAlive(m_scanned) ? m_scanned : nullptr;
+    const int type = sensorType();
+    m_nextScan = m_scenario->time() + (type >= 3 ? QuickScanInterval : ScanInterval);
+    m_scanned = nullptr;
+    const float range = sensorRange();
+    float best = 0;
+    auto consider = [&](ActiveObject *unit) {
+        if (!isHostile(unit) || !isAlive(unit))
+            return;
+        const float distance2 = glm::length2(unit->position() - m_unit->position());
+        if (distance2 >= range*range)
+            return;
+        float score = 0;
+        switch (type)
+        {
+        case 0:
+            if (!sees(unit))
+                return;
+            score = 1/(distance2 + 1);
+            break;
+        case 1:
+            if (!hears(unit, distance2))
+                return;
+            score = unit->noise()/(distance2 + 1);
+            break;
+        case 2:
+            score = 1/(distance2 + 1);
+            break;
+        case 3:
+            if (unit != m_scenario->player())
+                return;
+            score = 1/(distance2 + 1);
+            break;
+        case 4:
+            if (unit == m_scenario->player())
+                score = 1e6f + 1/(distance2 + 1);
+            else if (hears(unit, distance2))
+                score = unit->noise()/(distance2 + 1);
+            else
+                return;
+            break;
+        default:
+            return;
+        }
+        if (score > best)
+        {
+            best = score;
+            m_scanned = unit;
+        }
+    };
+    consider(m_scenario->player());
+    for (const auto &record : m_scenario->objectRecords())
+        if (SimpleBoat *boat = dynamic_cast<SimpleBoat *>(record.object))
+            consider(boat);
+    return m_scanned;
+}
+
+
+ActiveObject* Orders::acquire(ActiveObject *enemy)
+{
+    if (isHostile(enemy) && detects(enemy, 1))
+        return engage(enemy);
+    // a unit under fire knows the player at double range
+    ActiveObject *player = m_scenario->player();
+    if (m_unit->hitRecently() && isHostile(player) && detects(player, 2))
+        return engage(player);
+    return engage(scan());
+}
+
+
+bool Orders::keepTarget(ActiveObject *enemy)
+{
+    if (!m_target)
+        return false;
+    ActiveObject *player = m_scenario->player();
+    // a player who shoots draws the fire if nearer than the current target
+    if (m_unit->hitRecently() && m_target != player && enemy != player && isHostile(player) && detects(player, 2) &&
+        glm::length2(player->position() - m_unit->position()) < glm::length2(m_target->position() - m_unit->position()))
+    {
+        if (ActiveObject *taken = engage(player))
+            m_target = taken;
+    }
+    // the ordered enemy comes first once in range
+    if (enemy && m_target != enemy && isHostile(enemy) && detects(enemy, 1))
+        m_target = engage(enemy);
+    if (!m_target || !isHostile(m_target) || !detects(m_target, 2))
+    {
+        dropTarget();
+        return false;
+    }
+    return true;
+}
+
+
+ActiveObject* Orders::engage(ActiveObject *target)
+{
+    if (!target)
+        return nullptr;
+    if (target == m_scenario->player())
+        return m_scenario->engagePlayer(m_unit) ? target : nullptr;
+    m_scenario->disengagePlayer(m_unit);
+    return target;
+}
+
+
+void Orders::dropTarget()
+{
+    m_target = nullptr;
+    m_fight = Fight::None;
+    m_unit->setTrigger(false);
+    m_scenario->disengagePlayer(m_unit);
+    endTorpedoRun();
 }
 
 
@@ -259,6 +593,8 @@ ActiveObject* Orders::nearestHostile(float range, int sector) const
 }
 
 
+// --- fighting
+
 Vector3D Orders::lead(const ActiveObject *target) const
 {
     const float speed = m_unit->gun() ? m_unit->gun()->projectileSpeed() : 0;
@@ -269,26 +605,354 @@ Vector3D Orders::lead(const ActiveObject *target) const
 }
 
 
+// boats shoot at where the target is, with no lead; at a ground unit a little higher
+Vector3D Orders::aimPoint(const ActiveObject *target) const
+{
+    Vector3D point = target->position();
+    if (const SimpleBoat *boat = dynamic_cast<const SimpleBoat *>(target))
+        if (boat->isGroundVehicle())
+            point.z += 0.4f*boat->collisionRadius();
+    return point;
+}
+
+
 bool Orders::aligned(const Vector3D &aim, const Vector3D &target, float range) const
 {
     const Vector3D way = target - m_unit->position();
     const float distance = glm::length(way);
-    return distance < range && glm::dot(aim, way/distance) > std::cos(AimTolerance);
+    return distance < range && glm::dot(aim, way/distance) > AimCos;
 }
 
 
-// towers: turn to the target and fire once the turret points at it
-void Orders::updateTurret(ActiveObject *target, float range, int sector)
+// a torpedo goes when the nose points at the target within 18 degrees in the horizontal plane
+// (45 for homing types) and the tube has reloaded; the target's list of torpedo attackers must
+// have room (appendix J)
+bool Orders::tryTorpedo(ActiveObject *target)
+{
+    if (!m_unit->hasTorpedoes() || !m_boat)
+        return false;
+    const TorpedoType *type = TorpedoType::get(m_unit->torpedoType());
+    const bool homing = type && type->lockType != 0;
+    Vector2D way(target->position() - m_unit->position());
+    Vector2D nose(m_boat->dir());
+    if (glm::length(way) < 0.1f || glm::length(nose) < 0.1f)
+        return false;
+    const float cosine = glm::dot(glm::normalize(way), glm::normalize(nose));
+    if (cosine < (homing ? TorpedoCosHoming : TorpedoCosStraight))
+        return false;
+    if (!m_torpedoRun)
+    {
+        if (!target->engageTorpedo(m_unit))
+            return false;
+        m_torpedoRun = true;
+        m_torpedoTarget = target;
+    }
+    if (!m_unit->fireTorpedo(target, m_unit->position() + m_boat->dir()*6.0f, m_boat->dir()))
+        return false;
+    endTorpedoRun();
+    return true;
+}
+
+
+void Orders::endTorpedoRun()
+{
+    if (m_torpedoTarget)
+        m_torpedoTarget->disengageTorpedo(m_unit);
+    m_torpedoTarget = nullptr;
+    m_torpedoRun = false;
+}
+
+
+// the fight's phases (docs/ROADMAP.md, appendix J): a side of the target to align on, a run at it
+// turning in place or flying, a flight away from it
+void Orders::startFight(Fight phase, ActiveObject *target)
+{
+    const SimpleBoat::AttackSettings &s = m_boat->attackSettings();
+    const float now = m_scenario->time();
+    m_fight = phase;
+    m_fightStart = now;
+    m_torpedo = false;
+    switch (phase)
+    {
+    case Fight::Align:
+        {
+            // the side by the align probabilities: ahead within 30 degrees, left or right between
+            // 30 and 150, behind within 30; a distance within the align radii and a little above
+            // or below the target's horizon by the align gammas
+            const float pick = random();
+            float angle;
+            if (pick < s.alignFront)
+            {
+                m_side = Front;
+                angle = random(glm::radians(-30.0f), glm::radians(30.0f));
+            }
+            else if (pick < s.alignFront + s.alignLeft)
+            {
+                m_side = Left;
+                angle = random(glm::radians(30.0f), glm::radians(150.0f));
+            }
+            else if (pick < s.alignFront + s.alignLeft + s.alignRight)
+            {
+                m_side = Right;
+                angle = -random(glm::radians(30.0f), glm::radians(150.0f));
+            }
+            else
+            {
+                m_side = Back;
+                angle = random(glm::radians(150.0f), glm::radians(180.0f))*(random() < 0.5f ? -1.0f : 1.0f);
+            }
+            const float gamma = random(s.minAlignGamma, s.maxAlignGamma);
+            const float radius = random(s.minAlignRadius, s.maxAlignRadius);
+            m_alignOffset = Vector3D(-std::sin(angle)*radius, std::cos(angle)*radius, std::sin(gamma)*radius);
+            m_alignEnd = now + random(s.minAlignTime, s.maxAlignTime);
+            m_torpedo = random() < s.alignTorpedo;
+        }
+        break;
+
+    case Fight::Turn:
+    case Fight::Run:
+        {
+            // the run: for its time, until the target is within the flight radius, or until hit after
+            // the first shot if the dice say so; turning in place or flying at 40 to 100 percent speed
+            m_runStart = toLocal(target, m_unit->position());
+            m_runDistance = glm::length(m_runStart);
+            m_attackEnd = now + random(s.minAttackTime, s.maxAttackTime);
+            m_flightRadius = random(s.minFlightRadius, s.maxFlightRadius);
+            m_attackSpeed = random(0.4f, 1.0f)*m_boat->maxVelocity()*m_slots[m_current].vel/100.0f;
+            m_fight = random() < s.turnProbability ? Fight::Turn : Fight::Run;
+            m_torpedo = random() < s.attackTorpedo;
+            m_shotsBefore = m_unit->gun() ? m_unit->gun()->shots() : 0;
+            m_breakOnHit = random() < s.flightHit;
+        }
+        break;
+
+    case Fight::Flight:
+        {
+            // away to one of four points far to the target's left or right, ahead and above or below it
+            const float pick = random();
+            float x = 1, z = 1;
+            if (pick < s.flightUL)
+                x = -1;
+            else if (pick < s.flightUL + s.flightUR)
+                ;
+            else if (pick < s.flightUL + s.flightUR + s.flightDL)
+                x = -1, z = -1;
+            else
+                z = -1;
+            m_flightOffset = Vector3D(x*FlightSide, FlightAhead, z*FlightUp);
+            m_flightEnd = now + random(s.minFlightTime, s.maxFlightTime);
+            m_lastFlip = now;
+            if (random() < s.flightTorpedo)
+                tryTorpedo(target);
+        }
+        break;
+
+    case Fight::None:
+        break;
+    }
+}
+
+
+void Orders::updateFight(ActiveObject *target, float speed)
+{
+    const OrderSlot &slot = m_slots[m_current];
+    const SimpleBoat::AttackSettings &s = m_boat->attackSettings();
+    const float now = m_scenario->time();
+
+    if (m_fight == Fight::None)
+        startFight(slot.type == OrderSlot::Ambush ? Fight::Turn : Fight::Align, target);
+
+    switch (m_fight)
+    {
+    case Fight::Align:
+        {
+            m_boat->steerTo(inBand(toWorld(target, m_alignOffset), slot.mih, slot.mah), speed);
+            m_unit->setTrigger(false);
+            // which side of the target the unit is on, and whether it is at the align distance
+            const Vector3D way = m_unit->position() - target->position();
+            const glm::mat3 frame = frameOf(target);
+            const Vector2D forward = glm::normalize(Vector2D(frame[1]) + Vector2D(1e-6f, 0));
+            const Vector2D flat(way);
+            const float cosine = glm::length(flat) > 0.1f ? glm::dot(glm::normalize(flat), forward) : 1.0f;
+            int side = cosine > 0.866f ? Front : cosine < -0.866f ? Back : glm::dot(flat, Vector2D(frame[0])) < 0 ? Left : Right;
+            const float distance = glm::length(way);
+            if (side == m_side && distance > s.minAlignRadius && distance < s.maxAlignRadius)
+                startFight(Fight::Turn, target);
+            else if (now > m_alignEnd)
+                startFight(Fight::Align, target);
+            else if (m_unit->hitRecently())
+                startFight(random() < s.hitProbability ? Fight::Turn : Fight::Align, target);
+            else if (m_torpedo && tryTorpedo(target))
+                m_torpedo = false;
+        }
+        break;
+
+    case Fight::Turn:
+    case Fight::Run:
+        {
+            const Vector3D aim = aimPoint(target);
+            if (m_fight == Fight::Turn)
+                m_boat->steerTo(aim, 0);
+            else
+                m_boat->steerTo(inBand(aim, slot.mih + m_boat->collisionRadius(), slot.mah), m_attackSpeed);
+            // the run ends once the start, carried along with the target, has got farther away than
+            // the distance minus the flight radius: the target is within it
+            const Vector3D start = toWorld(target, m_runStart);
+            const float reach = m_runDistance - m_flightRadius;
+            bool over = glm::length2(start - m_unit->position()) > reach*reach || now > m_attackEnd;
+            const Vector3D way = aim - m_unit->position();
+            m_unit->setTrigger(m_unit->gun() && glm::length(way) > 0.1f && glm::dot(m_boat->dir(), glm::normalize(way)) > AimCos);
+            const int shots = m_unit->gun() ? m_unit->gun()->shots() - m_shotsBefore : 0;
+            if (shots > 0 && m_breakOnHit && m_unit->hitRecently())
+                over = true;
+            if (m_torpedo && tryTorpedo(target))
+                m_torpedo = false;
+            if (over)
+                startFight(Fight::Flight, target);
+        }
+        break;
+
+    case Fight::Flight:
+        {
+            // in the target's line of fire for a while: over to the other side
+            const Vector3D way = m_unit->position() - target->position();
+            const Vector3D forward = frameOf(target)[1];
+            const float cosine = glm::length(way) > 0.1f ? glm::dot(glm::normalize(way), forward) : 0;
+            if (cosine > LineOfFireCos)
+            {
+                if (now - m_lastFlip > LineOfFireTime)
+                {
+                    m_flightOffset.x = -m_flightOffset.x;
+                    m_lastFlip = now;
+                }
+            }
+            else
+                m_lastFlip = now;
+            Vector3D point = toWorld(target, m_flightOffset);
+            // after a moment the flight levels off at the target's height
+            if (now - m_fightStart > LineOfFireTime)
+                point.z = target->position().z;
+            m_boat->steerTo(inBand(point, slot.mih, slot.mah), speed);
+            m_unit->setTrigger(false);
+            if (now > m_flightEnd)
+                startFight(Fight::Align, target);
+        }
+        break;
+
+    case Fight::None:
+        break;
+    }
+}
+
+
+// the tanks' fight (docs/ROADMAP.md, appendix J): the align point lies at the align radius, 20 to
+// 30 degrees round the target from the tank's bearing; Hook goes the way the target is turning,
+// Cross towards its nose, Retain and Change by which way the two point relative to each other.
+// Then the tank drives at the target for the attack time, firing, and aligns again
+void Orders::startTankFight(Fight phase, ActiveObject *target, float speed)
+{
+    const SimpleBoat::AttackSettings &s = m_boat->attackSettings();
+    const float now = m_scenario->time();
+    m_fight = phase;
+    m_fightStart = now;
+    const glm::mat3 frame = frameOf(target);
+    const float targetYaw = std::atan2(-frame[1].x, frame[1].y);
+    switch (phase)
+    {
+    case Fight::Align:
+        {
+            const Vector3D local = toLocal(target, m_unit->position());
+            float bearing = std::atan2(-local.x, local.y);
+            float step = random(glm::radians(20.0f), glm::radians(30.0f));
+            const float pick = random();
+            const float turned = std::remainder(targetYaw - m_targetYaw, glm::two_pi<float>());
+            const Vector2D own(m_boat->dir());
+            const float across = frame[1].x*own.y - frame[1].y*own.x;
+            if (pick < s.hook)
+                step = turned < 0 ? -step : step;
+            else if (pick < s.hook + s.cross)
+                step = bearing > 0 ? -step : step;
+            else if (pick < s.hook + s.cross + s.retain)
+                step = across > 0 ? step : -step;
+            else
+                step = across > 0 ? -step : step;
+            bearing += step;
+            const float radius = random(s.minAlignRadius, s.maxAlignRadius);
+            m_alignOffset = Vector3D(-std::sin(bearing)*radius, std::cos(bearing)*radius, 0);
+            m_runDistance = std::max(1.0f, glm::length(Vector2D(toWorld(target, m_alignOffset)) - Vector2D(m_unit->position())));
+            m_alignEnd = now + random(s.minAlignTime, s.maxAlignTime);
+        }
+        break;
+
+    case Fight::Run:
+        // (the original draws the speed between two of the unit's speeds; which the lower is isn't read)
+        m_attackSpeed = random(0.4f, 1.0f)*speed;
+        m_attackEnd = now + random(s.minAttackTime, s.maxAttackTime);
+        break;
+
+    default:
+        break;
+    }
+    m_targetYaw = targetYaw;
+}
+
+
+void Orders::updateTankFight(ActiveObject *target, float speed)
+{
+    const SimpleBoat::AttackSettings &s = m_boat->attackSettings();
+    const float now = m_scenario->time();
+    if (m_fight == Fight::None || m_fight == Fight::Turn || m_fight == Fight::Flight)
+        startTankFight(Fight::Align, target, speed);
+
+    const Vector3D aim = aimPoint(target);
+    m_boat->aimAt(aim);
+    if (m_fight == Fight::Align)
+    {
+        // to the point, slow at both ends of the way, without firing
+        const Vector3D point = toWorld(target, m_alignOffset);
+        const float distance = glm::length(Vector2D(point) - Vector2D(m_unit->position()));
+        float f = std::min(1.0f, distance/m_runDistance);
+        if (f > 0.5f)
+            f = 1.0f - f;
+        m_boat->steerTo(point, (f + 0.5f)*speed);
+        m_unit->setTrigger(false);
+        if (distance < arriveRadius(m_boat->maxVelocity()) || now > m_alignEnd)
+            startTankFight(Fight::Run, target, speed);
+        else if (m_unit->hitRecently())
+            startTankFight(random() < s.alignHit ? Fight::Align : Fight::Run, target, speed);
+        return;
+    }
+
+    // the drive at the target, the turret firing within 14 degrees of it
+    m_boat->steerTo(target->position(), m_attackSpeed);
+    const Vector3D way = aim - m_unit->position();
+    m_unit->setTrigger(m_unit->gun() && glm::length(way) > 0.1f && glm::dot(m_boat->gunDirection(), glm::normalize(way)) > AimCos);
+    const float distance = glm::length(Vector2D(target->position()) - Vector2D(m_unit->position()));
+    if (distance < arriveRadius(m_boat->maxVelocity()) || now > m_attackEnd)
+        startTankFight(Fight::Align, target, speed);
+}
+
+
+// towers: turn to the target and fire once the turret points at it; without one the turret rests
+// turned by car, and on patrol it sweeps: every 0.5-2.5 s it turns by 15-90 degrees either way,
+// wherever that takes it (docs/ROADMAP.md, appendix J)
+void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
 {
     TurretBase *turret = dynamic_cast<TurretBase *>(m_unit);
     if (!turret)
         return;
+    m_turretBusy = target != nullptr;
     if (!target)
     {
         m_unit->setTrigger(false);
-        // rest towards the side to cover
-        if (sector >= 0 && sector < 8)
-            turret->aimAt(sector*glm::quarter_pi<float>());
+        const float rest = m_slots[m_current].yaw();
+        if (sweep && m_scenario->time() >= m_nextSweep)
+        {
+            const float step = random(glm::radians(15.0f), glm::radians(90.0f))*(random() < 0.5f ? -1.0f : 1.0f);
+            m_sweepYaw = rest + std::remainder(m_sweepYaw - rest, glm::two_pi<float>()) + step;
+            m_nextSweep = m_scenario->time() + random(0.5f, 2.5f);
+        }
+        turret->aimAt(sweep ? m_sweepYaw : rest);
         return;
     }
     const Vector3D point = lead(target);
@@ -301,169 +965,17 @@ void Orders::updateTurret(ActiveObject *target, float range, int sector)
 }
 
 
-void Orders::startAttackState(Attack state, ActiveObject *target)
-{
-    const SimpleBoat::AttackSettings &settings = m_boat->attackSettings();
-    m_attack = state;
-    switch (state)
-    {
-    case Attack::Approach:
-        {
-            // a side of the target, picked by the align probabilities, at the align radius
-            const float total = settings.alignFront + settings.alignBack + settings.alignLeft + settings.alignRight;
-            float pick = random()*(total > 0 ? total : 1);
-            Vector3D side(0, 1, 0);
-            if ((pick -= settings.alignFront) < 0)
-                side = Vector3D(0, 1, 0);
-            else if ((pick -= settings.alignBack) < 0)
-                side = Vector3D(0, -1, 0);
-            else if ((pick -= settings.alignLeft) < 0)
-                side = Vector3D(-1, 0, 0);
-            else
-                side = Vector3D(1, 0, 0);
-            m_offset = side*random(settings.minAlignRadius, settings.maxAlignRadius);
-            m_attackEnd = m_scenario->time() + random(settings.minAlignTime, settings.maxAlignTime);
-        }
-        break;
-    case Attack::Attack:
-        {
-            m_torpedoRun = random() < settings.torpedoProbability;
-            // AttackProbabilityHit is the chance that the run is on target; otherwise it aims past the hull,
-            // to the side of the line of fire
-            m_offset = Vector3D(0);
-            if (random() >= settings.hitProbability)
-            {
-                const Vector3D dim = target->box().dim();
-                const float miss = 0.5f*std::max(dim.x, std::max(dim.y, dim.z)) + random(3.0f, 8.0f);
-                Vector3D line = target->center() - m_unit->position();
-                line = glm::length(line) > 0.1f ? glm::normalize(line) : Vector3D(0, 1, 0);
-                const Vector3D side = glm::normalize(std::abs(line.z) < 0.9f ? glm::cross(line, Vector3D(0, 0, 1)) : glm::cross(line, Vector3D(1, 0, 0)));
-                const Vector3D up = glm::cross(side, line);
-                const float angle = random()*glm::two_pi<float>();
-                m_offset = (side*std::cos(angle) + up*0.5f*std::sin(angle))*miss;
-            }
-            m_attackEnd = m_scenario->time() + random(settings.minAttackTime, settings.maxAttackTime);
-        }
-        break;
-    case Attack::Break:
-        {
-            const float angle = random()*glm::two_pi<float>();
-            // at least 60 m out, so the way there doesn't cross the target
-            m_point = target->position() + Vector3D(std::cos(angle), std::sin(angle), 0)*std::max(60.0f, random(settings.minFlightRadius, settings.maxFlightRadius));
-            m_attackEnd = m_scenario->time() + random(settings.minFlightTime, settings.maxFlightTime);
-        }
-        break;
-    }
-}
-
-
-// boats: approach a side of the target, attack, break off, and again; tanks: drive at the target and fire
-void Orders::updateAttack(ActiveObject *target, float speed)
-{
-    const OrderSlot &slot = m_slots[m_current];
-    const Vector3D &scale = m_scenario->surface().scale();
-    const float range = m_unit->gun() ? m_unit->gun()->range() : 0;
-
-    auto inBand = [&](Vector3D point) {
-        if (slot.mah > 0)
-        {
-            const float ground = m_scenario->surface().heightAt(point.x, point.y);
-            point.z = glm::clamp(point.z, ground + slot.mih*scale.z, ground + slot.mah*scale.z);
-        }
-        return point;
-    };
-
-    if (m_boat->isGroundVehicle())
-    {
-        const Vector3D point = lead(target);
-        const float distance = glm::length(point - m_unit->position());
-        m_boat->steerTo(point, distance > 0.6f*range ? speed : 0.3f*speed);
-        m_boat->aimAt(point);
-        m_unit->setTrigger(aligned(m_boat->gunDirection(), point, range));
-        return;
-    }
-
-    if (m_attackEnd == 0)
-        startAttackState(Attack::Approach, target);
-
-    // too close: veer away instead of ramming the target
-    const Vector3D away = m_unit->position() - target->center();
-    if (glm::length(away) < 35.0f)
-    {
-        m_unit->setTrigger(false);
-        m_boat->steerTo(m_unit->position() + glm::normalize(away)*60.0f, speed);
-        if (m_attack == Attack::Attack)
-            startAttackState(Attack::Break, target);
-        return;
-    }
-
-    // a point to fly to without crossing the target: if the way passes it within 40 m, go round it first
-    auto around = [&](const Vector3D &point) {
-        const Vector3D start = m_unit->position();
-        const Vector3D way = point - start;
-        const float length = glm::length(way);
-        if (length < 1.0f)
-            return point;
-        const float t = glm::clamp(glm::dot(target->center() - start, way)/(length*length), 0.0f, 1.0f);
-        const Vector3D closest = start + way*t;
-        Vector3D side = closest - target->center();
-        if (glm::length(side) >= 40.0f || t <= 0.0f || t >= 1.0f)
-            return point;
-        if (glm::length(side) < 0.1f)
-            side = Vector3D(way.y, -way.x, 0);
-        return target->center() + glm::normalize(side)*55.0f;
-    };
-
-    switch (m_attack)
-    {
-    case Attack::Approach:
-        {
-            // the side is relative to the target's heading, so units come in from its front, back or flanks
-            Vector3D forward = target->velocity();
-            if (const SimpleBoat *boat = dynamic_cast<const SimpleBoat *>(target))
-                forward = boat->dir();
-            forward.z = 0;
-            forward = glm::length(forward) > 0.01f ? glm::normalize(forward) : Vector3D(0, 1, 0);
-            const Vector3D right(forward.y, -forward.x, 0);
-            const Vector3D point = inBand(target->position() + right*m_offset.x + forward*m_offset.y);
-            m_boat->steerTo(around(point), speed);
-            m_unit->setTrigger(false);
-            if (glm::length(point - m_unit->position()) < ArriveDistance || m_scenario->time() > m_attackEnd)
-                startAttackState(Attack::Attack, target);
-        }
-        break;
-
-    case Attack::Attack:
-        {
-            const Vector3D point = lead(target) + m_offset;
-            const float distance = glm::length(point - m_unit->position());
-            m_boat->steerTo(point, speed);
-            m_unit->setTrigger(aligned(m_boat->dir(), point, range));
-            // one torpedo per run, if the dice said so, when pointing at the target from up to 250 m
-            if (m_torpedoRun && m_unit->hasTorpedoes() && aligned(m_boat->dir(), target->center(), 250.0f) &&
-                m_unit->fireTorpedo(target, m_unit->position() + m_boat->dir()*6.0f, m_boat->dir()))
-                m_torpedoRun = false;
-            // break off early enough not to ram the target
-            if (distance < 50.0f || m_scenario->time() > m_attackEnd)
-                startAttackState(Attack::Break, target);
-        }
-        break;
-
-    case Attack::Break:
-        m_boat->steerTo(around(inBand(m_point)), speed);
-        m_unit->setTrigger(false);
-        if (glm::length(Vector2D(m_point) - Vector2D(m_unit->position())) < ArriveDistance || m_scenario->time() > m_attackEnd)
-            startAttackState(Attack::Approach, target);
-        break;
-    }
-}
-
-
 void Orders::update()
 {
-    // finish slots whose break condition is met or whose time is up
-    while (m_current >= 0)
+    // finish slots whose break condition is met or whose time is up; when every slot ends at
+    // once (all break conditions met), the unit holds instead of going round forever
+    for (int ended = 0; m_current >= 0; ended++)
     {
+        if (ended > int(m_slots.size()))
+        {
+            m_current = -1;
+            break;
+        }
         const OrderSlot &slot = m_slots[m_current];
         if (slot.breakCondition && slot.breakCondition->isCompleted())
         {
@@ -496,28 +1008,33 @@ void Orders::update()
     switch (slot.type)
     {
     case OrderSlot::Explode:
-        // con 1: the countdown starts once the unit has been boarded (S00202's control unit); otherwise when the slot starts
-        if (slot.con == 1 && !m_unit->eventBoard()->isCompleted())
         {
-            m_startTime = m_scenario->time();
-            return;
-        }
-        if (m_scenario->time() - m_startTime >= slot.dur)
-        {
-            m_unit->destroy();
-            m_current = -1;
+            // con says what sets it off (docs/ROADMAP.md, appendix J): 0 when dur is over unless the unit has
+            // been boarded by then, 1 dur seconds after it has been boarded (S00202's control unit), 2 when dur
+            // is over no matter what
+            const bool boarded = m_unit->eventBoard()->isCompleted();
+            if (slot.con == 1 && !boarded)
+            {
+                m_startTime = m_scenario->time();
+                return;
+            }
+            if (m_scenario->time() - m_startTime >= slot.dur && !(slot.con == 0 && boarded))
+            {
+                m_unit->explode();
+                m_current = -1;
+            }
         }
         return;
 
     case OrderSlot::CardinalPatrol:
-        updateTurret(nearestHostile(slot.rad, slot.car), slot.rad, slot.car);
+        updateTurret(engage(nearestHostile(slot.rad, -1)), slot.rad, true);
         return;
 
     case OrderSlot::CardinalAttack:
         {
             ActiveObject *target = findUnit(slot.ene);
             const bool inRange = isAlive(target) && glm::length(target->position() - m_unit->position()) < slot.rad;
-            updateTurret(inRange ? target : nullptr, slot.rad, slot.car);
+            updateTurret(engage(inRange ? target : nullptr), slot.rad, false);
         }
         return;
     }
@@ -526,27 +1043,38 @@ void Orders::update()
     if (!m_boat)
         return;
 
-    // patrols and escorts attack hostile units within their sensor range (senr, 100 m if unset),
-    // and go back to their order when the target is gone or has got away
-    if ((slot.type == OrderSlot::Patrol || slot.type == OrderSlot::Escort) && m_boat->engagesHostiles())
+    // patrols, attackers, escorts and ambushers fight what their sensor finds (appendix J): the
+    // ordered enemy once in range, the player when he shoots, any hostile in range; they keep at it
+    // until the target is out of double range, and the order's time runs on meanwhile
+    const bool fights = slot.type == OrderSlot::Patrol || slot.type == OrderSlot::Attack || slot.type == OrderSlot::Escort || slot.type == OrderSlot::Ambush;
+    if (fights && m_boat->engagesHostiles())
     {
-        const float sensorRange = m_unit->sensorRange() > 0 ? m_unit->sensorRange() : 100.0f;
-        if (m_engaged && (!isAlive(m_engaged) || glm::length(m_engaged->position() - m_unit->position()) > EngageLeash*sensorRange))
+        ActiveObject *enemy = slot.type == OrderSlot::Attack || slot.type == OrderSlot::Ambush ? findUnit(slot.ene) : nullptr;
+        if (!keepTarget(enemy))
+            m_target = acquire(enemy);
+        else if (slot.type == OrderSlot::Escort)
         {
-            m_engaged = nullptr;
-            m_attackEnd = 0;
-            m_unit->setTrigger(false);
-            if (slot.type == OrderSlot::Patrol)
-                pickPatrolPoint();
+            // an escort fights only near its place
+            if (SimpleBoat *escorted = dynamic_cast<SimpleBoat *>(findUnit(slot.esc)))
+            {
+                Vector3D offset = slot.offset;
+                if (offset.y < 0)
+                    offset.y = -1;
+                if (glm::length(toWorld(escorted, offset) - m_unit->position()) > slot.ran)
+                    dropTarget();
+            }
         }
-        if (!m_engaged && m_scenario->time() >= m_nextScan)
+        if (m_target)
         {
-            m_nextScan = m_scenario->time() + 1.0f;
-            m_engaged = nearestHostile(sensorRange, -1);
-        }
-        if (m_engaged)
-        {
-            updateAttack(m_engaged, m_boat->maxVelocity());
+            if (m_lying)
+            {
+                m_lying = false;
+                m_unit->setSilent(false);
+            }
+            if (m_boat->isGroundVehicle())
+                updateTankFight(m_target, speed);
+            else
+                updateFight(m_target, speed);
             return;
         }
     }
@@ -557,8 +1085,8 @@ void Orders::update()
     case OrderSlot::GotoWithArrive:
         {
             Vector3D target = cellCentre(slot.refx, slot.refy);
-            const float distance = glm::length(Vector2D(target) - Vector2D(m_unit->position()));
-            if (distance < ArriveDistance)
+            target.z = m_scenario->surface().heightAt(target.x, target.y) + slot.hei;
+            if (glm::length(target - m_unit->position()) < arriveRadius(m_boat->maxVelocity()))
             {
                 if (slot.type == OrderSlot::GotoWithArrive)
                     m_unit->eventFinish()->complete();
@@ -566,59 +1094,46 @@ void Orders::update()
                 m_boat->hold();
                 return;
             }
-            target.z = altitude(target, slot.hei);
-            // GotoWithArrive stops at the point, Goto passes through it
-            const float arriveSpeed = slot.type == OrderSlot::GotoWithArrive ? std::min(speed, 2.0f + 0.3f*distance) : speed;
-            m_boat->steerTo(target, arriveSpeed);
+            // slowing down over the last cells
+            m_boat->steerTo(inBand(target, slot.hei, 0), slowSpeed(target, speed));
         }
         break;
 
     case OrderSlot::Patrol:
-        // a new point once this one is reached, or after a while when the way is blocked (steep ground for tanks)
-        if (glm::length(Vector2D(m_point) - Vector2D(m_unit->position())) < ArriveDistance || m_scenario->time() - m_pointTime > 45.0f)
-            pickPatrolPoint();
-        m_point.z = altitude(m_point, m_pointHeight);
-        m_boat->steerTo(m_point, speed);
-        break;
-
     case OrderSlot::Attack:
         {
-            ActiveObject *target = findUnit(slot.ene);
-            if (isAlive(target))
-            {
-                updateAttack(target, speed);
-                break;
-            }
-            // nobody to attack (yet): patrol the area
+            // from point to point of the area: a new one when this one is reached or the time to fly
+            // the radius is up; nobody to attack yet (Attack): the same
             m_unit->setTrigger(false);
-            if (glm::length(Vector2D(m_point) - Vector2D(m_unit->position())) < ArriveDistance || m_scenario->time() - m_pointTime > 45.0f)
-                pickPatrolPoint();
-            m_point.z = altitude(m_point, m_pointHeight);
-            m_boat->steerTo(m_point, speed);
+            const float flyTime = speed > 0.1f ? slot.rad/speed : 10.0f;
+            if (glm::length(m_point - m_unit->position()) < arriveRadius(m_boat->maxVelocity()) || m_scenario->time() - m_pointTime > flyTime)
+                pickPatrolPoint(slot.type == OrderSlot::Patrol ? 0.5f : 0.3f);
+            m_boat->steerTo(inBand(m_point, slot.mih, slot.mah), slowSpeed(m_point, speed));
         }
         break;
 
     case OrderSlot::Ambush:
         {
-            // wait at the point until the target comes near or the unit is attacked
-            ActiveObject *target = findUnit(slot.ene);
-            if (!m_ambushed && isAlive(target) &&
-                (glm::length(target->position() - m_unit->position()) < AmbushDistance || m_unit->eventAttack()->isCompleted()))
-                m_ambushed = true;
-            if (m_ambushed && isAlive(target))
-            {
-                updateAttack(target, speed);
-                break;
-            }
+            // to the point, then lie there silent, pointing the way car says, a hull's height or two
+            // over the ground, until the sensor finds something
             m_unit->setTrigger(false);
             Vector3D point = cellCentre(slot.refx, slot.refy);
-            if (glm::length(Vector2D(point) - Vector2D(m_unit->position())) < ArriveDistance)
+            const float ground = m_scenario->surface().heightAt(point.x, point.y);
+            if (!m_lying && glm::length(Vector2D(point) - Vector2D(m_unit->position())) < arriveRadius(m_boat->maxVelocity()))
             {
-                m_boat->hold();
+                m_lying = true;
+                m_unit->setSilent(true);
+            }
+            if (m_lying)
+            {
+                const float yaw = slot.yaw();
+                const float height = ground + AmbushHeights*0.5f*m_boat->box().dim().z;
+                const Vector3D ahead = m_unit->position() + Vector3D(std::sin(yaw), std::cos(yaw), 0)*50.0f;
+                m_boat->steerTo(Vector3D(ahead.x, ahead.y, m_unit->position().z + glm::clamp(height - m_unit->position().z, -5.0f, 5.0f)), 0);
                 break;
             }
-            point.z = altitude(point, slot.mih);
-            m_boat->steerTo(point, speed);
+            point.z = ground + slot.mih;
+            m_boat->steerTo(inBand(point, slot.mih, slot.mah), slowSpeed(point, speed));
         }
         break;
 
@@ -665,22 +1180,26 @@ void Orders::update()
                 return;
             }
 
-            const Vector3D &scale = m_scenario->surface().scale();
-            const Vector3D &offset = slot.offset;
-            Vector3D target = escorted->position() + escorted->right()*offset.x + escorted->dir()*offset.y + escorted->up()*offset.z;
-            if (slot.mah > 0)
-            {
-                const float ground = m_scenario->surface().heightAt(target.x, target.y);
-                target.z = glm::clamp(target.z, ground + slot.mih*scale.z, ground + slot.mah*scale.z);
-            }
-
+            // the place: the offsets in the escorted unit's frame (nothing behind it), within the band
+            Vector3D offset = slot.offset;
+            if (offset.y < 0)
+                offset.y = -1;
+            const Vector3D target = inBand(toWorld(escorted, offset), slot.mih, slot.mah);
             const float distance = glm::length(target - m_unit->position());
             const float escortedSpeed = glm::length(escorted->velocity());
-            if (distance < 5.0f)
-                // in place: fly along with the escorted unit
-                m_boat->steerTo(m_unit->position() + escorted->dir()*50.0f + Vector3D(0, 0, target.z - m_unit->position().z), escortedSpeed);
+            if (m_formation && distance > arriveRadius(1.3f*m_boat->maxVelocity()))
+                m_formation = false;
+            else if (!m_formation && distance < arriveRadius(m_boat->maxVelocity()))
+                m_formation = true;
+            if (m_formation && escortedSpeed < 1.0f && distance < 3.0f)
+                // the escorted unit waits: so does the escort
+                m_boat->hold();
+            else if (m_formation)
+                // in place: fly along, closing what is left
+                m_boat->steerTo(target + escorted->dir()*escortedSpeed*2.0f, std::min(m_boat->maxVelocity(), escortedSpeed + 0.5f*distance));
             else
-                m_boat->steerTo(target, std::min(std::max(speed, escortedSpeed), escortedSpeed + 0.5f*distance));
+                // closing in at the order's speed, slower over the last 75 m, never much faster than the escorted unit
+                m_boat->steerTo(target, std::min(speed*std::min(1.0f, distance/EscortSlowDistance), 1.1f*escortedSpeed + 2.0f));
         }
         break;
 

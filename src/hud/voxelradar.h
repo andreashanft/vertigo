@@ -67,7 +67,9 @@ private:
     bool m_valid = false;
     Rect m_rect;
     float m_elevation = 0.52f;  // radians the view looks down
-    float m_extent = 20;        // cells from the boat to each side of the patch
+    float m_behind = 5;         // cells of the patch behind the boat
+    float m_ahead = 20;         // and ahead of it; the patch is as wide as deep
+    int m_boatRow = 16;         // the boat's pixel row above the radar's bottom edge
     float m_lowest = 1, m_highest = 0;  // the heights the shades span, following the patch
     float m_time = 0;
     gfx::Image m_fine;                      // rendered at a higher resolution

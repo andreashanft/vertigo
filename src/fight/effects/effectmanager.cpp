@@ -19,7 +19,9 @@
 #include "projectile.h"
 #include "fight/scenario.h"
 #include "util/random.h"
+#include <algorithm>
 #include <glm/gtx/norm.hpp>
+#include <vector>
 
 
 namespace fight {
@@ -28,6 +30,12 @@ namespace fight {
 namespace {
 
 const int Bubbles = 100;
+// an energy shot lights the ground and the objects this far around it (m), with this strength
+// (1 is the sprite's colour at full brightness right under the ball), and is looked for within
+// this distance of the player
+const float LightRadius = 20.0f;
+const float LightStrength = 1.0f;
+const float LightRange = 150.0f;
 
 float random()
 {
@@ -79,7 +87,25 @@ Billboard* EffectManager::getBillboard(Effects effect)
 
 void EffectManager::addEffect(Effects effect, const Vector3D &position, float angle, float scale)
 {
-    m_particles.add(getBillboard(effect), Particles::Motion::Animation, position, Vector3D(0), angle, scale);
+    // the explosions differ from one to the next: the size by up to 30 % and the speed of the
+    // animation by up to 25 %, and all but the ones on the ground are rolled at random; the
+    // torpedoes' bubbles keep their frames' size whatever their [Size] Scale
+    const int index = int(effect) - int(Effects::Explosion_0);
+    float rate = 1;
+    if (index >= 0 && index <= 26)
+    {
+        if (index >= 21 && index <= 23)
+            scale /= getBillboard(effect)->sizeScale();
+        else
+        {
+            scale *= 0.7f + 0.6f*random();
+            rate = 1/(0.75f + 0.5f*random());
+            const bool onGround = (index >= 12 && index <= 14) || (index >= 18 && index <= 20);
+            if (!onGround && angle == 0)
+                angle = 360*random();
+        }
+    }
+    m_particles.add(getBillboard(effect), Particles::Motion::Animation, position, Vector3D(0), angle, scale, 0, rate);
 }
 
 
@@ -94,18 +120,52 @@ void EffectManager::addDebris(Effects debris, const Vector3D &position, const Ve
 void EffectManager::addDust(const Vector3D &position, int size, const Vector3D &velocity)
 {
     const Effects dust = Effects(int(Effects::Explosion_18) + glm::clamp(size, 0, 2));
-    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity, util::random()%360);
+    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity);
 }
 
 
 Projectile* EffectManager::addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction, ActiveObject *owner)
 {
-    Projectile *object = new Projectile(m_scenario, getBillboard(projectile));
+    Billboard *billboard = getBillboard(projectile);
+    Projectile *object = new Projectile(m_scenario, billboard);
     m_effects.emplace_back(object);
     object->setPosition(position);
     object->setDirection(direction);
     object->setOwner(owner);
+    if (glows(projectile))
+        object->setLightColor(billboard->lightColor());
     return object;
+}
+
+
+bool EffectManager::glows(Effects projectile)
+{
+    return projectile == Effects::Shoot_PlasmaGun || projectile == Effects::Shoot_PlasmaDeath || projectile == Effects::Shoot_DoomMortar;
+}
+
+
+int EffectManager::pointLights(const Vector3D &position, gfx::Pipeline::PointLight *lights, int count)
+{
+    // the shots whose light reaches the ground first (a gun firing a dozen shots a second has the
+    // nearest ones still high up), then the rest, each by the distance to the player; a shot's
+    // light reaches a few metres, so none beyond the fog matters
+    std::vector<std::pair<float, const Projectile *>> shots;
+    for (const auto &effect : m_effects)
+    {
+        const Projectile *shot = static_cast<const Projectile *>(effect.get());
+        const float distance = glm::distance(position, shot->position());
+        if (shot->lightColor() == Vector3D(0) || distance > LightRange)
+            continue;
+        const Vector3D &p = shot->position();
+        const bool aboveGround = p.z - m_scenario->surface().heightAt(p.x, p.y) > LightRadius;
+        shots.emplace_back(distance + (aboveGround ? LightRange : 0), shot);
+    }
+    const int n = std::min(count, int(shots.size()));
+    std::partial_sort(shots.begin(), shots.begin() + n, shots.end(),
+                      [](const auto &a, const auto &b) { return a.first < b.first; });
+    for (int i = 0; i < n; i++)
+        lights[i] = { shots[i].second->position(), shots[i].second->lightColor()*LightStrength, LightRadius };
+    return n;
 }
 
 
