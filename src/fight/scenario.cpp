@@ -1042,6 +1042,16 @@ bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *s
 }
 
 
+bool Scenario::monitorBlanked(int monitor) const
+{
+    if (depth() >= RadiationDepth)
+        return false;
+    // a hash of the frame's time, so the drawing takes nothing from the game's random numbers
+    const float noise = glm::fract(std::sin(m_time*(971.3f + 37.1f*monitor) + monitor)*43758.5f);
+    return noise < 0.06f;
+}
+
+
 Vector3D Scenario::current(const Vector3D &position) const
 {
     if (m_currentGrid.empty())

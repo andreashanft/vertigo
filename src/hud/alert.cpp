@@ -36,8 +36,11 @@ Alert::Alert(HUD *hud, Rect rect) :
 void Alert::draw()
 {
     fight::Scenario *scenario = m_hud->scenario();
-    // blinking while a side's armor is below 10 %
-    if (scenario->player()->isCritical() && scenario->blink())
+    // blinking while a side's armor is below 10 %, or less than 60 m below the surface (then out
+    // of phase with the radiation symbol)
+    const bool critical = scenario->player()->isCritical();
+    const bool radiation = scenario->depth() < fight::Scenario::RadiationAlertDepth;
+    if ((critical && scenario->blink()) || (radiation && !scenario->blink()))
     {
         const Rect rect = m_hud->projectCenter(m_rect);
         m_alert.draw(rect.x, rect.y);

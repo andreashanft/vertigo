@@ -49,6 +49,8 @@ MasterMonitor::MasterMonitor(HUD *hud, Rect rect, Rect observationRect, txt::Des
 
 void MasterMonitor::draw()
 {
+    if (m_hud->scenario()->monitorBlanked(1))
+        return;
     // a menu in place of the target and the voxel radar
     if (m_hud->menu().onScreen())
     {

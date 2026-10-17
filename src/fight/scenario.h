@@ -89,6 +89,12 @@ public:
     float pitch() const { return m_pitch; }
     float height() const { return m_height; }
     float depth() const { return m_depth - m_position.z; }
+    // less than this far below the surface the radiation symbol blinks and the monitors flicker,
+    // less than RadiationAlertDepth the alert comes too (docs/ROADMAP.md, appendix D)
+    static constexpr float RadiationDepth = 100;
+    static constexpr float RadiationAlertDepth = 60;
+    // a monitor blanks out for single frames at random in the radiation; each monitor its own
+    bool monitorBlanked(int monitor) const;
     // the CD track of the mission's music, as numbered on the CD (0: none)
     int cdTrack() const { return m_cdTrack > 0 ? m_cdTrack + 1 : 0; }
     float time() const { return m_time; }

@@ -51,6 +51,8 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
 
 void SlaveMonitor::draw()
 {
+    if (m_hud->scenario()->monitorBlanked(m_page == Page::Armor ? 2 : 0))
+        return;
     const Rect rect = m_hud->projectCenter(m_rect);
     m_lamp.draw(m_page == Page::Armor);
     switch (m_page)

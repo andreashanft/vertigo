@@ -433,6 +433,21 @@ bool Player::update(float elapsedTime)
     m_alertBlink = blink;
     m_critical = critical;
 
+    // the radiation less than 60 m below the surface: the voice on entry and every 15 s, the
+    // beep every 0.8 s (docs/ROADMAP.md, appendix D)
+    const bool radiation = m_scenario->depth() < Scenario::RadiationAlertDepth;
+    if (radiation && (!m_radiation || m_scenario->time() >= m_nextRadiationVoice))
+    {
+        sfx::SampleMap::get(sfx::Sample::Voice_SystemCollapse).play();
+        m_nextRadiationVoice = m_scenario->time() + 15.0f;
+    }
+    if (radiation && (!m_radiation || m_scenario->time() >= m_nextRadiationBeep))
+    {
+        sfx::SampleMap::get(sfx::Sample::Alert).play();
+        m_nextRadiationBeep = m_scenario->time() + 0.8f;
+    }
+    m_radiation = radiation;
+
     m_gun.update(elapsedTime);
     if (m_firing && m_gun.state() == Gun::StateReady)
         m_gun.fire(m_position, dir(), up(), right());

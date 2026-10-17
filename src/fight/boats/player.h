@@ -95,6 +95,9 @@ private:
     bool m_threatBlink;
     bool m_critical = false;
     bool m_alertBlink = false;
+    bool m_radiation = false;
+    float m_nextRadiationVoice = 0;
+    float m_nextRadiationBeep = 0;
 
     int m_shield[4];
     bool m_grounded = false;    // touching the ground in the last step
