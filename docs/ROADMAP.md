@@ -91,7 +91,7 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
 | O2 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether boats and tanks run into mines (the collision matrix in `SOBJECTS/COLLIDE.DES` pairs mines with them; Vertigo's units pass through); a mine explosion's sound |
+| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; debris and trash setting off mines and hitting units (the original's debris belongs to no faction and has a strength of 3 to 12; Vertigo's debris and trash touch nothing); active mines running into buildings |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -686,10 +686,20 @@ place, then moves straight at the player at 0.3 times its `MaxVelocity`
 (about 0.9 m/s), keeping 1.5 times its radius above the ground; once the
 player is more than 56 m from the place it goes back there at the same
 speed. Only the player draws it. A mine blows up as soon as its armor is
-gone, shot or rammed, and the player takes its offense on contact. It
-goes in one explosion of its kind, sized to 1.5 times its radius and without debris,
+gone, shot or rammed. Contact counts only between objects of different
+factions whose classes `SOBJECTS/COLLIDE.DES` pairs: for a mine that is
+the player (a faction of its own), boats, bombers, tanks, ground
+vehicles, towers, turrets, buildings, ship modules, debris, shots and
+torpedoes, never another mine; a unit of the mine's own faction passes
+through. On contact each takes the other's offense, so the mine goes up
+and the unit loses 2000 or 1500 armor. It goes in one explosion of its
+kind, sized to 1.5 times its radius and without debris,
 `EXPLOSIO.DES` entry 5 (Explosion1L) for a passive mine, entry 1
-(Explosion0M) for an active one. Vertigo does the same; its explosions keep
+(Explosion0M) for an active one, each with its sound: entries 0–2 play
+the big explosion (sample 1), 3–8 the small one (16), 9–11 the metal hit
+(2), 12–14 the ground hit (15), 15–17 the EMS explosion (17). Vertigo does
+the same for the mines, their contacts with the player, boats, tanks,
+towers and ship segments; its explosions keep
 their own size, which comes within about 10 % of that. Running into a
 mine hits from below the window, so its explosion is mostly hidden by the
 cockpit.

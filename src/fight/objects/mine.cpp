@@ -18,6 +18,9 @@
 #include "mine.h"
 #include "fight/scenario.h"
 #include "fight/boats/player.h"
+#include "fight/collisionmanager.h"
+#include "fight/objects/turretbase.h"
+#include "fight/boats/cargoship.h"
 #include "fight/effects/effectmanager.h"
 #include "sfx/samplemap.h"
 #include "txt/desfile.h"
@@ -79,23 +82,56 @@ bool Mine::update(float elapsedTime)
     const Vector3D way = goal - m_position;
     const float step = m_speed*elapsedTime;
     const float distance = glm::length(way);
+    const float r = radius();
     if (distance > 1e-4f)
     {
         Vector3D next = distance <= step ? goal : m_position + way*(step/distance);
-        const float radius = 0.5f*std::max(m_box.dim().x, std::max(m_box.dim().y, m_box.dim().z));
-        next.z = std::max(next.z, m_scenario->surface().heightAt(next.x, next.y) + GroundClearance*radius);
+        next.z = std::max(next.z, m_scenario->surface().heightAt(next.x, next.y) + GroundClearance*r);
+        // running into another faction's unit on the way
+        Vector3D contact, normal;
+        const Vector3D from = center();
+        auto other = [this, player](const Object *object) {
+            const ActiveObject *unit = dynamic_cast<const ActiveObject *>(object);
+            return unit && unit != player && collidesWith(unit);
+        };
+        if (Object *hit = m_scenario->collisionManager().testCollision(from, from + next - m_position, r, contact, normal, nullptr, this, other))
+        {
+            collide(static_cast<ActiveObject *>(hit), contact);
+            return false;
+        }
         SimpleObject::setPosition(next);
     }
 
     // running into the player: both take the other's strength, as when the player runs into it
-    const float radius = 0.5f*std::max(m_box.dim().x, std::max(m_box.dim().y, m_box.dim().z));
-    if (m_chasing && glm::length(player->position() - center()) < radius + PlayerRadius)
+    if (m_chasing && glm::length(player->position() - center()) < r + PlayerRadius)
     {
-        const Vector3D contact = center() + glm::normalize(player->position() - center())*radius;
+        const Vector3D contact = center() + glm::normalize(player->position() - center())*r;
         player->damage(m_kineticStrength, m_shockStrength, contact);
         damage(player->kineticStrength(), player->shockStrength(), contact, player);
     }
     return false;
+}
+
+
+float Mine::radius() const
+{
+    return 0.5f*std::max(m_box.dim().x, std::max(m_box.dim().y, m_box.dim().z));
+}
+
+
+bool Mine::collidesWith(const ActiveObject *unit) const
+{
+    if (!isEnabled() || m_eventDestroy.isCompleted() || !unit || unit == this || !unit->isEnabled() || unit->iff() == iff())
+        return false;
+    return dynamic_cast<const SimpleBoat *>(unit) || dynamic_cast<const TurretBase *>(unit) || dynamic_cast<const CargoSegment *>(unit);
+}
+
+
+void Mine::collide(ActiveObject *unit, const Vector3D &contact)
+{
+    const int kinetic = unit->kineticStrength(), shock = unit->shockStrength();
+    unit->damage(m_kineticStrength, m_shockStrength, contact);
+    damage(kinetic, shock, contact);
 }
 
 
@@ -107,7 +143,8 @@ void Mine::destroy()
         return;
     const Vector3D at = center();
     m_scenario->effectManager().addEffect(isActive() ? Effects::Explosion_1 : Effects::Explosion_5, at);
-    sfx::SampleMap::playAt(sfx::Sample::Explosion_Small, at.x, at.y, at.z);
+    // each explosion has its sound: the puff the small explosion's, the flash the big one's
+    sfx::SampleMap::playAt(isActive() ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
     m_scenario->explosionAt(at, 0.3f);
     vanish();
     m_eventDestroy.complete();
