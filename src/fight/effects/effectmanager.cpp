@@ -33,7 +33,7 @@ const int Bubbles = 100;
 // an energy shot lights the ground and the objects this far around it (m), with this strength
 // (1 is the sprite's colour at full brightness right under the ball), and is looked for within
 // this distance of the player
-const float LightRadius = 10.0f;
+const float LightRadius = 20.0f;
 const float LightStrength = 1.0f;
 const float LightRange = 150.0f;
 
