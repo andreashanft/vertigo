@@ -656,6 +656,8 @@ void Scenario::update(float elapsedTime)
     m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
 
     m_conditionManager.update(elapsedTime);
+    if (m_failTime < 0 && m_conditionManager.failed())
+        m_failTime = m_time;
 
     m_conditionManager.testSpace(m_position.x, m_position.y, m_height);
 
@@ -785,16 +787,17 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     gfx::Pipeline::setFog(true);
     gfx::Pipeline::setFog(m_surface.fog());
 
-    m_surface.draw(m_position, m_player->dir());
+    const float brightness = this->brightness();
+    m_surface.draw(m_position, m_player->dir(), brightness);
 
     // the boat's headlight, a spot light from just behind it, and a blue ambient light
     gfx::Pipeline::setLighting(true);
-    gfx::Pipeline::setAmbient(Vector3D(0.5f, 0.5f, 1.0f));
+    gfx::Pipeline::setAmbient(Vector3D(0.5f, 0.5f, 1.0f)*brightness);
     gfx::Pipeline::Light light;
     light.position = Vector3D(camera*Vector4D(m_player->position() - m_player->dir()*5.0f, 1));
     light.direction = glm::mat3(camera)*m_player->dir();
-    light.ambient = Vector3D(4.0f);
-    light.diffuse = Vector3D(1.0f);
+    light.ambient = Vector3D(4.0f*brightness);
+    light.diffuse = Vector3D(1.0f*brightness);
     light.cutoff = 90.0f;
     light.exponent = 4.0f;
     light.constantAttenuation = 0.1f;
@@ -1039,6 +1042,16 @@ bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *s
         if (torpedo.get() != self && !torpedo->isDone() && torpedo->type().isDecoy())
             consider(torpedo->position());
     return found;
+}
+
+
+float Scenario::brightness() const
+{
+    const float fadeIn = 1.5f, fadeOut = 2.0f;
+    float brightness = glm::clamp(m_time/fadeIn, 0.0f, 1.0f);
+    if (m_failTime >= 0)
+        brightness *= glm::clamp(1.0f - (m_time - m_failTime)/fadeOut, 0.0f, 1.0f);
+    return brightness;
 }
 
 

@@ -38,8 +38,9 @@ public:
     void load(const String &name, int maxheightscale, int mapping);
 
 public:
-    // the terrain with the shading tables' own rule; the pipeline's lighting is left as it was
-    void draw(const Vector3D &position, const Vector3D &direction);
+    // the terrain with the shading tables' own rule, at this share of its brightness (the
+    // mission's fade); the pipeline's lighting is left as it was
+    void draw(const Vector3D &position, const Vector3D &direction, float brightness = 1);
     float heightAt(float x, float y);
     float heightAt(float x, float y, Vector3D &normal);
     const Vector3D& scale() const { return m_scale; }

@@ -89,6 +89,9 @@ public:
     float pitch() const { return m_pitch; }
     float height() const { return m_height; }
     float depth() const { return m_depth - m_position.z; }
+    // the whole picture's brightness, 0 to 1: fading in at the start and out once the mission
+    // has failed, as the original does
+    float brightness() const;
     // less than this far below the surface the radiation symbol blinks and the monitors flicker,
     // less than RadiationAlertDepth the alert comes too (docs/ROADMAP.md, appendix D)
     static constexpr float RadiationDepth = 100;
@@ -236,6 +239,7 @@ private:
     ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;
+    float m_failTime = -1;      // when the mission failed, -1 while it hasn't
 
     float m_left;
     float m_right;

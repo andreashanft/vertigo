@@ -230,7 +230,7 @@ Element& Surface::getElement(int x, int y)
 }
 
 
-void Surface::draw(const Vector3D &position, const Vector3D &direction)
+void Surface::draw(const Vector3D &position, const Vector3D &direction, float brightness)
 {
     int x0 = position.x / m_scale.x / 8;
     int y0 = position.y / m_scale.y / 8;
@@ -239,7 +239,10 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction)
     // (loadShading), instead of the fog by distance everything else gets
     const bool lighting = gfx::Pipeline::lighting();
     gfx::Pipeline::setLighting(false);
-    gfx::Pipeline::setTableShading(m_shading);
+    gfx::Pipeline::TableShading shading = m_shading;
+    shading.ambient *= brightness;
+    shading.light *= brightness;
+    gfx::Pipeline::setTableShading(shading);
     gfx::Pipeline::setTableShading(true);
     gfx::Pipeline::Fog fog = m_fog;
     fog.gain = TextureGain;
