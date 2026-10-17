@@ -25,10 +25,27 @@
 namespace fight {
 
 
+// A mine (docs/ROADMAP.md, appendix Q). A passive one (MINE0.DES) stays where it is laid; an active
+// one (MINE1.DES, with a MaxVelocity) creeps towards the player once the player comes near the
+// place it was laid and goes back there when the player leaves. Either blows up when its armour
+// is gone, by a shot or by running into something, in an explosion of its own kind.
 class Mine : public SimpleObject
 {
 public:
     Mine(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info);
+
+public:
+    bool isActive() const { return m_speed > 0; }
+    bool isChasing() const { return m_chasing; }
+
+    void setPosition(const Vector3D &pos);
+    bool update(float elapsedTime);
+    void destroy();
+
+private:
+    float m_speed;          // m/s, 0 for a passive mine
+    Vector3D m_home;        // where it was laid
+    bool m_chasing = false;
 };
 
 

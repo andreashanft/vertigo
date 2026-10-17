@@ -17,15 +17,101 @@
 
 #include "mine.h"
 #include "fight/scenario.h"
+#include "fight/boats/player.h"
+#include "fight/effects/effectmanager.h"
+#include "sfx/samplemap.h"
+#include "txt/desfile.h"
+#include <glm/geometric.hpp>
+#include <glm/gtx/norm.hpp>
+#include <algorithm>
 
 
 namespace fight {
 
 
+namespace {
+
+// an active mine sets off once the player is within 50 m of the place it was laid and gives up
+// beyond 56 m; it moves at 0.3 times its MaxVelocity, keeping 1.5 times its radius above the
+// ground
+const float ChaseDistance = 50.0f;
+const float GiveUpDistance = 56.0f;
+const float SpeedFactor = 0.3f;
+const float GroundClearance = 1.5f;
+// the player's collision radius (as in Player::update)
+const float PlayerRadius = 1.5f;
+
+}
+
+
 Mine::Mine(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info) :
     SimpleObject(scenario, file, info)
 {
+    file.setSection("kinematics");
+    m_speed = std::max(0.0f, file.value("maxvelocity").toFloat()/32.0f*SpeedFactor);
+    // a mine that moves can't be remembered by the shots' collision cache
+    m_static = !isActive();
+}
 
+
+void Mine::setPosition(const Vector3D &pos)
+{
+    SimpleObject::setPosition(pos);
+    if (!m_chasing)
+        m_home = pos;
+}
+
+
+bool Mine::update(float elapsedTime)
+{
+    ActiveObject::update(elapsedTime);
+    if (!isActive() || m_eventDestroy.isCompleted())
+        return false;
+
+    Player *player = m_scenario->player();
+    const float fromHome = glm::length(player->position() - m_home);
+    if (m_chasing && fromHome > GiveUpDistance)
+        m_chasing = false;
+    else if (!m_chasing && fromHome < ChaseDistance)
+        m_chasing = true;
+
+    const Vector3D goal = m_chasing ? player->position() : m_home;
+    const Vector3D way = goal - m_position;
+    const float step = m_speed*elapsedTime;
+    const float distance = glm::length(way);
+    if (distance > 1e-4f)
+    {
+        Vector3D next = distance <= step ? goal : m_position + way*(step/distance);
+        const float radius = 0.5f*std::max(m_box.dim().x, std::max(m_box.dim().y, m_box.dim().z));
+        next.z = std::max(next.z, m_scenario->surface().heightAt(next.x, next.y) + GroundClearance*radius);
+        SimpleObject::setPosition(next);
+    }
+
+    // running into the player: both take the other's strength, as when the player runs into it
+    const float radius = 0.5f*std::max(m_box.dim().x, std::max(m_box.dim().y, m_box.dim().z));
+    if (m_chasing && glm::length(player->position() - center()) < radius + PlayerRadius)
+    {
+        const Vector3D contact = center() + glm::normalize(player->position() - center())*radius;
+        player->damage(m_kineticStrength, m_shockStrength, contact);
+        damage(player->kineticStrength(), player->shockStrength(), contact, player);
+    }
+    return false;
+}
+
+
+// one explosion of the mine's kind and no debris: a puff for a passive mine, a flash for an
+// active one
+void Mine::destroy()
+{
+    if (m_eventDestroy.isCompleted())
+        return;
+    const Vector3D at = center();
+    m_scenario->effectManager().addEffect(isActive() ? Effects::Explosion_1 : Effects::Explosion_5, at);
+    sfx::SampleMap::playAt(sfx::Sample::Explosion_Small, at.x, at.y, at.z);
+    m_scenario->explosionAt(at, 0.3f);
+    vanish();
+    m_eventDestroy.complete();
+    m_scenario->logEvent(name(), &m_eventDestroy, txt::Fight5);
 }
 
 

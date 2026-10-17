@@ -91,7 +91,7 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
 | O2 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
+| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether boats and tanks run into mines (the collision matrix in `SOBJECTS/COLLIDE.DES` pairs mines with them; Vertigo's units pass through); a mine explosion's sound |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -126,7 +126,7 @@ master monitor's target picture, D/H/V/N and R.
 | # | Gap | Notes |
 |---|---|---|
 | G1 | Mission music | Done. `[CD] Track` n plays the CD's audio track n+1 (1–4; 0 none); building `Game Data` from a CD image copies them out as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`; `sfx::Music` streams the mission's track round and round at half volume, pausing with the mission; CD Musik AN/AUS in the options (`Sound/cdMusic`). Not compared: whether the original loops, pauses and how loud |
-| G2 | Minefields | Done. A mine entry is a column of `num` mines `dis` height units apart, the lowest at `hei`; 407 mines in 10 scenarios were missing before. Attacked when one of them is, destroyed when all are (s02205's objectives). Whether the original stacks them upwards is not compared |
+| G2 | Minefields | Done. A mine entry is a column of `num` mines `dis` height units apart, the lowest at `hei`; 407 mines in 10 scenarios were missing before. Attacked when one of them is, destroyed when all are (s02205's objectives). Whether the original stacks them upwards is not compared. What a mine does (active mines chasing, its explosion) is in appendix Q |
 | G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by the original. Open: `card` on active buildings (O2) |
 | G4 | Unresolved conditions | Done. The references `--check` reported are condition codes for objectives that no unit has; they never come true, and all five missions can still be won. s01802 lost two tanks' trigger area when it was made from s01801 (the AD mod fixes it), s02006 kept a radio message of a dropped objective |
 | G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O3) |
@@ -142,7 +142,7 @@ currents (appendix D), the radiation (D), `sle`, `diff`, the attacker lists,
 `car`, `con`, Explode, the order slots, the sensors and the boats' and tanks'
 fighting (J), the energy pool, the energy guns, the booster and the jams (K),
 the boat's turning (L), the terrain's shading (M), the ground under
-buildings (N), the Fixer (O) and the sonars' abilities (P).
+buildings (N), the Fixer (O), the sonars' abilities (P) and the mines (Q).
 
 ## Appendix: reference data
 
@@ -675,3 +675,21 @@ the master monitor's radar draws friends green and everything else red,
 and the round radars draw friends and hostiles with their two symbols and
 skip neutral contacts altogether. Vertigo does the same; its detection
 ranges are not compared yet (O4).
+
+### Q. What the original's mines do
+
+Read off in October 2026. `dtyp` 27 is a passive mine (`MINE0.DES`), 28 an
+active one (`MINE1.DES`, `MaxVelocity = 100`). Both have 1 point of armor
+and an offense of 2000 and 1500. A passive mine never moves. An active
+mine waits where it was laid until the player comes within 50 m of that
+place, then moves straight at the player at 0.3 times its `MaxVelocity`
+(about 0.9 m/s), keeping 1.5 times its radius above the ground; once the
+player is more than 56 m from the place it goes back there at the same
+speed. Only the player draws it. A mine blows up as soon as its armor is
+gone, shot or rammed, and the player takes its offense on contact. It
+goes in one explosion of its kind, sized to 1.5 times its radius and without debris,
+`EXPLOSIO.DES` entry 5 (Explosion1L) for a passive mine, entry 1
+(Explosion0M) for an active one. Vertigo does the same; its explosions keep
+their own size, which comes within about 10 % of that. Running into a
+mine hits from below the window, so its explosion is mostly hidden by the
+cockpit.
