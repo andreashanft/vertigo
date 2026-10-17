@@ -194,7 +194,16 @@ bool Torpedo::update(float elapsedTime)
         detonate(position, nullptr);
         return false;
     }
-    if (Object *hit = m_scenario->collisionManager().testCollision(m_position, next, 0.5f, position, normal, nullptr, m_owner))
+    Object *hit = m_scenario->collisionManager().testCollision(m_position, next, 0.5f, position, normal, nullptr, m_owner);
+    // a piece of debris before that: with its armour of 1 the torpedo goes up there
+    // (docs/ROADMAP.md, appendix Q)
+    Particles::DebrisHit debris;
+    if (m_scenario->effectManager().hitDebris(m_position, hit ? position : next, 0.5f, m_speed, m_type.kineticStrength, debris))
+    {
+        detonate(debris.position, nullptr);
+        return false;
+    }
+    if (hit)
     {
         detonate(position, dynamic_cast<ActiveObject *>(hit));
         return false;

@@ -22,6 +22,7 @@
 #include "fight/objects/turretbase.h"
 #include "fight/boats/cargoship.h"
 #include "fight/effects/effectmanager.h"
+#include "fight/effects/trash.h"
 #include "sfx/samplemap.h"
 #include "txt/desfile.h"
 #include <glm/geometric.hpp>
@@ -99,6 +100,14 @@ bool Mine::update(float elapsedTime)
             collide(static_cast<ActiveObject *>(hit), contact);
             return false;
         }
+        // debris slower than the mine
+        Particles::DebrisHit debris;
+        if (m_scenario->effectManager().hitDebris(from, from + next - m_position, r, m_speed, m_kineticStrength, debris))
+        {
+            damage(debris.kinetic, debris.shock, debris.position);
+            if (m_eventDestroy.isCompleted())
+                return false;
+        }
         SimpleObject::setPosition(next);
     }
 
@@ -121,9 +130,10 @@ float Mine::radius() const
 
 bool Mine::collidesWith(const ActiveObject *unit) const
 {
-    if (!isEnabled() || m_eventDestroy.isCompleted() || !unit || unit == this || !unit->isEnabled() || unit->iff() == iff())
+    if (!isEnabled() || m_eventDestroy.isCompleted() || !unit || unit == this || !unit->isEnabled() || unit->contactFaction() == contactFaction())
         return false;
-    return dynamic_cast<const SimpleBoat *>(unit) || dynamic_cast<const TurretBase *>(unit) || dynamic_cast<const CargoSegment *>(unit);
+    return dynamic_cast<const SimpleBoat *>(unit) || dynamic_cast<const TurretBase *>(unit) || dynamic_cast<const CargoSegment *>(unit) ||
+           dynamic_cast<const Trash *>(unit);
 }
 
 

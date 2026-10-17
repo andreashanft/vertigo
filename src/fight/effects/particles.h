@@ -44,7 +44,8 @@ public:
     enum class Motion
     {
         Animation,  // plays its animation once, in place
-        Debris,     // flies off, slows down, sinks and settles on the ground until its LifeTime ends
+        Debris,     // flies off, slows down and sinks; goes out on the ground, at the end of its
+                    // LifeTime or when it is hit (docs/ROADMAP.md, appendix Q)
         Bubble,     // rises (the billboard's Velocity) until it is far from the player; loops
         Dust,       // plays its animation slowly while drifting up
     };
@@ -61,6 +62,18 @@ public:
     int count() const { return int(m_particles.size()); }
     int count(Motion motion) const;
 
+    // A piece of debris in the way of something moving from start to end with that radius at that
+    // speed (m/s): the nearest piece that is more than a second old and slower than the mover. The
+    // piece takes kinetic (and goes when its armour is gone); its own strength and where it was
+    // hit come back. False if nothing was hit.
+    struct DebrisHit
+    {
+        int kinetic;
+        int shock;
+        Vector3D position;
+    };
+    bool hitDebris(const Vector3D &start, const Vector3D &end, float radius, float speed, int kinetic, DebrisHit &hit);
+
     void update(float elapsedTime);
     void draw();
 
@@ -75,6 +88,7 @@ private:
         float scale;
         float time;
         float rate;     // the speed of the animation
+        int shield;     // debris: its armour
     };
 
     struct Batch
@@ -85,12 +99,23 @@ private:
     };
 
     // advances the particle, false when it is done
-    bool update(Particle &particle, float elapsedTime) const;
+    bool update(Particle &particle, float elapsedTime);
+    // the debris that takes part in contacts (not the buzzer's torch)
+    static bool collides(const Particle &particle);
+    // a piece of debris goes out in an explosion of its own, with its sound
+    void endDebris(const Particle &particle, int explosion, int sample);
 
 private:
     Scenario *m_scenario;
     std::vector<Particle> m_particles;
     std::vector<Batch> m_batches;  // kept between frames to reuse their memory
+    struct Ending
+    {
+        int explosion;
+        int sample;
+        Vector3D position;
+    };
+    std::vector<Ending> m_endings;  // the debris that went out this frame, spawned after the update
 };
 
 

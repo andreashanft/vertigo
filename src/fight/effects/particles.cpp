@@ -17,6 +17,8 @@
 
 #include "particles.h"
 #include "billboard.h"
+#include "effectmanager.h"
+#include "sfx/samplemap.h"
 #include "fight/scenario.h"
 #include "gfx/texture.h"
 
@@ -38,6 +40,14 @@ const float BubbleRange2 = 50.0f*50.0f;
 const float DustRate = 0.4f;
 const float DustRise = 0.6f;
 const int AmbientCapacity = Particles::Capacity*3/4;
+// a piece of debris takes part in contacts once it is this old (s)
+const float DebrisGrace = 1.0f;
+
+// a piece of debris' radius
+float debrisRadius(Billboard *billboard, float scale)
+{
+    return billboard->box().maxPoint().x*scale;
+}
 
 }
 
@@ -65,12 +75,53 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
         return false;
     if (glm::distance2(position, m_scenario->position()) > Range*Range)
         return false;
-    m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate });
+    m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate, billboard->kineticShield() });
     return true;
 }
 
 
-bool Particles::update(Particle &particle, float elapsedTime) const
+// the buzzer's torch is the only piece that makes noise
+bool Particles::collides(const Particle &particle)
+{
+    return particle.motion == Motion::Debris && particle.billboard->noiseLevel() == 0;
+}
+
+
+bool Particles::hitDebris(const Vector3D &start, const Vector3D &end, float radius, float speed, int kinetic, DebrisHit &hit)
+{
+    const Vector3D way = end - start;
+    const float length2 = glm::length2(way);
+    Particle *nearest = nullptr;
+    float nearestAlong = 2;
+    for (Particle &particle : m_particles)
+    {
+        if (!collides(particle) || particle.time < DebrisGrace || particle.shield <= 0 || glm::length(particle.velocity) >= speed)
+            continue;
+        const float along = length2 > 0 ? glm::clamp(glm::dot(particle.position - start, way)/length2, 0.0f, 1.0f) : 0.0f;
+        const float reach = radius + debrisRadius(particle.billboard, particle.scale);
+        if (glm::distance2(start + way*along, particle.position) < reach*reach && along < nearestAlong)
+        {
+            nearest = &particle;
+            nearestAlong = along;
+        }
+    }
+    if (!nearest)
+        return false;
+    hit.kinetic = nearest->billboard->kineticStrength();
+    hit.shock = nearest->billboard->shockStrength();
+    hit.position = nearest->position;
+    nearest->shield -= kinetic;
+    return true;
+}
+
+
+void Particles::endDebris(const Particle &particle, int explosion, int sample)
+{
+    m_endings.push_back(Ending{ explosion, sample, particle.position });
+}
+
+
+bool Particles::update(Particle &particle, float elapsedTime)
 {
     Billboard *billboard = particle.billboard;
     switch (particle.motion)
@@ -81,12 +132,31 @@ bool Particles::update(Particle &particle, float elapsedTime) const
 
     case Motion::Debris:
         {
+            // the pieces go out in a puff when hit or old and in a ground impact on the ground,
+            // each with its sound; the buzzer's torch rests on the ground until its time is up
+            const bool ends = collides(particle);
+            if (ends && particle.shield <= 0)
+            {
+                endDebris(particle, int(Effects::Explosion_4), int(sfx::Sample::Explosion_Small));
+                return false;
+            }
             particle.time += elapsedTime;
             if (particle.time >= billboard->lifeTime())
+            {
+                if (ends)
+                    endDebris(particle, int(Effects::Explosion_5), int(sfx::Sample::Explosion_Small));
                 return false;
+            }
             particle.velocity += (-billboard->friction()*particle.velocity + Vector3D(0, 0, billboard->lift()*DebrisLiftScale))*elapsedTime;
             particle.position += particle.velocity*elapsedTime;
-            const float ground = m_scenario->surface().heightAt(particle.position.x, particle.position.y) + 0.3f;
+            const float height = m_scenario->surface().heightAt(particle.position.x, particle.position.y);
+            if (ends && particle.position.z - 0.5f*debrisRadius(billboard, particle.scale) < height)
+            {
+                particle.position.z = height;
+                endDebris(particle, int(Effects::Explosion_12), int(sfx::Sample::Explosion_Ground));
+                return false;
+            }
+            const float ground = height + 0.3f;
             if (particle.position.z < ground)
             {
                 particle.position.z = ground;
@@ -122,6 +192,14 @@ void Particles::update(float elapsedTime)
             m_particles[i] = m_particles.back();
             m_particles.pop_back();
         }
+    }
+    // the debris' explosions join the pool now that the loop is done
+    std::vector<Ending> endings;
+    endings.swap(m_endings);
+    for (const Ending &ending : endings)
+    {
+        m_scenario->effectManager().addEffect(Effects(ending.explosion), ending.position);
+        sfx::SampleMap::playAt(sfx::Sample(ending.sample), ending.position.x, ending.position.y, ending.position.z);
     }
 }
 

@@ -65,6 +65,8 @@ public:
     ConditionEvent* eventBoard() { return &m_eventBoard; }
 
     int iff() const { return m_info.iff; }
+    // the faction that decides contacts (docs/ROADMAP.md, appendix Q): only different ones touch
+    virtual int contactFaction() const { return iff(); }
     const String& name() const { return m_info.name; }
     const String& cargo() const { return m_info.cargo; }
     // the unit's sensor (sen, -1 if the mission gives none) and its range (senr, metres, 0 if none);

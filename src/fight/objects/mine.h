@@ -37,8 +37,8 @@ public:
 public:
     bool isActive() const { return m_speed > 0; }
     bool isChasing() const { return m_chasing; }
-    // whether running into this unit sets the mine off: boats, tanks, ships, towers and turrets of
-    // another faction (the player has one of its own); mines of the same faction leave their
+    // whether running into this unit sets the mine off: boats, tanks, ships, towers, turrets and
+    // trash of another faction (the player has one of its own); mines of the same faction leave their
     // own side's units alone, and mines never touch each other
     bool collidesWith(const ActiveObject *unit) const;
     // the contact: each takes the other's strength, so the mine goes up

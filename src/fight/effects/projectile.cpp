@@ -67,6 +67,14 @@ bool Projectile::update(float elapsedTime)
         return true;
     }
     Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache, m_owner);
+    // a piece of debris before that stops the shot (docs/ROADMAP.md, appendix Q)
+    Particles::DebrisHit debris;
+    if (m_scenario->effectManager().hitDebris(m_position, collision ? pos : newPos, m_billboard->collisionRadius(), m_billboard->velocity(), m_kineticStrength, debris))
+    {
+        m_scenario->effectManager().addEffect(Effects::Explosion_11, debris.position, util::random()%360);
+        disable();
+        return true;
+    }
     if (collision)
     {
         m_scenario->effectManager().addEffect(Effects::Explosion_11, pos, util::random()%360);

@@ -16,6 +16,8 @@
  ***************************************************************************/
 
 #include "player.h"
+#include "fight/effects/trash.h"
+#include "fight/effects/effectmanager.h"
 #include "txt/desfile.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/weapons/torpedo.h"
@@ -344,6 +346,11 @@ bool Player::update(float elapsedTime)
     Vector3D delta = vel*elapsedTime;
     float path = 0;
 
+    // running into debris slower than the boat (docs/ROADMAP.md, appendix Q)
+    Particles::DebrisHit debris;
+    if (m_scenario->effectManager().hitDebris(m_position, m_position + delta, 1.5f, glm::length(vel), m_kineticStrength, debris))
+        damage(debris.kinetic, debris.shock, debris.position);
+
     int count = 0;
     bool grounded = false;
     while (glm::length2(delta) > 1e-5f && count < 5)
@@ -352,7 +359,9 @@ bool Player::update(float elapsedTime)
         bool colSurface = m_scenario->surface().testCollision(m_position, m_position + delta, 1.5f, posSurface, normSurface);
 
         Vector3D posObject, normObject;
-        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this);
+        // trash and the player don't touch (docs/ROADMAP.md, appendix Q)
+        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this,
+                                                                         [](const Object *object) { return !dynamic_cast<const Trash *>(object); });
 
         if (colObject && (!colSurface || glm::length2(posObject - m_position) < glm::length2(posSurface - m_position)))
         {
