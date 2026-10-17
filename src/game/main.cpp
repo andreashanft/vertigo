@@ -257,7 +257,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         "player was destroyed.");
     parser.addArgument("mission", "Start this mission directly (test mode), e.g. s00101.", "[mission]");
     parser.addOption("boat", "Boat in test mode: 2049 Hiob, 2050 Gator, 2051 Zorn, 2052 Succubus.", "type");
-    parser.addOption("equip", "Install items in test mode, e.g. GUN=3082,TUR1=3074 (repeatable, see --list-items).", "mounting=model");
+    parser.addOption("equip", "Install items in test mode, e.g. GUN=3082,TUR1=3074,DEFE=9218 (repeatable, see --list-items).", "mounting=model");
     parser.addOption("timeout", "End test mode, or the game, after this many seconds; such automated runs are silent and don't take the focus.", "seconds");
     parser.addOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     parser.addOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");

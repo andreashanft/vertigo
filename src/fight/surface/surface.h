@@ -55,7 +55,9 @@ public:
     float height(int x, int y) const;
     // false if the texture couldn't be loaded
     bool bindTexture(int textureId);
-    void setHeight(int x, int y, int refx, int refy, int offset);
+    // a building's cluster flattens the ground: the cell and its neighbours to the east, south and
+    // south-east take the reference cell's height (docs/ROADMAP.md, appendix M)
+    void setHeight(int x, int y, int refx, int refy);
     bool testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal);
 
 private:

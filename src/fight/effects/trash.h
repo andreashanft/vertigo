@@ -35,6 +35,9 @@ public:
 
 public:
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
+    // the trash entries name no faction, which for contacts makes them the original's default,
+    // 10, a faction of no side, so mines of every faction meet them
+    int contactFaction() const { return 10; }
     void destroy();
 
 public:

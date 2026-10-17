@@ -723,6 +723,19 @@ void Scenario::update(float elapsedTime)
 }
 
 
+void Scenario::log(const String &text, LogColor color)
+{
+    m_log.push_back({ m_time, text, color });
+}
+
+
+void Scenario::logEvent(const String &name, const ConditionEvent *event, txt::StringFight what)
+{
+    if (!name.isEmpty() && event->isUsed())
+        log(name + " " + txt::StringTable::get(what), LogColor::Amber);
+}
+
+
 bool Scenario::engagePlayer(ActiveObject *unit)
 {
     if (std::find(m_playerAttackers.begin(), m_playerAttackers.end(), unit) != m_playerAttackers.end())

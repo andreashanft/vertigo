@@ -53,6 +53,7 @@
 #include "horizon.h"
 #include "debugoverlay.h"
 #include "missionmenu.h"
+#include "pages.h"
 #include "pause.h"
 #include "alert.h"
 #include "slavemonitor.h"
@@ -187,6 +188,7 @@ HUD::HUD() :
     m_debugOverlay(nullptr),
     m_debugOverlayVisible(false),
     m_menu(nullptr),
+    m_pages(nullptr),
     m_paused(false),
     m_frozen(false),
     m_successShown(false),
@@ -280,8 +282,8 @@ void HUD::load(game::Boat *boat)
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
 
-    // status monitors: with two, the first shows a weapon and the second the armor (I switches it
-    // to the systems and back); a single one shows a weapon (I steps through all three pages)
+    // status monitors: with two, the first shows a weapon and the second the armor; I switches
+    // between the armor and the system state (a single one starts on a weapon; F1-F4 bring it back)
     m_slaveMonitors.clear();
     for (int i = 0; i < 2; i++)
     {
@@ -311,6 +313,8 @@ void HUD::load(game::Boat *boat)
 
     m_menu = new MissionMenu(this, m_center);
     m_children.emplace_back(m_menu);
+    m_pages = new Pages(this);
+    m_children.emplace_back(m_pages);
 
     m_integerScale = true;
 
@@ -695,6 +699,7 @@ void HUD::drawFrame()
     m_integerScale = true;
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
+    m_pages->doDraw();
     m_integerScale = false;
 
     if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
@@ -761,6 +766,7 @@ bool HUD::drawModel(double pixelRatio)
     m_integerScale = true;
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
+    m_pages->doDraw();
     m_integerScale = false;
 
     glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
@@ -791,9 +797,40 @@ void HUD::press(input::KeyEvent *e)
         return;
     }
 
+    // the help (H turns its pages) and the radio log lie over the view until Esc (or M) closes
+    // them; the boat is still steered meanwhile
+    if (m_pages->page() != Pages::Page::None)
+    {
+        if (e->key() == input::Key_Escape || (e->key() == input::Key_M && m_pages->page() == Pages::Page::Radio))
+        {
+            m_pages->close();
+            return;
+        }
+        if (e->key() == input::Key_H && m_pages->page() == Pages::Page::Help)
+        {
+            m_pages->next();
+            return;
+        }
+    }
     if (e->key() == input::Key_Escape)
     {
         m_menu->open(MissionMenu::Page::Main);
+        return;
+    }
+    if (e->key() == input::Key_H && !(e->modifiers() & ~input::KeypadModifier))
+    {
+        m_pages->open(Pages::Page::Help);
+        return;
+    }
+    if (e->key() == input::Key_M && !(e->modifiers() & ~input::KeypadModifier))
+    {
+        m_pages->open(Pages::Page::Radio);
+        return;
+    }
+    // Alt+I sets the Fixer's repair priority (appendix O)
+    if (e->key() == input::Key_I && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
+    {
+        m_scenario->player()->cycleFixer();
         return;
     }
     if (e->key() == input::Key_O)
@@ -875,9 +912,7 @@ void HUD::press(input::KeyEvent *e)
         {
         case SlaveMonitor::Page::Weapon: monitor->setPage(SlaveMonitor::Page::Armor); break;
         case SlaveMonitor::Page::Armor: monitor->setPage(SlaveMonitor::Page::Systems); break;
-        case SlaveMonitor::Page::Systems:
-            monitor->setPage(m_slaveMonitors.size() > 1 ? SlaveMonitor::Page::Armor : SlaveMonitor::Page::Weapon);
-            break;
+        case SlaveMonitor::Page::Systems: monitor->setPage(SlaveMonitor::Page::Armor); break;
         }
     }
     // F1-F4: the gun, the magazine or a turret on the weapon page

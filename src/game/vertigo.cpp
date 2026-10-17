@@ -137,7 +137,8 @@ int Vertigo::start()
                 std::cerr << "Unknown item " << item.second << " (see --list-items)" << std::endl;
                 return ExitUsage;
             }
-            if (!m_boat->getMounting(item.first)) {
+            // DEFE takes the items without a mounting: armour, skin, sensor, buzzers, the Fixer
+            if (item.first != "DEFE" && !m_boat->getMounting(item.first)) {
                 std::cerr << "The boat has no mounting " << item.first << std::endl;
                 return ExitUsage;
             }

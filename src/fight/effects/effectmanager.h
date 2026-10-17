@@ -47,6 +47,11 @@ public:
     void addEffect(Effects effect, const Vector3D &position, float angle = 0, float scale = 1);
     // a piece flying from the position in the direction, slowing down and sinking (DEBRIS.DES)
     void addDebris(Effects debris, const Vector3D &position, const Vector3D &direction);
+    // the piece of debris something moving runs into (Particles::hitDebris)
+    bool hitDebris(const Vector3D &start, const Vector3D &end, float radius, float speed, int kinetic, Particles::DebrisHit &hit)
+    {
+        return m_particles.hitDebris(start, end, radius, speed, kinetic, hit);
+    }
     // ground dust (EXPLOSIO "bodenstaub") stirred up at the position, size 0-2 (small to large)
     void addDust(const Vector3D &position, int size, const Vector3D &velocity);
     Projectile* addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction, ActiveObject *owner = nullptr);

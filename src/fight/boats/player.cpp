@@ -16,6 +16,8 @@
  ***************************************************************************/
 
 #include "player.h"
+#include "fight/effects/trash.h"
+#include "fight/effects/effectmanager.h"
 #include "txt/desfile.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/weapons/torpedo.h"
@@ -117,6 +119,9 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
         m_turrets[0].reset(new PlayerTurret(m_scenario, this, boat->tur1(), boat->tur1soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->defects()[game::Boat::DefectTur1]));
     if (boat->tur2() != 0)
         m_turrets[1].reset(new PlayerTurret(m_scenario, this, boat->tur2(), boat->tur2soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->defects()[game::Boat::DefectTur2]));
+
+    m_fixer = boat->fixer() != 0;
+    m_magazineCondition = boat->defects()[game::Boat::DefectToMa];
 
     sfx::SampleMap::get(sfx::Sample::Engine).playLoop();
 
@@ -299,6 +304,8 @@ bool Player::update(float elapsedTime)
 
     updateVelocity(elapsedTime);
     rechargeEnergy(elapsedTime);
+    if (m_fixer)
+        updateFixer();
 
     // the booster (docs/ROADMAP.md, appendix K) draws from the same pool: held, it starts (again)
     // once the pool is at 0.8, costing 0.15 at once and 1.2 per second while the engine keeps
@@ -339,6 +346,11 @@ bool Player::update(float elapsedTime)
     Vector3D delta = vel*elapsedTime;
     float path = 0;
 
+    // running into debris slower than the boat (docs/ROADMAP.md, appendix Q)
+    Particles::DebrisHit debris;
+    if (m_scenario->effectManager().hitDebris(m_position, m_position + delta, 1.5f, glm::length(vel), m_kineticStrength, debris))
+        damage(debris.kinetic, debris.shock, debris.position);
+
     int count = 0;
     bool grounded = false;
     while (glm::length2(delta) > 1e-5f && count < 5)
@@ -347,7 +359,9 @@ bool Player::update(float elapsedTime)
         bool colSurface = m_scenario->surface().testCollision(m_position, m_position + delta, 1.5f, posSurface, normSurface);
 
         Vector3D posObject, normObject;
-        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this);
+        // trash and the player don't touch (docs/ROADMAP.md, appendix Q)
+        Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this,
+                                                                         [](const Object *object) { return !dynamic_cast<const Trash *>(object); });
 
         if (colObject && (!colSurface || glm::length2(posObject - m_position) < glm::length2(posSurface - m_position)))
         {
@@ -424,6 +438,13 @@ bool Player::update(float elapsedTime)
     m_threatBlink = blink;
     m_threats = threats;
 
+    // the voice "lock-on located" when the first unit turns on the player; the symbol block
+    // shows the marker under fire as long as any does
+    const int attackers = m_scenario->playerAttackers();
+    if (attackers > 0 && m_attackers == 0)
+        sfx::SampleMap::get(sfx::Sample::Voice_LockOn).play();
+    m_attackers = attackers;
+
     // critical: the voice once, then the alert beep with each blink of ALERT
     const bool critical = isCritical();
     if (critical && !m_critical)
@@ -486,6 +507,142 @@ void Player::fire()
 void Player::fireStop()
 {
     m_firing = false;
+}
+
+
+
+// --- the Fixer (appendix O)
+
+namespace {
+
+// a system is mended up to this much of its full state, and chosen for repair below it
+const float FixerDone = 0.75f;
+// one step a second, a 160th of the full state each
+const float FixerStep = 1.0f/160;
+
+} // namespace
+
+
+void Player::cycleFixer()
+{
+    if (!m_fixer)
+        return;
+    // automatic, armour, gun, torpedo, turret 1, turret 2 (the turrets only if the boat has them)
+    int next = m_fixerForced + 1;
+    if (next == 4 && !m_turrets[0])
+        next = 0;
+    if (next == 5 && !m_turrets[1])
+        next = 0;
+    if (next > 5)
+        next = 0;
+    m_fixerForced = next;
+    m_fixerNext = m_scenario->time() + 1.0f;
+    sfx::SampleMap::get(sfx::Sample::Sample5).play();
+}
+
+
+// the first system below the threshold in the order armour (the side under repair, or none),
+// gun, torpedo, turrets; 0 if none is
+int Player::fixerChoice(float threshold) const
+{
+    const float armour = m_fixerSide >= 0 && m_shieldMax[m_fixerSide] > 0 ? float(m_shield[m_fixerSide])/m_shieldMax[m_fixerSide] : 1.0f;
+    if (armour < threshold)
+        return 1;
+    if (m_gun.defect() < threshold)
+        return 2;
+    if (m_magazineCondition < threshold)
+        return 3;
+    for (int i = 0; i < 2; i++)
+        if (m_turrets[i] && m_turrets[i]->gun().defect() < threshold)
+            return 4 + i;
+    return 0;
+}
+
+
+void Player::updateFixer()
+{
+    const float now = m_scenario->time();
+    if (now < m_fixerNext)
+        return;
+    m_fixerNext = now + 1.0f;
+
+    // the forced system takes over; otherwise the worst one by the 25, 50 and 75 % marks
+    if (m_fixerForced != 0 && m_fixerForced != m_fixerSystem)
+    {
+        m_fixerSystem = m_fixerForced;
+        return;
+    }
+    if (m_fixerForced == 0)
+    {
+        for (float threshold : { 0.25f, 0.5f, FixerDone })
+        {
+            const int choice = fixerChoice(threshold);
+            if (choice != 0)
+            {
+                m_fixerSystem = choice;
+                break;
+            }
+        }
+    }
+
+    // a mended system hands over to the next one; the turrets only exist sometimes
+    auto handOver = [&](int next) {
+        m_fixerForced = 0;
+        m_fixerSystem = next == 4 && !m_turrets[0] ? 1 : next == 5 && !m_turrets[1] ? 1 : next;
+    };
+    auto mend = [&](Gun &gun, int next) {
+        if (gun.defect() >= FixerDone)
+            handOver(next);
+        else
+            gun.setDefect(std::min(1.0f, gun.defect() + FixerStep));
+    };
+    switch (m_fixerSystem)
+    {
+    case 1: {
+        // the worst side, a 160th of its full armour a second, until every side is at 75 %
+        int worst = -1;
+        bool allDone = true;
+        for (int side = 0; side < 4; side++)
+        {
+            const float state = m_shieldMax[side] > 0 ? float(m_shield[side])/m_shieldMax[side] : 1.0f;
+            allDone = allDone && state >= FixerDone;
+            if (worst < 0 || state < float(m_shield[worst])/std::max(1, m_shieldMax[worst]))
+                worst = side;
+        }
+        if (allDone)
+        {
+            m_fixerSide = -1;
+            handOver(2);
+            break;
+        }
+        m_fixerSide = worst;
+        m_shield[worst] = std::min(m_shieldMax[worst], m_shield[worst] + std::max(1, m_shieldMax[worst]/160));
+        break;
+    }
+    case 2:
+        mend(m_gun, 3);
+        break;
+    case 3:
+        if (m_magazineCondition >= FixerDone)
+            handOver(4);
+        else
+            m_magazineCondition = std::min(1.0f, m_magazineCondition + FixerStep);
+        break;
+    case 4:
+        if (m_turrets[0])
+            mend(m_turrets[0]->gun(), 5);
+        else
+            m_fixerSystem = 1;
+        break;
+    case 5:
+        if (m_turrets[1])
+            mend(m_turrets[1]->gun(), 1);
+        else
+            m_fixerSystem = 1;
+        break;
+    default:
+        break;
+    }
 }
 
 

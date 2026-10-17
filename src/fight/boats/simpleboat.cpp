@@ -18,6 +18,7 @@
 #include "simpleboat.h"
 #include "fight/collisionmanager.h"
 #include "fight/effects/effect.h"
+#include "fight/effects/effectmanager.h"
 #include "fight/objects/mine.h"
 #include "fight/scenario.h"
 #include "fight/module.h"
@@ -187,15 +188,28 @@ bool SimpleBoat::update(float elapsedTime)
 }
 
 
-Vector3D SimpleBoat::slideAlongObjects(const Vector3D &position, const Vector3D &delta)
+Vector3D SimpleBoat::slideAlongObjects(const Vector3D &position, const Vector3D &delta, float speed)
 {
-    if (!collidesWithObjects() || glm::length2(delta) < 1e-8f)
+    if (glm::length2(delta) < 1e-8f)
+        return delta;
+    // debris slower than the unit
+    Particles::DebrisHit debris;
+    if (m_scenario->effectManager().hitDebris(position, position + delta, m_collisionRadius, speed < 0 ? glm::length(m_velocity) : speed, m_kineticStrength, debris))
+        damage(debris.kinetic, debris.shock, debris.position);
+    // another faction's mine in the way goes up (docs/ROADMAP.md, appendix Q); the unit carries on
+    auto mine = [this](const Object *object) {
+        const Mine *mine = dynamic_cast<const Mine *>(object);
+        return mine && mine->collidesWith(this);
+    };
+    Vector3D contact, normal;
+    if (Object *hit = m_scenario->collisionManager().testCollision(position, position + delta, m_collisionRadius, contact, normal, nullptr, this, mine))
+        static_cast<Mine *>(hit)->collide(this, contact);
+    if (!collidesWithObjects())
         return delta;
     const Object *docking = m_orders ? m_orders->dockingTarget() : nullptr;
     auto obstacle = [docking](const Object *object) {
         return object != docking && !dynamic_cast<const Mine *>(object) && !dynamic_cast<const Effect *>(object);
     };
-    Vector3D contact, normal;
     if (!m_scenario->collisionManager().testCollision(position, position + delta, m_collisionRadius, contact, normal, nullptr, this, obstacle))
         return delta;
     // already touching and moving away (or along it): free to go

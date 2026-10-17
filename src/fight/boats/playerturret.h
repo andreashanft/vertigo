@@ -53,6 +53,7 @@ public:
     String stateText() const;  // the state written out (GLOBWEAP verbose)
     String softwareName() const { return m_software.shortName; }
     const Gun& gun() const { return m_gun; }
+    Gun& gun() { return m_gun; }
     // nullptr once the target is gone (a torpedo is deleted when it explodes)
     ActiveObject* target() const { return isValid(m_target) ? m_target : nullptr; }
 

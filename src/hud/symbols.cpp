@@ -19,10 +19,23 @@
 #include "hud.h"
 #include "fight/scenario.h"
 
+#include <cmath>
 #include <glm/geometric.hpp>
 
 
 namespace hud {
+
+
+namespace {
+
+// the slots' offsets in the block (docs/ROADMAP.md, appendix E)
+const int RadiationSlot = 0;
+const int CurrentSlot = 28;
+const int AttackedSlot = 56;
+// a symbol is shown for this long and hidden for as long, from the moment it is switched on
+const float BlinkPhase = 0.5f;
+
+} // namespace
 
 
 Threat::Threat(HUD *hud, Rect rect) :
@@ -45,13 +58,34 @@ void Threat::draw()
 }
 
 
+Symbols::Symbol::Symbol(HUD *hud, const char *image, int x) :
+    texture(hud->getImage(image), true),
+    x(x)
+{
+}
+
+
+void Symbols::Symbol::draw(bool on, float time, const Rect &block)
+{
+    if (!on)
+    {
+        shownAt = -1;
+        return;
+    }
+    if (shownAt < 0)
+        shownAt = time;
+    if (std::fmod(time - shownAt, 2*BlinkPhase) < BlinkPhase)
+        texture.draw(block.x + x, block.y);
+}
+
+
 Symbols::Symbols(HUD *hud, Rect rect) :
     ui::Widget(hud->widget()),
     m_hud(hud),
     m_rect(rect),
-    m_lock(hud->getImage("hudsym1"), true),
-    m_radiation(hud->getImage("hudsym2"), true),
-    m_current(hud->getImage("hudsym3"), true)
+    m_radiation(hud, "hudsym2", RadiationSlot),
+    m_current(hud, "hudsym3", CurrentSlot),
+    m_attacked(hud, "hudsym1", AttackedSlot)
 {
 }
 
@@ -60,16 +94,12 @@ void Symbols::draw()
 {
     fight::Scenario *scenario = m_hud->scenario();
     const Rect rect = m_hud->projectCenter(m_rect);
-    // side by side: the radiation symbol in the first slot, blinking at 1 Hz less than 100 m
-    // below the surface (docs/ROADMAP.md, appendix D), the lock in the second, the current in the
-    // third
-    const int width = m_lock.width();
-    if (scenario->depth() < fight::Scenario::RadiationDepth && scenario->blink())
-        m_radiation.draw(rect.x, rect.y);
-    if (scenario->player()->lockProgress() >= 1)
-        m_lock.draw(rect.x + width, rect.y);
-    if (glm::length(scenario->current(scenario->position())) > 0.5f)
-        m_current.draw(rect.x + 2*width, rect.y);
+    const float time = scenario->time();
+    // the radiation less than 100 m below the surface (appendix D), a current in the player's
+    // cell, and the marker while units fight the player (appendix J, the attacker list)
+    m_radiation.draw(scenario->depth() < fight::Scenario::RadiationDepth, time, rect);
+    m_current.draw(glm::length(scenario->current(scenario->position())) > 0.5f, time, rect);
+    m_attacked.draw(scenario->playerAttackers() > 0, time, rect);
 }
 
 

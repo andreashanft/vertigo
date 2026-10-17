@@ -102,7 +102,9 @@ protected:
     void move(Vector3D delta);
     // the part of delta that doesn't run into another unit, a tower or a building: up to the
     // contact, then along it (mines, effects and the unit it docks on are left out)
-    Vector3D slideAlongObjects(const Vector3D &position, const Vector3D &delta);
+    // also sets off mines and runs into debris on the way, at the given speed (m/s; the
+    // velocity's if negative)
+    Vector3D slideAlongObjects(const Vector3D &position, const Vector3D &delta, float speed = -1);
     // big ships push through; the others steer round them
     virtual bool collidesWithObjects() const { return true; }
 

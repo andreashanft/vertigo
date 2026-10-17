@@ -37,8 +37,8 @@ class HUD;
 
 
 // A cockpit status monitor. As in the original, with two monitors the first shows a weapon page
-// and the second the armor page, which I switches to the systems table and back; a single
-// monitor shows the weapon page and I steps through all three. F1-F4 pick the weapon page's
+// and the second the armor page; I switches between the armor page and the system state page
+// (on a single monitor too, which starts on the weapon page). F1-F4 pick the weapon page's
 // system: the gun, the magazine (the default) or a turret. The lamp beside the monitor lights
 // its upper slot for the armor page.
 class SlaveMonitor : public ui::Widget
@@ -61,6 +61,7 @@ protected:
 private:
     void drawArmor(const Rect &rect);
     void drawSystems(const Rect &rect);
+    void drawBar(int x, int y, float condition, int band);
     void drawWeapon(const Rect &rect);
     // a picture from GFX/IMG/COCKPIT, loaded once
     gfx::Texture* picture(const String &name);
@@ -74,10 +75,8 @@ private:
     std::map<String, gfx::Texture> m_pictures;
     gfx::Texture m_armor[4][4]; // damage level 1-4, side front/left/right/back
     Point m_tableTopLeft;
-    int m_nameX;
-    int m_ammoX;
-    int m_statusX;
     int m_spacingY;
+    gfx::Texture m_bar[3][2];   // the system state page's bar colours: band, bright/dim
 };
 
 

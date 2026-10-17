@@ -35,65 +35,21 @@ Sonar::Sonar(Scenario *scenario) :
 }
 
 
+// what each sonar can do (docs/ROADMAP.md, appendix P): Spy I tells no friend from foe and shows
+// no armor, weapons or activity of the target; Spy II tells friend from foe and shows the armor;
+// Spy III and IV show everything. The ranges are not compared yet.
 void Sonar::init(int sensor)
 {
-    // TODO: check values
-    if (sensor == 6145)
-    {
-        m_delay = 12;
-        m_passiveRange = 160.0f;
-        m_passiveRangeMult = 20.0f;
-        m_activeRange = 160.0f;
-        m_activeRangeMult = 20.0f;
-        m_iff = false;
-        m_detectArmor = false;
-        m_detectRange = false;
-        m_detectWeapons = false;
-        m_detectActivity = false;
-    }
-    if (sensor == 6146)
-    {
-        m_delay = 10;
-        m_passiveRange = 180.0f;
-        m_passiveRangeMult = 30.0f;
-        m_activeRange = 160.0f;
-        m_activeRangeMult = 20.0f;
-        m_iff = true;
-        m_detectArmor = true;
-        m_detectRange = true;
-        m_detectWeapons = false;
-        m_detectActivity = false;
-    }
-    if (sensor == 6147)
-    {
-        m_delay = 8;
-        m_passiveRange = 200.0f;
-        m_passiveRangeMult = 40.0f;
-        m_activeRange = 160.0f;
-        m_activeRangeMult = 20.0f;
-        m_iff = true;
-        m_detectArmor = true;
-        m_detectRange = true;
-        m_detectWeapons = true;
-        m_detectActivity = true;
-    }
-    if (sensor == 6148)
-    {
-        m_delay = 6;
-        m_passiveRange = 220.0f;
-        m_passiveRangeMult = 50.0f;
-        m_activeRange = 160.0f;
-        m_activeRangeMult = 20.0f;
-        m_iff = true;
-        m_detectArmor = true;
-        m_detectRange = true;
-        m_detectWeapons = true;
-        m_detectActivity = true;
-    }
-    // TODO: remove
-    m_iff = true;
-    m_detectArmor = true;
-    m_detectRange = true;
+    const int grade = sensor >= 6145 && sensor <= 6148 ? sensor - 6144 : 1;
+    m_delay = 14 - 2*grade;
+    m_passiveRange = 140.0f + 20.0f*grade;
+    m_passiveRangeMult = 10.0f*grade + 10.0f;
+    m_activeRange = 160.0f;
+    m_activeRangeMult = 20.0f;
+    m_iff = grade >= 2;
+    m_detectArmor = grade >= 2;
+    m_detectWeapons = grade >= 3;
+    m_detectActivity = grade >= 3;
 }
 
 
@@ -181,6 +137,7 @@ void Sonar::update(float elapsedTime)
         entry.object = object;
         entry.distance = dist;
         entry.isFriend = !m_iff || m_scenario->isFriend(Scenario::PlayerFaction, object->iff());
+        entry.isNeutral = m_iff && !entry.isFriend && !m_scenario->isHostile(Scenario::PlayerFaction, object->iff());
         entry.isPassive = passive;
     }
 
