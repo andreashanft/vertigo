@@ -101,9 +101,11 @@ void Target::lockReticle()
 
 void Target::lockNearestEnemy()
 {
+    // the nearest hostile contact, whether or not the sonar tells friend from foe (the original's
+    // u finds one with Spy I too)
     const Sonar::SonarEntry *nearest = nullptr;
     for (const auto &entry : m_scenario->sonar())
-        if (!entry.isFriend && m_scenario->isHostile(Scenario::PlayerFaction, entry.object->iff()) && (!nearest || entry.distance < nearest->distance))
+        if (m_scenario->isHostile(Scenario::PlayerFaction, entry.object->iff()) && (!nearest || entry.distance < nearest->distance))
             nearest = &entry;
     if (nearest)
     {
