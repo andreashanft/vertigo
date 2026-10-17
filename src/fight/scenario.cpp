@@ -51,6 +51,7 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtx/transform.hpp>
 #include <algorithm>
+#include <cmath>
 
 
 namespace fight {

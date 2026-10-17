@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <string>
 #include <vector>
 
 namespace util {

@@ -1,4 +1,6 @@
 # Vertigo
+[![Build](https://github.com/andreashanft/vertigo/actions/workflows/build.yml/badge.svg)](https://github.com/andreashanft/vertigo/actions/workflows/build.yml)
+
 In November 1996, „[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)“ - or better known under its original German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)" - was released by *Massive Development*.
 This repository contains an open-source clone with the goal to faithfully recreate this 30 year old classic. It is based on the original work from [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had already been reimplemented years ago but then abandoned mid-finished.
 With the help of Claude Code, most open TODOs and missing features could finally be implemented, bringing the codebase closer to its original. In addition, an iPad version was created as well as a feasibility study to enable real 3D cockpits for an eventual VR port. 
@@ -30,7 +32,16 @@ cmake ..
 make
 ```
 
-## Linux (Nix)
+## Linux
+
+GitHub Actions builds and tests Vertigo on Ubuntu 24.04 (and on macOS) for
+every commit on master. Each run keeps the Linux build for 30 days as the
+artifact `vertigo-linux-x86_64-<commit>`, with SDL 3 built in; it needs
+OpenAL (`libopenal1`) and OpenGL 3.2. Ubuntu 24.04 has no SDL 3 package, so
+building there means building SDL 3 first, as
+[the workflow](.github/workflows/build.yml) does.
+
+### Nix
 
 If you use Nix with flakes enabled, you can build and start Vertigo by running:
 ```
