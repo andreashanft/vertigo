@@ -60,6 +60,8 @@ public:
 
     // distance at which an object is detected passively / actively
     float passiveRange(const ActiveObject *object) const;
+    // the player's own passive range, without a unit's noise
+    float passiveRange() const { return m_passiveRange; }
     float activeRange(const ActiveObject *object) const;
 
 public:

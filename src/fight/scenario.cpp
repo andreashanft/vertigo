@@ -677,7 +677,8 @@ void Scenario::update(float elapsedTime)
             if (unit->sleeps())
             {
                 const float distance = glm::length(Vector2D(unit->position()) - Vector2D(m_position));
-                const float radius = m_sonar.passiveRange(unit) + sleepMargin;
+                // the player's sonar range plus 3 cells, whatever the unit's noise (docs/ROADMAP.md, appendix J)
+                const float radius = m_sonar.passiveRange() + sleepMargin;
                 if (unit->isAsleep())
                 {
                     if (distance > radius)
