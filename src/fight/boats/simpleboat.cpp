@@ -95,6 +95,11 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     setting("FlightPointProbabilityDR", a.flightDR);
     setting("FlightProbabilityTorpedoFire", a.flightTorpedo);
     setting("FlightProbabilityHit", a.flightHit);
+    setting("AlignProbabilityHook", a.hook);
+    setting("AlignProbabilityCross", a.cross);
+    setting("AlignProbabilityRetain", a.retain);
+    setting("AlignProbabilityChange", a.change);
+    setting("AlignProbabilityHit", a.alignHit);
 
     // boats move, so collision results must not be cached
     m_static = false;

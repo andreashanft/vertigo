@@ -70,6 +70,9 @@ public:
         float flightUL = 1, flightUR = 0, flightDL = 0, flightDR = 0;  // where to break off to
         float flightTorpedo = 0;                       // chance of a torpedo when breaking off
         float flightHit = 0;                           // chance to break off when hit after the first shot
+        // tanks: which way round the target the next align point lies
+        float hook = 0.25f, cross = 0.25f, retain = 0.25f, change = 0.25f;
+        float alignHit = 1;                            // chance to align anew when hit while aligning
     };
     const AttackSettings& attackSettings() const { return m_attackSettings; }
     // the sphere the boat is moved by (metres)

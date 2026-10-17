@@ -150,7 +150,10 @@ private:
     bool tryTorpedo(ActiveObject *target);
     void startFight(Fight phase, ActiveObject *target);
     void updateFight(ActiveObject *target, float speed);
-    void updateGroundAttack(ActiveObject *target, float speed);
+    // tanks: an align point at the align radius, 20-30 degrees round the target from where the tank
+    // is, the way round by the Hook/Cross/Retain/Change probabilities; then a drive at the target
+    void startTankFight(Fight phase, ActiveObject *target, float speed);
+    void updateTankFight(ActiveObject *target, float speed);
     void updateTurret(ActiveObject *target, float range, bool sweep);
     void endTorpedoRun();
     float random() const;
@@ -187,6 +190,7 @@ private:
     Vector3D m_flightOffset;     // Flight: where to, in the target's frame
     float m_flightEnd;
     float m_lastFlip;            // when the flight last changed sides
+    float m_targetYaw;           // tanks: the target's heading when the last align began
     bool m_torpedo;              // this phase may fire a torpedo
     bool m_torpedoRun;
     ActiveObject *m_torpedoTarget;   // whose torpedo attackers the unit is among

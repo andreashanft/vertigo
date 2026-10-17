@@ -92,8 +92,7 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O3 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
 | O4 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
 | O5 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O6 | Tank manoeuvre | M | Tanks drive at their target and fire; the original's `[Attack]` keys for tanks (`AlignProbabilityHook/Cross/Retain/Change/Hit`) are not read yet (appendix J) |
-| O7 | Open comparisons | – | How a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
+| O6 | Open comparisons | – | How a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -137,7 +136,7 @@ master monitor's target picture, D/H/V/N and R.
 
 ## Open questions and how to settle them
 
-What is still unknown is in [what is open](#what-is-open) (O3–O7).
+What is still unknown is in [what is open](#what-is-open) (O3–O6).
 [reverse-engineering.md](reverse-engineering.md) maps each question to an
 instrument: the original under DOSBox-X on the Mac first, a static reading of
 `FIGHT.EXE` second, sfwin32 last. Settled this way so far: the currents
@@ -302,7 +301,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   `Min/MaxFlightTime`, `FlightPointProbabilityUL/UR/DL/DR`,
   `FlightProbabilityHit` (the chance to break off when hit);
   `*ProbabilityTorpedoFire` per phase. The files' own comments (in German)
-  describe them. Tanks use Hook/Cross/Retain/Change/Hit variants (O6). Also
+  describe them. Tanks use Hook/Cross/Retain/Change/Hit variants (J). Also
   `Min/MaxClimbingAngle` and the turret `[Kinematics]` `MaxAngleVelocityA/B`.
 - `sen` is the unit's sensor type and `senr` its range in metres (appendix
   J); without the keys a passive sonar of 100 m.
@@ -500,7 +499,7 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   (an Attack order patrolling its area: 0.3 of the radius from the last
   point), its height wandering by up to half the horizontal way, clamped to
   the `mih`–`mah` band. Vertigo picks the point again on the timer where the
-  original may pick one every frame once the time is up (O7).
+  original may pick one every frame once the time is up (O6).
 - **Sensors (`sen`, `senr`).** Every unit has one; the default is type 1
   with 100 m. The range check is the same for all: the other unit within the
   range. Type 0 (sight) also needs nothing of the terrain between the two;
@@ -525,7 +524,7 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   running; the enemy takes over again once in range; a player who hits the
   unit takes over if nearer than the current target. "Hit" in the original is
   a change of the energy defence in that frame; Vertigo takes any hit by
-  another unit (O7). The attacker lists above still cap how many fight the
+  another unit (O6). The attacker lists above still cap how many fight the
   player.
 - **The attack manoeuvre** of boats and bombers (bombers behave the same), with the
   `[Attack]` keys: *align* – pick a side by the four align probabilities
@@ -565,10 +564,21 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   (the original moves it there outright) matching the escorted unit's
   heading and speed; it leaves formation beyond 1.3 of that. It fights only
   within `ran` (150 m) of its place and ends the order when the escorted unit
-  is destroyed. The original measures the offsets from hull to hull (O7).
-- **Tanks** keep Vertigo's simple attack (drive at the target and fire); the
-  original's tank manoeuvre is not read (O6). GotoWithInfiltrate is not
-  compared (O7).
+  is destroyed. The original measures the offsets from hull to hull (O6).
+- **Tanks** fight in two phases with their own `[Attack]` keys. *Align*: the
+  point lies at a distance between the align radii, 20–30° round the target
+  from the tank's present bearing; which way round is decided by the
+  probabilities `AlignProbabilityHook` (the way the target has turned),
+  `Cross` (towards the target's nose), `Retain` and `Change` (by which way
+  the two vehicles point relative to each other, one or the other). The tank
+  drives there at the order's speed, half of it at both ends of the way,
+  without firing, until it is there or the align time is up; when hit,
+  `AlignProbabilityHit` says whether it aligns anew or attacks at once.
+  *Attack*: it drives at the target for an attack time (or until it reaches
+  it), its turret firing whenever the gun points within 14° of the target,
+  then aligns again. The original draws the attack speed between two of the
+  unit's speeds of which the lower is not identified; Vertigo takes 40–100 %
+  of the order's speed (O6). GotoWithInfiltrate is not compared (O6).
 
 ### K. What the original does with the engine, the energy guns and the booster
 

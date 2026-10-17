@@ -122,6 +122,7 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_breakOnHit(false),
     m_flightEnd(0),
     m_lastFlip(0),
+    m_targetYaw(0),
     m_torpedo(false),
     m_torpedoRun(false),
     m_torpedoTarget(nullptr),
@@ -844,15 +845,91 @@ void Orders::updateFight(ActiveObject *target, float speed)
 }
 
 
-// tanks: drive at the target and fire (the original's tank manoeuvre is not read yet)
-void Orders::updateGroundAttack(ActiveObject *target, float speed)
+// the tanks' fight (docs/ROADMAP.md, appendix J): the align point lies at the align radius, 20 to
+// 30 degrees round the target from the tank's bearing; Hook goes the way the target is turning,
+// Cross towards its nose, Retain and Change by which way the two point relative to each other.
+// Then the tank drives at the target for the attack time, firing, and aligns again
+void Orders::startTankFight(Fight phase, ActiveObject *target, float speed)
 {
-    const float range = m_unit->gun() ? m_unit->gun()->range() : 0;
-    const Vector3D point = lead(target);
-    const float distance = glm::length(point - m_unit->position());
-    m_boat->steerTo(point, distance > 0.6f*range ? speed : 0.3f*speed);
-    m_boat->aimAt(point);
-    m_unit->setTrigger(aligned(m_boat->gunDirection(), point, range));
+    const SimpleBoat::AttackSettings &s = m_boat->attackSettings();
+    const float now = m_scenario->time();
+    m_fight = phase;
+    m_fightStart = now;
+    const glm::mat3 frame = frameOf(target);
+    const float targetYaw = std::atan2(-frame[1].x, frame[1].y);
+    switch (phase)
+    {
+    case Fight::Align:
+        {
+            const Vector3D local = toLocal(target, m_unit->position());
+            float bearing = std::atan2(-local.x, local.y);
+            float step = random(glm::radians(20.0f), glm::radians(30.0f));
+            const float pick = random();
+            const float turned = std::remainder(targetYaw - m_targetYaw, glm::two_pi<float>());
+            const Vector2D own(m_boat->dir());
+            const float across = frame[1].x*own.y - frame[1].y*own.x;
+            if (pick < s.hook)
+                step = turned < 0 ? -step : step;
+            else if (pick < s.hook + s.cross)
+                step = bearing > 0 ? -step : step;
+            else if (pick < s.hook + s.cross + s.retain)
+                step = across > 0 ? step : -step;
+            else
+                step = across > 0 ? -step : step;
+            bearing += step;
+            const float radius = random(s.minAlignRadius, s.maxAlignRadius);
+            m_alignOffset = Vector3D(-std::sin(bearing)*radius, std::cos(bearing)*radius, 0);
+            m_runDistance = std::max(1.0f, glm::length(Vector2D(toWorld(target, m_alignOffset)) - Vector2D(m_unit->position())));
+            m_alignEnd = now + random(s.minAlignTime, s.maxAlignTime);
+        }
+        break;
+
+    case Fight::Run:
+        // (the original draws the speed between two of the unit's speeds; which the lower is isn't read)
+        m_attackSpeed = random(0.4f, 1.0f)*speed;
+        m_attackEnd = now + random(s.minAttackTime, s.maxAttackTime);
+        break;
+
+    default:
+        break;
+    }
+    m_targetYaw = targetYaw;
+}
+
+
+void Orders::updateTankFight(ActiveObject *target, float speed)
+{
+    const SimpleBoat::AttackSettings &s = m_boat->attackSettings();
+    const float now = m_scenario->time();
+    if (m_fight == Fight::None || m_fight == Fight::Turn || m_fight == Fight::Flight)
+        startTankFight(Fight::Align, target, speed);
+
+    const Vector3D aim = aimPoint(target);
+    m_boat->aimAt(aim);
+    if (m_fight == Fight::Align)
+    {
+        // to the point, slow at both ends of the way, without firing
+        const Vector3D point = toWorld(target, m_alignOffset);
+        const float distance = glm::length(Vector2D(point) - Vector2D(m_unit->position()));
+        float f = std::min(1.0f, distance/m_runDistance);
+        if (f > 0.5f)
+            f = 1.0f - f;
+        m_boat->steerTo(point, (f + 0.5f)*speed);
+        m_unit->setTrigger(false);
+        if (distance < arriveRadius(m_boat->maxVelocity()) || now > m_alignEnd)
+            startTankFight(Fight::Run, target, speed);
+        else if (m_unit->hitRecently())
+            startTankFight(random() < s.alignHit ? Fight::Align : Fight::Run, target, speed);
+        return;
+    }
+
+    // the drive at the target, the turret firing within 14 degrees of it
+    m_boat->steerTo(target->position(), m_attackSpeed);
+    const Vector3D way = aim - m_unit->position();
+    m_unit->setTrigger(m_unit->gun() && glm::length(way) > 0.1f && glm::dot(m_boat->gunDirection(), glm::normalize(way)) > AimCos);
+    const float distance = glm::length(Vector2D(target->position()) - Vector2D(m_unit->position()));
+    if (distance < arriveRadius(m_boat->maxVelocity()) || now > m_attackEnd)
+        startTankFight(Fight::Align, target, speed);
 }
 
 
@@ -995,7 +1072,7 @@ void Orders::update()
                 m_unit->setSilent(false);
             }
             if (m_boat->isGroundVehicle())
-                updateGroundAttack(m_target, speed);
+                updateTankFight(m_target, speed);
             else
                 updateFight(m_target, speed);
             return;
