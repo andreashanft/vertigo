@@ -84,6 +84,9 @@ void SonarMonitor::draw()
 
     for (const auto &entry : m_hud->scenario()->sonar())
     {
+        // the original draws no neutral contact here once the sonar tells friend from foe
+        if (entry.isNeutral)
+            continue;
         Vector2D dir = Vector2D(m * Vector4D(entry.object->position(), 1));
         float distance = glm::length(dir);
         if (distance < m_scale)

@@ -91,7 +91,7 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
 | O2 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
+| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges, and whether `u` (the nearest enemy) finds anything with Spy I; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -142,7 +142,7 @@ currents (appendix D), the radiation (D), `sle`, `diff`, the attacker lists,
 `car`, `con`, Explode, the order slots, the sensors and the boats' and tanks'
 fighting (J), the energy pool, the energy guns, the booster and the jams (K),
 the boat's turning (L), the terrain's shading (M), the ground under
-buildings (N) and the Fixer (O).
+buildings (N), the Fixer (O) and the sonars' abilities (P).
 
 ## Appendix: reference data
 
@@ -656,3 +656,19 @@ armor counts by its weakest side. With a Fixer a green `*` (an × in the
 cockpit font) stands 8 px left of the system it mends and a yellow one
 16 px left of the forced system, and a centred `AUTOMATIC` line follows two
 pixels below the rows, with the yellow mark when nothing is forced.
+
+### P. What the original's sonars can do
+
+Read off in October 2026. The four sonars (items 6145–6148, Spy I–IV) take
+12, 10, 8 and 6 seconds to come up and differ in four abilities: Spy I has
+none, Spy II tells friend from foe and shows the target's armor, Spy III
+and IV also show its weapons (`G:` and `T:` on the master monitor) and what
+it does (the second line). The target's sensor range (`R:`) shows with any
+sonar once the contact is active. Without friend-or-foe detection every
+contact is drawn as a friend: green on the master monitor's radar and the
+round radars, and the HUD takes the locked target for a friend too; the
+master monitor's text still colours a hostile target's name red. With it
+the master monitor's radar draws friends green and everything else red,
+and the round radars draw friends and hostiles with their two symbols and
+skip neutral contacts altogether. Vertigo does the same; its detection
+ranges are not compared yet (O4).

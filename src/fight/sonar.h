@@ -39,7 +39,8 @@ public:
     {
         ActiveObject *object;
         float distance;
-        bool isFriend;
+        bool isFriend;      // without friend-or-foe detection every contact counts as a friend
+        bool isNeutral;     // neither friend nor hostile, told apart (the round radars skip it)
         bool isPassive;
     };
 
@@ -54,7 +55,6 @@ public:
     bool isActive() const { return m_active; }
     bool isActivating() const { return m_activatingDelay > 0; }
     bool detectArmor() const { return m_detectArmor; }
-    bool detectRange() const { return m_detectRange; }
     bool detectWeapons() const { return m_detectWeapons; }
     bool detectActivity() const { return m_detectActivity; }
 
@@ -76,7 +76,6 @@ private:
     float m_activeRangeMult;
     bool m_iff;
     bool m_detectArmor;
-    bool m_detectRange;
     bool m_detectWeapons;
     bool m_detectActivity;
 

@@ -99,7 +99,8 @@ void MasterMonitor::draw()
         txtVelocity = String("%1KMH").arg(static_cast<int>(glm::round(3.6f*glm::length(object->velocity()))));
         txtNoise = String("%1").arg(object->noise());
 
-        if (m_hud->scenario()->sonar().detectRange() && !target.isPassive() && object->sensor() > 0)
+        // the target's sensor range: with any sonar, once the contact is active
+        if (!target.isPassive() && object->sensor() > 0)
             txtRange = String("%1M").arg(object->sensorRange());
         if (m_hud->scenario()->sonar().detectWeapons() && !target.isPassive())
         {
