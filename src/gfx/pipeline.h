@@ -125,6 +125,7 @@ public:
     // replaces the fog's blend by distance while enabled; the fog's colour and gain still apply
     static void setTableShading(bool enabled);
     static void setTableShading(const TableShading &shading);
+    static bool tableShading();
     // drops fragments without alpha
     static void setAlphaTest(bool enabled);
     // texture coordinates s/q and t/q from the model position: rows 0, 1 and 3 of the matrix give

@@ -44,11 +44,14 @@ public:
     float heightAt(float x, float y);
     float heightAt(float x, float y, Vector3D &normal);
     const Vector3D& scale() const { return m_scale; }
-    // the water's fog as the map's shading tables have it, for everything in the scene but the
-    // terrain: a blend by distance from the colours themselves into the fog's colour, a blue
-    // that takes the red away. The terrain picks the tables' rows by the game's rule instead,
-    // at twice its textures' brightness, as the tables' nearest row is twice the palette
+    // the water's fog as the map's shading tables have it: a blend by distance from the colours
+    // themselves into the fog's colour, a blue that takes the red away, for the sprites. The
+    // terrain and the models pick the tables' rows by the game's rule instead (shading)
     const gfx::Pipeline::Fog& fog() const { return m_fog; }
+    // the game's rule for the row of the shading table per vertex (loadShading), at this share
+    // of its brightness (the mission's fade). The brightness is in multiples of the palette:
+    // the models' tables hold the palette in the last row, the terrain's twice its textures
+    gfx::Pipeline::TableShading shading(float brightness = 1) const;
     float height(int x, int y) const;
     // false if the texture couldn't be loaded
     bool bindTexture(int textureId);

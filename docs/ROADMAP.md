@@ -60,7 +60,8 @@ and moves the pilot's head with the boat.
 **Effects and sound (phases 5 and 6).** One particle pool for explosions,
 debris, bubbles, torpedo trails and dust; 3D audio with the four nearest
 engines, mission music from the CD tracks; the terrain is coloured by the
-maps' shading tables with the original's rule (appendix M), energy shots
+maps' shading tables with the original's rule, and so are the models
+(appendix M), energy shots
 light the ground, the booster, the energy pool and the jams follow the
 original (appendix K), and so does the boat's turning (appendix L).
 
@@ -82,15 +83,14 @@ with unresolved conditions checked (G4), the station chosen after a mission
 
 | # | Item | Effort | Notes |
 |---|---|---|---|
-| O1 | Models' shading | M | The models' tables `MOD_nnn.S16` are the terrain's blend at the palette's brightness; the models still take a blue ambient light, the headlight and a linear fog from 30 to 140 m instead of the camera light of appendix M. Their objects have a `shadingmode` key. Compare against the original's pictures |
-| O2 | Hit and explosion sizes (D13) | S–M | Plasma hits light up as large blue-white flashes in the original and explosions close by fill much of the view; Vertigo's are smaller. Compare sizes |
-| O3 | The marker under fire (D12) | S | A red ring with a cross in the symbol block's second slot while the player is attacked, sometimes outside the HUD frame; not HUDAIMH, HUDTARG, HUDTURR, HUDPOI* or HUDTHREA. Identify the image, then draw it |
-| O4 | Ground sample at s00101's start (D18) | S–M | The original reads 57 m of height there (the cell's own value 250), Vertigo 74 m: its western neighbours hold 236–240 and a building's `setHeight` or the spline's sampling takes the lower value |
-| O5 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
-| O6 | Sensor types | ? | `sen` (optical, passive, active) only picks the master monitor's icon; engagement uses `senr` alone. What the types do is unknown |
-| O7 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
-| O8 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O9 | Open comparisons | – | `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
+| O1 | Hit and explosion sizes (D13) | S–M | Plasma hits light up as large blue-white flashes in the original and explosions close by fill much of the view; Vertigo's are smaller. Compare sizes |
+| O2 | The marker under fire (D12) | S | A red ring with a cross in the symbol block's second slot while the player is attacked, sometimes outside the HUD frame; not HUDAIMH, HUDTARG, HUDTURR, HUDPOI* or HUDTHREA. Identify the image, then draw it |
+| O3 | Ground sample at s00101's start (D18) | S–M | The original reads 57 m of height there (the cell's own value 250), Vertigo 74 m: its western neighbours hold 236–240 and a building's `setHeight` or the spline's sampling takes the lower value |
+| O4 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
+| O5 | Sensor types | ? | `sen` (optical, passive, active) only picks the master monitor's icon; engagement uses `senr` alone. What the types do is unknown |
+| O6 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
+| O7 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
+| O8 | Open comparisons | – | `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -108,13 +108,13 @@ Succubus cockpits). All but D12, D13 and the ground sample of D18 are done.
 | D9 | Aim help | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame |
 | D10 | Cargo ships | Each block is a sonar contact and target of its own |
 | D11 | Target lock | `u` locks the nearest enemy; L locks what is in the reticle, N the next nav point |
-| D12 | Marker under fire | Open (O3) |
-| D13 | Hits | Open (O2) |
+| D12 | Marker under fire | Open (O2) |
+| D13 | Hits | Open (O1) |
 | D14 | Armor symbol | A bar per side: green, yellow below 75 %, red below 50 %, gone below 25 %, white when hit |
 | D15 | ALERT | While a side's armor is below 10 %, with the voice "system collapse"; also in the radiation (appendix D) |
 | D16 | THREAT | Yellow (HUDTHREY) |
-| D17 | Terrain colours and fog | The map's shading tables (`VFX/TEXTURE/S000_nnn.S16`, like the radar's): 32 rows of 256 RGB565 colours, row r holding (r + 1)/32 of twice the palette and the rest of a blue F ≈ (−70, −2, 37) that takes the red away; the row per pixel follows the rule of appendix M. Everything but the terrain keeps a fog by distance from 30 to 140 m |
-| D18 | Terrain geometry | The height map is the same (at s00202's start both have the boat at 57–60 m over ground at 48 m); only the ground sample at s00101's start differs (O4) |
+| D17 | Terrain colours and fog | The map's shading tables (`VFX/TEXTURE/S000_nnn.S16`, like the radar's): 32 rows of 256 RGB565 colours, row r holding (r + 1)/32 of twice the palette and the rest of a blue F ≈ (−70, −2, 37) that takes the red away; the row per pixel follows the rule of appendix M, for the models too from their own tables (`MOD_nnn.S16`, the palette itself in the last row). Only the sprites keep a fog by distance from 30 to 140 m |
+| D18 | Terrain geometry | The height map is the same (at s00202's start both have the boat at 57–60 m over ground at 48 m); only the ground sample at s00101's start differs (O3) |
 
 Already alike: the lock ring with name, distance, shield bars and sensor
 icon; turret brackets; heading tape; the lamps beside the sonar monitors; the
@@ -126,15 +126,15 @@ master monitor's target picture, D/H/V/N and R.
 |---|---|---|
 | G1 | Mission music | Done. `[CD] Track` n plays the CD's audio track n+1 (1–4; 0 none); building `Game Data` from a CD image copies them out as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`; `sfx::Music` streams the mission's track round and round at half volume, pausing with the mission; CD Musik AN/AUS in the options (`Sound/cdMusic`). Not compared: whether the original loops, pauses and how loud |
 | G2 | Minefields | Done. A mine entry is a column of `num` mines `dis` height units apart, the lowest at `hei`; 407 mines in 10 scenarios were missing before. Attacked when one of them is, destroyed when all are (s02205's objectives). Whether the original stacks them upwards is not compared |
-| G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by `FIGHT.EXE`. Open: `card` on active buildings (O7) |
+| G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by `FIGHT.EXE`. Open: `card` on active buildings (O6) |
 | G4 | Unresolved conditions | Done. The references `--check` reported are condition codes for objectives that no unit has; they never come true, and all five missions can still be won. s01802 lost two tanks' trigger area when it was made from s01801 (the AD mod fixes it), s02006 kept a radio message of a dropped objective |
-| G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O8) |
+| G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O7) |
 | G6 | Station after a mission | Done. The original's autopilot menu (FIGHTEXT) opens with Alt+A once the mission is accomplished and lists the open stations; with one destination the autopilot goes there at once. The menus show on the master monitor, also in the 3D cockpit |
 | G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing |
 
 ## Open questions and how to settle them
 
-What is still unknown is in [what is open](#what-is-open) (O5–O9).
+What is still unknown is in [what is open](#what-is-open) (O4–O8).
 [reverse-engineering.md](reverse-engineering.md) maps each question to an
 instrument: the original under DOSBox-X on the Mac first, a static reading of
 `FIGHT.EXE` second, sfwin32 last. Settled this way so far: the currents
@@ -347,7 +347,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   collapse" (SMPMAP 72) plays on entry and every 15 s and the alert beep
   (SMPMAP 10) every 0.8 s. The same ALERT, voice and beep are the combat
   alert, together with a red ring with a cross in the symbol block's second
-  slot (O3).
+  slot (O2).
 
 ### E. HUD data
 
@@ -398,7 +398,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   K; the object files' `[Engine] Type` is never read).
 - `GLOBWEAP.DES` has 14 gun models: 0–10 for boats (0 Plasma Gun I to 10
   Vendetta III, 0–5 energy guns), 11–13 for turrets and vehicles; turrets with
-  boat guns see O5.
+  boat guns see O4.
 - Torpedoes: `globweap.des` `[TorpedoMagazine0-7]` (items 1025–1032) and
   `[Torpedo0-21]` (items 1–22: `locktype` 0 none / 1 noise / 2 optic,
   `lockdelay` 0–6 s, `imagename`, `sfvname`/`sfvnumber`); torpedo bodies in
@@ -542,3 +542,19 @@ lights' strength to the brightness; its vertices and normals are the spline's,
 finer than the original's grid, so the bands along slopes fall in slightly
 different places. Against the original's pictures at s00701's start the band
 means of the ground differ by 12.5 units RMS over four views.
+
+The models follow the same rule: every vertex gets the brightness of its
+normal, turned into the camera, against the same point 8 m above and 4 m
+ahead of the eye, clamped and rounded the same way, and the polygons pick
+the row per pixel from the brightness interpolated between the corners.
+There is no other light on them, neither a headlight nor an ambient colour.
+Their own shading tables (`MOD_nnn.S16`) hold the palette itself in the last
+row, not twice it, with the same blue F in the first, so a model at the eye
+shows its texture as it is and one 60 m ahead, facing the boat, keeps 1.9 of
+it clamped to the texture. Vertigo draws the models in the same table-shading
+mode with the fog's gain at 1; their normals are the faces' (the model files
+carry none), so the flat-shaded objects of the descriptions (`ShadingMode f`,
+the ground plans and blocks) differ only in that the brightness still varies
+across a face. In the original's pictures at s00701's start the station, the
+turret and the tower come out within 3 to 6 units of Vertigo's in each
+channel.

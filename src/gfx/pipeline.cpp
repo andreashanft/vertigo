@@ -511,6 +511,12 @@ void Pipeline::setTableShading(bool enabled)
 }
 
 
+bool Pipeline::tableShading()
+{
+    return state().tableShading;
+}
+
+
 void Pipeline::setTableShading(const TableShading &shading)
 {
     State &s = state();

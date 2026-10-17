@@ -355,3 +355,11 @@ mountain wall of the east view bluish with its bright veins and the flat
 ground of the west views dark beyond 60 m on both sides. The brightness
 itself can be checked in the same way with the grey of a debug render; the
 captures stay outside the repository.
+
+The models in the same pictures (the station and the turret of the north
+view, the tower of the east view) are compared by the mean of their grey
+pixels, those with the channels within 25 (red to green) and 40 (green to
+blue) of each other and brighter than 25, the HUD's green left out: the
+original gives (45, 51, 54) for the tower, (46, 52, 56) for the station and
+(45, 45, 47) for the turret, Vertigo (50, 56, 60), (45, 54, 60) and
+(44, 47, 50).

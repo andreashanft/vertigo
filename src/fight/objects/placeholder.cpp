@@ -51,9 +51,11 @@ void Placeholder::draw()
 
     // unlit and untextured, on both sides
     const bool lighting = gfx::Pipeline::lighting();
+    const bool tableShading = gfx::Pipeline::tableShading();
     const Vector4D color = gfx::Pipeline::color();
     const bool cull = glIsEnabled(GL_CULL_FACE);
     gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setTableShading(false);
     glDisable(GL_CULL_FACE);
 
     gfx::Pipeline::pushMatrix();
@@ -71,6 +73,7 @@ void Placeholder::draw()
 
     gfx::Pipeline::setColor(color);
     gfx::Pipeline::setLighting(lighting);
+    gfx::Pipeline::setTableShading(tableShading);
     if (cull)
         glEnable(GL_CULL_FACE);
 }

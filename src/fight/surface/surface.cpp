@@ -34,9 +34,9 @@ namespace {
 
 // the terrain's textures hold half the brightness the shading tables' nearest row gives them
 const float TextureGain = 2;
-// the fog for everything but the terrain, which has the shading tables' own rule: the
-// distances at which the tables' nearest and farthest rows are left and reached, from the
-// original's pictures (docs/ROADMAP.md, "Differences to the original's cockpit")
+// the fog for the sprites, which have no vertices for the shading tables' rule: the distances
+// at which the tables' nearest and farthest rows are left and reached, from the original's
+// pictures (docs/ROADMAP.md, "Differences to the original's cockpit")
 const float FogStart = 30;
 const float FogEnd = 140;
 // the game's length unit, in which the cockpit description gives the camera's distances
@@ -123,6 +123,15 @@ void Surface::loadShading()
     m_shading.lightBack = value("LightBackPlane", 3650.0f)/UnitsPerMetre;
     m_shading.lightPower = value("LightPower", 1.0f);
     m_shading.rows = gfx::ColorTable::ShadingRows;
+}
+
+
+gfx::Pipeline::TableShading Surface::shading(float brightness) const
+{
+    gfx::Pipeline::TableShading shading = m_shading;
+    shading.ambient *= brightness;
+    shading.light *= brightness;
+    return shading;
 }
 
 
@@ -239,10 +248,7 @@ void Surface::draw(const Vector3D &position, const Vector3D &direction, float br
     // (loadShading), instead of the fog by distance everything else gets
     const bool lighting = gfx::Pipeline::lighting();
     gfx::Pipeline::setLighting(false);
-    gfx::Pipeline::TableShading shading = m_shading;
-    shading.ambient *= brightness;
-    shading.light *= brightness;
-    gfx::Pipeline::setTableShading(shading);
+    gfx::Pipeline::setTableShading(shading(brightness));
     gfx::Pipeline::setTableShading(true);
     gfx::Pipeline::Fog fog = m_fog;
     fog.gain = TextureGain;

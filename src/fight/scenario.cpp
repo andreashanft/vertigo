@@ -790,26 +790,20 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     const float brightness = this->brightness();
     m_surface.draw(m_position, m_player->dir(), brightness);
 
-    // the boat's headlight, a spot light from just behind it, and a blue ambient light
-    gfx::Pipeline::setLighting(true);
-    gfx::Pipeline::setAmbient(Vector3D(0.5f, 0.5f, 1.0f)*brightness);
-    gfx::Pipeline::Light light;
-    light.position = Vector3D(camera*Vector4D(m_player->position() - m_player->dir()*5.0f, 1));
-    light.direction = glm::mat3(camera)*m_player->dir();
-    light.ambient = Vector3D(4.0f*brightness);
-    light.diffuse = Vector3D(1.0f*brightness);
-    light.cutoff = 90.0f;
-    light.exponent = 4.0f;
-    light.constantAttenuation = 0.1f;
-    light.quadraticAttenuation = 0.0002f;
-    gfx::Pipeline::setLight(light);
+    // the models take their rows of the shading tables by the terrain's rule, from the same
+    // light at the eye, without any light of their own; their tables hold the palette itself
+    // in the last row
+    gfx::Pipeline::setLighting(false);
+    gfx::Pipeline::setTableShading(m_surface.shading(brightness));
+    gfx::Pipeline::setTableShading(true);
     for (const auto &object : m_objects)
         if (object->isEnabled())
             object->draw();
     for (const auto &torpedo : m_torpedoes)
         torpedo->draw();
+    gfx::Pipeline::setTableShading(false);
 
-    // the sprites glow by themselves
+    // the sprites glow by themselves and fade with the distance
     gfx::Pipeline::setPointLights(nullptr, 0);
     m_effectManager.draw();
 }
