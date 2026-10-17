@@ -1,314 +1,147 @@
 # Roadmap
 
-This plan started out covering the items of the former `todo.txt`: currents,
-the 11 AI orders, the HUD items, effects and engine sounds. All of them are
-done (phases 1–6) except the radiation icon, whose trigger is now measured
-in the original (appendix D) and waits for its implementation. What is still open is collected in
-[gaps found after milestone 6](#gaps-found-after-milestone-6) and the
-[iPad port](#ipad-port). The plan is based on a code review of this
-repository and on an analysis of the original German game data (CD release)
-and of strings and tables in the original `FIGHT.EXE` (October 2026).
-Reference data gathered during that analysis is collected in the
-[appendix](#appendix-reference-data).
+Vertigo recreates Schleichfahrt / Archimedean Dynasty from the original's game
+data. This file keeps the plan, what of it is done, what is still open, and
+the reference data gathered from the data files and from the original
+(October 2026). The plan grew out of the former `todo.txt` (currents, the 11
+AI orders, the HUD items, effects, engine sounds) and a review of the
+repository: every mission loads, is fought and can be won or lost now, on the
+desktop and on the iPad. What remains is collected under
+[what is open](#what-is-open). Rules for handling the original's executables
+are under [working safely](#working-safely-with-sfwin32-and-the-original-executables).
 
-Most of those items needed groundwork that didn't exist yet; without it they
-couldn't be built or tested in a real mission. When the plan was written:
+Effort marks: S is up to a day, M a few days, L one to three weeks, for one
+developer.
 
-- About half of all units with orders (1,110 of 2,345) never appear in
-  missions, because their `dtyp` has no object file mapping.
-- Enemies can't shoot, and the player can't be hit or die.
-- There are no torpedoes.
-- Three of the mission-condition events ("attacked", "arrived", "boarded")
-  never fire.
-- Esc counts as winning the mission.
+## What is done
 
-So the plan builds those basics first.
+**Test tooling.** Test mode runs a mission from the command line with a
+chosen boat, equipment and difficulty, headless if wanted, with a seed, a
+timeout and an exit code for success or failure; `--trace` prints units every
+second, `--keys`, `--click`, `--pad` and `--touch` drive the game,
+`--screenshot` saves frames, `--start` and `--near` place the player,
+`--destroy` and `--collapse` take units out, `--check` loads all 71 missions
+and reports what the loader skips. The debug overlay shows orders, currents
+and sonar ranges. Seeded idle runs of all missions (3 seeds, 60 s) are the
+regression check: before and after a change the same runs should end the
+same way, or differ for a known reason.
 
-## What the research established
+**Combat and missions (phase 1).** Every unit type loads (appendix A); the
+missing conditions, the failure path and the mission end (Esc menu, death and
+failure screens, restart, abort, load, the autopilot's choice of station)
+are in. Units move with terrain and object collisions; shots know who fired
+them, the player is hit per side and dies, destroyed units explode with
+debris and bodies. Tanks drive on the ground with turning turrets; cargo
+ships are built from their blocks with turrets on the hull, take hits as a
+whole and blow up block by block. Enemy guns use the object files' muzzles
+and volleys; 22 torpedo types with magazines, lock, homing, decoys and
+torpedo towers; the cluster torpedo bursts as area damage. Difficulty from
+the main menu limits which units appear (`diff`) and how many attack the
+player at once.
 
-- All 11 AI order types are identified, with their names and settings, from
-  strings inside the original `FIGHT.EXE`: 6 is Ambush, 7 is CardinalPatrol
-  (towers), 8 is CardinalAttack, 9 is GotoWithArrive, 10 is GotoWithInfiltrate
-  (boarding), 11 is Explode. Each unit has up to 8 order slots, run in
-  sequence, each with its own "stop when…" condition.
-- The missing mapping from unit type numbers (`dtyp`) to object files was
-  recovered from `FIGHT.EXE`. That alone restores the missing units.
-- Currents are fully defined in 20 scenarios (1,266 cells, `[CurrentNNNN]`).
-  Nothing reads them yet.
-- Every HUD item already has its layout section and images in the data,
-  unused. The "slave monitor" is an armor and system status page, not a camera
-  view.
-- The beeps and voice lines for lock, threat and alert exist in the sound list,
-  unnamed.
+**Currents (phase 2).** The `[CurrentNNNN]` cells push the player and AI
+boats as the original's do (appendix D).
 
-## Phase 0 – Test tooling (do first)
+**AI orders (phase 3).** All 11 order types run (appendix B), slot by slot
+with break conditions, round and round over a unit's 8 slots. Towers sweep
+and fire, boats approach, attack and break off with the `[Attack]` settings,
+ambush, escort, patrol, dock to board, and explode on order; patrol and
+escort units engage hostiles within their sensor range. Sleeping units,
+the attacker lists, `car` and `con` follow the original (appendix J).
 
-- **Test-mode options.** A mission started from the command line
-  (`vertigo s00101`) always uses the chapter 1 boat, which has no turrets. Add
-  options to pick the boat and equipment, and an exit code for success or
-  failure.
-- **Mission check.** A mode that loads all 71 missions and lists skipped units,
-  unread settings and conditions that can't resolve. Rerun it after every
-  phase.
-- **Debug overlay.** Shows each unit's current order, current arrows and sonar
-  ranges.
+**HUD (phase 4).** Pause, the voxel radar, both slave monitor pages with
+F1–F4 and I, the lamps, the lock, current and radiation symbols, ALERT and
+THREAT with their beeps and voices, friendly-fire warnings, the torpedo lock
+and countdown, the turret menu and brackets, the armor symbol, the aim help,
+the master monitor's activity and weapon lines, `u` to lock the nearest
+enemy. The 3D cockpit (glTF models) shows the instruments on its screens
+and moves the pilot's head with the boat.
 
-## Phase 1 – Combat and mission basics
+**Effects and sound (phases 5 and 6).** One particle pool for explosions,
+debris, bubbles, torpedo trails and dust; 3D audio with the four nearest
+engines, mission music from the CD tracks; the terrain is coloured by the
+maps' shading tables with the original's rule (appendix M), energy shots
+light the ground, the booster, the energy pool and the jams follow the
+original (appendix K), and so does the boat's turning (appendix L).
 
-| # | Step | Effort | Unlocks |
+**iPad port.** Qt is gone (SDL3 and our own types), the renderer is one
+shader on OpenGL 3.2 core and ES 3, data access is case-insensitive, the
+game data is imported from a GOG installation or the CD image, and the app
+has its lifecycle and audio session, second key bindings, game controllers,
+touch controls and the 3D cockpit at 120 frames a second on an iPad Pro.
+OpenGL ES and OpenAL are deprecated but still in the iOS 27 SDK; ANGLE and
+OpenAL Soft would replace them. The GPL keeps it out of the App Store, so
+players build it in Xcode, side-load an IPA or use AltStore PAL in the EU.
+
+**Later additions.** Mission music (G1), minefields as columns (G2), the
+armour and energy defence percentages `inte`/`eint` (G3), the five missions
+with unresolved conditions checked (G4), the station chosen after a mission
+(G6), the four training missions in the main menu (G7).
+
+## What is open
+
+| # | Item | Effort | Notes |
 |---|---|---|---|
-| 1.1 | Load every unit type: complete the type table ([appendix A](#a-dtyp--object-file)), use a placeholder instead of skipping a unit, always register objectives | S | 63 missions get their missing units (**done**: cargo ships are placeholder boxes until 1.6, tanks are static until 1.6) |
-| 1.2 | Missing condition types ("any unit of faction X attacked", order chaining, protect-only objectives, nav-point objectives), a real failure path, fix the endless "mission failed" voice. Ship together with 1.1 | S–M | Missions become winnable (**done**; "attacked" fires on any hit until 1.4) |
-| 1.3 | Moving units: collision box follows the boat, orientation used for drawing and hits, terrain collision | M | All AI orders (**done** for boats and bombers; tanks follow in 1.6; since milestone 6 moving units also slide along other units, towers and buildings instead of passing through them, except cargo ships, which push through, and a boarding boat docking on its target) |
-| 1.4 | Damage: shots know who fired them, the player can be hit and die, "attacked" event fires, explosion when destroyed | M | Friendly fire, alert, combat orders, explosions (**done**: attacker passed through guns, projectiles and damage; "attacked" only for hits by another unit; the player is hit per side (front, left, right, back) and destroyed when a side drops below zero; destroyed units explode, sized by the unit) |
-| 1.5 | Mission end: Esc menu, failure and death screens (texts already exist), restart / abort / load. Keep "skip mission" as a debug key until missions are winnable | M | Proper campaign flow (**done**; the player can only be destroyed by `--destroy` until 1.4) |
-| 1.6 | Tanks (ground-following, 22 missions) and cargo ships (built from blocks, 36 missions; start with static hulls) | M / M–L | Escort targets, dust clouds (**tanks done**: tanks and crawlers drive on the ground, tilt with it at most `MaxClimbingAngle`, and run their orders; since milestone 6 their turret (the `Gun` module or the `GunTurret`) turns towards the target at 1.5 rad/s and the gun fires along it. Cargo ships are built from their blocks in milestone 5) |
-| 1.7 | Enemy guns, using the gun and volley settings in the object files | M | Orders 4, 6, 7, 8 (**done**: `UnitGun` with `[StaticGun]` muzzles and `[VolleyGun]` rhythm; the mission's `gun` key picks the model (0–13, 14 is "No Gun"); boats fire from the nose, tanks along their heading, towers from a turret that turns towards its target at the turret's rates. Who fires when is up to the orders) |
-| 1.8 | Torpedoes: 22 types, magazines, fire key, lock (none / noise / optic, 0–6 s), homing, decoys, enemy torpedo towers | L | Torpedo HUD, trails, cluster torpedo, turrets (**done**; the data only has lock types 0 and 1) |
+| O1 | Models' shading | M | The models' tables `MOD_nnn.S16` are the terrain's blend at the palette's brightness; the models still take a blue ambient light, the headlight and a linear fog from 30 to 140 m instead of the camera light of appendix M. Their objects have a `shadingmode` key. Compare against the original's pictures |
+| O2 | Hit and explosion sizes (D13) | S–M | Plasma hits light up as large blue-white flashes in the original and explosions close by fill much of the view; Vertigo's are smaller. Compare sizes |
+| O3 | The marker under fire (D12) | S | A red ring with a cross in the symbol block's second slot while the player is attacked, sometimes outside the HUD frame; not HUDAIMH, HUDTARG, HUDTURR, HUDPOI* or HUDTHREA. Identify the image, then draw it |
+| O4 | Ground sample at s00101's start (D18) | S–M | The original reads 57 m of height there (the cell's own value 250), Vertigo 74 m: its western neighbours hold 236–240 and a building's `setHeight` or the spline's sampling takes the lower value |
+| O5 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
+| O6 | Sensor types | ? | `sen` (optical, passive, active) only picks the master monitor's icon; engagement uses `senr` alone. What the types do is unknown |
+| O7 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
+| O8 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
+| O9 | Open comparisons | – | `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
 
-## Phase 2 – Currents (M, can run alongside Phase 1)
-
-- Read the `[CurrentNNNN]` cells into a map grid. The direction from `card` is
-  the same compass mapping the game uses elsewhere; values 8 and 9 are probably
-  down and up.
-- Apply the drift to the player (the boat's `Current` value is already loaded,
-  never used) and to AI boats, smoothed at cell edges.
-- Tests: `s00303` (should push you back), `s00406`, `s01806`, `s01801`.
-  Current speeds aren't in the data and have to be measured in the original.
-
-**Done:** `Scenario::current()` blends the 2×2-cell grid bilinearly between
-block centres (full strength in the middle of a current area, fading out over
-one block at its edges). The player (`[Kinematics] Current`) and AI boats
-(`[Fluid] Current`) drift with it; tanks don't. Speeds are the estimates from
-appendix D (`CurrentSpeedSlow`/`CurrentSpeedFast` in `scenario.cpp`), 8 is
-down and 9 up. The debug overlay draws an arrow per cell near the player and
-shows the current at the player's position.
-
-## Phase 3 – AI orders
-
-Design: each unit runs its orders slot by slot. One class per order type; a
-shared steering layer handles seek, arrive, hold, follow-at-offset and
-circling, with terrain look-ahead.
-
-| otyp | Order | Behaviour | Fires event | Effort | Test |
-|---|---|---|---|---|---|
-| 1 | Wait | hold position | – | S | s01602 |
-| 2 | Goto | fly to a map cell at a given height | – | S | s00204 |
-| 9 | GotoWithArrive | arrive and stop | "arrived" | S | s00204 |
-| 3 | Patrol | random points within a radius and height band | – | M | s02007 |
-| 5 | Escort | keep an offset to the escorted unit | – | M | s01001 |
-| 7 | CardinalPatrol | tower scans its sensor range and fires at hostiles | – | M | s01602 |
-| 8 | CardinalAttack | tower attacks one given target | – | S | s00704 |
-| 4 | Attack | approach, attack and break off, using the `[Attack]` settings in each boat's file | – | L | s00203 |
-| 6 | Ambush | wait; attack when the target comes near or it is attacked | – | M | s00201 |
-| 10 | GotoWithInfiltrate | dock at the target for a set time | "boarded" | M | s00406 |
-| 11 | Explode | self-destruct after a set time | destroyed | S | s00202 |
-
-Order of work: 1, 2, 9 → 3 → 5 → (needs 1.4 and 1.7) → 7, 8 → 4 → 6 → 10 → 11.
-
-**Combat orders (milestone 3):** 7 and 8 for towers (nearest hostile within
-`rad`, on the side `car` 0–7 or all around for 8–10; or the unit `ene`), turning
-the turret and firing once it points at the target, leading moving targets; 4
-for boats (approach a side of the target at the align radius, attack run with
-an aim error from `AttackProbabilityHit`, break off, using the `[Attack]`
-settings; no closer than 35 m, and the way goes round the target) and tanks
-(drive at the target, fire when aligned); patrol while the target isn't there;
-6 waits at its point until the target is within 300 m or the unit is hit,
-then attacks; 11 destroys the unit after `dur` (`con` 1: counted from being
-boarded). Hostility is the attitude matrix (2 = hostile), the player is
-faction 8 (every mission makes the enemies hostile to 8). 10 (milestone 4) flies to the unit `ene`, docks on top of it for
-`dur` seconds and then completes its "boarded" event. Cargo ships (milestone 5) run the boat orders. Patrol and Escort units
-(milestone 5) also attack hostile units within their sensor range `senr`
-(100 m if unset) and return to their order once the target is gone or more
-than 2.5 sensor ranges away. The sensor type `sen` (optical, passive,
-active) isn't told apart yet. Cargo ships leave this to their turrets.
-
-**Done:** orders 1, 2, 9, 3 and 5 for boats and bombers (`fight/orders.cpp`),
-with "stop when" conditions per slot. A slot ends when its break condition is
-met, or when it is finished: Goto and GotoWithArrive on arrival (20 m), Wait,
-Patrol and Escort after `dur`. After the last slot the unit holds its
-position. Heights are above ground with a look-ahead of 60 m. Units with other
-orders hold their position for now; `--check` lists them ("order not
-implemented"), as well as the orders of units that can't move yet (tanks,
-crawlers, towers, buildings, cargo ships: "orders not run").
-
-## Phase 4 – HUD
-
-| Item | What it is | Effort | Needs |
-|---|---|---|---|
-| Pause | P key stops mission time and sounds, shows the PAUSE image (**done**) | S | – |
-| Voxel radar | 120×100 terrain view inside the master monitor (**done** in milestone 6, as in the original's screenshots: always shown, below the target's picture; a square patch of the height map reaching `WorldMaxY` cells to each side of the boat, turning with it, seen in perspective from behind at `Projection` degrees down, drawn with a depth buffer (so nearer ground hides what lies behind it) onto no background and fitted above the cargo line; shaded by height (low ground dark, peaks bright) with `VOX_000.S16` (32 fog rows of 256 RGB565 colours from offset 0x31a; 0–63 a light ramp, 64 orange); drawn with the height map's own grid and rendered at three times the resolution, then averaged down, so the ground moves smoothly without flickering against the lines; buildings as orange blocks, water currents as blue boxes, the boat as an orange line up from the ground, sonar contacts as lines in red (hostile), green (friendly), blue (neutral) or grey (the locked target), debris (trash) as green lines. `WorldMinY` and `FlightY` are still unused. Later, after a screenshot of the original next to a big station whose radar showed no block at all, only a few orange spots on the ground: buildings are their models (the modules' triangles, with each cluster's transform) in orange, in 16 shades by how much a face turns to a light from above and behind, cut at the patch's edges; about 0.6 ms a frame more next to the Asylum in s00101 on an M1 Pro, the terrain taking 2.4 ms. Whether the original shows small buildings as blocks and big ones not, or as orange ground, is to be compared) |
-| Slave monitor | Armor damage silhouette plus a weapons/ammo status table, and F1–F4 detail pages (**done**; F1–F4 and the lamps since milestone 6: as in the original, the first monitor shows a weapon page (the magazine by default; F1–F4 pick gun, magazine or a turret: name, state written out, the selected torpedo or the turret's software, and the picture of the gun or torpedo) and the second the armor page (`ARMOR STATE`, each side's percentage around the silhouette), which I switches to the systems table; a single monitor steps through all three with I. The lamps (`*.D16`, two RGB565 frames lighting the lower or the upper slot) show the monitor's mode: armor page, target locked, active sonar; what they show in the original is to be compared. Armor page from the four side images per damage level, laid out as a 64×64 silhouette; systems page with ARMO/GUN/TORP/TUR1/TUR2, ammunition and the gun states RDY/ARM/FIR/JAM/EMP/ENE; with two monitors one shows each page, I switches) | M | Full rows need 1.8 |
-| Icons | Current, radiation, locked (**lock and current done**; radiation open, its rule **measured** in appendix D: the symbol blinks in the first slot of the symbol block while the boat is less than 100 m below the surface, the depth readout turns red and the monitors flicker; below 60 m the ALERT with its voice and beep comes on top. Seen in the original but not placed yet: a red ring with a cross in the block's second slot while the player is under fire, where Vertigo draws the lock symbol) | S each | Phase 2, 1.8 |
-| Alert / threat | ALERT when hit, THREAT for an incoming homing torpedo, with matching beeps and voice (**done**: ALERT blinks for 3 s after a hit, with the alert beep; THREAT blinks while homing torpedoes follow the player, with the threat beep and the voice for each new one) | S | 1.4, 1.8 |
-| Friendly fire | Escalating radio warnings; the third friendly kill fails the mission (**done**: friends are units not hostile to the player's faction 8 that aren't destroy objectives or mines; warnings 67–70 at most every 3 s, kills 71, the third kill 89 and failure; `~` texts are red) | M | 1.4, 1.5 |
-| Torpedo lock + countdown | Lock ring, countdown from the torpedo's lock time, beep and "torpedo ready" voice (**done**: the target must stay locked and within 40° of the nose; the ring turns yellow when complete) | S | 1.8 |
-| Turret targeting | Turret software types, turret states, the `o` and F5–F12 order menu, target brackets (**done**: orders attack my target / sync / search and destroy / stop; Claw targets attacking torpedoes, Punisher hostile vessels, Eraser both; scan, lock time, accuracy and volleys from GLOBWEAP `[SoftwareN]`; states from `[TurretStateN]`; torpedoes can be shot down; brackets green scanning, yellow locking, red firing; turrets turn at 1.5 rad/s, as the turret models do, and fire once they point at the target (milestone 6)) | L | 1.4, 1.8 |
-
-## Phase 5 – Effects
-
-- **Particle system first (M):**
-  - Fix the effect-file parsing; speed and debris lifetime, drag and sinking
-    are currently ignored or uninitialised.
-  - Replace one heavyweight object per particle with lightweight pooled
-    particles drawn in batches.
-  - Add limits and distance culling.
-
-  **Done** (milestone 6): `Particles` holds explosions, debris, bubbles,
-  torpedo trails and dust in one pool of 3,000 and draws them in one batch
-  per texture. Bubbles and dust only use three quarters of it; nothing is
-  spawned or drawn beyond 220 m (the fog ends at 140 m, D17) or drawn behind the
-  camera. Projectiles stay objects, as they collide.
-- **Explosions with debris and bodies (M, needs 1.4):** explosion sized to the
-  object, 4–10 debris parts, the three "Cadaver" sprites for crewed vessels,
-  sparks on hits. Test: `s00105`. **Done** (without the particle pool): the
-  billboard loader reads `LifeTime`, `Friction`, `Lift` and `Min/MaxVelocity`;
-  `Debris` pieces fly off, slow down, sink (`Lift` × 4 m/s²) and settle on the
-  ground until their `LifeTime` ends.
-- **Dust clouds (S):** ground-dust sprites behind moving tanks and crawlers.
-  Needs 1.6 and moving units. **Done** (milestone 6): moving tanks and crawlers stir up
-  the "bodenstaub" sprites (EXPLOSIO 18–20, by the vehicle's size) behind
-  their tracks, more often the faster they go; the dust plays slowly and
-  drifts up. Which sprite the original uses is still to be checked.
-- **Torpedo trails (S, needs 1.8):** the data's "torpedo-bubble" sprite,
-  spawned every ~60 ms. **Done.**
-- **Cluster torpedo (M, needs 1.8):** the Ripper (torpedo 18). The data has no
-  submunition values, so the burst has to be designed: several flare shots, or
-  area damage of 7600 within ~31 m. **Done** as area damage: the Ripper bursts
-  on impact, at the end of its run or within 25 m of a unit, damaging
-  everything within 31 m except its launcher (7600, half at the edge).
-
-## Phase 6 – Nearby engine sounds (M)
-
-- Add 3D audio: the listener follows the camera, and cockpit and voice sounds
-  stay attached to the listener.
-- Give each unit its own looping sound; play the 4 nearest engines.
-- Pick the sample by unit class (enemy, bomber, biont and big-ship engines
-  exist); raise pitch with speed, as for the player's engine.
-
-**Done:** sounds are attached to the listener by default; the listener follows
-the player; enemy gunfire, hits and explosions play where they happen;
-`EngineSounds` loops the engines of the 4 nearest moving units within 300 m
-(scouts enemy engine 1, bombers/tanks/crawlers enemy engine 2, bionts the
-biont engine, cargo ships the big-ship engine), pitch rising with speed.
-
-## Milestones
-
-1. **Every mission loads and can end properly:** Phase 0, steps 1.1, 1.2 and
-   1.5, plus Pause.
-2. **The world moves:** step 1.3, orders 1/2/9/3/5, currents, tanks, voxel
-   radar, dust clouds.
-3. **The world fights back:** steps 1.4 and 1.7, orders 7/8/4/6, explosions,
-   alert, friendly fire, slave monitor, engine sounds. (**Done**, without the
-   particle pool, the slave monitor's F1–F4 pages and lamps, and THREAT,
-   which needs torpedoes.)
-4. **Torpedoes:** step 1.8, lock HUD, threat and locked icons, trails, cluster
-   torpedo, turret targeting, orders 10/11. (**Done**; turrets aim instantly,
-   tank turrets don't aim yet, the radiation icon is open.)
-5. **Cargo ships and a balancing pass** against the original. (**Cargo ships
-   done**: `CargoShip` builds the hull from its blocks, places the turrets on
-   it and runs the boat orders; see appendix A. **Difficulty done**: Easy,
-   Normal or Hard in the main menu (DEEPTEXT 107–109), Normal by default and in
-   test mode, `--difficulty` to change it. A unit whose `diff` key (0–2) is
-   above the level stays out of the mission. Only boats, bombers and tanks
-   carry it: 151 of them need Normal, 112 Hard, and before this every
-   mission was played as Hard. An absent unit counts as achieved in "destroy
-   these" objectives, is in no faction and never fires its own events.
-   **Balancing so far:** `AttackProbabilityHit` is now the chance that an
-   attack run is on target; the other runs aim past the hull. Before, the aim
-   error was smaller than the player's boat, so nearly every run hit. Ship
-   turrets engage within their sensor range `senr`. Test runs use a fixed
-   random seed (`--seed`). Over 3 seeds × 71 missions at Normal, with the
-   idle chapter-1 boat, 14 of 213 runs end with the player destroyed within
-   60 s, down from 20. The remaining ones are a tower at the start (S00704),
-   torpedo runs, and chapter-22 warships (S02204) that need a late-game boat.
-   Still open: tower accuracy, and cargo-ship placement and turret size. The
-   energy pool and its recharge, which decide how fast energy guns fire, and
-   the booster are in since October 2026 (appendix K).)
-6. **Loose ends:** what earlier milestones left out: voxel radar, dust
-   clouds and the particle pool, the slave monitor's F1–F4 pages and lamps,
-   turrets that turn at their rates (player and tanks), collisions between
-   units. The radiation icon and the sensor type wait for the alignment with
-   the original, which comes near the end. (**Done**; what the voxel radar's
-   settings, the lamps and the dust sprite mean in the original is to be
-   compared then. Test mode gained `--near` to start next to a unit.)
-7. **Mission completeness:** G1–G6 from the
-   [gaps found after milestone 6](#gaps-found-after-milestone-6): mission
-   music, complete minefields, the unit keys nobody reads yet, the five
-   missions with unresolved conditions, s00705, and the choice of station
-   after a mission. (G1, G2, G4 and G6 are done, G3 in part.)
+Risks: renderer changes stay self-contained so that a modern renderer and
+VR work stay easy; the cargo-ship block layout is inferred from the data.
 
 ## Differences to the original's cockpit (screenshots, October 2026)
 
-Compared with six screenshots of the original (English version; Hiob, Gator
-and Succubus cockpits) after milestone 6.
+Compared with screenshots of the original (English version; Hiob, Gator and
+Succubus cockpits). All but D12, D13 and the ground sample of D18 are done.
 
-| # | Area | Original | Vertigo now |
-|---|---|---|---|
-| D1 | Voxel radar: when | Always shown in the lower part of the master monitor, also with a target locked (the target's picture sits above it) | Only while no target is locked |
-| D2 | Voxel radar: look | A square patch of terrain around the boat, turning with the heading, seen obliquely from above; nothing beyond it and no background, so the monitor's grid shows through. Terrain in light grey to white, slopes darker; no blue fog | Perspective view to the horizon, filled with the water colour, fogged to blue |
-| D3 | Voxel radar: objects | Buildings as orange blocks with their height (big stations apparently not, or as orange spots on the ground); units as vertical lines from the ground up to them: red hostile, green friendly, blue (probably neutral or the player) | Coloured dots for sonar contacts and the boat |
-| D4 | Slave monitors: assignment | The first monitor (left) shows a weapon page, the second (right) the armor; Hiob's single monitor shows the weapon page | First armor, second systems table; Hiob's shows the armor |
-| D5 | Weapon page | Centred lines: item name, state as a word (`READY`), the selected torpedo's long name (`THRESHER SHARK I`); the picture of the torpedo below. Shown by default for the magazine; F1–F4 presumably switch it to gun, magazine, turrets | Detail page only after F1–F4, with the magazine's picture, short names and `RDY` beside the picture |
-| D6 | Armor page | Title `ARMOR STATE`, the silhouette in the middle, the percentage of each side around it (front above, back below, left and right beside it) | Silhouette only |
-| D7 | Master monitor: activity | Second line shows what the target does: `GOTO`, `PATROLLING`, `ATTACKING` | `activity not implemented` (with the sonar's activity detection) |
-| D8 | Master monitor: weapons | `G:` the target's gun short name (`VEN1`), `T:` its torpedoes | `NIMP` |
-| D9 | Aim help (HUDAIMH) | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame | Drawn on the target's centre |
-| D10 | Cargo ships | Each block is a sonar contact and target of its own (a row of dots on the sonar, a bracket per block) | One contact for the whole ship |
-| D11 | Target lock | `u` locks the nearest enemy (HELP0-2.TXT) | Not implemented (L locks what is in the reticle, N the next nav point) |
-| D12 | Unknown marker | A red circle with a cross, apart from the locked target (shots in combat), sometimes outside the HUD frame; not one of HUDAIMH, HUDTARG, HUDTURR, HUDPOI* | – (identify first) |
-| D13 | Hits | Plasma hits light up as large blue-white flashes; explosions close by fill much of the view | Smaller hit effects (compare sizes) |
-| D14 | Armor symbol (HUDSHIE1-9, beside the sonar symbol) | A bar per side: green, yellow below 75 %, red below 50 %, gone below 25 %, white when hit | Done |
-| D15 | ALERT | Only while a side's armor is below 10 %, with the voice "system collapse" (SMPMAP 72) | Done: blinks while critical, the voice when it starts, the alert beep with each blink |
-| D16 | THREAT | Yellow (HUDTHREY) | Was red (HUDTHREA, whose use is unknown); yellow now |
-| D17 | Terrain colours and fog | The colours come from the map's shading tables (`VFX/TEXTURE/S000_nnn.S16`, the same layout as the radar's `VOX_000.S16`): 32 rows of 256 RGB565 colours, row r holding t·2·palette + (1 − t)·F with t = (r + 1)/32, clamped, where F ≈ (−70, −2, 37) is a blue that takes the red away; the nearest row is twice the palette (the textures use entries up to 123 only), and the models' tables (`MOD_nnn.S16`) are the same blend at the palette's own brightness. The row follows the distance and the slope: ground that faces the boat stays bright far out (a mountain wall 40–60 m ahead is nearly unfogged), ground seen at a grazing angle darkens within 50 m, and nothing is left beyond about 80 m over flat ground; 44 m up at strai3's start no ground shows at all, while 4 m up before a mountain wall (the user's screenshot) the ground fills the window. The surface files name a `gouraud.xyz` file of light vectors that the GOG data does not contain, so the shading comes from the height map's own slopes | Was a blue ambient light, the headlight and a linear fog to (0, 0, 0.15) between 100 and 200 m: brighter, greyer, with weaker fog. Now the terrain follows the game's own rule (appendix M): every vertex gets a brightness in multiples of its texture, an ambient part of 2 at the eye that falls to nothing at 31 m plus the cockpit's light of 5 falling to nothing at 114 m, times how much the ground faces a point 8 m above and 4 m ahead of the eye; the brightness, interpolated across the triangles, picks the table's row per pixel (16 rows per multiple, the last of the 32 being twice the texture), which blends the table's colour F into twice the texture. Everything else keeps the fog by distance from 30 to 140 m at its own brightness. Against the original's pictures at s00701's start, 11 m up facing west, east and north and 22 m up facing west (`--start 198,126,10,6`, `…,10,2`, `…,10,0`, `…,20,6`), the mean colour of each 8-line band of the ground differs by 12.5 units RMS over the four pictures, as close as the fit before (11.8) with nothing fitted; a light at the eye itself gives 12.4, one 8 m below 18.4. The vertices' normals are the spline's, where the original sums the six triangles around a grid vertex, and the shot lights raise the brightness instead of bending the normals |
-| D18 | Terrain geometry | The height map is the same: at s00202's start the original's memory holds the boat at z 57–60 m above map zero with the ground at 48 m (a sibling session's dump), as Vertigo has it. The screenshot that seemed to show the ground 148 m higher was taken with the player moved to cell 76,76 (its dump says so), where Vertigo reads 3798 m to the original's 3794 at the same 11 m height. At s00101's start both read 3966 m of depth, but the original 57 m of height (hei 30 × 61/32, the cell's own value) to Vertigo's 74 m | The ground under s00101's start is sampled 17 m too low: the cell holds 250, its western neighbours 236–240, and a building's `setHeight` or the spline's sampling takes the lower value (open; nothing else differs) |
+| # | Area | Original, and what Vertigo does now |
+|---|---|---|
+| D1–D3 | Voxel radar | Always shown in the lower part of the master monitor, the target's picture above it: a patch of terrain from 5 cells behind the boat (`WorldMinY`) to 20 ahead (`WorldMaxY`) and 15 to each side, turning with the heading, seen in perspective from behind at `Projection` 30° so that the far edge is about half as wide as the near one and the boat sits in the lower third (`FlightY`); no background, so the monitor's grid shows through; light grey ground, low ground dark, with `VOX_000.S16`; buildings as their models in orange, units as vertical lines from the ground (red hostile, green friendly, blue neutral, grey the locked target), debris green, the boat orange, water currents as one turquoise sheet over their cells |
+| D4–D6 | Slave monitors | The first monitor shows a weapon page (item name, state as a word, the torpedo's long name, its picture; F1–F4 pick gun, magazine or a turret), the second the armor page (`ARMOR STATE`, the silhouette with each side's percentage); Hiob's single monitor shows the weapon page; I switches to the systems table |
+| D7–D8 | Master monitor | The second line shows what the target does (`GOTO`, `PATROLLING`, `ATTACKING`), `G:` its gun's short name and `T:` its torpedoes |
+| D9 | Aim help | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame |
+| D10 | Cargo ships | Each block is a sonar contact and target of its own |
+| D11 | Target lock | `u` locks the nearest enemy; L locks what is in the reticle, N the next nav point |
+| D12 | Marker under fire | Open (O3) |
+| D13 | Hits | Open (O2) |
+| D14 | Armor symbol | A bar per side: green, yellow below 75 %, red below 50 %, gone below 25 %, white when hit |
+| D15 | ALERT | While a side's armor is below 10 %, with the voice "system collapse"; also in the radiation (appendix D) |
+| D16 | THREAT | Yellow (HUDTHREY) |
+| D17 | Terrain colours and fog | The map's shading tables (`VFX/TEXTURE/S000_nnn.S16`, like the radar's): 32 rows of 256 RGB565 colours, row r holding (r + 1)/32 of twice the palette and the rest of a blue F ≈ (−70, −2, 37) that takes the red away; the row per pixel follows the rule of appendix M. Everything but the terrain keeps a fog by distance from 30 to 140 m |
+| D18 | Terrain geometry | The height map is the same (at s00202's start both have the boat at 57–60 m over ground at 48 m); only the ground sample at s00101's start differs (O4) |
 
-D1–D11, D14 and D17 are done (D12, D13 and the ground sample in D18 remain):
-the radar, monitors, aim help, cargo-ship blocks, `u`, the armor symbol and
-the terrain's colours now follow the screenshots.
-
-Already alike: lock ring with name, distance, shield bars and sensor icon;
-turret brackets; heading tape; THREAT; the lamps beside the sonar monitors lit;
-the master monitor's target picture, D/H/V/N and R.
+Already alike: the lock ring with name, distance, shield bars and sensor
+icon; turret brackets; heading tape; the lamps beside the sonar monitors; the
+master monitor's target picture, D/H/V/N and R.
 
 ## Gaps found after milestone 6
 
-A review in October 2026, after milestone 6, found these gaps outside the
-former todo list. At that point `--check` matched
-[mission-check.txt](mission-check.txt), and running each of the 71 scenarios
-headless for 60 s with the idle chapter-1 boat crashed none of them.
-
-| # | Gap | Effort | Notes |
-|---|---|---|---|
-| G1 | Mission music | S–M | Each scenario's `[CD] Track` (1–4; 0 only in s02005) presumably picks one of the CD's audio tracks 2–5 (`game.ins`: track 1 is data). Vertigo plays no music in missions, and the data directory doesn't contain these tracks. They are plain 44.1 kHz 16-bit stereo PCM in `game.gog` (2,352-byte sectors), so they can be copied out once (or on import, see the [iPad port](#ipad-port)) and streamed like the other sounds. Whether 0 means silence, and whether the stations use CD music too, is to be checked (**done**: `Track` n plays the CD's track n+1, so 1–4 are its four audio tracks (3:30, 3:11, 1:34 and 1:00) and 0 would be the data track, i.e. none. Building `Game Data` from a CD image also copies the audio tracks out: `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`, 98 MB, 16-bit stereo at 44.1 kHz. They are the sounding stretches after the data track, apart by a second or more of digital silence (the CD has two), so the image is enough; GOG's `game.ins` has each track 167 sectors (2.2 s) later than its sound starts in `game.gog`, so a track by it would lack its first 2.2 s and end in the next one's. A cue sheet is used only for a rip with a file for each track; the samples are little-endian (the neighbouring samples correlate at 0.993, read big-endian at 0). `sfx::Music` streams the mission's track from the disk through four OpenAL buffers, round and round, pauses with the mission and stops when it ends; at half the volume, as the CD audio (−11 dBFS) is louder than the game's sounds (−13 dBFS in the median). The notebook's Options › Sound has the original's CD Musik: AN/AUS (DEEPTEXT 58–64), remembered as `Sound/cdMusic`. Automated runs, which are silent, play no music, so traces and screenshots are unchanged; `tests/cdimagetest` covers the silences, the cue sheets and the WAV files, and the stream was checked against stubbed OpenAL calls. Listened to by hand: not yet. Stations have background sounds of their own (`Sound = b05`, SFX/SND/BGROUND). Whether `DESKTOP.EXE` plays CD tracks too, and whether the original loops a mission's track, pauses it in the menu and plays it as loud as the effects, is to be compared) |
-| G2 | Minefields | S | The mine keys `num` and `dis` are ignored (`TODO: dis num` in `scenario.cpp`), so every mine entry places one mine. Going by their values (`num` 1–5 and more, `dis` 6–22, mostly 10 and 20) they are the number of mines and their spacing; then 407 of 1,289 mines in 19 scenarios are missing. How the original lays them out is to be compared (**done**: an entry is a column of `num` mines, `dis` height units apart, the lowest at `hei` above the ground. Rows don't fit the data: the 202 entries with more than one mine sit in neighbouring cells, 16 m apart, and in s00201 two rows of five-mine columns (from 10 to 50) close a canyon whose walls rise about 50 height units, where single mines would leave it open above. The mines of an entry appear together; the entry is attacked when one of them is and destroyed when all of them are, which matters for s02205, whose objectives 2 and 3 are to destroy such columns. The 407 mines are added in 10 of the 19 scenarios with mines (one of them a training mission); elsewhere every entry has one mine and `dis` is just set for the whole scenario. In the traces of all 71 missions only the added mines differ, and the exit codes are the same; s02205 is won when every target is destroyed, but not with one mine column left, or with only the lowest mine of each column destroyed. Whether the original stacks them upwards is to be compared) |
-| G3 | Unit keys nobody reads | M | `sle` on 3,373 units, `inte` on 2,345, `eint`, `eng` and `ai` on 1,849 each, `card` on 424 (as listed by `--check`). `inte` and `eint` are mostly 100 but range from 0 to 600, which looks like percentages of strength or skill; `eng` (0–5) is listed with the armament (appendix H); `ai` is never read by `FIGHT.EXE` (appendix B). Meanings to be found in the original; likely to matter for the balancing (**partly done**: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod)'s changelog names them, and its changes match: "PD & ED decreased from 150% to 100%" for s02006's Biont bombers is `inte` and `eint` from 150 to 100, "better engines (#3 instead of #2)" is `eng` from 2 to 3. So `inte` is a unit's armour and `eint` its energy defence in percent of its type's `KineticShield0` and `ShockShield0`, which Vertigo now applies: 718 of the 2,345 units differ from 100, from 10 % (the weakened Bionts and Shogunate units of chapters 20–22, some with no energy defence at all) to 1,000 %, and the indestructible types (10,000,000) stay above a million. Seeded idle runs of all missions end as before (3 seeds × 71: 13 destroyed, 3 failed), as only fights see the difference; the traces show the new armour. `sle` lets a unit sleep out of the player's sonar range (appendix J, **done**). `eng` is the unit's engine, which sets how fast its energy guns recharge (appendix K, **done**). Still open: `card` on 424 active buildings (51 of them not 0) may turn them as it does buildings (in the [open questions](#open-questions-and-how-to-settle-them)); `ai` is never read by `FIGHT.EXE` (appendix B)) |
-| G4 | Unresolved conditions | S each | `--check` reports an empty faction in s00402 and objectives that don't exist in s00404 (objective 14, 8 times), s01802 (24), s02003 (32, 36) and s02006 (21). Check whether these missions can still be won, and what the original makes of such references (**done**: the numbers are condition codes; they stand for objectives 4 (achieved), 9, 13 and 15 (achieved) and 7 (failed), which `--check` now names. A reference to an objective or faction without units never comes true, as before, and all five missions can be won (with their targets destroyed by `--destroy`). s00402: "every unit of faction 1 destroyed" never happens, so its negation holds and the pirates' threat of revenge plays when 2091 is destroyed, as the text suggests. s00404: the tanks and scouts wait for area 2087 *or* objective 4. The area is enabled with objective 1, when a radio message announces them; if a missing objective were achieved from the start, they would be on their way before that. s01802 was made from s01801, where objective 9 is the enabling of area 2184; it dropped the area, so 2 of the 7 tanks the transport brings (2191 and 2197) never come. They aren't objectives. s02003: area 2049 waits for objective 13 *or* unit 2071 destroyed, and the other reference is the stop condition of an order that waits forever, so neither changes anything. s02006 was made from s02005, whose objective 7 protects the power plant; it dropped the objective but kept its radio message ("direct hit"), which never plays. The original agrees for s01802: the [AD Augmented Mod](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) 1.2, a community mod for the English version, "fixed 'appear' triggers" of two ATL buggies (2191 and 2197) "so these units actually appear on map". The mod also gives s02006 its power plant objective back, rebuilds s02003's objectives and replaces s00402's faction 1; s00404's references stay, and it adds one of its own to s00701) |
-| G5 | s00705 | S | Ended with success after 33 s while the player did nothing (seed 1, with `qrand()`); with other seeds the player died or the time ran out, and with `util::random()` (P2) seeds 1–4 run out of time. Find out which units can fulfil the objectives without the player and whether that is right (October 2026: no longer happens. With the torpedoes and the balancing since, the idle player is destroyed after 62–95 s in each of 12 seeds; only the player can destroy Marquez (2067), the one objective, as everyone else is in his faction. Left to compare: the AD Augmented Mod's changelog says that in the original Schwartz (2066) infiltrates only the first control unit and waits with the others until Marquez is dead. In Vertigo he infiltrates all three in turn (2061 after about 35 s, 2052 after 75 s), and each wakes two turrets. His four slots after the first wait all have "Marquez destroyed" as their break condition; that the original keeps him in the first suggests that a slot with a break condition doesn't also end by itself there, after its time or its docking. See [open questions](#open-questions-and-how-to-settle-them)) |
-| G6 | Station after a mission | S | When several stations are enabled after a mission, the first one is taken (`TODO` in `Chapter`); the player should choose (**done**: FIGHTEXT has the original's autopilot menu, unused until now: AUTOPILOT, ZIEL AUSWÄHLEN (choose the destination), 0 - ABBRUCH, ZIEL BESTÄTIGEN : with 0 - NEIN and 1 - JA, laid out like the turret menu. Alt+A after the mission is accomplished (and Ctrl+K) now opens it with the area's open stations, numbered 1 to 9 in their order, or, after a mission met on the way to a station, that station alone; the boat docks at the one confirmed. Like the turret menu it doesn't pause the mission and takes digits, the d-pad and taps. Test missions and training, which have no stations, still end at once. Tested in a story game from a save with all four stations of area 2 open: after "Trümmer beseitigen", the menu offered Magellan, Vespucci, Topo's Asylum and Entropoint II, and choosing Vespucci docked there instead of at Magellan, the first. Whether the original lists the station the mission started from, and what it shows with no open station (KEINE ZIELE VERFÜGBAR), is to be compared. After the user's comparison with the original: with one destination the autopilot goes there at once, without the menu; and the menus (mission, game over, turret, autopilot) show on the master monitor in place of the target and the voxel radar, in its middle and closer together (nine destinations fit), also in the 3D cockpit, whose screen gets the instruments' texture; taps still take their options. Notices stay in the box in the middle of the view) |
-| G7 | Training | S–M | The original's main menu had TRAINING (`deeptext.des` Text112, `txt::MainMenu_Training`, unused; the menu has room for it between the difficulty and Quit). The data has four training missions: scenarios `strai0`–`strai3`, briefings `dat/mission/mtrai0`–`3` (Moghs, Panzerschlacht, Rette Hilfstransport, Vespucci befreien) and setups `dat/save/ftrai0`–`3.des` with the map, the briefing's background, the boat (Gator or Hiob), its cockpit and equipment, and a station. A menu with the four would start them as test mode does, with their boats, briefing first; the way to try the game without the story, also on the iPad, which has no command line (**done**: TRAINING in the main menu lists the four by their names on the area map; each starts with its briefing (`Briefing` now takes the mission, the area map and the HUD instead of asking the chapter) and goes back to the menu when it is won or aborted, restarting (and loading, as there is no saved game) starts it anew. The setups have the boat as the fight engine takes it (`FIGHTIN.DES` of the GOG installation has the same form): the boat by name, Hiob as 2046 and Gator as 2047 where saved games have 2049 and 2050, and its items numbered within their kind (armor 3 is 5123, a magazine 7 is 1031, a gun 3 is 3075); they become a saved game's `[Ship]` for `Boat`, rebuilt for each start so that the torpedoes are back) |
+| # | Gap | Notes |
+|---|---|---|
+| G1 | Mission music | Done. `[CD] Track` n plays the CD's audio track n+1 (1–4; 0 none); building `Game Data` from a CD image copies them out as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`; `sfx::Music` streams the mission's track round and round at half volume, pausing with the mission; CD Musik AN/AUS in the options (`Sound/cdMusic`). Not compared: whether the original loops, pauses and how loud |
+| G2 | Minefields | Done. A mine entry is a column of `num` mines `dis` height units apart, the lowest at `hei`; 407 mines in 10 scenarios were missing before. Attacked when one of them is, destroyed when all are (s02205's objectives). Whether the original stacks them upwards is not compared |
+| G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by `FIGHT.EXE`. Open: `card` on active buildings (O7) |
+| G4 | Unresolved conditions | Done. The references `--check` reported are condition codes for objectives that no unit has; they never come true, and all five missions can still be won. s01802 lost two tanks' trigger area when it was made from s01801 (the AD mod fixes it), s02006 kept a radio message of a dropped objective |
+| G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O8) |
+| G6 | Station after a mission | Done. The original's autopilot menu (FIGHTEXT) opens with Alt+A once the mission is accomplished and lists the open stations; with one destination the autopilot goes there at once. The menus show on the master monitor, also in the 3D cockpit |
+| G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing |
 
 ## Open questions and how to settle them
 
-| Unknown | How |
-|---|---|
-| Current speeds and directions 8/9 (**measured**, appendix D: about 41 m/s along the boat's axis and 19 m/s across it for `spd` 2, about 5 m/s for `spd` 0, no fade, coasting afterwards; 8 is up at 5 m/s, 9 down at 4.5–9 m/s). Left: why one of S00202's two 8 cells does nothing, and the exact acceleration curve | Measured with the player's drift in the original under DOSBox-X; the rest the same way, or in `FIGHT.EXE` (instrument 2) |
-| Unclear order settings (`car` for towers and ambush, `con` for Explode, `sle`, `diff`), mission end types (**settled** in the original, October 2026, appendix J: `car` is a quarter turn, `con` says what sets off the explosion, `sle` lets a unit sleep out of the player's sonar range, `diff` is the lowest difficulty the unit appears at, the end types pick the destination written to `fightout.des`), one objective type (`wccond 9`, still open) | `wccond 9`: compare the 56 units that carry it (s00303, s02006 and others) with what the original does with them |
-| How engine volume and pan fall off with distance | Log the original's volume, pan and pitch calls in sfwin32's `audio.c` |
-| Radiation trigger (**measured**, appendix D: less than 100 m below the surface on every map, the ALERT below 60 m) | Done by setting the boat's height in the original under DOSBox-X |
-| Cluster burst, alert trigger, which dust sprite, debris units | Watch the original (e.g. `s01804`) |
-| Whether an order slot with a break condition also ends by itself (its time, arrival or docking), or only when the condition comes true (G5) | In the original both end a slot (appendix J): the break condition is checked every frame, and the orders also finish on their own, GotoWithInfiltrate after it has docked for `dur`. Still to watch in s00705, as the AD Augmented Mod says Schwartz stays at the first control unit: does he infiltrate the second one (2052, south of the first) while Marquez lives? |
-| Whether Explode (order 11) counts as "destroyed" for conditions | **Settled** (appendix J): it doesn't. The original raises "destroyed" only when a unit's armour reaches zero; an Explode order puts the unit through the same tumbling explosion as a collapsed energy defence, which leaves the armour alone, so "not destroyed" (39) stays true, as the AD Augmented Mod found. Vertigo does the same now (**done**) |
-| How energy guns recharge, and what the engine (`eng`, the boat's engine) does | **Settled** (appendix K): every armed unit has one energy pool, refilled from empty in 5, 3, 1 or 0.01 s by engine 0, 1, 2–4 or 5; a shot costs the gun's `energydemand`, and the gun is ready again once its rearming time is over and the pool is above the demand. The booster draws from the same pool. In Vertigo since October 2026 (**done**) |
-| How the terrain's shading-table row is chosen per vertex (D17) | **Settled** (appendix M): the cockpit description's `[Camera]` values give an ambient part that falls off to 31 m and the cockpit's light that falls off to 114 m times the slope's cosine towards a point 8 m above the eye, in multiples of the texture with 16 rows per multiple; the terrain is drawn with it since October 2026. **Done** |
-| How the boat's pitch and yaw carry on after the key is released | **Settled** (appendix L): the rates relax towards the stick's share of the maximum by the boat's `AngleFriction` fraction once per update of the original, and the frame time only turns the boat. At 30 updates a second the feel matches the original in the booster setup of docs/reverse-engineering.md, compared by hand (October 2026); `turnticks` in `settings.ini` keeps it tunable. **Done** |
-| Whether active buildings turn with `card` (0, 2, 4 or 6 on 51 of 424; buildings turn by card·45°) (G3) | Look at one in the original, e.g. s00401's hydrogen tank 2066 (`card` 6) |
-| What `sle` means (0 or 1 on every unit, 1 on nearly all mines and turrets) | **Settled** (appendix J): a unit with `sle` 1 (or no `sle`) sleeps while it is out of the player's sonar range, a unit with 0 keeps running its orders anywhere on the map. Vertigo does the same now (**done**) |
-
+What is still unknown is in [what is open](#what-is-open) (O5–O9).
 [reverse-engineering.md](reverse-engineering.md) maps each question to an
-instrument: the original under DOSBox-X's debugger on the Mac first, a static
-reading of `FIGHT.EXE` second, sfwin32 last.
+instrument: the original under DOSBox-X on the Mac first, a static reading of
+`FIGHT.EXE` second, sfwin32 last. Settled this way so far: the currents
+(appendix D), the radiation (D), `sle`, `diff`, the attacker lists, `car`,
+`con`, Explode and the order slots (J), the energy pool, the energy guns, the
+booster and the jams (K), the boat's turning (L) and the terrain's shading
+(M).
 
 [sfwin32](https://github.com/mnkraus/sfwin32) runs the original `FIGHT.EXE`
 machine code on Windows and only replaces the DOS, video and sound services.
@@ -387,95 +220,6 @@ installation (`goggame-1436955893.hashdb`, 1,774 entries, all verified
 The hash database comes with the installation, so it only shows the files are
 what that GOG installer shipped; obtain the installer from GOG itself.
 
-## iPad port
-
-Nothing in the engine rules out an iPad version (assessed October 2026): the
-code is portable C++, the video and sound decoders are our own, matrices are
-computed with glm, and the 566 MB of game data fit easily. As on the desktop,
-players bring their own game data. Most steps pay off on the desktop too, so
-they can land on master one by one.
-
-| # | Step | Effort | Notes |
-|---|---|---|---|
-| P1 | Drop SDL2 | S | Only `SDL_GetTicks` and `SDL_iconv_string` (Windows file names) are used; replace them with `QElapsedTimer` and Qt's own conversion (**done**: `util::ticks()` on `std::chrono::steady_clock`, `QString::toStdWString()` for MSVC's wide file names) |
-| P2 | Qt 6 | M | `QGLWidget` is gone in Qt 6. Use `QGuiApplication` with a `QOpenGLWindow`; Qt Widgets is then not needed, as the window is the only widget besides the `QFileDialog` folder picker. Replace `QRegExp`, `QString::SkipEmptyParts`, `qsrand`, `QDesktopServices::storageLocation` and `QGLWidget::convertToGLFormat`. Settles the Qt 5 risk below (**done**: the code only uses what Qt 5.15 and Qt 6 both have, and CMake takes either. Tested with Qt 6.12 and Qt 5.15 (Homebrew): the same `--check` report, the same results in all 71 missions and identical unit traces, as long as both builds use the same build type. `Window` is a `QWindow` with one `QOpenGLContext`, current from the start on a `QOffscreenSurface` while the window isn't shown, so loading and headless runs work as before; `QApplication` stays for the folder dialog until P6. The window comes back with its last size; the `QWidget` geometry saved before is read once. `util::random()` (a `std::mt19937`) replaces `qrand()`, so seeded runs give other results than before; over 3 seeds × 71 missions the counts stay the same (13 runs destroyed, 3 failed). `QRegularExpression`, `QElapsedTimer`, `QMultiMap`, `QStandardPaths::AppLocalDataLocation` (the same directory as before), C++17) |
-| P3 | Shader renderer | M–L | About 280 fixed-function calls in 22 files: matrix stack, lighting, fog, alpha test, `glBegin`/`GL_QUADS`, `glPushAttrib`. Replace the GL matrix stack with a glm one and draw with one or two shaders (texture, light, fog, alpha discard): one code path for OpenGL 3.2 core on the desktop and OpenGL ES 3 on the iPad. A first step towards the modern renderer (see risks) (**done**: `gfx::Pipeline` keeps the model-view stack, the colour, the boat's spot light, linear fog, the alpha test and projective texture coordinates (the 3D cockpit's HUD decal) and draws with one shader, GLSL 1.50 on OpenGL 3.2 core (4.1 on macOS) and GLSL ES 3.00; lighting stays per vertex as in OpenGL 1. `gfx::Mesh` keeps models, terrain and the 3D cockpit in vertex buffers, quads and text are streamed. With `--fixed-step`, screenshots of 23 scenes (menus, a station, a movie, missions in the 2D and 3D cockpits with explosions, gun and torpedo fire and the debug overlay) match the fixed-function renderer to within 0.04 % of the pixels (rounding at texel and triangle edges), at the same CPU time. The OpenGL ES variant is untested until P5) |
-| P4 | Case-insensitive data access | S | The data folders are upper case (`GFX/IMG/...`), the code opens lower-case paths (`gfx:img/...`). That only works on file systems that ignore case, like macOS's default; iPadOS's doesn't. Resolve names case-insensitively in `util::File` and the Qt search paths, or lower-case the files on import (**done**: `util::DataPath` indexes the data directory once (about 4,300 entries) and resolves `gfx:…` and `gfx/…` names in any case; every file opener goes through it, and the Qt search paths are gone. `--data <directory>` picks the data for one run. Tested with the data on a case-sensitive APFS volume: `--check` gives the same report, missions, cockpits and the main menu load) |
-| P5 | iOS build | S | An app bundle with an Info.plist, icons and signing. After Q1–Q5 there is no Qt to install: SDL3 and the other libraries are built for iOS from source with CMake. `gfx/gl.hpp` takes OpenGL ES 3's headers there instead of SDL's desktop ones. Test in the iPad simulator first (**done**: `cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS` makes an Xcode project for an iPad app (iPadOS 18.6 or later, landscape, full screen, the logo of `data/vertigo.svg` as its icon); CMake fetches SDL 3.4.18's source release, pinned by its SHA-256, and builds it statically; OpenAL and OpenGL ES are the system's frameworks, and GLM's headers the host's. On iOS `gfx/gl.hpp` takes OpenGL ES 3's headers and links the functions directly. Floating-point `std::from_chars` needs iOS 26, so `util::readDouble()` reads numbers with `strtod_l()` in the C locale (the same results on 2 million random texts and on all game data). The game data is read from the app's Documents folder; without it a message says what is missing. Tested in the iPad Air 13" simulator (iOS 27): the intro, the menus by touch, the name entry with the on-screen keyboard, the intro movie with its sound, and missions in the 2D cockpit, which look as on the desktop. On an iPad Pro 11" (2018) it runs at the display's 120 frames a second in both cockpits, as long as the build is optimised: Xcode's `vertigo` scheme runs RelWithDebInfo, as a Debug build manages only about 20 (the debug overlay's frame rate line ends in DEBUG BUILD then). The simulator renders OpenGL ES in software: the 3D cockpit takes seconds per frame there, and in s00101 next to tower 2054 it drops a triangle of a building that reaches behind the camera in some frames (the desktop draws it, with the hardware renderer and with Apple's software renderer); an iPad Pro 11" draws it too, so it is the simulator's) |
-| P6 | Data import | S (M with the CD image) | Replaces the folder dialog: show the app's Documents folder in the Files app (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`) and look for `DAT`, `GFX`, `SFX`, `TXT` and `VFX` there. Optionally import straight from `game.gog` and the GOG installation (**done**: with both keys the Files app shows the Documents folder as On My iPad › Vertigo, but only with something in it, so Vertigo puts a note there on what to copy while it has no data. The game data is looked for in Documents and in each folder in it; without it a message says what to copy and checks again, as iPad apps don't quit. A GOG installation (or an `.iso` or `.bin` of the CD) in one of them is imported: `util::CdImage` reads the ISO 9660 file system of plain or raw sectors, and the CD's `SF/DAT`, `GFX`, `SFX`, `TXT` and `VFX` are copied with the installed files on top into the folder `Game Data` (4,180 files, 582 MB, 1.2 s in the simulator), which only appears once complete and is kept out of iCloud backups. On the desktop, choosing a GOG installation offers the same import, into `Game Data` next to the saves. The imported data matches the merged directory used so far in every file the game reads (only the DOS sound drivers and the original's save slots differ), and with it the traces of all 71 missions and the 23 screenshots are unchanged. `tests/cdimagetest` covers the three sector layouts and damaged images. Tested in the simulator from an empty folder through the import to the intro, and on an iPad with the data copied through the Files app and the Finder; the desktop's import dialog works too) |
-| P7 | App lifecycle and audio session | S | Pause the mission and save the settings when the app goes to the background (`SDL_EVENT_DID_ENTER_BACKGROUND`; the window is never closed on iOS), and make no GL calls while in the background. Set an `AVAudioSession` category and suspend the OpenAL context during interruptions (calls, Siri) (**done**: when the app is interrupted (a call, Siri, the app switcher), a mission pauses as with P. In the background nothing draws (`glFinish()` on the way there) and OpenAL rests (`alcSuspendContext()`); back in the foreground the audio session is activated again and the context made current anew, which makes it play again after an interruption. Interruptions of the audio alone (`AVAudioSessionInterruptionNotification`, Objective-C++ in `sfx/audiosession.mm`) suspend OpenAL as well. The category is Ambient: the game mixes with other apps' audio, such as the player's music (or the missions' own CD music, G1), and is silent with the silent switch. Settings are written on each change already. Tested in the simulator: after the Home button and back, a movie went on (its pictures follow its sound) and a mission was paused; on an iPad also with a call and Siri. From the first test on an iPad Pro 11": with the 3D cockpit's 8192x8192 texture nothing was drawn any more (sound and input went on, no error was shown). Loading it takes the game from 0.14 to 1.4 GB on the desktop, so on iOS the texture is halved to 4096x4096 at most (0.9 GB), without copies of the full size; OpenGL errors after loading it and in its first frame are reported) |
-| P8 | Keyboard | S | A hardware keyboard works as is, but older Magic Keyboards for iPad have no Esc and no F keys (F5–F12 are the turret orders), so add second bindings. Bring up the on-screen keyboard for save-game names (only then: done, text input is on only while the main menu asks for a name). The keyboard covers the name field, which should move above it (`SDL_SetTextInputArea()`) (**done**: second bindings on every system, as laptops lack F keys too: Cmd+. (Ctrl+. on Windows and Linux) is Esc, as in iPadOS, and Cmd with the number row's keys 1 to 0, - and = is F1 to F12, by the keys' places so that every layout has them; `--keys` takes them too (`Ctrl+.`, `Ctrl+2`), and screenshots after Cmd+2 and Cmd+. are the same as after F2 and Esc. The main menu tells the window where the name shows, and SDL moves the view up until it is above the on-screen keyboard (tried in the simulator). A tap also starts a mission after its briefing, without a keyboard) |
-| P9 | Game controller | M | SDL3's gamepad API (after Q5; Qt 6 has no gamepad module). The sticks feed the analog `m_left`/`m_right`/`m_up`/`m_down` in `Scenario`. There are more actions than buttons, so turret orders and torpedo selection need a menu or button combinations. Useful on the desktop too (**done**: every controller SDL knows, on the desktop and on the iPad (`GCSupportedGameControllers` in the Info.plist). The left stick steers in proportion: the player's turn rates go towards the maximum times the stick's deflection (keys are 1, so they steer as before, to the bit), beyond a round dead zone of 20 %; forward lowers the nose, as the original's joystick (HELP1.TXT) and the Up key. The buttons stand for keys, after the original's joystick buttons where it had them (fire, lock the target in the reticle, fire a torpedo, the next torpedo), with LB held for a second set (autopilot, lock the nav point, engine, sonar zoom, monitor pages, pause, 2D/3D cockpit); the d-pad changes the speed in steps and repeats while held. The right stick turns the head in the 3D cockpit as the mouse does. In the mission and turret menus the d-pad highlights an option in yellow (only once a controller is used, so the menus look as before otherwise), A takes it and B goes back; Start opens the menu (from P10 on, continuing from it also ends a pause). Outside missions A is Return and B and Start are Esc (briefings, movies, the name); menus and stations stay with the mouse or touch. `--pad` works a virtual controller (SDL's virtual joystick) in test runs: driving s00101 with it gives the same trace as with the keys, on the desktop and in the iPad simulator, and B and Start skip the new game's movies to the same station screenshot. Tested with a real controller on an iPad) |
-| P10 | Touch controls | L | Virtual stick and buttons over a cockpit that fills the 640×480 screen. Menus and stations already work, as taps arrive as mouse clicks; hover highlights only show with a trackpad or Pencil (**done**: `hud::TouchControls` draws over the whole window, laid out in units of a view 480 high (the HUD text's size) along the edges and in the corners, where the cockpit art has its frame: a stick that comes up where a finger touches the left part and steers in proportion, as the controller's stick; FIRE, TORP, LOCK, NEXT, BUZZ under the right thumb, the speed above them (+ and - repeat while held), MENU, NAV, AUTO, SONAR, TURR and VIEW in the top corners. The buttons stand for keys, through the same path as the controller's. Taps take the options of the mission and turret menus; elsewhere a finger turns the head in the 3D cockpit. SDL's finger events of touch screens only (macOS reports a trackpad's too); the mouse events SDL makes from fingers are left to menus and stations. Shown from the start on an iPad without keyboard and controller, otherwise after the first touch; a key or a controller's button hides them. Continuing from the mission menu now ends a pause too, so after an interruption MENU (or Start) and continue go on. SDL already defers the system's edge gestures for full-screen windows. `--touch` puts test fingers on the screen: FIRE, TORP and + by touch give the same trace as the keys, and the menu's options can be tapped (abort, continue). Tested in the iPad simulator with real touches, two fingers at once (stick and FIRE), and on an iPad. After testing on two iPads: the view is at least 480 high but at most 834/480 points per unit, so the controls keep an 11-inch iPad's size and stay in the corners of a 13-inch one; TORP, BUZZ, NEXT and LOCK in an arc 76 units around FIRE, + and - above them, closer together. Options (the main menu's OPTIONEN, as in the original, and the notebook's EINGABEGERÄTE, whose joystick settings Vertigo hasn't): the controls mirrored, stick on the right, and the stick's vertical inverted, as `Touch/mirrored` and `Touch/stickInverted`, in Vertigo's own texts, German or English by the data) |
-| P11 | 3D cockpit on the iPad | ? | With the texture halved to 4096x4096 an iPad Pro 11" still stops drawing once the 3D cockpit is shown (October 2026; sound and input go on). To be found: whether the texture (try 2048x2048), the 244,000 triangles in one draw call, the instruments' framebuffer or the decal's shader is the cause, and whether the OpenGL errors P7 reports show up in the device's console. Marked for a later fix (**done**: the cause was neither the texture nor memory. On iOS SDL draws into a framebuffer of its own and shows the renderbuffer that is bound at the end of the frame (`presentRenderbuffer:GL_RENDERBUFFER`); creating the instruments' framebuffer bound the depth renderbuffer and then 0, so from then on nothing was shown, without an OpenGL error. `gfx::Framebuffer` now restores the renderbuffer binding as it does the framebuffer's. The iPad simulator showed the same: with the 3D cockpit the screen stayed black while the mission ran, and draws since (slowly, in software). The texture stays halved to 4096x4096 on iOS, for the load time and memory. On an iPad Pro 11" the 3D cockpit now draws at 120 frames a second in an optimised build (P5); at 8.2 ms of CPU time a frame it is close to the 8.3 ms that 120 Hz allows) |
-
-### Replacing Qt with SDL3
-
-Prebuilt Qt for iOS comes from Qt's online installer, which needs a Qt account
-(the source is public, but every player building the game would first have to
-cross-compile Qt). That is too much to ask of players, so Qt goes before the
-iOS build. SDL3 (zlib licence) takes over the platform layer: it is in
-Homebrew, builds for iOS from source with CMake in minutes, and also brings
-what P7–P9 need (app lifecycle events, the on-screen keyboard, touch and game
-controllers). The rest of Qt is used as a general-purpose library and is
-replaced by our own types with the part of Qt's API the code uses, so call
-sites keep their shape (counted October 2026, 32,000 lines; 144 of 238 files
-use Qt types).
-
-| # | Step | Effort | Notes |
-|---|---|---|---|
-| Q1 | Strings and data values | L | `util::String` (UTF-8 in a `std::string`) with the about 40 `QString` methods in use (`arg` 289 times, `toInt`/`toFloat` about 370, `QString("…")` 232) and a string list; `DesFile` returns its own value type instead of `QVariant` (466 `value()` calls). The data's Latin-1 text (German umlauts) is converted on load and save, the fonts take Latin-1 when drawing. Conversions must behave exactly like Qt's (e.g. `toInt("10.5")` is 0 and not ok), so this step brings a small unit test target (**done**: `util::String` keeps one byte per character, as the game's text is 8-bit; `txt::Value`; `foreach` over string lists became range-for. `tests/stringtest` compares both with `QString` and `QVariant`: 1.15 million fixed and random cases, and with the data directory as the argument every line and value of its 1,029 text files, 237 million checks in all, no difference. File paths can hold any character, so they stay `QString` until Q3 (`DataPath`, `util::File`, the save folder, the 3D cockpit, screenshot names), as do the command-line values until Q4. The `--check` report, seeded traces of all 71 missions and 23 `--fixed-step` screenshots are unchanged, and a saved game is read and written byte for byte as before) |
-| Q2 | Images | M | `gfx::Image` with the formats in use (indexed with a colour table, ARGB, RGB, RGBA) and `setPixel`, `scanLine`, `copy`, `fill`, `scaled`, format conversion; PNG/JPEG decoding (glTF cockpits) with stb_image and PNG screenshots with stb_image_write (public domain). Also `QRgb` and implicit sharing (`std::shared_ptr`) (**done**: `gfx::Image` became a plain value type instead, as no image is copied where it matters, with rows not padded to 4 bytes; `gfx::Rgb` with the channel functions, and `lighter()`/`darker()` for the voxel radar, computed as `QColor` does. stb_image 2.30 and stb_image_write 1.16 are in `3rdparty/stb`. `tests/imagetest` compares with `QImage` and `QColor`: every operation the game uses on 2,000 random images, `lighter()`/`darker()` on all 16.7 million colours, and PNG both ways, 35.9 million checks, no difference. The old and new loaders gave the same images for all 564 IMG/IMB, 250 PCX and 37 R16 files, the glyphs of the 18 fonts and all 69,845 frames of the 978 videos. The `--check` report, the traces of all 71 missions and the 2D screenshots are unchanged. Two things differ: the JPEG textures of the 3D cockpits decode slightly differently from Qt's libjpeg (99.2–99.4% of the values the same, the rest at most 3 apart; 3D cockpit screenshots differ by 0.02 on average) and the cockpit takes 0.43 s instead of 0.3 s to load; and stb writes a screenshot in 0.25 s instead of 0.65 s, so the screenshots after the first in the real-time menu catch other moments of the blinking cursor and the movie (taken alone, they are unchanged)) |
-| Q3 | Containers, files, the rest | M | `QMap`, `QList`, `QVector`, `QSet`, `QHash` (about 150 uses) to the standard library; `QFile`, `QDir`, `QDataStream`, `QTextStream` (about 90) to `std::filesystem`, `util::File` and a small binary reader; `QRegularExpression` (48) to `std::regex` or plain parsing; `QJson` (glTF only) to a single-header JSON library (MIT); `QPoint`/`QRect`/`QSize` (about 120) to our glm-based types; `QLocale`/`QDateTime` for the save-game list (**done**: our `Point`/`Rect`/`Size` and, where the window's geometry was double precision, `PointD`/`RectD`; the standard containers, with `util::value()`, `take()`, `removeAll()`, `contains()` and `deleteAll()`, and copies where `foreach` iterated over lists that change meanwhile; `QMultiMap`'s newest-first order kept for the dialogs' messages; paths as UTF-8 `std::string` through `std::filesystem` (`util/path.hpp`), `util::ByteReader` for `QDataStream`; plain parsers (`txt/parse.hpp`) for the regular expressions; a JSON parser of our own (`util::Json`) instead of a library; `util::DateTime` for the save time. `tests/parsetest` and `tests/jsontest` compare the parsers with `QRegularExpression` (8.9 million checks, every line of the game's text files) and `QJsonDocument` (the four cockpits' glTF), `DesFile` reads and saves all 1,305 text files as before, and the `--check` report, the traces, the screenshots and the load list are unchanged. Messages and played movies are saved and listed in ascending order now, as `QSet`'s order changed from run to run. The command line's regular expressions go with Q4) |
-| Q4 | Settings, paths, command line | S | `QSettings` (17 uses) to a small settings file, the save folder unchanged; `QCommandLineParser` (22 options) to our own parser; `QElapsedTimer` to `util::ticks()` (**done**: `util::Settings` keeps `settings.ini` in the save folder (`util::appDataLocation()`, where `QStandardPaths` found it, in `CFFIXED_USER_HOME` on macOS if that is set), written on each change; the first start imports the game's keys from `QSettings`, including the window geometry `QWidget` saved long ago. `util::CommandLine` parses the options as before (unknown options and missing values end with exit code 64, as other usage errors do), taking the arguments in UTF-8 on Windows; the option values are checked by plain code instead of regular expressions. `util::ElapsedTimer` replaces `QElapsedTimer`. The `--check` report, the traces, the screenshots and the load list are unchanged; the test runs now have a home of their own) |
-| Q5 | Platform layer | M | SDL3 window and OpenGL 3.2 core / ES 3 context, fullscreen, HiDPI, saved geometry; the main loop as SDL's per-frame callbacks (which iOS wants) instead of the `QTimer`; our own key enum and event structs for the 66 input handlers in 33 files (43 `Qt::Key_` values); SDL text input for save-game names; OpenGL linked directly on macOS and iOS and through a generated loader (glad) on Windows and Linux, replacing `QOpenGLExtraFunctions`; a plain framebuffer object for the 3D cockpit's instruments; the SDL cursor and `SDL_ShowOpenFolderDialog`; `--keys` and `--click` through our own event queue; the load list's date in the locale's format from `SDL_GetDateTimeLocalePreferences()` (`QLocale` until then); the import of `QSettings` goes (whoever skips the versions with `settings.ini` picks the data directory once more). Then Qt is gone, and with it the Qt 5 fallback (**done**: `game::Window` is an SDL window with an OpenGL 3.2 core context (ES 3 on iOS and Android), created hidden so that loading and headless runs have the context; the main loop is SDL's callbacks, 50 frames a second like the 20 ms timer (as fast as it goes headless), and SDL's exit codes give way to test mode's own. Our own keys, modifiers and mouse buttons (`game/input.hpp`; on macOS Command is Control, as Qt had it, so Cmd+F is full screen); typed text comes from SDL's text input. Instead of glad, a small loader of our own fetches the 72 OpenGL functions in use with `SDL_GL_GetProcAddress()` on every desktop platform, so macOS exercises it too. `gfx::Framebuffer` for the cockpit's instruments, SDL's colour cursor and folder dialog. On macOS and iOS the load list's date comes from CoreFoundation's short formats of the region, as Qt took them (SDL reads the C locale, which apps started from Finder don't set); elsewhere from `SDL_GetDateTimeLocalePreferences()`. The `QSettings` import is gone. Automated runs (with `--timeout`) are a background app with an unfocusable window. The `--check` report, the traces of all 71 missions with their exit codes, all 23 screenshots (the menus' real-time ones included) and the load list are unchanged. The tests that compare with Qt are built only where Qt 6 is installed. The folder dialog works by hand; not tried here: typing a name by hand, and Windows and Linux builds) |
-| Q6 | Simplify | S–M | Q1–Q3 copied Qt's behaviour to the bit, quirks included, so that every step could be compared with Qt. The game only needs what recreates the original faithfully, so once Qt is gone the copies can shrink to that, as long as the `--check` report, the traces and the screenshots stay as they are (or change for a reason): `util::String`'s number formatting and parsing (exact-digit rounding, Qt's `mid()`/`section()` edge cases, the case mapping of ß, ÿ and µ), `txt::Value`'s `QVariant` conversions, `gfx::Image`'s `QImage` edge cases (pixels and indices out of range), `gfx::lighter()`/`darker()`'s 16-bit HSV arithmetic, `util::Json`'s leniency, `util::DateTime`'s ISO variants, the regular-expression corner cases in `txt/parse.hpp`. The differential tests need Qt; they become tests with fixed expectations where they still matter. From Q4 on, only the behaviour the game needs is reproduced (**done**: numbers are read and written by `std::from_chars`/`to_chars`, so the traces print exact halves rounded to even (four values of 71 missions changed, x.25 to x.2); only ASCII letters change case and only ASCII whitespace is trimmed (in code page 437, 0x85 and 0xa0 are letters); `section()`, `mid()`, `insert()` and `split()` without Qt's edge cases; `txt::Value` converts as `String` does; `lighter()`/`darker()` scale the channels in floating point; indices beyond a colour table are transparent black; JSON numbers are doubles; saved games' times are read in the one format they are written in; the parsers match single lines. A comparison of the old and new `String` and `txt::Value` on all 486,755 lines of the game data found differences only in values that end with a zero byte, which now read as decimals too (none is read as one), and in upper-casing the 'ß' of code page 437 (no game text is upper-cased). The tests have fixed expectations and no longer need Qt. Mouse positions are no longer rounded to whole pixels before being mapped to the 640x480 screen or the 3D cockpit's view) |
-
-Q1–Q4 happen while Qt is still linked, so the game works after every step;
-Q5 removes Qt, and Q6 tidies up after it. Each step must leave the `--check` report, seeded headless runs
-of all 71 missions and `--fixed-step` screenshots of menus and missions
-unchanged.
-
-Order of work: P1 → P2 → P3 → P4 on the desktop, then Q1–Q6, then P5–P8
-(playable with a hardware keyboard), then P9 and P10. P1 to P4 are done
-(October 2026); Q1–Q6 and P5–P11 are done.
-
-Platform notes:
-
-- OpenGL ES (deprecated since iOS 12) and OpenAL (deprecated since iOS 13) are
-  still in the iOS 27 SDK (checked with Xcode 27.0, October 2026). Should
-  Apple remove them, ANGLE's Metal backend runs the same OpenGL ES 3 code, and
-  OpenAL Soft replaces OpenAL.
-- The game is 4:3, iPad screens are between 4:3 (13" Air) and about 3:2
-  (mini), so the bars at the sides stay small. SDL defers the system's edge
-  gestures for full-screen windows, so a swipe from the bottom doesn't leave
-  the game at once.
-
-Distribution: the GPL is generally read as incompatible with the App Store
-and TestFlight terms (VLC was removed in 2011 for this reason), and an
-exception would need every copyright holder. So players install it
-themselves:
-
-- built from source in Xcode: a free Apple ID signs it for 7 days, a paid
-  developer account for a year;
-- as an unsigned IPA built by CI, installed with AltStore or SideStore
-  (re-signed every 7 days with a free Apple ID);
-- in the EU through AltStore PAL, which needs a developer account and Apple's
-  notarization.
-
-## Risks
-
-- Turning on enemy fire before the AI is tuned will make early missions
-  unfair, so keep it behind an option until then.
-- How cargo-ship blocks fit together is unverified.
-- Keep renderer changes self-contained so the later modern renderer and VR
-  work stays easy.
-- Qt 5 support ends in Homebrew in May 2027 (settled: Qt went altogether with
-  steps Q1–Q5 of the iPad port, October 2026).
-
-Effort: S is up to a day, M a few days, L one to three weeks, all rough and
-for one developer.
-
 ## Appendix: reference data
 
 Distances and speeds in the object files are in 1/32 m (and 1/32 m/s); one
@@ -483,46 +227,35 @@ map cell is 16 m.
 
 ### A. dtyp → object file
 
-Decoded from the class switches in `FIGHT.EXE`. Entries marked ✓ were in
-`Scenario`'s type map before step 1.1; since then all of them are (number of
-stock movables in parentheses).
+Decoded from the class switches in `FIGHT.EXE` (number of stock movables in
+parentheses).
 
 | typ | Class | dtyp → `VFX/SOBJECTS` file |
 |---|---|---|
-| 2049 | Scout → SimpleBoat | 1 ✓, 8 ✓, 9 ✓, 10 ✓, 11 prscout1 (56), 12 ✓, 13 prscout2 (73), 14 moghboot (95), 15 indrboot (20), 39 ✓, 67 ✓, 88 anscout3 (60), 89 anscout4 (76; also the default) |
-| 2050 | Bomber → SimpleBoat | 16 ✓, 40 ✓, 41 ✓, 42 prbomber (18), 43 biobombr (52), 44 russbomb (46) |
-| 2051 | Tank (new class) | 2 tank0 (29), 3 tank1 (57), 4 tank2 (38), 65 tank3 (11); 66 tank4 unused |
-| 2052 | GunTower → TurretBase | 5 ✓, 6 guntow1 (12), 7 ✓, 90 guntow3 (96) |
-| 2059 | TorpedoTower | 36 ✓; 37/38 have no files and are unused |
-| 2058 | Mine | 27 ✓, 28 ✓; `num` mines above each other, `dis` height units apart (G2) |
-| 2062 | Building → SimpleObject | 45 build0 (73), 46 build1 (145), 47 ✓, 48 ✓, 49 build4 (7), 50 ✓, 51 build6 (19), 52 build7 (55) |
-| 2063 | CargoShip (new composite class) | 68–77 cship0–9, 78–87 bship0–9, 91 bship10 (72 in total) |
+| 2049 | Scout → SimpleBoat | 1, 8, 9, 10, 11 prscout1 (56), 12, 13 prscout2 (73), 14 moghboot (95), 15 indrboot (20), 39, 67, 88 anscout3 (60), 89 anscout4 (76; also the default) |
+| 2050 | Bomber → SimpleBoat | 16, 40, 41, 42 prbomber (18), 43 biobombr (52), 44 russbomb (46) |
+| 2051 | Tank | 2 tank0 (29), 3 tank1 (57), 4 tank2 (38), 65 tank3 (11); 66 tank4 unused |
+| 2052 | GunTower → TurretBase | 5, 6 guntow1 (12), 7, 90 guntow3 (96) |
+| 2059 | TorpedoTower | 36; 37/38 have no files and are unused |
+| 2058 | Mine | 27, 28; `num` mines above each other, `dis` height units apart (G2) |
+| 2062 | Building → SimpleObject | 45 build0 (73), 46 build1 (145), 47, 48, 49 build4 (7), 50, 51 build6 (19), 52 build7 (55) |
+| 2063 | CargoShip | 68–77 cship0–9, 78–87 bship0–9, 91 bship10 (72 in total) |
 
 Cargo ships are assembled from `CargoBlockN` sections (`Name`,
 `ConnectReference`, `ConnectSide` with L1 R2 F4 B8 T16 B32), block scales
-312/1600, with turrets from `bblock` `[TurretN]` attached by `PatchNumber`.
-As built (`fight/boats/cargoship.cpp`): a block touches the side of its
-reference block, with right as +x and front as +y. The half-hulls have their
-open seam at +x, which confirms this, and the blocks end up one model unit
-apart. A turret stands at `RelativePositionX/Y` in the block's model units, on
-the hull surface found straight below it (`Z` +1000), or hangs upside down
-under the hull (`Z` −1000). `Alpha` turns it counter-clockwise from the bow, in
-the ship's frame for both. Turrets use their own `[Size] Scale`/32, about
-1.2 m. The mission position is the middle of the hull seen from above, so
-long ships turn around their middle and their sterns don't sweep over nearby
-units. Turrets fire at hostile units on their side of the hull within `senr` and the
-gun's range.
-
-As in the original (from its screenshots), a big ship takes hits as a whole on
-its own `[Defense]` shield (cargo ships 20,000–60,000, Big Fat Mama
-10,000,000); once that is used up it counts as destroyed at once, stops, and
-its blocks blow up one after another (every 0.3–0.7 s, in random order).
-Each block is a sonar contact and target of its own. The master monitor
-shows a picture instead of the model, chosen by the ship file's comment:
-`SHPSEACO` (bship0), `SHPTRITO` (1, 8), `SHPPOLAR` (2, 9), `SHPINDER`
-(Star of Bengalia, 3, 10), `SHPBIONT` (4, 7), `SHPBFM` (5, 6), `SHPCONTF`
-(cship0–9). The kinematics in the ship files copy the bomber's, so big ships turn
-at most 0.15 rad/s and climb at most 5°.
+312/1600, with turrets from `bblock` `[TurretN]` attached by `PatchNumber`:
+a block touches the side of its reference block, with right as +x and front
+as +y (the half-hulls' open seam at +x confirms this); a turret stands at
+`RelativePositionX/Y` on the hull surface below it (`Z` +1000) or hangs under
+it (`Z` −1000), turned by `Alpha` counter-clockwise from the bow, at its own
+`[Size] Scale`/32. The mission position is the middle of the hull. A big ship
+takes hits as a whole on its own `[Defense]` shield (cargo ships
+20,000–60,000, Big Fat Mama 10,000,000); used up, it counts as destroyed,
+stops, and its blocks blow up one after another. The master monitor shows a
+picture chosen by the ship file's comment: `SHPSEACO` (bship0), `SHPTRITO`
+(1, 8), `SHPPOLAR` (2, 9), `SHPINDER` (3, 10), `SHPBIONT` (4, 7), `SHPBFM`
+(5, 6), `SHPCONTF` (cship0–9). Big ships turn at most 0.15 rad/s and climb at
+most 5°.
 
 ### B. Orders
 
@@ -548,409 +281,264 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 - `refx`/`refy` are map cells; `hei`/`mih`/`mah` are height units (≈1.125 m
   in 60 of 71 maps); `vel` is a percentage of the unit's MaxVelocity; `dur` is
   in seconds (100000 or 1000000 means forever); `rad` and the escort offsets
-  look like metres (inferred).
+  are metres.
 - "Arrived" (conditions 43/44, objective 7) completes when a GotoWithArrive
   reaches its point. "Boarded" (45/46, objective 8) completes on the `ene` of a
-  GotoWithInfiltrate. "Attacked" with `bcdep` 2 refers to a faction (IFF),
-  not a single unit.
-- `car` takes 0/2/4/6/10 (mostly 10): a quarter turn, see appendix J. Explode
-  `con=2` is used 71 times; `con=1` only once (S00202, "after being
-  boarded", appendix J). `sle` lets a unit sleep out of the player's sonar
-  range (appendix J); `diff` is the lowest difficulty the unit appears at
-  (milestone 5); `ai` is never read.
+  GotoWithInfiltrate. "Attacked" with `bcdep` 2 refers to a faction (IFF).
+- `car` takes 0/2/4/6/10: a quarter turn (appendix J). Explode `con=2` is
+  used 71 times; `con=1` once (S00202). `sle` lets a unit sleep (J); `diff` is
+  the lowest difficulty the unit appears at; `ai` is never read.
 - `[Attack]` in boat and bomber files drives the attack manoeuvre:
   `AlignProbabilityFront/Back/Left/Right`, `Min/MaxAlignRadius`,
   `Min/MaxAlignGamma`, `Min/MaxAlignTime`; `AttackProbabilityTurn`,
-  `AttackProbabilityHit`, `Min/MaxAttackTime`; `Min/MaxFlightRadius`,
-  `Min/MaxFlightTime`, `FlightPointProbabilityUL/UR/DL/DR`,
+  `AttackProbabilityHit` (the chance that a run is on target), `Min/MaxAttackTime`;
+  `Min/MaxFlightRadius`, `Min/MaxFlightTime`, `FlightPointProbabilityUL/UR/DL/DR`,
   `FlightProbabilityHit`; `*ProbabilityTorpedoFire` per phase. Tanks use
-  Hook/Cross/Retain/Change/Hit variants. Also relevant: `Min/MaxClimbingAngle`,
+  Hook/Cross/Retain/Change/Hit variants. Also `Min/MaxClimbingAngle` and the
   turret `[Kinematics]` `MaxAngleVelocityA/B`.
 
 ### C. Conditions and events
 
-| Event | Where it should complete | Objectives (wccond) |
+| Event | Completes | Objectives (wccond) |
 |---|---|---|
-| destroy | `ActiveObject::destroy` (works) | 2, 5, 9 |
-| attack | first hit by another object, including AI hits | 3 |
-| identify | sonar (works) | 4 |
-| paralyze | shock shield below zero (completes, but has no effect) | 6 |
+| destroy | armour below zero | 2, 5, 9 |
+| attack | first hit by another unit | 3 |
+| identify | sonar | 4 |
+| paralyze | energy defence below zero (the unit then tumbles away, appendix J) | 6 |
 | finish ("ist angekommen") | own GotoWithArrive reaches its point | 7 |
 | board ("wurde infiltriert") | target of another unit's GotoWithInfiltrate | 8 |
 
-Handled since step 1.2:
-
 - Faction references (`bcdep` 2, `bcref` is the faction's `iff`): 1 means
-  every unit of the faction is destroyed (S01501 "the Crawlers are gone"),
-  39 its negation, 2 any unit of the faction attacked. A faction without units
-  is never destroyed (S00402 refers to faction 1, which has no units).
+  every unit of the faction is destroyed, 39 its negation, 2 any unit of the
+  faction attacked. A faction without units is never destroyed.
 - 0 and 47 both mean "no condition", in either slot.
-- "Objective achieved" on an objective that can only fail (wccond 5: protect a
-  unit, or stay out of an area) means "not failed yet". This spawns the waves
-  in S01301 and S01805 and drives the sensor areas in S00405.
-- wccond 2 on a nav point means "reached" (S00303, S02006).
-- Mission failure plays its message once and ends the mission 10 s later.
-
-Since step 1.5, "destroyed" on the player's id means the player died (S00401
-sends pirates). Still reported by `--check`: 13 references to objectives that
-no unit has (S00404, S01802, S02003, S02006); they never come true (G4).
+- "Objective achieved" on an objective that can only fail (wccond 5) means
+  "not failed yet" (the waves in S01301 and S01805, the sensor areas in
+  S00405). wccond 2 on a nav point means "reached".
+- Mission failure plays its message once and ends the mission 10 s later;
+  "destroyed" on the player's id means the player died.
+- 13 references to objectives that no unit has (S00404, S01802, S02003,
+  S02006) never come true (G4).
 
 ### D. Currents and radiation
 
 - `[CurrentNNNN]`: `typ=3072`, `px`/`py` (cells on a 2-cell grid), `pz=0`,
-  `card` 0–9, `spd` 0 or 2. 1,266 entries in S00202, S00204, S00303, S00401,
-  S00405, S00406, S00701–S00705, S00902, S00903, S01306, S01801–S01804,
-  S01806 and STRAI2.
-- Direction: (sin(card·45°), cos(card·45°), 0), checked against map geometry
-  and briefings (S00406, S01806, S01801). 8 is up and 9 down (measured, see
-  below; `scenario.cpp` still has them the other way round).
-- Speeds are not in the data. Measured in the original (October 2026, FIGHT.EXE
-  under DOSBox-X, see [reverse-engineering.md](reverse-engineering.md)): the
-  player's position was dumped from memory every 1–2 s through the debugger's
-  control channel and checked against the HUD's km/h readout in screenshots,
-  with the boat placed at rest inside current cells of copies of S01801,
-  S00704 and S00405 (map scale 512 units per 16 m cell, so 1 unit = 1/32 m).
-  - `spd` 2, boat facing along the current: from rest to about 1,300 units/s
-    (41 m/s, 147 km/h; the HUD showed 141) within about 5 s, then steady.
-    Facing across it (boat north, current east) only about 600 units/s
-    (19 m/s, 68 km/h; HUD 61).
-  - `spd` 0, facing along it: about 160–170 units/s (5 m/s, 18 km/h; HUD 12),
-    one run, noisy.
-  - The engine state doesn't matter (stopped with the engine on or off, the
-    boat is carried the same); the boat's own speed is 0 at a mission's start.
-    Outside the cells there is no fade: a boat half a cell outside (S00902's
-    own start, one map cell south of its first current cell) doesn't move, so
-    a cell covers the two map cells from `px`,`py` upwards. After leaving the
-    cells the boat coasts and slows at 110–150 units/s² (3.5–4.7 m/s²),
-    stopping after 150–290 m.
-  - Vertical cells (HUD depth and height readouts in screenshots every
-    second, boat at rest): `card` 9 pushes **down**, about 9 m/s (HUD
-    −32 km/h) for `spd` 2 and 4.5 m/s (−15 km/h) for `spd` 0, still at
-    150 m above the ground (S01306's block, S00202's single cell); the boat
-    lands and then slides along the bottom. `card` 8 pushes **up**, about
-    5 m/s for `spd` 0 (S00202's cell at 82,86), while S00202's other 8 cell
-    (92,80) moved the boat not at all, reason unknown. So 8 is up and 9
-    down, the other way round from Vertigo's reading.
-  - Vertigo uses 5 and 12 m/s with a bilinear fade; the slow value is about
-    right, the fast one is 3.4× too low (and the vertical fast one 1.3× too
-    high), 8 and 9 are swapped, and the fade, the heading dependence and the
-    coasting are missing.
-- Affected: the player (`[Kinematics] Current`), AI boats (`[Fluid] Current`
-  0–1; possibly ignored by the original). Not affected: torpedoes, mines, gun
-  projectiles.
-- Radiation has no data key: it is a depth rule. Measured in the original
-  (October 2026, FIGHT.EXE under DOSBox-X): the boat was set to a height
-  through the debugger's control channel and the HUD watched in screenshots
-  twice a second, on S00701 (`[Surface] depth` 200), S01801 (300) and S00202
-  (4,000); all three behave the same, so the rule holds on every map, and the
-  briefings only mention it where the player can reach it.
-  - Less than 100 m below the surface (the readout `100M` is still green,
-    `98M` red): the red radiation symbol (`HUDSYM2`) blinks at 1 Hz (0.5 s
-    on, 0.5 s off) in the first slot of `[HUDSymbolBlock1]`, at the lower
-    right of the HUD, and the depth readout turns red. The cockpit's three
-    monitors (weapon page, master monitor, armor page) blank out for single
-    frames at random, each on its own, a few times a second. No sound, no
-    damage (armor still 100 % after 40 s), no push downward: a boat at rest
-    stays where it is.
-  - Less than 60 m below the surface (`58M` yes, `60M` no): additionally
-    `ALERT` blinks in the alert block, out of phase with the symbol, the
-    voice "system collapse" (SMPMAP 72, the one D15 uses) plays on entry and
-    again about every 15 s, and the alert beep (SMPMAP 10) repeats every
-    0.8 s. Both stop within a few seconds of rising above 60 m (one run on
-    S01801 had one more voice and a few beeps about 20 s later at 70 m, not
-    reproduced on S00202).
-  - The same `ALERT`, voice and beep are also the combat alert: on S00202 the
-    player was attacked at its start cell and got them together with a red
-    ring with a cross in the symbol block's second slot (which image that is
-    is to be checked; it is not `HUDTHREA`, whose block is at the top right).
-  - Vertigo draws neither the radiation symbol nor the red depth readout nor
-    the monitor flicker; its ALERT comes only from a critical armor side.
+  `card` 0–9, `spd` 0 or 2. 1,266 entries in 20 scenarios. Direction
+  (sin(card·45°), cos(card·45°), 0); 8 is up and 9 down. A cell covers the two
+  map cells from `px`,`py` upwards, with no fade at its edges.
+- Measured in the original (October 2026, the player's position dumped from
+  memory and the HUD's readouts, boat at rest in current cells): `spd` 2 takes
+  the boat from rest to about 41 m/s (HUD 141 km/h) within about 5 s facing
+  along the current, to about 19 m/s facing across it; `spd` 0 to about 5 m/s;
+  downward cells push 9 m/s (`spd` 2) or 4.5 m/s (`spd` 0), upward ones about
+  5 m/s (`spd` 0; one of S00202's two upward cells did nothing). The engine's
+  state doesn't matter, and a boat that leaves the cells coasts and slows at
+  3.5–4.7 m/s². Vertigo makes of this a steady push of 9 m/s² (`spd` 2) or
+  3.1 m/s² (`spd` 0) on the boat: its drag across its axis and the cap of twice
+  its top speed along it give the speeds above, its own retardation the
+  coasting. Affected: the player (`[Kinematics] Current`) and AI boats
+  (`[Fluid] Current`); not torpedoes, mines or shots.
+- Radiation has no data key: it is a depth rule, the same on every map
+  (measured on S00701, S01801 and S00202). Less than 100 m below the surface
+  the red radiation symbol (`HUDSYM2`) blinks at 1 Hz in the first slot of
+  `[HUDSymbolBlock1]`, the depth readout turns red and the three monitors
+  blank out for single frames at random; no damage, no push. Less than 60 m
+  below, `ALERT` blinks out of phase with the symbol, the voice "system
+  collapse" (SMPMAP 72) plays on entry and every 15 s and the alert beep
+  (SMPMAP 10) every 0.8 s. The same ALERT, voice and beep are the combat
+  alert, together with a red ring with a cross in the symbol block's second
+  slot (O3).
 
-### E. HUD data not used yet
+### E. HUD data
 
-Since milestone 6 the voxel radar, the lamps and the weapon pictures are used.
-
-- Cockpit sections in `VFX/COCKPIT/00n.DES`: `[VoxelRadar0]`,
-  `[HUDAlertBlock]`, `[HUDThreatBlock]`, `[HUDPauseBlock]`,
-  `[HUDSymbolBlock1]`, `[SlaveMonitor0/1]` (none in 000/Hiob), `[Camera]`
-  (`ViewAngle` 105; the code hardcodes 60°), `[Flake]`, the monitors' `Type`
-  and `Lamp*` keys (lamp files `*.D16` hold an off and an on frame).
-- `[VoxelRadar0]`: offset 21,34 relative to the master monitor, 120×100,
-  `WorldMinY` −5, `WorldMaxY` 20, `Projection` 30, `FlightY` 16, shading
-  table `VFX/TEXTURE/VOX_000.S16`.
+- Cockpit sections in `VFX/COCKPIT/00n.DES`: `[Front]` (window, `VFX_FlightX/Y`
+  the view's centre), `[Camera]` (`ViewAngle` 105, the light and fog values of
+  appendix M), `[VoxelRadar0]` (offset 21,34 in the master monitor, 120×100,
+  `WorldMinY` −5, `WorldMaxY` 20, `Projection` 30, `FlightY` 16, `ShadingTable`
+  `VOX_000`), `[HUDAlertBlock]`, `[HUDThreatBlock]`, `[HUDPauseBlock]`,
+  `[HUDSymbolBlock1]`, `[SlaveMonitor0/1]` (none in 000/Hiob), the monitors'
+  `Type` and `Lamp*` keys (`*.D16`, an off and an on frame). `[Flake]` is
+  unread.
 - Images in `GFX/IMG/COCKPIT`: `HUDALERT`, `HUDPAUSE`, `HUDTHREA`/`HUDTHREY`,
-  `HUDSYM1` (lock), `HUDSYM2` (radiation), `HUDSYM3` (current), `HUDTURR`
-  (turret target bracket), `HUDTURGR/RE/YE`, `HUDLOCAA`/`HUDLOCPA` (lock
-  rings, loaded but never drawn), armor silhouettes
-  `{GATO,HIOB,SUCC,ZORN}{1-4}{F,L,R,B}`, 48×48 weapon pictures, `SHP*` 60×60
-  observation pictures. Font `CPITSMHC.FNT` is unused.
-- Slave monitor pages: armor state (64×64 silhouette, damage level 1–4 per
-  side) and system state (NAME/AMMO/STAT for ARMO, GUN, TORP, TUR1, TUR2,
-  with states from GLOBWEAP `TurretState0–8`: ARM, SCA, FIR, JAM, EMP, LOC,
-  STP, SYN, VOL). `Player::damage` currently splits sides by top/bottom rather
-  than left/right.
+  `HUDSYM1` (lock), `HUDSYM2` (radiation), `HUDSYM3` (current), `HUDTURR` and
+  `HUDTURGR/RE/YE` (turret brackets), `HUDLOCAA`/`HUDLOCPA` (lock rings),
+  armor silhouettes `{GATO,HIOB,SUCC,ZORN}{1-4}{F,L,R,B}`, 48×48 weapon
+  pictures, `SHP*` 60×60 observation pictures. Font `CPITSMHC.FNT` is unused.
+- Turret states from GLOBWEAP `TurretState0–8`: ARM, SCA, FIR, JAM, EMP, LOC,
+  STP, SYN, VOL.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
-  `i` armor/system status, F5–F12 turret orders.
+  `i` armor/system status, F5–F12 turret orders, `u` nearest enemy.
 
 ### F. Texts (`TXT/FIGHTEXT.DES`)
 
 - 11/12/13: mission accomplished / failed / "DU WURDEST ZERSTÖRT".
 - 31/32: "MISSION NICHT ERFÜLLT", "AUTOPILOT NICHT VERFÜGBAR".
-- 38–48: turret order menu. 49–56: Esc menu (continue, abort game, restart
-  mission, confirmations). 57/58, 61–66: death and game-over menu.
+- 38–48: turret order menu. 49–56: Esc menu. 57/58, 61–66: death and
+  game-over menu. The autopilot menu follows.
 - 67–70: escalating friendly-fire warnings; 71: friendly object destroyed;
-  89: mission failed after three friendly kills. 70, 71 and 89 start with `~`,
-  which the radio message widget should treat as red (it only handles `#`).
+  89: mission failed after three friendly kills. Texts starting with `~` or
+  `#` are red.
 
 ### G. Sounds (`SFX/SND/SMPMAP.DES`, `NumOfVoices = 8`)
 
 | # | Use |
 |---|---|
 | 6 / 7 / 9 / 10 | threat / lock-on / torpedo lock-on / alert beeps |
+| 29 | booster |
 | 67 / 72 / 77 / 81 / 82 | voices: target locked / system collapse / torpedo ready / lock-on located / torpedo threat |
 | 4 / 21 / 23 / 24 / 34 / 35 | engines: torpedo / turret / enemy 1 / enemy 2 / biont / big ship |
 | 1 / 2 / 14 / 15 / 16 / 17 | big explosion / metal hit / torpedo start / ground hit / small explosion / EMS |
-
-The sound system is 2D today (no listener or source positions), with 32
-OpenAL sources and one shared instance per sample.
 
 ### H. Weapons and effects data
 
 - Enemy weapons: `[StaticGun]` (Model, Ammunition, Relative{i}XYZ),
   `[VolleyGun]` (State{i} a/p, Duration, Tolerance), `[TorpedoMagazine]`
   (Relative{i}XYZ; TORTUR0 has 6 tubes), `[BuzzerMagazine]` (Type, Eject*),
-  scenario keys `gun`, `tor`, `ntor`, `eng` ("Armament"). `eng` is the
-  unit's engine model (0–5), which sets how fast its energy pool refills
-  (appendix K); the object files' `[Engine] Type` is never read.
+  scenario keys `gun`, `tor`, `ntor`, `eng` (the engine model 0–5, appendix
+  K; the object files' `[Engine] Type` is never read).
 - `GLOBWEAP.DES` has 14 gun models: 0–10 for boats (0 Plasma Gun I to 10
-  Vendetta III, 0–5 energy guns), 11–13 for turrets and vehicles. The AD
-  Augmented Mod's changelog says a turret given a boat gun fires that gun's
-  projectiles from each barrel (a one-barrel turret with Vendetta III four a
-  salvo, a four-barrel one 16), which many missions do; to be compared with
-  Vertigo's turrets in the balancing.
+  Vendetta III, 0–5 energy guns), 11–13 for turrets and vehicles; turrets with
+  boat guns see O5.
 - Torpedoes: `globweap.des` `[TorpedoMagazine0-7]` (items 1025–1032) and
   `[Torpedo0-21]` (items 1–22: `locktype` 0 none / 1 noise / 2 optic,
   `lockdelay` 0–6 s, `imagename`, `sfvname`/`sfvnumber`); torpedo bodies in
-  `VFX/SOBJECTS/TORPEDO.DES` (`[ClusterN]`, `[SensorN]`, `[KinematicsN]`,
-  `[OffenseN]`). Turret software: GLOBWEAP `Software0–9` (hit, scan, lock,
-  volley shots, volley delay).
-- Paralysis effectively needs the Flash or Leech torpedoes; gun shock damage
-  is far below the shock shields.
-- Cluster torpedo: `TORPEDO.DES` entry 18 "Ripper" (ripper.mod, LifeTime 6,
-  MaxVelocity 1800, KineticStrength 500, comment "KineticStrength Area =
-  7600"). Candidate submunitions: `SHOOT.DES` 7/8 (flare / invisible flare,
-  Range 1000, Velocity 300, KineticStrength 7600).
+  `VFX/SOBJECTS/TORPEDO.DES`. Turret software: GLOBWEAP `Software0–9` (hit,
+  scan, lock, volley shots, volley delay). Paralysis effectively needs the
+  Flash or Leech torpedoes; gun shock damage is far below the shock shields.
+- Cluster torpedo: `TORPEDO.DES` entry 18 "Ripper" (LifeTime 6, MaxVelocity
+  1800, KineticStrength 500, comment "KineticStrength Area = 7600"), bursting
+  within 31 m in Vertigo.
 - `EXPLOSIO.DES`: 0–2 explosion with flash (S/M/L), 3–5 puff, 9–11 sparks,
   12–14 ground impact, 15–17 ECM impact, 18–20 and 24–26 ground dust, 21–23
-  torpedo bubble.
-- `DEBRIS.DES`: 0–2 plates, 3 engine, 4–8 small parts, 9–13 large parts,
-  14–16 "Cadaver 1–3" (dead bodies), 17 shrapnel, 22 torch (decoy, Noise 4).
-  Uses `LifeTime`, `Friction`, `Lift`, `Min/MaxVelocity`, which the billboard
-  loader ignores today.
+  torpedo bubble. `DEBRIS.DES`: 0–2 plates, 3 engine, 4–8 small parts, 9–13
+  large parts, 14–16 "Cadaver 1–3", 17 shrapnel, 22 torch (decoy, Noise 4);
+  `LifeTime`, `Friction`, `Lift`, `Min/MaxVelocity`.
 
 ### I. Mission result
 
 `FIGHT.EXE` writes `dat\save\fightout.des` with `[Global]` completed / failed
 / primary / user / secondary, and `Destination` = AutoEnd | InstantEnd |
-<station> | RestoreAutoSave | RestartScenario | AbortGame. A sample file is in
-the GOG installation (`DAT/SAVE/FIGHTOUT.DES`). The scenario's `[End] type`
-(0 in most, 1–4 in a few) picks the destination of an accomplished mission:
-1 AutoEnd, 2 InstantEnd, 3 the station st1703, 4 the station st9901;
-otherwise the destination is what the player chose in the mission menu or the
-autopilot menu (restart, abort, the autosave, or one of the open stations).
+<station> | RestoreAutoSave | RestartScenario | AbortGame. The scenario's
+`[End] type` (0 in most, 1–4 in a few) picks the destination of an
+accomplished mission: 1 AutoEnd, 2 InstantEnd, 3 the station st1703, 4 the
+station st9901; otherwise the destination is what the player chose in the
+mission menu or the autopilot menu.
 
-### J. What the original does with `sle`, `diff`, `car`, `con` and the difficulty
+### J. What the original does with `sle`, `diff`, `car`, `con`, the attackers and the order slots
 
-Read off the original's behaviour in October 2026, for the open questions
-above. All of it is in Vertigo since October 2026 (the sleep, the attacker
-cap, `car`, `con` and the explosion that isn't a destruction); the seeded
-idle runs of all missions are compared at the end of this section.
+Read off in October 2026; Vertigo does all of it.
 
-- **Sleeping units (`sle`).** Every unit carries a flag set from `sle`: 1
-  when the key is 1 or missing, 0 when it is 0. Each frame the game keeps two
-  sets of units, awake and asleep. An awake unit whose flag is set and whose
-  horizontal distance from the player exceeds the player's sonar range plus
-  3 map cells (48 m on most maps) is put to sleep: its engine sound stops and
-  it is not updated at all (no orders, no movement, no shooting) until the
-  player comes back within that radius, when it starts its current order slot
-  again. Boats sleep only while waiting, going somewhere, patrolling,
-  attacking, lying in ambush, escorting, arriving or infiltrating, never while
-  dying, exploding or in an Explode order; a tower sleeps only while idle or
-  patrolling, not while it is attacking. A unit with `sle` 0 never sleeps and
-  runs its orders anywhere on the map. In the data `sle` is 0 on 800 of 949
-  scouts, 195 of 244 bombers and 72 of 135 tanks (units that have to travel
-  across the map), and 1 on nearly all towers, mines and turrets. In Vertigo
-  the radius is the sonar's passive range for that unit plus 3 cells, a
-  sleeping boat's engine is silent, a boat in an Explode order and a tower
-  whose turret tracks a target stay awake, and `--trace` and the debug
-  overlay say `asleep`.
-- **`diff`** on a unit is the lowest difficulty (0 easy, 1 normal, 2 hard; the
-  main menu's setting, `[Global] Difficulty` in `fightin.des`) at which the
-  unit exists; a missing key is 0. Vertigo does the same (milestone 5).
-- **The difficulty** also limits how many units attack the player at once: a
-  unit that takes the player as its target joins the player's list of
-  attackers, which holds 4 units on easy, 6 on normal and 8 on hard; when the
-  list is full the unit gets no target. Ground plans take at most 4 attackers
-  at any difficulty; attackers of a second kind (probably torpedoes) have a
-  list of their own, 8 for everyone. Vertigo keeps the player's list (every
-  order that takes the player as its target asks first; `--trace` prints the
-  count), not the ground plans' nor the second kind's.
-- **`car`** (CardinalPatrol, CardinalAttack and Ambush) is a quarter turn: 2
-  turns 90° one way, 4 turns 180°, 6 turns 90° the other way, and 0, odd
-  values and the frequent 10 mean straight ahead. A tower starts its patrol
-  with the turret turned by it from the tower's own front, then sweeps: every
-  0.5–2.5 s it turns the turret by a random angle of 15° to 90° in a random
-  direction, for the order's `dur`; a boat in ambush points its nose that way
-  while it lies in wait. Which of 2 and 6 is left remains to be checked in a
-  mission (Vertigo turns 2 to the left and 6 to the right, and keeps the
-  tower's sweep within a quarter turn of its rest direction). Boats ignore
-  CardinalPatrol and CardinalAttack orders altogether (they skip to the next
-  slot), so `car` on those only matters for towers.
-- **`con`** on Explode (with `dur` in seconds) says what sets the explosion
-  off: 0 explodes when `dur` is over unless the unit has been boarded by then;
-  1 waits to be boarded (by a GotoWithInfiltrate) and explodes `dur` seconds
-  after that; 2 explodes when `dur` is over no matter what. The explosion
-  itself is three explosion effects at the unit, which then tumbles away with
-  a random spin, the same sequence as a unit whose energy defence has
+- **Sleeping units (`sle`).** A unit with `sle` 1 (or no key) is put to sleep
+  while its horizontal distance from the player exceeds the player's sonar
+  range plus 3 map cells (48 m on most maps): its engine sound stops and it
+  is not updated at all until the player comes back, when it starts its
+  current order slot again. Boats don't sleep while dying, exploding or in
+  an Explode order, a tower not while it attacks. `sle` is 0 on units that
+  have to travel across the map (800 of 949 scouts, 195 of 244 bombers, 72
+  of 135 tanks) and 1 on nearly all towers, mines and turrets.
+- **`diff`** is the lowest difficulty (0 easy, 1 normal, 2 hard) at which the
+  unit exists; a missing key is 0.
+- **Attackers.** A unit that takes the player as its target joins the
+  player's list of attackers, 4 units on easy, 6 on normal, 8 on hard; when
+  the list is full the unit gets no target. Ground plans take at most 4 at
+  any difficulty (Vertigo's buildings can't be attacked, so this has no
+  effect); units on a torpedo run against a target have a list of their own,
+  8 for every target.
+- **`car`** (CardinalPatrol, CardinalAttack, Ambush) is a quarter turn: 2 is
+  90° one way, 4 is 180°, 6 the other way; 0, odd values and the frequent 10
+  are straight ahead. A tower starts its patrol with the turret turned by it
+  from its front, then every 0.5–2.5 s turns it by a random 15° to 90° either
+  way, unbounded; a boat in ambush points its nose that way. Which of 2 and 6
+  is left is not checked (Vertigo turns 2 left). Boats skip CardinalPatrol and
+  CardinalAttack slots at once.
+- **`con`** on Explode (with `dur` in seconds): 0 explodes when `dur` is over
+  unless the unit has been boarded by then; 1 waits to be boarded and explodes
+  `dur` seconds after that; 2 explodes when `dur` is over no matter what. The
+  explosion is three explosion effects at the unit, which then tumbles away
+  with a random spin, the same sequence as a unit whose energy defence has
   collapsed; the armour is untouched, so the unit is not "destroyed" for the
-  mission's conditions.
-- **Order slots** end in two ways, both of which the original checks: the
-  slot's break condition is evaluated every frame, independently of the
-  order, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
-  CardinalPatrol when `dur` is over, Goto and GotoWithArrive at their point,
+  mission's conditions (the AD Augmented Mod found the same).
+- **Order slots** end in two ways: the break condition is checked every
+  frame, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
+  CardinalPatrol after `dur`, Goto and GotoWithArrive at their point,
   GotoWithInfiltrate once the boat has sat at its target for `dur` seconds,
-  which is when the target counts as boarded). A unit's 8 slots are taken in
-  turn, skipping empty ones, round and round. The squadron events: "attacked"
-  on the first hit on any of its units, "arrived" and "boarded" once every one
-  of its units has arrived or been boarded, "destroyed" once every one is
-  destroyed (armour at zero).
-- **Seeded idle runs** of all 71 missions (3 seeds, headless, 60 s, normal
-  difficulty) before and after: 13 destroyed, 3 failed, 197 timed out before;
-  9 destroyed, 3 failed, 201 timed out after. The same 3 runs fail; about a
-  third of the runs fire a different number of torpedoes or end a few units
-  differently, as fights far from the player now sleep and fewer units attack
-  the player at once (s00303 and s00402 seed 1 now survive, s00304 seed 1 and
-  s00705 seed 3 don't).
+  when the target counts as boarded). A unit's 8 slots are taken in turn,
+  skipping empty ones, round and round. The squadron events: "attacked" on
+  the first hit on any of its units, "arrived" and "boarded" once every unit
+  has, "destroyed" once every one is destroyed.
 
 ### K. What the original does with the engine, the energy guns and the booster
 
-Read off the original's behaviour in October 2026. All of it is in Vertigo
-since October 2026 (before, the guns knew their `energydemand` and the state
-"EnergyDelay" but there was no pool, so energy guns fired at their rearming
-rate, the energy bar was always full, and neither `eng` nor the boat's engine
-had any effect): the pool, the engine's recharge, the energy guns, the
-booster on Q (held; LB with the d-pad left on a controller, BOOST by touch),
-which replaces the debug speed Q and W used to give, and the jam rule. The
-seeded idle runs are compared at the end of this section.
+Read off in October 2026; Vertigo does all of it.
 
-- **The energy pool.** The player's boat and every unit with a `gun` key have
-  one engine with an energy level from 0 to 1, full when the mission starts.
-  The engine's model sets how fast the level refills: every frame it rises by
-  the frame time divided by the model's recharge time, up to 1. The recharge
-  times (from empty to full) are 5 s for engine 0, 3 s for engine 1, 1 s for
-  engines 2, 3 and 4, and 0.01 s for engine 5, which is as good as instant.
-  The player's model is the boat's engine (saved with the ship's mountings as
-  `engine` 0–5), a unit's is its `eng` key (all 1,625 units with a `gun` have
-  one). The game hands a mission the boat's engine as 0, 1 or 2 for the
-  Small, Medium and Big Block, so the player recharges in 5, 3 or 1 s. The
-  HUD's energy bar shows the level: its filled width is the level times the
-  bar's width, never less than 4 pixels.
-- **Energy guns.** Gun models 0–5 (Plasma Gun I to Doom Mortar, the ones with
-  `energydemand` above 0) draw from the pool; models 6–13 use rounds, and
-  where their counter stands the energy guns show "ENER". A gun fires its
-  barrels in turn, one per trigger pull with the rearming time between:
-  models 0 to 5 have 1, 2, 1, 2, 4 and 1 barrels, models 6 to 13 have 2, 2,
-  2, 3, 4, 2, 2 and 2 (the muzzle counts Vertigo already used). A barrel's
-  shot takes `energydemand` divided by the barrels off the level (down to 0;
-  a shot is never refused for lack of energy) and puts the gun into
-  "EnergyDelay". The gun is ready again once its `rearmingtime` has passed
-  *and* the level is above the whole `energydemand` again. So a full pool
-  allows a burst at the rearming rate, after which the gun settles to one
-  shot per (`energydemand` / barrels) × recharge time: a Plasma Gun I (0.1,
-  1 barrel, 0.15 s) on engine 0 fires about 13 shots in 2 s and then one
-  every 0.5 s; a Plasma Death II (0.3, 2 barrels, 0.075 s) on engine 2 keeps
-  firing at its rearming rate for about 4 s and then one shot every 0.15 s,
-  on engine 0 one every 0.75 s; a Doom Mortar (0.5, 1 barrel, 0.3 s) fires
-  every 0.5 s on engine 2 and every 2.5 s on engine 0. Engine 5 removes the
-  limit for every gun. The guns with rounds go to "Rearming"
-  after a shot and to "Empty" when their rounds are gone, as in Vertigo.
-- **The booster** (the boat's `booster` mounting) draws from the same pool.
-  It can be switched on only while the level is at least 0.8; switching it on
-  costs 0.15 at once, and while it runs it drains 1.2 per second, the engine
-  recharging meanwhile (so a boost lasts about 0.8 s on engine 0, about 4 s
-  on engines 2–4, and as long as you like on engine 5). It doubles the boat's
-  top speed and raises a second movement limit, probably the acceleration,
-  2.5-fold, and switches itself off when the level falls below 0.05.
-- **Jams**, read on the way, as Vertigo's formula carries a "check" note. The
-  original decides once per trigger pull, before any barrel fires. The gun's
-  condition (1 when new, the boat's `Defect` value from the saved game, taken
-  as 0.2 at the least) is compared with a random number from 0 to 1 times the
-  gun's `defectdamping`: the gun jams when the random product reaches the
-  condition, so the chance is 1 − condition / `defectdamping`, nothing while
-  the condition is at or above the damping (0.2–0.8 in `GLOBWEAP.DES`). A jam
-  lasts `defectdelay` × 0.5 to 1.5, then the gun is ready at once. Vertigo
-  used to roll per barrel, divide the chance by the number of barrels and end
-  a jam with a rearming period; it follows the original now.
-- **Seeded idle runs** of all 71 missions (3 seeds, headless, 60 s, normal
-  difficulty) end exactly as before: 9 destroyed, 3 failed, 201 timed out,
-  with 13 of the 213 runs ending with a few units or torpedoes differently,
-  as the units with engine 0 or 1 now fire their energy guns more slowly once
-  their pool is down. An idle player is rarely shot at with an energy gun
-  for long, so the fights the player joins are where the change shows.
+- **The energy pool.** The player's boat and every unit with a `gun` has an
+  energy level from 0 to 1, full at the start, refilled by its engine model
+  from empty in 5 s (engine 0), 3 s (1), 1 s (2–4) or 0.01 s (5). The
+  player's model is the boat's engine (`engine` 0–2 for the Small, Medium
+  and Big Block), a unit's its `eng` key. The HUD's energy bar shows the
+  level, never less than 4 pixels.
+- **Energy guns.** Models 0–5 (the ones with `energydemand` above 0) draw
+  from the pool; models 6–13 use rounds and the energy guns show "ENER" in
+  their place. A gun fires its barrels in turn, one per trigger pull with the
+  rearming time between: models 0 to 13 have 1, 2, 1, 2, 4, 1, 2, 2, 2, 3,
+  4, 2, 2 and 2 barrels. A shot takes `energydemand` divided by the barrels
+  off the level (never refused) and the gun is ready again once its
+  `rearmingtime` has passed and the level is above the whole `energydemand`.
+  So a full pool allows a burst at the rearming rate, after which the gun
+  settles to one shot per (`energydemand` / barrels) × recharge time: a
+  Plasma Death II (0.3, 2 barrels, 0.075 s) on engine 2 fires at its rearming
+  rate for about 4 s and then every 0.15 s, on engine 0 every 0.75 s.
+- **The booster** draws from the same pool: on only while the level is at
+  least 0.8, 0.15 at once, 1.2 per second while it runs (about 4 s on engines
+  2–4), off below 0.05. It doubles the top speed and raises the acceleration
+  2.5-fold, works from a standstill, and the engine's pitch follows the speed.
+- **Jams** are decided once per trigger pull: the gun's condition (1 when
+  new, the saved `Defect`, at least 0.2) against a random number times the
+  gun's `defectdamping`; it jams when the product reaches the condition, so
+  never while the condition is at or above the damping (0.2–0.8). A jam lasts
+  `defectdelay` × 0.5 to 1.5, then the gun is ready at once.
 
 ### L. How the original turns the boat
 
-Read off in October 2026, after the comparison by hand showed the original's
-pitch carrying on when the key is released. The player's pitch and yaw rates
-relax towards the stick's share of `MaxAngleVelocity` by the boat's
-`AngleFriction` fraction (0.4 for pitch and 0.7 for yaw on the Hiob) once
-per update: rate += (target − rate) × friction. The frame time enters only
-where the rate turns the boat. Two more terms join the rates each update: the
-nose drops by 0.01 × its own `dir.z` × the pitch maximum, and the roll turns
-the boat by roll × `RollCenterVelocity` × the yaw maximum. A fully pressed
-key reaches the maximum rate only asymptotically (60 % of the way per update
-for pitch) and the rate dies the same way after the release, which is the
-momentum felt in the original. Vertigo used the same fractions but applied
-them 64 times a second and pushed the rate only while it was below the
-target, so a release stopped the turn within a few frames.
-
-Vertigo relaxes the rates per tick now, at `turnticks` ticks per second from
-`settings.ini` (`[Fight]`, default 30, which matched the original in the
-booster setup of docs/reverse-engineering.md when compared by hand in
-October 2026). `--trace` prints the player's pitch every second. Whether the original's keyboard ramps the stick value
-rather than setting it to ±1 at once is not known either; a joystick's value
-goes in as it is.
+Read off in October 2026. The pitch and yaw rates relax towards the stick's
+share of `MaxAngleVelocity` by the boat's `AngleFriction` fraction (0.4 for
+pitch, 0.7 for yaw on the Hiob) once per update: rate += (target − rate) ×
+friction; the frame time only turns the boat by the rate. Each update the
+nose also drops by 0.01 × its own `dir.z` × the pitch maximum, and the roll
+turns the boat by roll × `RollCenterVelocity` × the yaw maximum. So a pressed
+key reaches the maximum rate only asymptotically and the rate dies the same
+way after the release, which is the momentum felt in the original. Vertigo
+relaxes the rates at `turnticks` ticks per second (`settings.ini` `[Fight]`,
+default 30, which matched by hand). Whether the keyboard ramps the stick
+value is not known; a joystick's value goes in as it is.
 
 ### M. How the original shades the terrain
 
-Read off in October 2026, after a fit of fog and slope light to screenshots
-(D17) had left the exact rule open. The cockpit description's `[Camera]`
-section holds its numbers: `AmbientBrightness` 2.0, `CueingBackPlane` 1000,
+Read off in October 2026. The cockpit description's `[Camera]` section holds
+the numbers: `AmbientBrightness` 2.0, `CueingBackPlane` 1000,
 `LightBrightness` 5.0, `LightPower` 1.0, `LightFrontPlane` 0 and
-`LightBackPlane` 3650, the distances in the game's units of 1/32 m, so 31 m
-and 114 m (all cockpits agree). Every vertex of the terrain gets a brightness
-of ambient × (1 − d/cueing), not below zero, plus light × ((back − d)/(back −
-front))^power × cos, where d is the distance from a point 8 m above and 4 m
-ahead of the eye and cos the cosine between the vertex's vector and the
-direction to that point, not clamped, so a slope turned away takes from the
-ambient part; the light part is nothing beyond its back plane. The vertex's
-vector is the normalised sum of the normalised normals of the six triangles
-around it, with the map's scales; the `gouraud.xyz` file the surface
-descriptions name would replace that, but none exists. The brightness is a
-multiple of the texture: 2 is the shading table's last row (twice the
-palette), 1 its sixteenth, 0 its first, so the row is 16 × brightness
-rounded down and kept between 0 and 31, chosen per pixel from the brightness
-interpolated across the triangle; row r blends (r + 1)/32 of twice the texture
-with the rest of the table's own colour F. So the ground at the eye is twice
-its texture, at 16 m once, and at 31 m the ambient part is gone; from there
-only the light counts, and flat ground seen at a grazing angle darkens quickly
-while a wall facing the boat stays bright: at 60 m a wall at a cosine of 0.8
-keeps 1.9 (row 30), flat ground 11 m below 0.45 (row 7), and at 90 m nothing
-of the flat ground is left. A fade at a mission's start and end scales the
-whole brightness. The energy shots' lights add to the vectors of the corners
-of the cell under them, so they brighten the ground through the same rows.
-Vertigo computes the brightness per vertex in the pipeline's table-shading
-mode (`gfx::Pipeline::TableShading`), picks the row per fragment and adds the
-shot lights' strength to the brightness; its vertices and normals are the
-spline's, finer than the original's grid, so the bands along slopes fall in
-slightly different places.
+`LightBackPlane` 3650, in units of 1/32 m (31 m and 114 m). Every vertex of
+the terrain gets a brightness of ambient × (1 − d/cueing), not below zero,
+plus light × ((back − d)/(back − front))^power × cos, where d is the distance
+from a point 8 m above and 4 m ahead of the eye and cos the cosine between the
+vertex's vector and the direction to that point, not clamped; the light part
+is nothing beyond its back plane. The vertex's vector is the normalised sum
+of the normalised normals of the six triangles around it (the `gouraud.xyz`
+file the surface descriptions name would replace that, but none exists). The
+brightness is a multiple of the texture: 2 is the shading table's last row
+(twice the palette), 1 its sixteenth, so the row is 16 × brightness rounded
+down, kept between 0 and 31, chosen per pixel from the brightness interpolated
+across the triangle; row r blends (r + 1)/32 of twice the texture with the
+rest of the table's own colour F. So the ground at the eye is twice its
+texture, at 16 m once, at 31 m the ambient part is gone, and from there only
+the light counts: at 60 m a wall facing the boat keeps 1.9 (row 30), flat
+ground 11 m below 0.45 (row 7), and at 90 m nothing of the flat ground is
+left. A fade at a mission's start and end scales the whole brightness. The
+energy shots' lights add to the vectors of the cell's corners under them, so
+they brighten the ground through the same rows. Vertigo computes the
+brightness per vertex in the pipeline's table-shading mode
+(`gfx::Pipeline::TableShading`), picks the row per fragment and adds the shot
+lights' strength to the brightness; its vertices and normals are the spline's,
+finer than the original's grid, so the bands along slopes fall in slightly
+different places. Against the original's pictures at s00701's start the band
+means of the ground differ by 12.5 units RMS over four views.
