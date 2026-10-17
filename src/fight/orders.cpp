@@ -321,7 +321,7 @@ bool Orders::aligned(const Vector3D &aim, const Vector3D &target, float range) c
 
 // towers: turn to the target and fire once the turret points at it; without one the turret rests
 // turned by car, and on patrol it sweeps: every 0.5-2.5 s it turns by 15-90 degrees either way,
-// staying within a quarter turn of its rest direction
+// wherever that takes it (docs/ROADMAP.md, appendix J)
 void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
 {
     TurretBase *turret = dynamic_cast<TurretBase *>(m_unit);
@@ -335,10 +335,7 @@ void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
         if (sweep && m_scenario->time() >= m_nextSweep)
         {
             const float step = random(glm::radians(15.0f), glm::radians(90.0f))*(random() < 0.5f ? -1.0f : 1.0f);
-            float turn = std::remainder(m_sweepYaw - rest, glm::two_pi<float>()) + step;
-            if (std::abs(turn) > glm::half_pi<float>())
-                turn = glm::sign(turn)*glm::pi<float>() - turn;
-            m_sweepYaw = rest + turn;
+            m_sweepYaw = rest + std::remainder(m_sweepYaw - rest, glm::two_pi<float>()) + step;
             m_nextSweep = m_scenario->time() + random(0.5f, 2.5f);
         }
         turret->aimAt(sweep ? m_sweepYaw : rest);
