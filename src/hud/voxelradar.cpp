@@ -33,6 +33,7 @@
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
 #include <algorithm>
+#include <set>
 #include <cmath>
 
 
@@ -53,8 +54,16 @@ const int GridSteps = 32;
 // fractions of a pixel shows as a gradual change rather than pixels stepping at uneven moments
 const int SuperSample = 3;
 // the patch at the boat's ground level fills at most this part of the view
-const float PatchWidth = 0.9f;
+const float PatchWidth = 0.94f;
 const float PatchHeight = 0.9f;
+// the water currents' slab, in cells
+const float CurrentHeight = 0.4f;
+// the patch's half width in cells, from the original's pictures (its depth comes from the
+// cockpit description)
+const float HalfWidth = 15;
+// the eye's distance from the patch's middle, in patch depths: the far edge comes out about
+// half as wide as the near one
+const float EyeDistance = 1.6f;
 
 }
 
@@ -66,7 +75,9 @@ VoxelRadar::VoxelRadar(txt::DesFile &file)
         return;
     m_rect = Rect(file.value("StartX").toInt(), file.value("StartY").toInt(), file.value("Width").toInt(), file.value("Height").toInt());
     m_elevation = glm::radians(file.value("Projection", 30).toFloat());
-    m_extent = file.value("WorldMaxY", 20).toFloat();
+    m_behind = -file.value("WorldMinY", -5).toFloat();
+    m_ahead = file.value("WorldMaxY", 20).toFloat();
+    m_boatRow = file.value("FlightY", 16).toInt();
 
     m_table = gfx::ColorTable::loadShading(String("vfx:texture/%1.s16").arg(file.value("ShadingTable", "vox_000").toString()));
     if (m_rect.width <= 0 || m_rect.height <= 0 || m_table.empty())
@@ -99,8 +110,13 @@ void VoxelRadar::render(fight::Scenario *scenario)
 {
     fight::Surface &surface = scenario->surface();
     const Vector3D boat = scenario->position();
-    const float extent = m_extent*surface.scale().x;
-    const float step = 2*extent/GridSteps;
+    // the patch: as deep as the cells behind and ahead of the boat, and as wide as deep
+    const float cell = surface.scale().x;
+    const float behind = m_behind*cell, ahead = m_ahead*cell;
+    const float depth = behind + ahead, half = HalfWidth*cell;
+    const float extent = std::max(half, std::max(behind, ahead));
+    const float step = depth/GridSteps;
+    const Vector2D patchLow(-half, -behind), patchHigh(half, ahead);
     Vector2D forward(scenario->player()->dir());
     forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : Vector2D(0, 1);
     const Vector2D right(forward.y, -forward.x);
@@ -109,7 +125,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
     auto fromPatch = [&](float x, float y, float z) { return Vector3D(middle + right*x + forward*y, z); };
     auto inPatch = [&](const Vector3D &p) {
         const Vector2D local = toPatch(p);
-        return std::abs(local.x) <= extent && std::abs(local.y) <= extent;
+        return local.x >= patchLow.x && local.x <= patchHigh.x && local.y >= patchLow.y && local.y <= patchHigh.y;
     };
     // a polygon in the patch's frame (x, y and the height) cut at the patch's edges
     auto clip = [&](std::vector<Vector3D> polygon) {
@@ -120,7 +136,8 @@ void VoxelRadar::render(fight::Scenario *scenario)
                 for (size_t k = 0; k < polygon.size(); k++)
                 {
                     const Vector3D &a = polygon[k], &b = polygon[(k + 1) % polygon.size()];
-                    const float da = extent - sign*a[axis], db = extent - sign*b[axis];
+                    const float edge = sign < 0 ? -patchLow[axis] : patchHigh[axis];
+                    const float da = edge - sign*a[axis], db = edge - sign*b[axis];
                     if (da >= 0)
                         kept.push_back(a);
                     if ((da >= 0) != (db >= 0))
@@ -133,8 +150,9 @@ void VoxelRadar::render(fight::Scenario *scenario)
 
     // the height map's own grid (so the shading stays with the ground as the boat moves); lines
     // stand on it, so they meet the terrain as drawn
-    const int first[2] = { int(std::floor((middle.x - 1.5f*extent)/step)), int(std::floor((middle.y - 1.5f*extent)/step)) };
-    const int count = int(3*extent/step) + 2;
+    const float reach = extent + step;
+    const int first[2] = { int(std::floor((middle.x - reach)/step)), int(std::floor((middle.y - reach)/step)) };
+    const int count = int(2*reach/step) + 2;
     std::vector<float> heights(count*count);
     for (int j = 0; j < count; j++)
         for (int i = 0; i < count; i++)
@@ -146,10 +164,12 @@ void VoxelRadar::render(fight::Scenario *scenario)
         return (heights[j*count + i]*(1 - fu) + heights[j*count + i + 1]*fu)*(1 - fv) + (heights[(j + 1)*count + i]*(1 - fu) + heights[(j + 1)*count + i + 1]*fu)*fv;
     };
 
-    // the eye looks down at the ground under the boat from behind; in perspective, so the far
-    // edge of the patch comes out narrower than the near one
-    const float distance = 3.5f*extent;
-    const Vector3D target(middle, ground(middle.x, middle.y));
+    // the eye looks down at the patch's middle from behind the boat; in perspective, so the far
+    // edge of the patch comes out much narrower than the near one and the boat sits in the
+    // lower part
+    const float distance = EyeDistance*depth;
+    const Vector2D patchMiddle = middle + forward*(0.5f*(patchLow.y + patchHigh.y));
+    const Vector3D target(patchMiddle, ground(middle.x, middle.y));
     const Vector3D eye = target - Vector3D(forward, 0)*distance*std::cos(m_elevation) + Vector3D(0, 0, distance*std::sin(m_elevation));
     const Vector3D viewForward = glm::normalize(target - eye);
     const Vector3D viewRight(right, 0);
@@ -169,8 +189,8 @@ void VoxelRadar::render(fight::Scenario *scenario)
     // the boat, at the view's centre, then stays in the middle of the same radar pixel and its
     // line doesn't flicker between two columns)
     Vector2D low(1e9f), high(-1e9f);
-    for (const float x : { -extent, extent })
-        for (const float y : { -extent, extent })
+    for (const float x : { patchLow.x, patchHigh.x })
+        for (const float y : { -0.5f*depth, 0.5f*depth })
         {
             const float depth = distance + y*std::cos(m_elevation);
             const Vector2D v(x/depth, y*std::sin(m_elevation)/depth);
@@ -286,7 +306,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
     for (const Cell &cell : cells)
     {
         // the lowest ground dark, the highest bright, slightly darker towards the far edge
-        const int level = glm::clamp(int(8 + 54*(cell.height - m_lowest)/range), 0, LightLevels - 1);
+        const int level = glm::clamp(int(8 + 32*(cell.height - m_lowest)/range), 0, LightLevels - 1);
         const int fog = FogRows - 1 - int(6*(cell.depth - nearest)/std::max(farthest - nearest, 1.0f));
         fillPolygon(cell.corners, shade(fog, level));
     }
@@ -363,13 +383,40 @@ void VoxelRadar::render(fight::Scenario *scenario)
         }
     }
 
-    // the water currents as translucent blue boxes over their 2x2 blocks of map cells, one cell high
+    // the water currents as one turquoise sheet a little above the ground over their 2x2 blocks
+    // of map cells, with sides only where no current is next to it, so that neighbouring blocks
+    // form one closed area
     const Vector3D &scale = surface.scale();
+    std::set<std::pair<int, int>> currents;
+    for (const fight::Scenario::CurrentCell &current : scenario->currentCells())
+        currents.insert({ current.x, current.y });
+    const gfx::Rgb turquoise = gfx::rgb(48, 208, 216);
     for (const fight::Scenario::CurrentCell &current : scenario->currentCells())
     {
         const Vector2D a(current.x*scale.x, current.y*scale.y), b = a + Vector2D(2*scale.x, 2*scale.y);
-        const float bottom = ground(0.5f*(a.x + b.x), 0.5f*(a.y + b.y));
-        fillBlock(Vector3D(a, bottom), Vector3D(b, bottom + scale.x), gfx::rgba(40, 72, 232, 160));
+        const float lift = CurrentHeight*scale.x;
+        // a corner of the sheet, following the ground, in the patch's frame
+        auto corner = [&](const Vector2D &p, float above) { return Vector3D(toPatch(Vector3D(p, 0)), ground(p.x, p.y) + above); };
+        // a face in the patch's frame, cut at the edges and drawn in the world
+        auto face = [&](std::vector<Vector3D> polygon, gfx::Rgb colour) {
+            polygon = clip(polygon);
+            for (Vector3D &c : polygon)
+                c = fromPatch(c.x, c.y, c.z);
+            if (polygon.size() >= 3)
+                fillPolygon(polygon, colour);
+        };
+        auto side = [&](const Vector2D &p, const Vector2D &q, gfx::Rgb colour) {
+            face({ corner(p, 0), corner(q, 0), corner(q, lift), corner(p, lift) }, colour);
+        };
+        face({ corner(a, lift), corner(Vector2D(b.x, a.y), lift), corner(b, lift), corner(Vector2D(a.x, b.y), lift) }, gfx::lighter(turquoise, 115));
+        if (!currents.count({ current.x, current.y - 2 }))
+            side(a, Vector2D(b.x, a.y), gfx::darker(turquoise, 130));
+        if (!currents.count({ current.x, current.y + 2 }))
+            side(Vector2D(a.x, b.y), b, gfx::darker(turquoise, 130));
+        if (!currents.count({ current.x - 2, current.y }))
+            side(a, Vector2D(a.x, b.y), gfx::darker(turquoise, 150));
+        if (!currents.count({ current.x + 2, current.y }))
+            side(Vector2D(b.x, a.y), b, gfx::darker(turquoise, 150));
     }
 
     // lines: debris (trash) green; sonar contacts red hostile, green friendly, blue neutral, the
