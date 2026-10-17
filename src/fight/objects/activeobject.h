@@ -100,6 +100,10 @@ public:
     bool hasTorpedoes() const { return m_torpedoCount > 0 && m_torpedoType >= 0; }
     int torpedoType() const { return m_torpedoType; }
     bool fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction);
+    // the units running a torpedo attack on this one: at most 8 at a time, for every target
+    // (docs/ROADMAP.md, appendix J); false if the list is full
+    bool engageTorpedo(ActiveObject *attacker);
+    void disengageTorpedo(ActiveObject *attacker);
 
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
@@ -173,6 +177,7 @@ protected:
     bool m_trigger = false;
     int m_torpedoType = -1;
     int m_torpedoCount = 0;
+    std::vector<ActiveObject*> m_torpedoAttackers;
     float m_torpedoReady = 0;
 };
 

@@ -113,6 +113,7 @@ private:
 
     void updateTurret(ActiveObject *target, float range, bool sweep);
     void updateAttack(ActiveObject *target, float speed);
+    void endTorpedoRun();
     void startAttackState(Attack state, ActiveObject *target);
 
 private:
@@ -130,7 +131,8 @@ private:
     float m_attackEnd;   // when the current attack state ends
     Vector3D m_offset;   // approach side, or the aim error for this attack run
     bool m_ambushed;     // an ambush has been triggered
-    bool m_torpedoRun;   // this attack run may fire a torpedo
+    bool m_torpedoRun;
+    ActiveObject *m_torpedoTarget;   // whose torpedo attackers the unit is among   // this attack run may fire a torpedo
     ActiveObject *m_engaged; // Patrol and Escort: the hostile unit being attacked
     float m_nextScan;        // when the sensor looks for hostiles next
     float m_dockStart;   // GotoWithInfiltrate: when the unit docked at its target, -1 while on its way

@@ -115,6 +115,26 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
 }
 
 
+bool ActiveObject::engageTorpedo(ActiveObject *attacker)
+{
+    m_torpedoAttackers.erase(std::remove_if(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), [](ActiveObject *unit) {
+        return !unit->isEnabled() || unit->isAsleep() || unit->isTumbling();
+    }), m_torpedoAttackers.end());
+    if (std::find(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), attacker) != m_torpedoAttackers.end())
+        return true;
+    if (m_torpedoAttackers.size() >= 8)
+        return false;
+    m_torpedoAttackers.push_back(attacker);
+    return true;
+}
+
+
+void ActiveObject::disengageTorpedo(ActiveObject *attacker)
+{
+    m_torpedoAttackers.erase(std::remove(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), attacker), m_torpedoAttackers.end());
+}
+
+
 void ActiveObject::destroy()
 {
     if (m_eventDestroy.isCompleted())

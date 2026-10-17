@@ -99,6 +99,7 @@ Orders::Orders(Scenario *scenario, ActiveObject *unit, const std::vector<OrderSl
     m_attackEnd(0),
     m_ambushed(false),
     m_torpedoRun(false),
+    m_torpedoTarget(nullptr),
     m_engaged(nullptr),
     m_nextScan(0),
     m_dockStart(-1),
@@ -129,6 +130,7 @@ void Orders::start(int slot)
     m_attackEnd = 0;
     m_ambushed = false;
     m_engaged = nullptr;
+    endTorpedoRun();
     m_dockStart = -1;
     m_unit->setTrigger(false);
     m_scenario->disengagePlayer(m_unit);
@@ -361,10 +363,21 @@ void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
 }
 
 
+void Orders::endTorpedoRun()
+{
+    if (m_torpedoTarget)
+        m_torpedoTarget->disengageTorpedo(m_unit);
+    m_torpedoTarget = nullptr;
+    m_torpedoRun = false;
+}
+
+
 void Orders::startAttackState(Attack state, ActiveObject *target)
 {
     const SimpleBoat::AttackSettings &settings = m_boat->attackSettings();
     m_attack = state;
+    if (state != Attack::Attack)
+        endTorpedoRun();
     switch (state)
     {
     case Attack::Approach:
@@ -387,7 +400,9 @@ void Orders::startAttackState(Attack state, ActiveObject *target)
         break;
     case Attack::Attack:
         {
-            m_torpedoRun = random() < settings.torpedoProbability;
+            // a torpedo run, if the dice say so and the target's list of torpedo attackers has room
+            m_torpedoRun = random() < settings.torpedoProbability && target->engageTorpedo(m_unit);
+            m_torpedoTarget = m_torpedoRun ? target : nullptr;
             // AttackProbabilityHit is the chance that the run is on target; otherwise it aims past the hull,
             // to the side of the line of fire
             m_offset = Vector3D(0);
@@ -502,7 +517,7 @@ void Orders::updateAttack(ActiveObject *target, float speed)
             // one torpedo per run, if the dice said so, when pointing at the target from up to 250 m
             if (m_torpedoRun && m_unit->hasTorpedoes() && aligned(m_boat->dir(), target->center(), 250.0f) &&
                 m_unit->fireTorpedo(target, m_unit->position() + m_boat->dir()*6.0f, m_boat->dir()))
-                m_torpedoRun = false;
+                endTorpedoRun();
             // break off early enough not to ram the target
             if (distance < 50.0f || m_scenario->time() > m_attackEnd)
                 startAttackState(Attack::Break, target);
