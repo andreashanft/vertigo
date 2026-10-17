@@ -159,6 +159,7 @@ int Vertigo::start()
     }
 
     m_destroy = m_options.destroy;
+    m_collapse = m_options.collapse;
     m_screenshots = m_options.screenshots;
     if (m_headless && !m_screenshots.empty()) {
         std::cerr << "--screenshot needs a window, ignored with --headless" << std::endl;
@@ -327,6 +328,21 @@ void Vertigo::testFrame()
                 std::cerr << "--destroy: no unit " << id << std::endl;
         }
         m_destroy.clear();
+    }
+    if (m_scenario && !m_collapse.empty() && elapsed() >= 1) {
+        for (const int id : m_collapse) {
+            bool found = false;
+            for (const auto &record : m_scenario->objectRecords()) {
+                fight::ActiveObject *object = dynamic_cast<fight::ActiveObject *>(record.object);
+                if (record.id == id && object) {
+                    object->damage(0, object->shockShield() + 1, object->position(), m_scenario->player());
+                    found = true;
+                }
+            }
+            if (!found)
+                std::cerr << "--collapse: no unit " << id << std::endl;
+        }
+        m_collapse.clear();
     }
     // keys and screenshots work in the main menu too, at seconds since the start
     for (auto it = m_keys.begin(); it != m_keys.end(); ) {

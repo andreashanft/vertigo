@@ -66,6 +66,7 @@ public:
     };
     const AttackSettings& attackSettings() const { return m_attackSettings; }
     virtual bool isGroundVehicle() const { return false; }
+    bool startTumbling() override;
     // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)
     virtual bool engagesHostiles() const { return true; }
     // where the gun points; units with a turret turn it with aimAt()
@@ -78,6 +79,7 @@ public:
     bool update(float elapsedTime);
     void updateVelocity(float elapsedTime);
     void updateOrientation(float elapsedTime);
+    void updateTumble(float elapsedTime);
     void draw();
     void arm(int model, txt::DesFile &file);
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
@@ -109,6 +111,8 @@ protected:
 
     Vector3D m_angleVelocity;
     Vector3D m_turnVelocity;
+    Vector3D m_spin;            // the tumble's angular velocity
+    float m_tumbleEnd = 0;      // and when it ends at the latest
 
     Vector3D m_maxAngleVelocity;
     Vector3D m_angleFriction;

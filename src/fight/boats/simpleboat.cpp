@@ -24,6 +24,7 @@
 #include "fight/orders.h"
 #include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
+#include "util/random.h"
 #include "gfx/pipeline.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
@@ -154,6 +155,11 @@ void SimpleBoat::arm(int model, txt::DesFile &file)
 
 bool SimpleBoat::update(float elapsedTime)
 {
+    if (m_tumbling)
+    {
+        updateTumble(elapsedTime);
+        return false;
+    }
     if (m_orders)
         m_orders->update();
     updateOrientation(elapsedTime);
@@ -257,6 +263,40 @@ void SimpleBoat::updateVelocity(float elapsedTime)
     // nothing pushes the boat past twice its top speed along its axis
     velocity.y = glm::clamp(velocity.y, 2*m_minVelocity, 2*m_maxVelocity);
     m_velocity = m_orientationInverted * velocity;
+}
+
+
+// the tumble after an Explode order or an energy defence's collapse (docs/ROADMAP.md, appendix J):
+// the boat spins at random, loses its way and sinks, until it touches the ground or half a
+// minute is over
+bool SimpleBoat::startTumbling()
+{
+    if (this == m_scenario->player() || isGroundVehicle())
+        return false;
+    auto unit = [](float scale) { return scale*(2.0f*util::random()/float(RAND_MAX) - 1.0f); };
+    m_spin = Vector3D(unit(1.5f), unit(1.5f), unit(1.5f));
+    if (glm::length(m_spin) < 0.5f)
+        m_spin = Vector3D(0, 0, 1.0f);
+    m_tumbleEnd = m_scenario->time() + 30.0f;
+    m_tumbling = true;
+    m_trigger = false;
+    m_scenario->disengagePlayer(this);
+    return true;
+}
+
+
+void SimpleBoat::updateTumble(float elapsedTime)
+{
+    m_orientation *= glm::mat3(glm::rotate(m_spin.x*elapsedTime, Vector3D(1, 0, 0))) * glm::mat3(glm::rotate(m_spin.y*elapsedTime, Vector3D(0, 1, 0)))
+                   * glm::mat3(glm::rotate(m_spin.z*elapsedTime, Vector3D(0, 0, 1)));
+    m_orientationInverted = glm::transpose(m_orientation);
+    // the way runs out and the boat sinks
+    m_velocity *= std::exp(-0.5f*elapsedTime);
+    m_velocity.z = std::max(m_velocity.z - 2.0f*elapsedTime, -4.0f);
+    move(m_velocity*elapsedTime);
+    const float ground = m_scenario->surface().heightAt(m_position.x, m_position.y);
+    if (m_position.z - m_collisionRadius <= ground + 0.5f || m_scenario->time() >= m_tumbleEnd)
+        vanish();
 }
 
 

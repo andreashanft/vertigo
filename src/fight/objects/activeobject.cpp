@@ -104,8 +104,11 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
     m_shockShield -= shock;
     if (m_kineticShield < 0)
         destroy();
-    else if (m_shockShield < 0)
+    else if (m_shockShield < 0 && !m_eventParalyze.isCompleted())
+    {
         m_eventParalyze.complete();
+        explode();
+    }
 
     if (attacker && attacker != this && attacker == m_scenario->player())
         m_scenario->playerHit(this, !wasDestroyed && m_eventDestroy.isCompleted());
@@ -117,15 +120,18 @@ void ActiveObject::destroy()
     if (m_eventDestroy.isCompleted())
         return;
     blowUp(1);
+    vanish();
     m_eventDestroy.complete();
 }
 
 
 void ActiveObject::explode()
 {
-    if (!m_enabled || m_eventDestroy.isCompleted())
+    if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling)
         return;
     blowUp(3);
+    if (!startTumbling())
+        vanish();
 }
 
 
@@ -167,7 +173,11 @@ void ActiveObject::blowUp(int explosions)
             for (int i = random(1, 3); i > 0; i--)
                 debris(random(14, 16));
     }
+}
 
+
+void ActiveObject::vanish()
+{
     disable();
     if (m_scenario->target().locked() == this)
     {
@@ -186,7 +196,7 @@ void ActiveObject::leaveMission()
 
 bool ActiveObject::canSleep() const
 {
-    return !m_orders || m_orders->mayPause();
+    return !m_tumbling && (!m_orders || m_orders->mayPause());
 }
 
 

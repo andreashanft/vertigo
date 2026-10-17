@@ -51,6 +51,7 @@ public:
         bool headless = false;                          // test mode: no window and no sound, simulated time
         bool fixedStep = false;                         // test mode: 20 ms of mission time per frame
         std::vector<int> destroy;                       // test mode: destroy these units after one second
+        std::vector<int> collapse;                      // test mode: collapse these units' energy defence after one second
         struct Key { float time; input::Key key; int modifiers; float hold; };
         std::vector<Key> keys;                          // test mode: press these keys at these times (seconds), holding them
         struct Drive { int id; float speed; float turn; };
@@ -136,6 +137,7 @@ private:
     bool m_running = true;
     bool m_headless = false;
     std::vector<int> m_destroy;
+    std::vector<int> m_collapse;
     std::vector<Options::Screenshot> m_screenshots;
     std::vector<Options::Key> m_keys;
     std::vector<Options::Click> m_clicks;

@@ -104,9 +104,12 @@ public:
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
-    // an Explode order: the unit blows up and is gone, but as its armour was never taken down it
-    // doesn't count as destroyed for the mission's conditions (docs/ROADMAP.md, appendix J)
+    // an Explode order, and an energy defence that has collapsed: three explosions, then the unit
+    // tumbles away with a random spin (a boat; anything else is simply gone) and, as its armour
+    // was never taken down, doesn't count as destroyed for the mission's conditions
+    // (docs/ROADMAP.md, appendix J)
     void explode();
+    bool isTumbling() const { return m_tumbling; }
     virtual void identify();
     // whether the sonar shows it (a cargo ship shows its blocks instead)
     virtual bool isContact() const { return true; }
@@ -136,8 +139,11 @@ public:
     static float rechargeTime(int engine);
 
 protected:
-    // the explosion, debris and disabling shared by destroy() and explode()
+    // the explosions and debris shared by destroy() and explode(), and the going
     void blowUp(int explosions);
+    void vanish();
+    // starts the tumble; false if the unit can't (then it vanishes)
+    virtual bool startTumbling() { return false; }
 
 protected:
     ConditionEvent m_eventDestroy;
@@ -151,6 +157,7 @@ protected:
     float m_noise;
     bool m_identified;
     bool m_asleep = false;
+    bool m_tumbling = false;
     int m_engine = 0;
     float m_energy = 1.0f;
 
