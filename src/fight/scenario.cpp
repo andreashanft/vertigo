@@ -128,7 +128,7 @@ Scenario::Scenario(const String &name) :
     m_depth = m_file.value("depth").toInt();
     m_surface.load(m_file.value("name").toString().toLower(), m_file.value("maxheightscale").toInt(), m_file.value("patchcomb").toInt());
 
-    // dtyp -> object file, decoded from the original FIGHT.EXE (docs/ROADMAP.md, appendix A)
+    // dtyp -> object file, as the original maps them (docs/ROADMAP.md, appendix A)
     std::map<int, String> types = {
         // scouts
         { 1, "anscout2" }, { 8, "bioscout" }, { 9, "honglong" }, {10, "russcout" }, {11, "prscout1" },

@@ -7,8 +7,7 @@ the reference data gathered from the data files and from the original
 AI orders, the HUD items, effects, engine sounds) and a review of the
 repository: every mission loads, is fought and can be won or lost now, on the
 desktop and on the iPad. What remains is collected under
-[what is open](#what-is-open). Rules for handling the original's executables
-are under [working safely](#working-safely-with-sfwin32-and-the-original-executables).
+[what is open](#what-is-open).
 
 Effort marks: S is up to a day, M a few days, L one to three weeks, for one
 developer.
@@ -128,7 +127,7 @@ master monitor's target picture, D/H/V/N and R.
 |---|---|---|
 | G1 | Mission music | Done. `[CD] Track` n plays the CD's audio track n+1 (1–4; 0 none); building `Game Data` from a CD image copies them out as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`; `sfx::Music` streams the mission's track round and round at half volume, pausing with the mission; CD Musik AN/AUS in the options (`Sound/cdMusic`). Not compared: whether the original loops, pauses and how loud |
 | G2 | Minefields | Done. A mine entry is a column of `num` mines `dis` height units apart, the lowest at `hei`; 407 mines in 10 scenarios were missing before. Attacked when one of them is, destroyed when all are (s02205's objectives). Whether the original stacks them upwards is not compared |
-| G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by `FIGHT.EXE`. Open: `card` on active buildings (O4) |
+| G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by the original. Open: `card` on active buildings (O4) |
 | G4 | Unresolved conditions | Done. The references `--check` reported are condition codes for objectives that no unit has; they never come true, and all five missions can still be won. s01802 lost two tanks' trigger area when it was made from s01801 (the AD mod fixes it), s02006 kept a radio message of a dropped objective |
 | G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O5) |
 | G6 | Station after a mission | Done. The original's autopilot menu (FIGHTEXT) opens with Alt+A once the mission is accomplished and lists the open stations; with one destination the autopilot goes there at once. The menus show on the master monitor, also in the 3D cockpit |
@@ -136,92 +135,13 @@ master monitor's target picture, D/H/V/N and R.
 
 ## Open questions and how to settle them
 
-What is still unknown is in [what is open](#what-is-open) (O3–O6).
-[reverse-engineering.md](reverse-engineering.md) maps each question to an
-instrument: the original under DOSBox-X on the Mac first, a static reading of
-`FIGHT.EXE` second, sfwin32 last. Settled this way so far: the currents
-(appendix D), the radiation (D), `sle`, `diff`, the attacker lists, `car`,
-`con`, Explode, the order slots, the sensors and the boats' fighting (J), the
-energy pool, the energy guns, the booster and the jams (K), the boat's turning
-(L) and the terrain's shading
-(M).
-
-[sfwin32](https://github.com/mnkraus/sfwin32) runs the original `FIGHT.EXE`
-machine code on Windows and only replaces the DOS, video and sound services.
-It contains no decompiled game logic, but it can log changes to the game's own
-variables (`--watch`), trace calls, and see every volume/pan/pitch call the
-game makes. Use it to observe behaviour, then implement it independently; don't
-copy disassembled logic into this GPL code base.
-
-## Working safely with sfwin32 and the original executables
-
-sfwin32 loads the original DOS executables into memory, patches them and runs
-their machine code under a vectored exception handler. Treat both the runner
-and the game binaries as untrusted, and never build or run them on a
-development machine. It is Windows-only anyway; whether it works under the x86
-emulation of Windows on ARM is untested.
-
-Before building or running anything from sfwin32:
-
-- **Verify repo provenance**
-  - Only use the code from the official repository,
-    <https://github.com/mnkraus/sfwin32>.
-  - Check the commit hash and confirm it is the intended source. The commit
-    inspected (read-only, nothing built or run) while writing this roadmap was
-    `e0861140e62f0934432ad05b0d0813ab48b5d670` (2026-08-23, "Give
-    DESKTOP.EXE's text fields a keyboard").
-- **Treat the game binaries as untrusted input**
-  - Do not run `FIGHT.EXE` / `DESKTOP.EXE` or game assets from unknown sources.
-  - Verify checksums or source authenticity (see the table below).
-- **Run in an isolated Windows VM**
-  - Use a disposable VM or a snapshot-enabled environment.
-  - No sensitive data, no banking, no SSH keys, no developer credentials.
-- **Keep the VM offline**
-  - Disable networking before the first run.
-  - Only enable it after the app behaves normally.
-- **Run as a non-admin user**
-  - Prefer a standard local user account.
-  - Avoid Administrator privileges.
-- **Review dangerous execution paths**
-  - Loader and memory mapping
-  - Vectored exception handler
-  - Thread/context manipulation
-  - CLI options like `--patch`
-  - Any modification of executable memory
-- **Use a clean snapshot**
-  - Take a snapshot before building or executing.
-  - Restore immediately if you see unexpected process creation, file writes
-    or network activity.
-- **Monitor behaviour**, watching for:
-  - unexpected child processes
-  - file writes outside the game folder
-  - network connections
-  - registry changes
-  - suspicious DLL loads
-- **Prefer a fresh test VM for each major change**, especially after changing
-  patches or runner settings.
-- **If anything odd happens**
-  - Stop immediately.
-  - Restore the VM snapshot.
-  - Reassess the binary and asset sources.
-
-Known-good checksums of the GOG release (Archimedean Dynasty, GOG id
-1436955893). The MD5 values match GOG's own hash database shipped with the
-installation (`goggame-1436955893.hashdb`, 1,774 entries, all verified
-2026-10-13):
-
-| File | SHA-256 | MD5 (GOG hashdb) |
-|---|---|---|
-| `FIGHT.EXE` | `193b07df63cc67a6d3be151792e0dc72de62401ea15208d8e25363b76de21cee` | `d853239748b8d5c9dfdca4b270d95acf` |
-| `FIGHT3.EXE` | `f90440e630c6ee0a877bfcd542ab75ea1268ca83894859e3e97bfae3e4ad9c56` | `fa083f2aa8e2430495a485ee5a424b74` |
-| `DESKTOP.EXE` | `540bdc3781f0d035dfaf942dbcb5a54e2a4e72c47ba13585911ea356e4b86e67` | `df53e082660918aa8514c202981d7efc` |
-| `DESKTOP3.EXE` | `b9f71901015122247580f54274eed1e794f78c7984515069c15de6c558f9b488` | `9fd7a0daed5a133395d571e0b2ef1b50` |
-| `SF.EXE` | `940b707c04960a84762695a95c49346cd714ee1e6ce7195a65222ebf1294106c` | `fbf78a04501d92b0652f3ca4bdacd676` |
-| `SF3DFX.EXE` | `40a91282275ce99c6b3e4f653ffba70987a794cce336bbd2dc45e8a6f2b63cca` | `5e0dcb9726ab0a287a5ff7ae512862f4` |
-| `game.gog` (CD image) | `58ed1b740bc51f36a4aa8df51969ec6e6a1f2dc2eaabb54fd51183a4556ea3d4` | `7cd5858c1e5e73088a39057bbb025b80` |
-
-The hash database comes with the installation, so it only shows the files are
-what that GOG installer shipped; obtain the installer from GOG itself.
+What is still unknown is in [what is open](#what-is-open) (O3–O6). Each
+question is settled by watching the original and reading its data, then
+implementing the behaviour independently. Settled this way so far: the
+currents (appendix D), the radiation (D), `sle`, `diff`, the attacker lists,
+`car`, `con`, Explode, the order slots, the sensors and the boats' and tanks'
+fighting (J), the energy pool, the energy guns, the booster and the jams (K),
+the boat's turning (L) and the terrain's shading (M).
 
 ## Appendix: reference data
 
@@ -230,8 +150,7 @@ map cell is 16 m.
 
 ### A. dtyp → object file
 
-Decoded from the class switches in `FIGHT.EXE` (number of stock movables in
-parentheses).
+As the original maps them (number of stock movables in parentheses).
 
 | typ | Class | dtyp → `VFX/SOBJECTS` file |
 |---|---|---|
@@ -267,7 +186,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 `o<N>bcdep1/2`, `o<N>bcref1/2`, `o<N>bcop`, `o<N>bcdel`. Condition code 47
 (or 0 in older files) means "no condition".
 
-| otyp | Name in `FIGHT.EXE` | Keys | Movables (slots) / scenarios |
+| otyp | Name in the original | Keys | Movables (slots) / scenarios |
 |---|---|---|---|
 | 1 | Wait | dur | 930 (997) / 66 |
 | 2 | Goto | refx refy vel hei | 451 (816) / 51 |
@@ -436,7 +355,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 
 ### I. Mission result
 
-`FIGHT.EXE` writes `dat\save\fightout.des` with `[Global]` completed / failed
+The original writes `dat\save\fightout.des` with `[Global]` completed / failed
 / primary / user / secondary, and `Destination` = AutoEnd | InstantEnd |
 <station> | RestoreAutoSave | RestartScenario | AbortGame. The scenario's
 `[End] type` (0 in most, 1–4 in a few) picks the destination of an
