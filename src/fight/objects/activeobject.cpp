@@ -82,8 +82,15 @@ bool ActiveObject::fireTorpedo(ActiveObject *target, const Vector3D &position, c
         return false;
     m_scenario->launchTorpedo(m_torpedoType, position, direction, glm::length(m_velocity), this, type->lockType != 0 ? target : nullptr);
     m_torpedoCount--;
-    m_torpedoReady = m_scenario->time() + 6.0f;
+    // the next one 2 to 3.5 s later
+    m_torpedoReady = m_scenario->time() + 2.0f + 1.5f*util::random()/float(RAND_MAX);
     return true;
+}
+
+
+bool ActiveObject::hitRecently() const
+{
+    return m_hitTime >= 0 && m_scenario->time() - m_hitTime < 0.1f;
 }
 
 
@@ -98,7 +105,10 @@ bool ActiveObject::update(float elapsedTime)
 void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
     if (attacker && attacker != this)
+    {
         m_eventAttack.complete();
+        m_hitTime = m_scenario->time();
+    }
     const bool wasDestroyed = m_eventDestroy.isCompleted();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;

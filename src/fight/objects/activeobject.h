@@ -48,7 +48,7 @@ public:
         int sensorRange;
         bool sleeps;     // may sleep out of the player's sonar range (sle)
 
-        ObjectInfo() : iff(0), name(""), cargo(""), sensor(0), sensorRange(0), sleeps(true) { }
+        ObjectInfo() : iff(0), name(""), cargo(""), sensor(-1), sensorRange(0), sleeps(true) { }
     };
 
 public:
@@ -67,9 +67,17 @@ public:
     int iff() const { return m_info.iff; }
     const String& name() const { return m_info.name; }
     const String& cargo() const { return m_info.cargo; }
+    // the unit's sensor (sen, -1 if the mission gives none) and its range (senr, metres, 0 if none);
+    // what they mean to the AI is in docs/ROADMAP.md, appendix J
     int sensor() const { return m_info.sensor; }
     int sensorRange() const { return m_info.sensorRange; }
-    virtual float noise() const { return m_noise + (m_info.sensor > 1 ? 1 : 0); }
+    // the sonar noise: the object file's level, one more with an active sonar (sen 2), nothing
+    // while the unit lies silent in ambush
+    virtual float noise() const { return m_silent ? 0 : m_noise + (m_info.sensor == 2 ? 1 : 0); }
+    void setSilent(bool silent) { m_silent = silent; }
+    // the unit took a hit from another unit within the last tenth of a second: the moment the
+    // AI reacts to being fired at
+    bool hitRecently() const;
     bool isIdentified() const { return m_eventIdentify.isCompleted(); }
 
     int kineticShield() const { return m_kineticShield; };
@@ -162,6 +170,8 @@ protected:
     bool m_identified;
     bool m_asleep = false;
     bool m_tumbling = false;
+    bool m_silent = false;
+    float m_hitTime = -1;
     int m_engine = 0;
     float m_energy = 1.0f;
 

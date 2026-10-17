@@ -75,16 +75,26 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     setting("AlignProbabilityRight", a.alignRight);
     setting("MinAlignRadius", a.minAlignRadius, 1/32.0f);
     setting("MaxAlignRadius", a.maxAlignRadius, 1/32.0f);
+    setting("MinAlignGamma", a.minAlignGamma);
+    setting("MaxAlignGamma", a.maxAlignGamma);
     setting("MinAlignTime", a.minAlignTime);
     setting("MaxAlignTime", a.maxAlignTime);
+    setting("AlignProbabilityTorpedoFire", a.alignTorpedo);
+    setting("AttackProbabilityTurn", a.turnProbability);
+    setting("AttackProbabilityHit", a.hitProbability);
+    setting("AttackProbabilityTorpedoFire", a.attackTorpedo);
     setting("MinAttackTime", a.minAttackTime);
     setting("MaxAttackTime", a.maxAttackTime);
-    setting("AttackProbabilityHit", a.hitProbability);
-    setting("AttackProbabilityTorpedoFire", a.torpedoProbability);
     setting("MinFlightRadius", a.minFlightRadius, 1/32.0f);
     setting("MaxFlightRadius", a.maxFlightRadius, 1/32.0f);
     setting("MinFlightTime", a.minFlightTime);
     setting("MaxFlightTime", a.maxFlightTime);
+    setting("FlightPointProbabilityUL", a.flightUL);
+    setting("FlightPointProbabilityUR", a.flightUR);
+    setting("FlightPointProbabilityDL", a.flightDL);
+    setting("FlightPointProbabilityDR", a.flightDR);
+    setting("FlightProbabilityTorpedoFire", a.flightTorpedo);
+    setting("FlightProbabilityHit", a.flightHit);
 
     // boats move, so collision results must not be cached
     m_static = false;

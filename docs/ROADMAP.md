@@ -44,10 +44,14 @@ boats as the original's do (appendix D).
 
 **AI orders (phase 3).** All 11 order types run (appendix B), slot by slot
 with break conditions, round and round over a unit's 8 slots. Towers sweep
-and fire, boats approach, attack and break off with the `[Attack]` settings,
-ambush, escort, patrol, dock to board, and explode on order; patrol and
-escort units engage hostiles within their sensor range. Sleeping units,
-the attacker lists, `car` and `con` follow the original (appendix J).
+and fire; boats and bombers fight as the original does (appendix J): they
+find their targets with the mission's sensors (`sen`, `senr`), align on a
+side of the target, run at it turning in place or flying, break off and come
+round again with the `[Attack]` settings, fire at anything within 14° of the
+nose, and go on with their order when the target is out of double sensor
+range. Patrols wander their area, ambushers lie silent until the sensor finds
+something, escorts fly in formation and fight within 150 m of their place.
+Sleeping units, the attacker lists, `car` and `con` follow the original too.
 
 **HUD (phase 4).** Pause, the voxel radar, both slave monitor pages with
 F1–F4 and I, the lamps, the lock, current and radiation symbols, ALERT and
@@ -86,10 +90,10 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O1 | The marker under fire (D12) | S | A red ring with a cross in the symbol block's second slot while the player is attacked, sometimes outside the HUD frame; not HUDAIMH, HUDTARG, HUDTURR, HUDPOI* or HUDTHREA. Identify the image, then draw it |
 | O2 | Ground sample at s00101's start (D18) | S–M | The original reads 57 m of height there (the cell's own value 250), Vertigo 74 m: its western neighbours hold 236–240 and a building's `setHeight` or the spline's sampling takes the lower value |
 | O3 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
-| O4 | Sensor types | ? | `sen` (optical, passive, active) only picks the master monitor's icon; engagement uses `senr` alone. What the types do is unknown |
-| O5 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
-| O6 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O7 | Open comparisons | – | `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
+| O4 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
+| O5 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
+| O6 | Tank manoeuvre | M | Tanks drive at their target and fire; the original's `[Attack]` keys for tanks (`AlignProbabilityHook/Cross/Retain/Change/Hit`) are not read yet (appendix J) |
+| O7 | Open comparisons | – | How a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -125,9 +129,9 @@ master monitor's target picture, D/H/V/N and R.
 |---|---|---|
 | G1 | Mission music | Done. `[CD] Track` n plays the CD's audio track n+1 (1–4; 0 none); building `Game Data` from a CD image copies them out as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV`; `sfx::Music` streams the mission's track round and round at half volume, pausing with the mission; CD Musik AN/AUS in the options (`Sound/cdMusic`). Not compared: whether the original loops, pauses and how loud |
 | G2 | Minefields | Done. A mine entry is a column of `num` mines `dis` height units apart, the lowest at `hei`; 407 mines in 10 scenarios were missing before. Attacked when one of them is, destroyed when all are (s02205's objectives). Whether the original stacks them upwards is not compared |
-| G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by `FIGHT.EXE`. Open: `card` on active buildings (O5) |
+| G3 | Unit keys | Done in the main. `inte` and `eint` are the armour and energy defence in percent of the type's (the AD Augmented Mod's changelog says so, and its changes match); `sle` lets a unit sleep (appendix J); `eng` is the engine model (appendix K); `ai` is never read by `FIGHT.EXE`. Open: `card` on active buildings (O4) |
 | G4 | Unresolved conditions | Done. The references `--check` reported are condition codes for objectives that no unit has; they never come true, and all five missions can still be won. s01802 lost two tanks' trigger area when it was made from s01801 (the AD mod fixes it), s02006 kept a radio message of a dropped objective |
-| G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O6) |
+| G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O5) |
 | G6 | Station after a mission | Done. The original's autopilot menu (FIGHTEXT) opens with Alt+A once the mission is accomplished and lists the open stations; with one destination the autopilot goes there at once. The menus show on the master monitor, also in the 3D cockpit |
 | G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing |
 
@@ -138,8 +142,9 @@ What is still unknown is in [what is open](#what-is-open) (O3–O7).
 instrument: the original under DOSBox-X on the Mac first, a static reading of
 `FIGHT.EXE` second, sfwin32 last. Settled this way so far: the currents
 (appendix D), the radiation (D), `sle`, `diff`, the attacker lists, `car`,
-`con`, Explode and the order slots (J), the energy pool, the energy guns, the
-booster and the jams (K), the boat's turning (L) and the terrain's shading
+`con`, Explode, the order slots, the sensors and the boats' fighting (J), the
+energy pool, the energy guns, the booster and the jams (K), the boat's turning
+(L) and the terrain's shading
 (M).
 
 [sfwin32](https://github.com/mnkraus/sfwin32) runs the original `FIGHT.EXE`
@@ -277,24 +282,30 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 | 10 | GotoWithInfiltrate | ene mih mah vel dur | 21 / 13 |
 | 11 | Explode | dur con | 72 / 16 |
 
-- `refx`/`refy` are map cells; `hei`/`mih`/`mah` are height units (≈1.125 m
-  in 60 of 71 maps); `vel` is a percentage of the unit's MaxVelocity; `dur` is
-  in seconds (100000 or 1000000 means forever); `rad` and the escort offsets
-  are metres.
+- `refx`/`refy` are map cells; `hei`/`mih`/`mah` are metres over the ground
+  (32 of the game's units each, read off in October 2026; not the map's height
+  units); `vel` is a percentage of the unit's MaxVelocity; `dur` is in seconds
+  (100000 or 1000000 means forever); `rad`, the escort offsets and the escort's
+  `ran` (how far from its place it fights, 150 m if missing, as it is in every
+  mission) are metres.
 - "Arrived" (conditions 43/44, objective 7) completes when a GotoWithArrive
   reaches its point. "Boarded" (45/46, objective 8) completes on the `ene` of a
   GotoWithInfiltrate. "Attacked" with `bcdep` 2 refers to a faction (IFF).
 - `car` takes 0/2/4/6/10: a quarter turn (appendix J). Explode `con=2` is
   used 71 times; `con=1` once (S00202). `sle` lets a unit sleep (J); `diff` is
   the lowest difficulty the unit appears at; `ai` is never read.
-- `[Attack]` in boat and bomber files drives the attack manoeuvre:
-  `AlignProbabilityFront/Back/Left/Right`, `Min/MaxAlignRadius`,
-  `Min/MaxAlignGamma`, `Min/MaxAlignTime`; `AttackProbabilityTurn`,
-  `AttackProbabilityHit` (the chance that a run is on target), `Min/MaxAttackTime`;
-  `Min/MaxFlightRadius`, `Min/MaxFlightTime`, `FlightPointProbabilityUL/UR/DL/DR`,
-  `FlightProbabilityHit`; `*ProbabilityTorpedoFire` per phase. Tanks use
-  Hook/Cross/Retain/Change/Hit variants. Also `Min/MaxClimbingAngle` and the
-  turret `[Kinematics]` `MaxAngleVelocityA/B`.
+- `[Attack]` in boat and bomber files drives the attack manoeuvre (appendix
+  J): `AlignProbabilityFront/Back/Left/Right`, `Min/MaxAlignRadius` (game
+  units, 32 per metre), `Min/MaxAlignGamma` (radians), `Min/MaxAlignTime`;
+  `AttackProbabilityTurn`, `AttackProbabilityHit` (the chance to attack at
+  once when fired at), `Min/MaxAttackTime`; `Min/MaxFlightRadius`,
+  `Min/MaxFlightTime`, `FlightPointProbabilityUL/UR/DL/DR`,
+  `FlightProbabilityHit` (the chance to break off when hit);
+  `*ProbabilityTorpedoFire` per phase. The files' own comments (in German)
+  describe them. Tanks use Hook/Cross/Retain/Change/Hit variants (O6). Also
+  `Min/MaxClimbingAngle` and the turret `[Kinematics]` `MaxAngleVelocityA/B`.
+- `sen` is the unit's sensor type and `senr` its range in metres (appendix
+  J); without the keys a passive sonar of 100 m.
 
 ### C. Conditions and events
 
@@ -434,9 +445,9 @@ accomplished mission: 1 AutoEnd, 2 InstantEnd, 3 the station st1703, 4 the
 station st9901; otherwise the destination is what the player chose in the
 mission menu or the autopilot menu.
 
-### J. What the original does with `sle`, `diff`, `car`, `con`, the attackers and the order slots
+### J. What the original does with `sle`, `diff`, `car`, `con`, the attackers, the order slots, the sensors and the fighting
 
-Read off in October 2026; Vertigo does all of it.
+Read off in October 2026; Vertigo does all of it unless a point says otherwise.
 
 - **Sleeping units (`sle`).** A unit with `sle` 1 (or no key) is put to sleep
   while its horizontal distance from the player exceeds the player's sonar
@@ -476,6 +487,88 @@ Read off in October 2026; Vertigo does all of it.
   skipping empty ones, round and round. The squadron events: "attacked" on
   the first hit on any of its units, "arrived" and "boarded" once every unit
   has, "destroyed" once every one is destroyed.
+- **Flying to a point** (Goto, GotoWithArrive, the patrol points, the ambush
+  point). The point is `hei` (or `mih`) metres over the ground; on the way the
+  boat keeps at least that plus 0.6 of its hull radius over the ground ahead
+  and, where a `mah` is given, at most `mah`. It slows down proportionally
+  within 2 cells (or its hull radius) of the point and counts as there within
+  1.25 cells, its hull radius or the way it flies in a second, whichever is
+  largest (so Goto no longer passes through its point at full speed).
+- **Patrol.** The first point is the area's centre; a new one is picked when
+  the point is reached or after the time it takes to fly the radius at the
+  order's speed: a random point of the circle at least half the radius away
+  (an Attack order patrolling its area: 0.3 of the radius from the last
+  point), its height wandering by up to half the horizontal way, clamped to
+  the `mih`–`mah` band. Vertigo picks the point again on the timer where the
+  original may pick one every frame once the time is up (O7).
+- **Sensors (`sen`, `senr`).** Every unit has one; the default is type 1
+  with 100 m. The range check is the same for all: the other unit within the
+  range. Type 0 (sight) also needs nothing of the terrain between the two;
+  type 1 (passive sonar) hears a unit while its noise over the squared
+  distance beats 1500 over the squared range, in the game's noise units of
+  500 per `[Noise] Level` step, so a level‑3 unit is heard up to the range,
+  level 2 to 82 %, level 1 to 58 % of it; type 2 (active sonar) hears
+  everything in range and adds 500 (one level) to the unit's own noise; type
+  3 picks up the player's boat only; type 4 the player, or others by the
+  passive rule. The sensor looks for hostiles every 1.5 s (0.7 s for types 3
+  and 4), keeps what it found while that lives, and takes the nearest (type 0
+  and 2), the loudest over its distance (1), the player (3), or the player if
+  in range else the loudest (4). The scenarios set `sen` and `senr` on most
+  boats (`sen 2` with 60–200 m is common).
+- **Choosing a target.** Patrol, Attack, Escort and Ambush orders fight; Wait,
+  Goto, GotoWithArrive and GotoWithInfiltrate never do. Each frame: the
+  order's enemy (`ene`) if the sensor has it within its range; else, in the
+  moment the unit is hit, the player if hostile and within twice the range;
+  else what the scan found. While fighting, the range counts double: the
+  target is dropped once it is beyond that (or no longer heard or seen by the
+  type's rule), and the order goes on where it was with its time still
+  running; the enemy takes over again once in range; a player who hits the
+  unit takes over if nearer than the current target. "Hit" in the original is
+  a change of the energy defence in that frame; Vertigo takes any hit by
+  another unit (O7). The attacker lists above still cap how many fight the
+  player.
+- **The attack manoeuvre** of boats and bombers (bombers behave the same), with the
+  `[Attack]` keys: *align* – pick a side by the four align probabilities
+  (ahead within 30°, left or right between 30° and 150°, behind within 30°),
+  a distance between the align radii and an elevation between the align
+  gammas, and fly to that point in the target's frame at the order's speed;
+  when the boat is on that side at a distance between the radii the run
+  starts; after the align time a new side is picked; when hit, with
+  `AttackProbabilityHit` the run starts at once, otherwise a new side is
+  picked. *Run* – lasts an attack time; with `AttackProbabilityTurn` the boat
+  stops and turns on the spot, otherwise it flies at the target at 40–100 %
+  of its speed (if the terrain is in the way it turns instead); it ends when
+  the target has come within a flight radius, when the time is up, or, with
+  `FlightProbabilityHit` decided at the start, with the first hit taken after
+  the boat has fired. *Flight* – to one of four points by the UL/UR/DL/DR
+  probabilities, 850 m left or right, 500 m ahead and 500 m above or below
+  the target in its frame, for a flight time; after 1.5 s the point drops to
+  the target's height, and a boat sitting in the target's line of fire (within
+  8°) for 1.5 s swaps sides; then it aligns again. An ambusher skips the
+  first alignment and runs at once.
+- **Shooting.** A boat fires whenever its gun is ready, the volley timer
+  allows and the target lies within 14° of its nose, at any distance and at
+  the target's position with no lead (a ground unit 0.4 hull radii higher).
+  A torpedo goes, once per phase when that phase's `*ProbabilityTorpedoFire`
+  came up, when the nose points at the target within 18° in the horizontal
+  plane (45° for homing types) and the tube has reloaded (2–3.5 s); a target
+  with 8 torpedo attackers takes no more.
+- **Ambush.** The boat flies to its point, then lies there without any noise
+  (so passive sonars don't hear it), two half hull heights over the ground,
+  pointing the way `car` says, until the sensor finds something; being hit
+  makes the player known at double range, as everywhere.
+- **Escort.** The place is the escorted unit's position plus the offsets in
+  its frame, a negative `yof` moved to −1 m (the escort never sits behind);
+  the escort closes in at the order's speed, slower over the last 75 m and
+  never much faster than the escorted unit, counts as in place within its
+  hull, 1.25 cells or its top speed in a second, and then holds the place
+  (the original moves it there outright) matching the escorted unit's
+  heading and speed; it leaves formation beyond 1.3 of that. It fights only
+  within `ran` (150 m) of its place and ends the order when the escorted unit
+  is destroyed. The original measures the offsets from hull to hull (O7).
+- **Tanks** keep Vertigo's simple attack (drive at the target and fire); the
+  original's tank manoeuvre is not read (O6). GotoWithInfiltrate is not
+  compared (O7).
 
 ### K. What the original does with the engine, the energy guns and the booster
 

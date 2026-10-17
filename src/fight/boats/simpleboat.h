@@ -53,18 +53,27 @@ public:
     void hold();
 
     // the [Attack] settings of the object file, distances in metres
+    // (docs/ROADMAP.md, appendix B and appendix J "The attack manoeuvre")
     struct AttackSettings
     {
         float alignFront = 0.5f, alignBack = 0, alignLeft = 0.25f, alignRight = 0.25f;
         float minAlignRadius = 50, maxAlignRadius = 100;
+        float minAlignGamma = 0, maxAlignGamma = 0;    // radians above the target's horizon
         float minAlignTime = 4, maxAlignTime = 8;
+        float alignTorpedo = 0;                        // chance of a torpedo while aligning
+        float turnProbability = 1;                     // chance that the run is made turning in place
+        float hitProbability = 0;                      // chance to attack at once when hit while aligning
+        float attackTorpedo = 0;                       // chance of a torpedo during the run
         float minAttackTime = 6, maxAttackTime = 12;
-        float hitProbability = 0.5f;
-        float torpedoProbability = 0;
         float minFlightRadius = 25, maxFlightRadius = 30;
         float minFlightTime = 3, maxFlightTime = 6;
+        float flightUL = 1, flightUR = 0, flightDL = 0, flightDR = 0;  // where to break off to
+        float flightTorpedo = 0;                       // chance of a torpedo when breaking off
+        float flightHit = 0;                           // chance to break off when hit after the first shot
     };
     const AttackSettings& attackSettings() const { return m_attackSettings; }
+    // the sphere the boat is moved by (metres)
+    float collisionRadius() const { return m_collisionRadius; }
     virtual bool isGroundVehicle() const { return false; }
     bool startTumbling() override;
     // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)

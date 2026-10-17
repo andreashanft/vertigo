@@ -471,6 +471,7 @@ Scenario::Scenario(const String &name) :
             slot.esc = value("esc", -1);
             slot.offset = Vector3D(value("xof", 0), value("yof", 0), value("zof", 0));
             slot.ene = value("ene", -1);
+            slot.ran = value("ran", 150);
             slot.car = value("car", 0);
             slot.con = value("con", 0);
             slot.cond1 = value("bccond1", 0);

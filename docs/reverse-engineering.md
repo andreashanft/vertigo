@@ -363,3 +363,27 @@ blue) of each other and brighter than 25, the HUD's green left out: the
 original gives (45, 51, 54) for the tower, (46, 52, 56) for the station and
 (45, 45, 47) for the turret, Vertigo (50, 56, 60), (45, 54, 60) and
 (44, 47, 50).
+
+## Comparing the AI (October 2026)
+
+The boats' behaviour was read off the original: what each order makes a
+boat do (the patrol, the attack manoeuvre's align, run and flight phases,
+ambush, escort), how the sensors find and keep a target, when guns and
+torpedoes fire, and which `[Attack]` keys set it; bombers behave like
+scouts. The German comments in the boat files
+(`VFX/SOBJECTS/ATSCOUT.DES` and the others) describe the keys and agree with
+the code. The results are in the roadmap's appendix J.
+
+There is no picture or recording of the original to put beside it; the
+implementation is checked by watching units in Vertigo with the test
+options, for example
+
+```bash
+build/vertigo s00701 --headless --timeout 90 --near 2058 --trace 2058
+```
+
+prints the scout's cell, height, speed and order phase (`attack align`,
+`turn firing`, `run`, `flight`) every second, `s00101 --near 2079 --trace
+2079` an ambusher springing on the player, `s00601 --trace 2053` an escort
+settling beside a waiting bomber. What is still open (tanks, the hit rule,
+GotoWithInfiltrate) is listed in the roadmap's O6 and O7.
