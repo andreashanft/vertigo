@@ -16,6 +16,8 @@
  ***************************************************************************/
 
 #include "target.h"
+
+#include <algorithm>
 #include "sonar.h"
 #include "scenario.h"
 #include "objects/activeobject.h"
@@ -101,11 +103,13 @@ void Target::lockReticle()
 
 void Target::lockNearestEnemy()
 {
-    // the nearest hostile contact, whether or not the sonar tells friend from foe (the original's
-    // u finds one with Spy I too)
+    // the nearest of the units attacking the player that the sonar has as a contact, whatever
+    // the sonar's friend-or-foe (the original's u works with Spy I too; a hostile unit that has
+    // not attacked yet is not locked)
+    const std::vector<ActiveObject*> &attackers = m_scenario->playerAttackerList();
     const Sonar::SonarEntry *nearest = nullptr;
     for (const auto &entry : m_scenario->sonar())
-        if (m_scenario->isHostile(Scenario::PlayerFaction, entry.object->iff()) && (!nearest || entry.distance < nearest->distance))
+        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && (!nearest || entry.distance < nearest->distance))
             nearest = &entry;
     if (nearest)
     {

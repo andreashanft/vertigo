@@ -120,6 +120,7 @@ public:
     bool engagePlayer(ActiveObject *unit);
     void disengagePlayer(ActiveObject *unit);
     int playerAttackers() const { return int(m_playerAttackers.size()); }
+    const std::vector<ActiveObject*>& playerAttackerList() const { return m_playerAttackers; }
 
     Surface& surface() { return m_surface; }
 

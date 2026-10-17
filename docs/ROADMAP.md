@@ -108,7 +108,7 @@ Succubus cockpits). All are done.
 | D7–D8 | Master monitor | The second line shows what the target does (`GOTO`, `PATROLLING`, `ATTACKING`), `G:` its gun's short name and `T:` its torpedoes |
 | D9 | Aim help | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame |
 | D10 | Cargo ships | Each block is a sonar contact and target of its own |
-| D11 | Target lock | `u` locks the nearest enemy; L locks what is in the reticle, N the next nav point |
+| D11 | Target lock | `u` locks the nearest attacker the sonar has as a contact (appendix P); L locks what is in the reticle, N the next nav point |
 | D12 | Marker under fire | A red ring with a cross (`HUDSYM1`) in the symbol block's third slot while any unit fights the player (one of the attacker list of appendix J), blinking half a second on and off from the moment it appears; the voice "lock-on located" (SMPMAP 81) when the first unit turns on the player |
 | D13 | Hits and explosions | The sprites' sizes follow the rule of appendix H: a frame's pixels at 1/32 m times the `[Size] Scale`, the explosions at 0.7 to 1.3 of that, rolled and timed at random |
 | D14 | Armor symbol | A bar per side: green, yellow below 75 %, red below 50 %, gone below 25 %, white when hit |
@@ -668,7 +668,9 @@ sonar once the contact is active. Without friend-or-foe detection every
 contact is drawn as a friend: green on the master monitor's radar and the
 round radars, and the HUD takes the locked target for a friend too; the
 master monitor's text still colours a hostile target's name red, and `u`
-still locks the nearest enemy (seen in the original with Spy I). With it
+still works (seen in the original with Spy I): it locks the nearest of the
+units attacking the player that the sonar has as a contact, so a hostile
+unit that has not attacked yet is not locked. With it
 the master monitor's radar draws friends green and everything else red,
 and the round radars draw friends and hostiles with their two symbols and
 skip neutral contacts altogether. Vertigo does the same; its detection
