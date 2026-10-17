@@ -74,13 +74,13 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
-      # the program starts (without data and window: --help only) and needs no SDL library (nor
-      # ALSA's or sndio's)
+      # the program starts (without data and window: --help only) and needs no SDL library of its
+      # own (the libraries it names; ldd would add theirs, such as OpenAL's ALSA and sndio)
       - name: Start
         run: |
           build/vertigo --help
-          ldd build/vertigo
-          if ldd build/vertigo | grep -E "libSDL3|libasound|libsndio"; then exit 1; fi
+          readelf -d build/vertigo | grep NEEDED
+          if readelf -d build/vertigo | grep NEEDED | grep libSDL3; then exit 1; fi
 
       - name: Pack
         run: |
