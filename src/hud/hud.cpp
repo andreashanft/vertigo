@@ -48,6 +48,7 @@
 #include "activesonar.h"
 #include "master.h"
 #include "mastermonitor.h"
+#include "sfx/samplemap.h"
 #include "sonarmonitor.h"
 #include "autopilot.h"
 #include "horizon.h"
@@ -993,12 +994,11 @@ void HUD::press(input::KeyEvent *e)
         case SlaveMonitor::Page::Systems: monitor->setPage(SlaveMonitor::Page::Armor); break;
         }
     }
-    // F1-F4: the gun, the magazine or a turret on the weapon page
+    // F1-F4: the gun, the magazine or a turret on the weapon page, or the overview of all weapons
     if (e->key() >= input::Key_F1 && e->key() <= input::Key_F4 && !(e->modifiers() & input::AltModifier) && !m_slaveMonitors.empty())
     {
-        SlaveMonitor *monitor = m_slaveMonitors.front();
-        monitor->setPage(SlaveMonitor::Page::Weapon);
-        monitor->showWeapon(SlaveMonitor::Weapon(e->key() - input::Key_F1));
+        m_slaveMonitors.front()->pressWeaponKey(SlaveMonitor::Weapon(e->key() - input::Key_F1));
+        sfx::SampleMap::get(sfx::Sample::Sample5).play();
     }
     if (e->key() == input::Key_A)
     {

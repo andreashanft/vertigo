@@ -116,9 +116,9 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_gun.addMuzzles(Vector3D(0, 3.0f, 0), boat->gun());
     m_gun.setDefect(boat->defects()[game::Boat::DefectGun]);
     if (boat->tur1() != 0)
-        m_turrets[0].reset(new PlayerTurret(m_scenario, this, boat->tur1(), boat->tur1soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->defects()[game::Boat::DefectTur1]));
+        m_turrets[0].reset(new PlayerTurret(m_scenario, this, boat->tur1(), boat->tur1soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR1")->rel, boat->getMounting("TUR1")->side, boat->defects()[game::Boat::DefectTur1]));
     if (boat->tur2() != 0)
-        m_turrets[1].reset(new PlayerTurret(m_scenario, this, boat->tur2(), boat->tur2soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->defects()[game::Boat::DefectTur2]));
+        m_turrets[1].reset(new PlayerTurret(m_scenario, this, boat->tur2(), boat->tur2soft(), Vector3D(0, 3.0f, 0) + boat->getMounting("TUR2")->rel, boat->getMounting("TUR2")->side, boat->defects()[game::Boat::DefectTur2]));
 
     m_fixer = boat->fixer() != 0;
     m_magazineCondition = boat->defects()[game::Boat::DefectToMa];

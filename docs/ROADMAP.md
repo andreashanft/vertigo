@@ -104,7 +104,7 @@ Succubus cockpits). All are done.
 | # | Area | Original, and what Vertigo does now |
 |---|---|---|
 | D1–D3 | Voxel radar | Always shown in the lower part of the master monitor, the target's picture above it: a patch of terrain from 5 cells behind the boat (`WorldMinY`) to 20 ahead (`WorldMaxY`) and 15 to each side, turning with the heading, seen in perspective from behind at `Projection` 30° so that the far edge is about half as wide as the near one and the boat sits in the lower third (`FlightY`); no background, so the monitor's grid shows through; light grey ground, low ground dark, with `VOX_000.S16`; buildings as their models in orange, units as vertical lines from the ground (red hostile, green friendly, blue neutral, grey the locked target), debris green, the boat orange, water currents as one turquoise sheet over their cells |
-| D4–D6 | Slave monitors | The first monitor shows a weapon page (item name, state as a word, the torpedo's long name, its picture; F1–F4 pick gun, magazine or a turret), the second the armor page (`ARMOR STATE`, the silhouette with each side's percentage); Hiob's single monitor shows the weapon page; I switches between the armor page and the system state page (appendix O), never back to the weapon page |
+| D4–D6 | Slave monitors | The first monitor shows a weapon page (item name, state as a word, the torpedo's long name, its picture; F1–F4 pick gun, magazine or a turret, the same key again the overview of all weapons, appendix T), the second the armor page (`ARMOR STATE`, the silhouette with each side's percentage); Hiob's single monitor shows the weapon page; I switches between the armor page and the system state page (appendix O), never back to the weapon page |
 | D7–D8 | Master monitor | The second line shows what the target does (`GOTO`, `PATROLLING`, `ATTACKING`), `G:` its gun's short name and `T:` its torpedoes |
 | D9 | Aim help | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame |
 | D10 | Cargo ships | Each block is a sonar contact and target of its own |
@@ -118,7 +118,7 @@ Succubus cockpits). All are done.
 | D18 | Terrain geometry | The height map is the same (at s00202's start both have the boat at 57–60 m over ground at 48 m). At s00101's start both read 57 m over ground now: a building flattens two cells by two per cluster, not four by four (appendix N) |
 
 Already alike: the lock ring with name, distance, shield bars and sensor
-icon; turret brackets; heading tape; the lamps beside the sonar monitors; the
+icon; the turrets' aim cross; heading tape; the lamps beside the sonar monitors; the
 master monitor's target picture, D/H/V/N and R.
 
 ## Gaps found after milestone 6
@@ -305,8 +305,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   `Type` and `Lamp*` keys (`*.D16`, an off and an on frame). `[Flake]` is
   unread.
 - Images in `GFX/IMG/COCKPIT`: `HUDALERT`, `HUDPAUSE`, `HUDTHREA`/`HUDTHREY`,
-  `HUDSYM1` (under fire), `HUDSYM2` (radiation), `HUDSYM3` (current), `HUDTURR` and
-  `HUDTURGR/RE/YE` (turret brackets), `HUDLOCAA`/`HUDLOCPA` (lock rings),
+  `HUDSYM1` (under fire), `HUDSYM2` (radiation), `HUDSYM3` (current), `HUDTURR` (a turret's
+  aim cross, appendix T), `HUDTURGR/RE/YE` (never shown), `HUDLOCAA`/`HUDLOCPA` (lock rings),
   armor silhouettes `{GATO,HIOB,SUCC,ZORN}{1-4}{F,L,R,B}`, 48×48 weapon
   pictures, `SHP*` 60×60 observation pictures. Font `CPITSMHC.FNT` is unused.
 - `[HUDSymbolBlock1]` (96×48) holds three 24×24 symbols at offsets 0, 28 and
@@ -916,3 +916,66 @@ Read off in October 2026. All 22 types share one behaviour, with their
 
 Vertigo sizes the explosions by the sprites' extent, which may not be the
 size the original measures them by.
+
+### T. What the original's player turrets do
+
+Read off in October 2026.
+
+- **Software** (GLOBWEAP `Software0–9`) decides everything a turret does on
+  its own: Claw V1.6–V3.6 look for torpedoes, Punisher V1.0–V2.2 for vessels,
+  Eraser V0.8–V1.4 for torpedoes first and vessels second. The candidates
+  are the torpedoes after the player and the units attacking the player
+  (appendix J), on the turret's half round the boat (the mounting's `side`:
+  0 above the boat, 1 below), in sight from the boat's centre and contacts
+  of the sonar; the nearest is taken, and if there is none, the target the
+  player had locked when the attack order was given. `scan` is the pause
+  before the next search when one finds nothing, `lock` the seconds a turret
+  shows LOC on its new target before it fires, `vollsho` + 1 the shots of a
+  volley (each when the gun is ready again, ARM between them) and `volldel`
+  the VOL pause before the next volley at the same target. `hit` scatters
+  the aim: each shot goes for a point up to (1 − `hit`) times the target's
+  size off its centre on each axis (half that for ground units and
+  buildings), led exactly for the target's motion and the shot's speed; a
+  shot that can't catch up isn't fired but counts. There is no turning: the
+  direction is worked out at each shot.
+- **Keeping the target:** a turret leaves it (back to SCA, searching again
+  after `scan`) once it is on the other half, out of sight or gone; Claw and
+  Eraser leave a vessel as soon as a torpedo is after the player, Punisher
+  keeps only a unit attacking the player, Eraser a vessel only while none
+  or this one attacks.
+- **Orders:** stop (STP) and sync (SYN) always work; attack my target and
+  search and destroy need software and are refused without (the order's
+  click still sounds); both search at once (SCA). A turret starts searching
+  (SCA); one without software does nothing until it is set to sync. In sync
+  each frame the fire key is held fires the turret's own gun straight ahead
+  from its mounting whenever it is ready, ARM until it is again. An empty
+  gun shows EMP and lets go of the target; a jammed one shows JAM whatever
+  the turret does.
+- **Barrels:** the main gun and each turret's gun count their barrels on
+  their own, both from the same barrel, so a cut-short burst or a volley of
+  an odd number of shots leaves them firing from opposite barrels. The
+  displays count one round per turn through all barrels (a Maximum Impact
+  II starts with 900).
+- **Sound:** the turret engine (SMPMAP 21) sounds once when a lock-on
+  begins, not while the turret tracks or fires.
+- **Aim cross:** `HUDTURR` (42×42, four diagonal strokes, red outside to
+  yellow inside) sits on each turret's target from the lock-on through
+  firing, rearming and the volley pause, held at the HUD's edge when the
+  target is off to the side; never while scanning, stopped, in sync or
+  empty.
+- **Turret page:** the gun's long name (GLOBWEAP, "MaximumImpact II"), the
+  software and the state written out, all in red at all times, the gun's
+  picture below; a boat without the turret shows an empty monitor. The gun
+  page's state is red while rearming, firing, jammed or empty; the
+  magazine page's while not ready.
+- **Overview:** F1–F4 again on the page they show (once more goes back)
+  shows `NAME AMMO STAT` (green) at `WS_TopLeftY` and a row each, `WS_SpacingY`
+  apart from two pixels lower, at `WS_NameX`, `WS_AmmoX` and `WS_StatusX`:
+  the gun (short name, "ENER" or its rounds, its state), the magazine (short
+  name, the selected torpedo's short name, RDY or its state) and the turrets
+  ("TURR", rounds, state). Rounds are green above 50 and red up to 50, "----"
+  in red when none are left; a state is red unless ready, the turrets'
+  always. Each F key clicks (SMPMAP 5).
+
+Vertigo does the same. Not read: what the original draws when a turret's
+target is behind the boat.

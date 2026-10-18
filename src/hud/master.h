@@ -66,9 +66,7 @@ private:
     gfx::Texture m_passiveGreen;
     gfx::Texture m_passiveRed;
 
-    gfx::Texture m_turretGreen;   // brackets on the turrets' targets: scanning,
-    gfx::Texture m_turretYellow;  // locking on,
-    gfx::Texture m_turretRed;     // firing
+    gfx::Texture m_turretCross;   // on a turret's target from the lock-on
     gfx::Texture m_lockActiveYellow;
     gfx::Texture m_lockActiveGreen;
     gfx::Texture m_lockActiveRed;

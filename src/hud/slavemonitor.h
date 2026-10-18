@@ -40,8 +40,9 @@ class HUD;
 // A cockpit status monitor. As in the original, with two monitors the first shows a weapon page
 // and the second the armor page; I switches between the armor page and the system state page
 // (on a single monitor too, which starts on the weapon page). F1-F4 pick the weapon page's
-// system: the gun, the magazine (the default) or a turret. The lamp beside the monitor lights
-// its upper slot for the armor page.
+// system: the gun, the magazine (the default) or a turret; the same key again shows the overview
+// of all weapons, and once more the system again. The lamp beside the monitor lights its upper
+// slot for the armor page.
 class SlaveMonitor : public ui::Widget
 {
 public:
@@ -55,6 +56,8 @@ public:
     Page page() const { return m_page; }
     void setPage(Page page) { m_page = page; }
     void showWeapon(Weapon weapon) { m_weapon = weapon; }
+    // F1-F4: the weapon's page, or the overview if that page is showing, or back
+    void pressWeaponKey(Weapon weapon);
 
 protected:
     void draw();
@@ -64,6 +67,7 @@ private:
     void drawSystems(const Rect &rect);
     void drawBar(int x, int y, float condition, int band);
     void drawWeapon(const Rect &rect);
+    void drawOverview(const Rect &rect);
     // a picture from GFX/IMG/COCKPIT, loaded once
     gfx::Texture* picture(const String &name);
 
@@ -73,11 +77,13 @@ private:
     fight::Scenario::Monitor m_monitor;  // which one, for the radiation's flicker
     Page m_page;
     Weapon m_weapon = Weapon::Magazine;
+    bool m_overview = false;
     Lamp m_lamp;
     std::map<String, gfx::Texture> m_pictures;
     gfx::Texture m_armor[4][4]; // damage level 1-4, side front/left/right/back
     Point m_tableTopLeft;
     int m_spacingY;
+    int m_nameX, m_ammoX, m_statusX;  // the overview's columns
     gfx::Texture m_bar[3][2];   // the system state page's bar colours: band, bright/dim
 };
 
