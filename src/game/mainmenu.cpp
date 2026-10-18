@@ -44,8 +44,8 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_lblMainTitle(&m_lblMain),
     m_btnMainNew([this]() { showNew(); }, &m_lblMain),
     m_btnMainLoad([this]() { showLoad(); }, &m_lblMain),
-    m_btnMainDifficulty([this]() { fight::Scenario::setDifficulty((fight::Scenario::difficulty() + 1)%3); updateDifficulty(); }, &m_lblMain),
     m_btnMainTraining([this]() { showTraining(); }, &m_lblMain),
+    m_btnMainCredits([this]() { changeState(Credits); }, &m_lblMain),
     m_btnMainOptions([this]() { showOptions(); }, &m_lblMain),
     m_btnMainQuit(funcQuit, &m_lblMain),
     m_lblNew(&m_title, false),
@@ -60,6 +60,7 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_lblOptions(&m_title, false),
     m_lblOptionsTitle(&m_lblOptions),
     m_btnOptionsBack([this]() { showMain(); }, &m_lblOptions),
+    m_btnOptionsDifficulty([this]() { fight::Scenario::setDifficulty((fight::Scenario::difficulty() + 1)%3); updateDifficulty(); }, &m_lblOptions),
     m_lblLoading(&m_title, false),
     m_lblLoadingTitle(&m_lblLoading),
     m_lblLoadingWait(&m_lblLoading),
@@ -104,17 +105,10 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnMainLoad.setAlignment(ui::Label::AlignHCenter);
     m_btnMainLoad.setText(txt::StringTable::get(txt::MainMenu_Load));
 
-    // easy, normal, hard: cycles on click
-    m_btnMainDifficulty.setFont(fontLarge);
-    m_btnMainDifficulty.setPosition(0, 328);
-    m_btnMainDifficulty.setWidth(640);
-    m_btnMainDifficulty.setAlignment(ui::Label::AlignHCenter);
-    updateDifficulty();
-
     // the training missions, if the data has them
     const StringList trainings = Training::names();
     m_btnMainTraining.setFont(fontLarge);
-    m_btnMainTraining.setPosition(0, 348);
+    m_btnMainTraining.setPosition(0, 328);
     m_btnMainTraining.setWidth(640);
     m_btnMainTraining.setAlignment(ui::Label::AlignHCenter);
     m_btnMainTraining.setText(txt::StringTable::get(txt::MainMenu_Training));
@@ -138,15 +132,21 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnTrainingBack.setFont(fontLarge);
     m_btnTrainingBack.setText(txt::StringTable::get(txt::MainMenu));
 
-    // as in the original, below the training (where it had CREDITS between them)
+    // as in the original, below the training
+    m_btnMainCredits.setFont(fontLarge);
+    m_btnMainCredits.setPosition(0, 348);
+    m_btnMainCredits.setWidth(640);
+    m_btnMainCredits.setAlignment(ui::Label::AlignHCenter);
+    m_btnMainCredits.setText(txt::StringTable::get(txt::MainMenu_Credits));
+
     m_btnMainOptions.setFont(fontLarge);
     m_btnMainOptions.setPosition(0, 368);
     m_btnMainOptions.setWidth(640);
     m_btnMainOptions.setAlignment(ui::Label::AlignHCenter);
     m_btnMainOptions.setText(txt::StringTable::get(txt::Notebook_Options));
 
-    // the notebook's sound and movie options (which a chapter takes when it starts) and the
-    // touch screen's, on one page
+    // the difficulty (easy, normal, hard: cycles on click), the notebook's sound and movie
+    // options (which a chapter takes when it starts) and the touch screen's, on one page
     m_lblOptionsTitle.setFont(fontMedium);
     m_lblOptionsTitle.setPosition(145, 256 - fontMedium.height() - 2);
     m_lblOptionsTitle.setText(txt::StringTable::get(txt::Notebook_Options));
@@ -169,11 +169,16 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
         m_options[1 + i].on = txt::StringTable::get(movies[i][0]);
         m_options[1 + i].off = txt::StringTable::get(movies[i][1]);
     }
+    m_btnOptionsDifficulty.setFont(fontLarge);
+    m_btnOptionsDifficulty.setPosition(0, 288);
+    m_btnOptionsDifficulty.setWidth(640);
+    m_btnOptionsDifficulty.setAlignment(ui::Label::AlignHCenter);
+    updateDifficulty();
     for (std::size_t i = 0; i < m_options.size(); i++) {
         m_btnOptions.emplace_back([this, i]() { m_options[i].setValue(!m_options[i].value()); updateOptions(); }, &m_lblOptions);
         ui::Button &button = m_btnOptions.back();
         button.setFont(fontLarge);
-        button.setPosition(0, 288 + 20*int(i));
+        button.setPosition(0, 308 + 20*int(i));
         button.setWidth(640);
         button.setAlignment(ui::Label::AlignHCenter);
     }
@@ -226,6 +231,13 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
 
 void MainMenu::draw()
 {
+    // each picture of the credits for twelve seconds, then back to the menu
+    if (m_state == Credits && m_creditsTime.elapsed() >= 12000) {
+        if (m_creditsPage < 3)
+            showCredits(m_creditsPage + 1);
+        else
+            changeState(Title);
+    }
     Menu::draw();
 
     if (m_lblNew.isVisible()) {
@@ -286,6 +298,12 @@ void MainMenu::changeState(State state)
         m_state = state;
         break;
 
+    case Credits:
+        setRootWidget(&m_credits);
+        showCredits(0);
+        m_state = state;
+        break;
+
     default:
         util::fatal("Cannot change state!");
     }
@@ -297,8 +315,9 @@ void MainMenu::mousePressEvent(input::MouseEvent *event)
 
     switch (m_state) {
     case Presents:
+    case Credits:
         changeState(Title);
-        break;
+        return;
 
     default:
         ; // nothing to do
@@ -311,6 +330,11 @@ void MainMenu::mousePressEvent(input::MouseEvent *event)
 
 void MainMenu::keyPressEvent(input::KeyEvent *event)
 {
+    // any key ends the credits
+    if (m_state == Credits) {
+        changeState(Title);
+        return;
+    }
     Menu::keyPressEvent(event);
 
     if (m_lblNew.isVisible()) {
@@ -421,9 +445,19 @@ void MainMenu::showLoading()
 }
 
 
+// The credits as the original shows them (docs/ROADMAP.md, appendix E): CREDITS0 to CREDITS3, each
+// for twelve seconds; a key or a click ends them
+void MainMenu::showCredits(int page)
+{
+    m_creditsPage = page;
+    m_credits.setTexture(gfx::Image::load(String("gfx:pic/title/credits%1.r16").arg(page), 640, 480));
+    m_creditsTime.start();
+}
+
+
 void MainMenu::updateDifficulty()
 {
-    m_btnMainDifficulty.setText(txt::StringTable::get(txt::StringId(txt::Text107 + fight::Scenario::difficulty())));
+    m_btnOptionsDifficulty.setText(txt::StringTable::get(txt::StringId(txt::Text107 + fight::Scenario::difficulty())));
 }
 
 
