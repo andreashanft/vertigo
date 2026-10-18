@@ -5,7 +5,7 @@ In November 1996, „[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archime
 This repository contains an open-source clone with the goal to faithfully recreate this 30 year old classic. It is based on the original work from [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had already been reimplemented years ago but then abandoned mid-finished.
 With the help of Claude Code, most open TODOs and missing features could finally be implemented, bringing the codebase closer to its original. In addition, an iPad version was created as well as a feasibility study to enable real 3D cockpits for an eventual VR port. 
 The game is now portable and playable on current hard and software in modern resolutions, improving the look (eg. by upscaling) but keeping its style and oldschool graphics.  For copyright reasons, the repository does not contain any old game data or binaries, the game assets from an original version of the game (either English or German), from an old CD or GOG installation, are required.
-This implementation in its current form can be considered **90% done**:
+This implementation in its current form can be considered **94% done**:
 * Modern codebase and renderer that support compiling for multiple platforms (macOS, iOS (iPad), Windows, Linux - the latter two untested)
 * Import of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data 
 * Menus, stations and interactions (dialogs, dock, upgrades), notebook, movies, music all work
@@ -13,12 +13,7 @@ This implementation in its current form can be considered **90% done**:
 * For input, Keyboard and Controllers are supported (as well as touch on the iPad)
 * Experimental: 3D cockpits, also making true support for widescreen aspect ratios possible
 
-What's missing are the details:
-* HUD behaviour and sound/voice lines for different situations (radioactive etc.)
-* Game behaviour that couldn't be derived from the game data (currents, engine/power, ...)
-* Weapons effects as in the original
-* 3rd person and external view when destroyed
-* Minor screens like ingame log and help
+What's still missing are the details, find the open points in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 # Compiling
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
