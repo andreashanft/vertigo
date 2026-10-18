@@ -97,10 +97,18 @@ public:
     void setDimming(float dimming) { m_dimming = dimming; }
     // less than this far below the surface the radiation symbol blinks and the monitors flicker,
     // less than RadiationAlertDepth the alert comes too (docs/ROADMAP.md, appendix D)
-    static constexpr float RadiationDepth = 100;
+    static constexpr float RadiationDepth = 99;
     static constexpr float RadiationAlertDepth = 60;
-    // a monitor blanks out for single frames at random in the radiation; each monitor its own
-    bool monitorBlanked(int monitor) const;
+    // the radiation's strength: 0 a hundred metres below the surface and deeper, 1 at the surface
+    float radiation() const;
+    // In the radiation a monitor shows nothing until its next refresh, at random, the more often
+    // the closer the boat is to the surface; each monitor refreshes at its own rate
+    enum class Monitor { Master, Slave0, Slave1, Round0, Round1 };
+    bool monitorBlanked(Monitor monitor) const;
+    // the height of the water's surface
+    float surfaceLevel() const { return m_depth; }
+    // the throttle set to that speed (m/s), as near the surface
+    void holdThrottle(float velocity);
     // the CD track of the mission's music, as numbered on the CD (0: none)
     int cdTrack() const { return m_cdTrack > 0 ? m_cdTrack + 1 : 0; }
     float time() const { return m_time; }

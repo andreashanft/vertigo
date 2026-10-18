@@ -47,9 +47,10 @@ const int BarColors[3][2][3] = {
 } // namespace
 
 
-SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
+SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page, fight::Scenario::Monitor monitor) :
     ui::Widget(hud->widget()),
     m_hud(hud),
+    m_monitor(monitor),
     m_rect(file.value("X1").toInt(), file.value("Y1").toInt(), file.value("Width").toInt(), file.value("Height").toInt()),
     m_page(page),
     m_lamp(hud, file),
@@ -74,7 +75,7 @@ SlaveMonitor::SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page) :
 
 void SlaveMonitor::draw()
 {
-    if (m_hud->scenario()->monitorBlanked(m_page == Page::Armor ? 2 : 0))
+    if (m_hud->scenario()->monitorBlanked(m_monitor))
         return;
     const Rect rect = m_hud->projectCenter(m_rect);
     m_lamp.draw(m_page == Page::Armor);

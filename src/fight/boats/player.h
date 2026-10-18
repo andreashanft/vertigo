@@ -107,6 +107,12 @@ private:
     bool m_critical = false;
     bool m_alertBlink = false;
     bool m_radiation = false;
+    // near the surface (docs/ROADMAP.md, appendix D): held below it from 40 m up until 70 m down,
+    // never above 10 m
+    static constexpr float SurfaceHoldDepth = 40;
+    static constexpr float SurfaceReleaseDepth = 70;
+    static constexpr float SurfaceLimitDepth = 10;
+    bool m_surfaceHold = false;
     float m_nextRadiationVoice = 0;
     float m_nextRadiationBeep = 0;
 

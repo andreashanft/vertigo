@@ -290,7 +290,8 @@ void HUD::load(game::Boat *boat)
         file.setSection(String("slavemonitor%1").arg(i));
         if (!file.contains("X1"))
             continue;
-        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Weapon : SlaveMonitor::Page::Armor);
+        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Weapon : SlaveMonitor::Page::Armor,
+                                                 i == 0 ? fight::Scenario::Monitor::Slave0 : fight::Scenario::Monitor::Slave1);
         m_children.emplace_back(monitor);
         m_slaveMonitors.push_back(monitor);
     }
@@ -348,11 +349,11 @@ void HUD::load(game::Boat *boat)
     m_children.emplace_back(masterMonitor);
 
     file.setSection("roundmonitor0");
-    m_sonar1 = new SonarMonitor(this, file, 360);
+    m_sonar1 = new SonarMonitor(this, file, 360, fight::Scenario::Monitor::Round0);
     m_children.emplace_back(m_sonar1);
 
     file.setSection("roundmonitor1");
-    m_sonar2 = new SonarMonitor(this, file, 180);
+    m_sonar2 = new SonarMonitor(this, file, 180, fight::Scenario::Monitor::Round1);
     m_children.emplace_back(m_sonar2);
 
     m_integerScale = false;

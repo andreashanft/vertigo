@@ -23,6 +23,7 @@
 #include "ui/widget.h"
 #include "gfx/texture.h"
 #include "lamp.h"
+#include "fight/scenario.h"
 #include <map>
 #include "util/string.hpp"
 
@@ -48,7 +49,7 @@ public:
     enum class Weapon { Gun, Magazine, Turret1, Turret2 };
 
 public:
-    SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page);
+    SlaveMonitor(HUD *hud, const txt::DesFile &file, Page page, fight::Scenario::Monitor monitor);
 
 public:
     Page page() const { return m_page; }
@@ -69,6 +70,7 @@ private:
 private:
     HUD *m_hud;
     Rect m_rect;
+    fight::Scenario::Monitor m_monitor;  // which one, for the radiation's flicker
     Page m_page;
     Weapon m_weapon = Weapon::Magazine;
     Lamp m_lamp;

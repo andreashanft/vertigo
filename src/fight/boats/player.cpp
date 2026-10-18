@@ -312,7 +312,23 @@ bool Player::update(float elapsedTime)
     if (glm::abs(dir().z) < 0.99999f)
         m_roll = glm::dot(glm::normalize(Vector3D(dir().y, -dir().x, 0)), up());
 
+    // Near the surface (docs/ROADMAP.md, appendix D): less than 40 m below it the throttle is held
+    // at 1 m/s and the boat pushed down at 1 g until it is more than 70 m below again; it never
+    // comes closer than 10 m
+    const float depth = m_scenario->surfaceLevel() - m_position.z;
+    if (!m_surfaceHold && depth < SurfaceHoldDepth)
+        m_surfaceHold = true;
+    else if (m_surfaceHold && depth > SurfaceReleaseDepth)
+        m_surfaceHold = false;
+    if (m_surfaceHold)
+    {
+        m_scenario->holdThrottle(1.0f);
+        m_speedBoost = m_accelerationBoost = 1.0f;
+    }
+
     updateVelocity(elapsedTime);
+    if (m_surfaceHold)
+        m_velocity.z -= 9.81f*elapsedTime;
     rechargeEnergy(elapsedTime);
     if (m_fixer)
         updateFixer();
@@ -403,6 +419,13 @@ bool Player::update(float elapsedTime)
         path += glm::length(delta);
         m_position += delta;
         break;
+    }
+
+    const float ceiling = m_scenario->surfaceLevel() - SurfaceLimitDepth;
+    if (m_position.z > ceiling)
+    {
+        m_position.z = ceiling;
+        m_velocity.z = std::min(m_velocity.z, 0.0f);
     }
 
     // scraping along the ground rattles the cockpit

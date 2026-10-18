@@ -269,10 +269,23 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   coasting. Affected: the player (`[Kinematics] Current`) and AI boats
   (`[Fluid] Current`); not torpedoes, mines or shots.
 - Radiation has no data key: it is a depth rule, the same on every map
-  (measured on S00701, S01801 and S00202). Less than 100 m below the surface
-  the red radiation symbol (`HUDSYM2`) blinks at 1 Hz in the first slot of
-  `[HUDSymbolBlock1]`, the depth readout turns red and the three monitors
-  blank out for single frames at random; no damage, no push. Less than 60 m
+  (measured on S00701, S01801 and S00202; the rest read off in October
+  2026). Its strength is 1 − depth/100 m, from 0 a hundred metres down to 1
+  at the surface. Above 99 m (a strength over 0.01) the red radiation symbol
+  (`HUDSYM2`) blinks at 1 Hz in the first slot of `[HUDSymbolBlock1]` and the
+  depth readout turns red. All five monitors flicker: each refreshes at its
+  own rate (master monitor with the voxel radar every 0.1 s, slave monitors
+  0 and 1 every 0.2 and 0.18 s, round monitors 0 and 1 every 0.21 and
+  0.23 s), and a refresh draws it with a chance of 1 − 0.7 × the strength
+  (0.3 at the surface) and leaves it blank otherwise until the next one, so
+  the slower monitors stay dark longer. No damage. Less than 40 m below, the
+  throttle is held at 1 m/s (the booster does nothing) and the boat is
+  pushed down at 1 g until it is more than 70 m below again; the throttle
+  stays at 1 m/s after that. The boat never comes closer than 10 m to the
+  surface. So a boat at full speed straight up coasts from 40 m to about
+  25 m before it sinks back. What else the original scales with the
+  strength between 100 and 40 m (a factor of 1 − strength on the boat) is
+  not read. Less than 60 m
   below, `ALERT` blinks out of phase with the symbol, the voice "system
   collapse" (SMPMAP 72) plays on entry and every 15 s and the alert beep
   (SMPMAP 10) every 0.8 s. The same ALERT, voice and beep are the combat

@@ -1116,13 +1116,37 @@ float Scenario::brightness() const
 }
 
 
-bool Scenario::monitorBlanked(int monitor) const
+float Scenario::radiation() const
 {
-    if (depth() >= RadiationDepth)
+    return glm::clamp(1.0f - depth()/100.0f, 0.0f, 1.0f);
+}
+
+
+// (docs/ROADMAP.md, appendix D) Each refresh draws the monitor with a chance of 1 - 0.7 times the
+// radiation, from 1 a hundred metres down to 0.3 at the surface, and leaves it blank otherwise
+// until the next refresh
+bool Scenario::monitorBlanked(Monitor monitor) const
+{
+    const float radiation = this->radiation();
+    if (radiation <= 0)
         return false;
-    // a hash of the frame's time, so the drawing takes nothing from the game's random numbers
-    const float noise = glm::fract(std::sin(m_time*(971.3f + 37.1f*monitor) + monitor)*43758.5f);
-    return noise < 0.06f;
+    static const float refresh[5] = { 0.1f, 0.2f, 0.18f, 0.21f, 0.23f };
+    const int index = int(monitor);
+    const float tick = std::floor(m_time/refresh[index]);
+    // a hash of the refresh, so the drawing takes nothing from the game's random numbers
+    const float noise = glm::fract(std::sin(tick*12.9898f + index*78.233f)*43758.5453f);
+    return noise >= 1.0f - 0.7f*radiation;
+}
+
+
+void Scenario::holdThrottle(float velocity)
+{
+    m_velocityTarget = velocity;
+    if (m_player->engineRunning())
+    {
+        m_player->setVelocityTarget(velocity);
+        m_player->setFullThrottle(false);
+    }
 }
 
 
