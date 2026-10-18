@@ -29,7 +29,10 @@
 #include <sstream>
 
 #ifndef VERTIGO_VERSION
-#define VERTIGO_VERSION "V0.1"
+#define VERTIGO_VERSION ""
+#endif
+#ifndef VERTIGO_COMMIT
+#define VERTIGO_COMMIT ""
 #endif
 
 
@@ -202,8 +205,11 @@ void Pages::drawHelp(const Rect &box)
             if (!lines[i].column[c].isEmpty())
                 font.draw(lines[i].column[c], place(box, HelpColumns[c], FirstLineY + int(i)*LineHeight));
     }
-    // the version to the left of the footer, as the original shows its own
-    drawFooter(box, String(VERTIGO_VERSION).toUpper() + "   " + fightText(TextHelpFooter));
+    // the version, the last commit and its date to the left of the footer, as the original shows
+    // its own version and date
+    const String commit = VERTIGO_COMMIT;
+    const String version = "V" VERTIGO_VERSION + (commit.isEmpty() ? String() : " " + commit);
+    drawFooter(box, version.toUpper() + "   " + fightText(TextHelpFooter));
 }
 
 

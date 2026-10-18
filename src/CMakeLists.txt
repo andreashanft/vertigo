@@ -334,16 +334,13 @@ endif()
 # the version, for the main menu and --help
 target_compile_definitions(vertigo PRIVATE VERTIGO_VERSION="${PROJECT_VERSION}")
 target_link_libraries(vertigo SDL3::SDL3 ${OPENAL_LIBRARY})
-# the version the help page shows: the last commit and its date (the original shows its own)
-set(VERTIGO_VERSION "V0.1")
+# the help page shows the version with the last commit and its date (the original shows its own)
+set(VERTIGO_COMMIT "")
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.git)
     execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --format=%h%x20%cd --date=format:%d/%m/%Y
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         OUTPUT_VARIABLE VERTIGO_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-    if(VERTIGO_COMMIT)
-        set(VERTIGO_VERSION "V0.1 ${VERTIGO_COMMIT}")
-    endif()
     # configure again after a commit or a branch switch
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/.git/HEAD)
     file(READ ${PROJECT_SOURCE_DIR}/.git/HEAD VERTIGO_GIT_HEAD)
@@ -354,7 +351,7 @@ if(GIT_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.git)
         endif()
     endif()
 endif()
-target_compile_definitions(vertigo PRIVATE VERTIGO_VERSION="${VERTIGO_VERSION}")
+target_compile_definitions(vertigo PRIVATE VERTIGO_COMMIT="${VERTIGO_COMMIT}")
 if(APPLE)
     # Apple deprecated its OpenAL, but it is in the SDKs
     set_source_files_properties(sfx/music.cpp sfx/sound.cpp sfx/soundsystem.cpp sfx/stream.cpp PROPERTIES COMPILE_OPTIONS -Wno-deprecated-declarations)

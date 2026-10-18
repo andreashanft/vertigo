@@ -306,7 +306,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   spaced out below the top line, up to twenty rows of 12 px from 142 down,
   the footer (FIGHTEXT 20/59) right-aligned at the bottom right; the help's
   footer has the game's version and date to the left of the text (Vertigo
-  shows its commit and its date). The log keeps the last 24 entries and
+  shows its version, last commit and date). The log keeps the last 24 entries and
   lists each radio message at the time it was shown (`mm:ss :` and the
   text; a leading `#` shows it in red, a `~` in amber) and the units'
   events ("<name> wurde angegriffen / zerstört / identifiziert /
