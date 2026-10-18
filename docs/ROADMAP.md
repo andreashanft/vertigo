@@ -57,7 +57,8 @@ and system state pages with F1–F4 and I, the key help (H), the radio log
 (M) and the briefing (B) laid over the view, the
 Fixer's repairs (appendix O), the lamps, the under-fire, current and radiation symbols, ALERT and
 THREAT with their beeps and voices, friendly-fire warnings, the torpedo lock
-and countdown, the turret menu and brackets, the armor symbol, the aim help,
+and countdown (green, after the target's distance on its line: "72M  0:5S",
+seconds to one decimal with a colon), the turret menu and brackets, the armor symbol, the aim help,
 the master monitor's activity and weapon lines, `u` to lock the nearest
 enemy. The 3D cockpit (glTF models) shows the instruments on its screens
 and moves the pilot's head with the boat.

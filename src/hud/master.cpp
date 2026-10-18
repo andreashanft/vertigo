@@ -187,11 +187,16 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
             tex = isFriend && m_hud->scenario()->blink() ? &m_lockPassiveGreen : &m_lockPassiveRed;
         tex->draw(point.x - tex->width()/2, point.y - tex->height()/2, &m_clipRect);
 
+        // the distance, and while a homing torpedo locks on the seconds left to one decimal on the
+        // same line ("72M  0:5S", the original's separator is a colon), the two centred together
+        String line = isPassive ? String() : String("%1M").arg(static_cast<int>(glm::round(target.distance())));
         if (torpedoLock && player->lockProgress() < 1)
-            m_hud->fontYellow().draw(String::number(int(std::ceil(player->lockRemaining()))), Rect(point.x - 100, point.y + 38, 200, -1), true, false, &m_clipRect);
-
-        if (!isPassive)
-            m_hud->fontGreen().draw(String("%1M").arg(static_cast<int>(glm::round(target.distance()))), Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);
+        {
+            const int tenths = static_cast<int>(std::ceil(10*player->lockRemaining()));
+            line += String("%1%2:%3S").arg(line.isEmpty() ? "" : "  ").arg(tenths/10).arg(tenths % 10);
+        }
+        if (!line.isEmpty())
+            m_hud->fontGreen().draw(line, Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);
 
         if (target.locked() == nullptr)
             return;
