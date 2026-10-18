@@ -161,6 +161,7 @@ private:
     // leaves with success, through the destination menu if there are destinations
     void engageAutopilot();
     bool drawModel(double pixelRatio);
+    void drawDeathView(double pixelRatio);
     void updateLook(float elapsedTime);
     void menuAction(int action);
     input::KeyEvent buttonKey(input::Button button);

@@ -248,9 +248,14 @@ void Player::dropBuzzer()
 }
 
 
+// the destruction sequence, watched from outside (docs/ROADMAP.md, appendix R)
 void Player::destroy()
 {
+    if (m_scenario->playerDestroyed())
+        return;
+    m_firing = false;
     m_scenario->destroyPlayer();
+    startWreck();
 }
 
 
@@ -265,6 +270,11 @@ float Player::pitch() const
 
 bool Player::update(float elapsedTime)
 {
+    if (isWrecking())
+    {
+        updateWreck(elapsedTime);
+        return false;
+    }
     // The pitch and yaw rates relax towards the stick's share of the maximum by the boat's
     // AngleFriction fraction per tick (docs/ROADMAP.md, appendix L), so they carry on for a
     // while after the key is released; the nose also drops by its own angle and the roll turns

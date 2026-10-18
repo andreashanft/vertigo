@@ -507,7 +507,9 @@ void HUD::updateMissionState()
             m_deathTime = m_scenario->time();
             m_menu->notice({ text(13) }, 3.0f);
         }
-        else if (m_scenario->time() >= m_deathTime + 3.0f && page != MissionMenu::Page::Died)
+        // the menu once the destruction sequence is over and the death view has watched the
+        // wreck for eight seconds (docs/ROADMAP.md, appendix R)
+        else if (m_scenario->time() >= m_deathTime + 10.0f && page != MissionMenu::Page::Died)
         {
             m_menu->open(MissionMenu::Page::Died);
             m_eventDied();
@@ -690,6 +692,11 @@ void HUD::drawFrame()
 
     // the GL viewport is in device pixels, the rects in logical pixels
     const double pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
+    if (m_scenario->playerDestroyed())
+    {
+        drawDeathView(pixelRatio);
+        return;
+    }
     if (showsModel() && drawModel(pixelRatio))
     {
         drawTouchControls(pixelRatio);
@@ -719,6 +726,25 @@ void HUD::drawFrame()
 
     if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+    drawTouchControls(pixelRatio);
+}
+
+
+// The death view (docs/ROADMAP.md, appendix R): the world from outside the boat, without the
+// cockpit and its instruments, "DEATH VIEW" (FIGHTEXT 18) at the bottom left and the menu on top
+void HUD::drawDeathView(double pixelRatio)
+{
+    glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
+    m_scenario->draw();
+
+    setupGL(false);
+    m_integerScale = true;
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
+    fontGreen().draw(txt::StringTable::get(txt::StringFight(18)), project(Point(8, 470)));
+    m_menu->doDraw();
+    m_integerScale = false;
+
+    glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
     drawTouchControls(pixelRatio);
 }
 

@@ -153,8 +153,11 @@ void ActiveObject::destroy()
 {
     if (m_eventDestroy.isCompleted())
         return;
-    blowUp(1);
-    vanish();
+    if (!startWreck())
+    {
+        blowUp(1);
+        vanish();
+    }
     m_eventDestroy.complete();
     m_scenario->logEvent(name(), &m_eventDestroy, txt::Fight5);
 }
@@ -167,6 +170,18 @@ void ActiveObject::explode()
     blowUp(3);
     if (!startTumbling())
         vanish();
+}
+
+
+void ActiveObject::wreck()
+{
+    if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling)
+        return;
+    if (!startWreck())
+    {
+        blowUp(3);
+        vanish();
+    }
 }
 
 

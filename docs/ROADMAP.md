@@ -132,6 +132,7 @@ master monitor's target picture, D/H/V/N and R.
 | G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O3) |
 | G6 | Station after a mission | Done. The original's autopilot menu (FIGHTEXT) opens with Alt+A once the mission is accomplished and lists the open stations; with one destination the autopilot goes there at once. The menus show on the master monitor, also in the 3D cockpit |
 | G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing |
+| G8 | Destruction and death view | Done. A destroyed boat goes through the original's sequence of explosions and debris before its hull is gone, and the player's boat is watched from outside in the death view (appendix R) |
 
 ## Open questions and how to settle them
 
@@ -433,10 +434,9 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
 - **`con`** on Explode (with `dur` in seconds): 0 explodes when `dur` is over
   unless the unit has been boarded by then; 1 waits to be boarded and explodes
   `dur` seconds after that; 2 explodes when `dur` is over no matter what. The
-  explosion is three explosion effects at the unit, which then tumbles away
-  with a random spin, the same sequence as a unit whose energy defence has
-  collapsed; the armour is untouched, so the unit is not "destroyed" for the
-  mission's conditions (the AD Augmented Mod found the same).
+  explosion is the destruction sequence of a destroyed unit (appendix R);
+  the armour is untouched, so the unit is not "destroyed" for the mission's
+  conditions (the AD Augmented Mod found the same).
 - **Order slots** end in two ways: the break condition is checked every
   frame, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
   CardinalPatrol after `dur`, Goto and GotoWithArrive at their point,
@@ -741,3 +741,62 @@ only touches when the faster of the two pairs with the other.
 
 Vertigo does the same, except that the buzzer's torch, the one piece of
 debris that makes noise, keeps resting on the ground as before.
+
+### R. What the original does when a boat is destroyed
+
+Read off in October 2026. A boat whose armour is gone, and one whose
+Explode order goes off, runs through the same sequence, the player's boat
+too. Explosions are EXPLOSIO.DES entries at their own size, each at a
+random spot of the hull: up to half a hull radius to either side, up to
+half of a spread s (in hull radii) lengthwise and up to s upwards. Debris is
+DEBRIS.DES entries flung out 0.1 to 0.6 hull radii from the centre, in any
+direction round and between two elevations, at the piece's own speed.
+
+| At | Explosions (entry, s) | Debris (entries, elevation) |
+|---|---|---|
+| 0 s | 0 (0.6), 3 (0.6), 3 (0.6) | the player's boat: 17, 17, 17, 1, 3, 3 at ±36° |
+| 0.4 s | 4 (0.5) | – |
+| 0.9 s | 1 (0.4), 4 (0.4), 4 (0.7) | 2, 2, 1, 3, 3 at 36° to 72° |
+| 1.3 s | 5 (0.3) | – |
+| 1.6 s | 5 (0.6), 2 (0.6) | the player's boat: 17, 17, 17, 0, 1, 2 at 36° to 72° |
+| 2.0 s | 2 (0.1), 2 (0.4) | 2, 2, 2, 1, 3, 3 at ±36°, then the wreck |
+
+At every step up to 1.6 s the hull gets a new random acceleration of up to
+30 units/s² (about 0.94 m/s²) on each axis and a new angular acceleration
+of up to 0.2 rad/s² about each of its own axes, so it drifts and spins up
+more and more. Another boat stops when the sequence starts; the player's
+boat drifts on. One boat in five instead keeps its course at 70 % of its
+speed, its angular acceleration drawn anew every frame within 3 rad/s²,
+and after 1.6 s it waits until it hits the ground (or five seconds) before
+the last burst. At 2.0 s the hull is gone and the wreck stays: the player's
+boat leaves one body (DEBRIS.DES 16 half the time, 15 or 14 otherwise),
+another boat none, 16, 15 and 16, or all of 14 to 16, each as likely, flung
+out at 0° to 90° elevation; the player's boat also blows up (entry 2) at
+the front and back of its hull. The unit counts as destroyed from the start
+of the sequence. Explosions of entries 0 to 2 sound as big explosions, the
+others as small ones.
+
+The player's boat is then watched from outside, the death view, with "DEATH
+VIEW" (FIGHTEXT 18) at the bottom left of the view and no cockpit. The
+camera starts in the hull and keeps moving a tenth of a second's worth (a
+factor of 10 per second) towards its place three hull radii out, 45° above
+the hull and circling it at 45° a second, measured in the hull's own frame,
+and it always looks at the hull. Once the hull is gone it comes down level
+(a factor of 1.5 per second) and closes in from three hull radii to half a
+radius at 1.25 radii a second. Eight seconds after the hull is gone the
+mission ends; Vertigo opens the death menu then, ten seconds after the boat
+was destroyed. The original shows other outside views (chase, fly around,
+pass by, look, look at; FIGHTEXT 14–19) that Vertigo doesn't have.
+
+Not compared or not followed:
+- Vertigo stops the hull once it is gone; whether the original's hidden
+  hull drifts on (the camera would follow it) is not read.
+- One kind of unit leaves no wreck body; which one is not known.
+- Tanks and other ground vehicles have a sequence of their own, not read;
+  Vertigo still blows them up at once.
+- The original's explosions in the sequence come in sizes that Vertigo's
+  effects don't take, as with the mines (appendix Q).
+- An energy defence that collapses makes a boat tumble with a small random
+  spin (up to 0.23 rad/s) and no explosions in the original; Vertigo still
+  sets off three explosions first (appendix J).
+

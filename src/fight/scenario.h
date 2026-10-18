@@ -112,7 +112,9 @@ public:
     int playerId() const { return m_playerId; }
     // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
     void playerHit(ActiveObject *unit, bool destroyed);
-    void destroyPlayer() { m_eventPlayerDestroyed.complete(); }
+    // the player's boat is destroyed: the death view watches its destruction sequence from
+    // outside (docs/ROADMAP.md, appendix R)
+    void destroyPlayer();
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
     Player* player() const { return m_player.get(); }
@@ -258,6 +260,14 @@ private:
 
     float m_time;
     float m_failTime = -1;      // when the mission failed, -1 while it hasn't
+    // the death view: the camera's place, its heading and elevation round the hull and its
+    // distance in hull radii
+    void updateDeathView(float elapsedTime);
+    Vector3D m_deathCamera;
+    float m_deathYaw = 0;
+    float m_deathPitch = 0;
+    float m_deathDistance = 0;
+    Matrix m_deathProjectionMatrix;    // centred on the view, without the cockpit's offset
     float m_dimming = 1;
 
     float m_left;

@@ -1020,7 +1020,7 @@ void Orders::update()
             }
             if (m_scenario->time() - m_startTime >= slot.dur && !(slot.con == 0 && boarded))
             {
-                m_unit->explode();
+                m_unit->wreck();
                 m_current = -1;
             }
         }

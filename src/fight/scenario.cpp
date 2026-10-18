@@ -635,6 +635,7 @@ void Scenario::setBoat(game::Boat *boat)
 void Scenario::setRect(const RectF &rect, const Vector2D &center, float fovY)
 {
     m_projectionMatrix = glm::translate(Vector3D(center, 0)) * glm::perspective(glm::radians(fovY), float(rect.width / rect.height), 0.1f, 500.0f);
+    m_deathProjectionMatrix = glm::perspective(glm::radians(fovY), float(rect.width / rect.height), 0.1f, 500.0f);
     m_projectionMatrixInverted = glm::inverse(m_projectionMatrix);
 }
 
@@ -653,9 +654,16 @@ void Scenario::update(float elapsedTime)
     m_pitch = dir.z < -1.0f ? -glm::half_pi<float>() : dir.z > 1.0f ? glm::half_pi<float>() : glm::asin(dir.z);
     m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
 
-    m_cameraMatrixInverted = Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_position, 1));
-    m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
-    m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
+    if (playerDestroyed())
+    {
+        updateDeathView(elapsedTime);
+    }
+    else
+    {
+        m_cameraMatrixInverted = Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_position, 1));
+        m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
+        m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
+    }
 
     m_conditionManager.update(elapsedTime);
     if (m_failTime < 0 && m_conditionManager.failed())
@@ -773,7 +781,49 @@ void Scenario::explosionAt(const Vector3D &position, float strength)
 
 void Scenario::draw()
 {
-    draw(m_projectionMatrix, m_cameraMatrix);
+    draw(playerDestroyed() ? m_deathProjectionMatrix : m_projectionMatrix, m_cameraMatrix);
+}
+
+
+void Scenario::destroyPlayer()
+{
+    if (playerDestroyed())
+        return;
+    m_eventPlayerDestroyed.complete();
+    // the camera starts in the hull and moves out to its place beside it
+    m_deathCamera = m_player->position();
+    m_deathYaw = -glm::half_pi<float>();
+    m_deathPitch = glm::quarter_pi<float>();
+    m_deathDistance = 3.0f;
+}
+
+
+// The death view (docs/ROADMAP.md, appendix R): the camera circles the hull at 45° a second, 45°
+// above it and three hull radii away, in the hull's own frame, moving a tenth of a second's worth
+// towards that place every frame and always looking at the hull. Once the hull is gone it comes
+// down level and closes in to half a radius.
+void Scenario::updateDeathView(float elapsedTime)
+{
+    m_deathYaw += glm::quarter_pi<float>()*elapsedTime;
+    if (m_player->wreckGone())
+    {
+        m_deathPitch -= m_deathPitch*std::min(1.0f, 1.5f*elapsedTime);
+        if (m_deathDistance > 0.5f)
+            m_deathDistance -= 1.25f*elapsedTime;
+    }
+    const float d = m_deathDistance*m_player->hullRadius();
+    const Vector3D offset(-d*std::cos(m_deathPitch)*std::sin(m_deathYaw), d*std::cos(m_deathPitch)*std::cos(m_deathYaw), d*std::sin(m_deathPitch));
+    const Vector3D target = m_player->position();
+    const Vector3D place = target + glm::transpose(m_player->orientation())*offset;
+    m_deathCamera += (place - m_deathCamera)*std::min(1.0f, 10.0f*elapsedTime);
+
+    Vector3D forward = target - m_deathCamera;
+    forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : m_player->dir();
+    Vector3D right = glm::cross(forward, Vector3D(0, 0, 1));
+    right = glm::length(right) > 1e-3f ? glm::normalize(right) : m_player->right();
+    const Vector3D up = glm::cross(right, forward);
+    m_cameraMatrixInverted = Matrix(Vector4D(right, 0), Vector4D(up, 0), Vector4D(-forward, 0), Vector4D(m_deathCamera, 1));
+    m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
 }
 
 
@@ -816,6 +866,9 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
             object->draw();
     for (const auto &torpedo : m_torpedoes)
         torpedo->draw();
+    // the death view sees the player's hull until it is gone
+    if (playerDestroyed() && !m_player->wreckGone())
+        m_player->draw();
     gfx::Pipeline::setTableShading(false);
 
     // the sprites glow by themselves and fade with the distance
