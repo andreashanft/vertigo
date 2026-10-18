@@ -790,11 +790,13 @@ void Orders::updateFight(ActiveObject *target, float speed)
     case Fight::Turn:
     case Fight::Run:
         {
+            // the nose straight at the target, as the guns fire along it; the run flies at the
+            // target itself, not at the order's height band, kept only clear of the ground ahead
             const Vector3D aim = aimPoint(target);
             if (m_fight == Fight::Turn)
-                m_boat->steerTo(aim, 0);
+                m_boat->pointAt(aim, 0);
             else
-                m_boat->steerTo(inBand(aim, slot.mih + m_boat->collisionRadius(), slot.mah), m_attackSpeed);
+                m_boat->pointAt(inBand(aim, 0, 0), m_attackSpeed);
             // the run ends once the start, carried along with the target, has got farther away than
             // the distance minus the flight radius: the target is within it
             const Vector3D start = toWorld(target, m_runStart);

@@ -48,8 +48,10 @@ public:
     void setFullThrottle(bool fullThrottle) { m_fullThrottle = fullThrottle; }
     void setTurnVelocity(const Vector3D &turnVelocity) { m_turnVelocity = turnVelocity; }
 
-    // steering for the AI orders: head for a point at a speed, or stay in place
+    // steering for the AI orders: head for a point at a speed (climbing to its height within a
+    // short way), point the nose straight at it (to fire along the nose), or stay in place
     void steerTo(const Vector3D &point, float speed);
+    void pointAt(const Vector3D &point, float speed);
     void hold();
 
     // the [Attack] settings of the object file, distances in metres
@@ -105,6 +107,8 @@ public:
 
 protected:
     void updateBox();
+    // turns and runs towards the point, the pitch making for its height over the given horizontal way
+    void steer(const Vector3D &point, float speed, float reach);
     // moves by delta, sliding along the terrain and the objects in the way
     void move(Vector3D delta);
     // the part of delta that doesn't run into another unit, a tower or a building: up to the
