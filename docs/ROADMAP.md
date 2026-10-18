@@ -268,7 +268,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   3.1 m/s² (`spd` 0) on the boat: its drag across its axis and the cap of twice
   its top speed along it give the speeds above, its own retardation the
   coasting. Affected: the player (`[Kinematics] Current`) and AI boats
-  (`[Fluid] Current`); not torpedoes, mines or shots.
+  (`[Fluid] Current`), and torpedoes at a factor of 1 like the boats (read
+  off in October 2026, appendix S); not mines or shots.
 - Radiation has no data key: it is a depth rule, the same on every map
   (measured on S00701, S01801 and S00202; the rest read off in October
   2026). Its strength is 1 − depth/100 m, from 0 a hundred metres down to 1
@@ -391,8 +392,9 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   scan, lock, volley shots, volley delay). Paralysis effectively needs the
   Flash or Leech torpedoes; gun shock damage is far below the shock shields.
 - Cluster torpedo: `TORPEDO.DES` entry 18 "Ripper" (LifeTime 6, MaxVelocity
-  1800, KineticStrength 500, comment "KineticStrength Area = 7600"), bursting
-  within 31 m in Vertigo.
+  1800, KineticStrength 500, comment "KineticStrength Area = 7600"). It runs
+  straight like the Stanleys and bursts where it goes off (appendix S); the
+  original then flings out rings of shards, Vertigo deals 7600 within 31 m.
 - `EXPLOSIO.DES`: 0–2 explosion with flash (S/M/L), 3–5 puff, 9–11 sparks,
   12–14 ground impact, 15–17 ECM impact, 18–20 and 24–26 ground dust, 21–23
   torpedo bubble. `DEBRIS.DES`: 0–2 plates, 3 engine, 4–8 small parts, 9–13
@@ -841,3 +843,56 @@ Not compared or not followed:
   spin (up to 0.23 rad/s) and no explosions in the original; Vertigo still
   sets off three explosions first (appendix J).
 
+### S. What the original's torpedoes do
+
+Read off in October 2026. All 22 types share one behaviour, with their
+`TORPEDO.DES` values:
+
+- **Straight types** (Stanley I and II, Subsonic I and II, Cluster Bomb,
+  Torch: `locktype` 0) speed up along the nose to `MaxVelocity` at
+  `MaxOrientationAcceleration`.
+- **Homing types** turn their nose towards the target's centre: yaw and
+  pitch each speed up by `MaxAngleAcceleration` A or B times the error over
+  π (nothing within a degree), lose `AngleFriction` A or B of their angular
+  speed per second and never turn faster than `MaxAngleVelocity` A or B.
+  Their speed along the nose makes for a wanted speed at
+  `MaxOrientationAcceleration` or `MaxOrientationRetardation`: `MaxVelocity`
+  at the distance of the launch, falling towards 1.5 times the target's
+  speed plus 0.3 of `MaxVelocity` at the target, so that they slow down
+  closing in.
+- **Agile types** (Tiger Shark II, Man Eater II, Hammerhead, Flash Shark
+  III, Leech I and II) fly straight for 0.7 s, then turn their velocity
+  itself towards the target: each tick the share `Agility` of it points at
+  the target. Their wanted speed falls from `MaxVelocity` to the target's
+  speed plus 0.4 of `MaxVelocity`. Vertigo takes the ticks at 30 a second.
+  The Hammerhead spins about its axis at 5 rad/s while it flies.
+- Every torpedo's speed across its nose dies away by `OrientationFrictionX`
+  and Z per second (it slides in a turn); along the nose there is none. The
+  water's currents push it as they push the boats.
+- With the type's `InfluenceProbability` (1, or 0.9 and 0.8 for the Tiger
+  Sharks and Man Eaters) a decoy within reach can draw a homing torpedo
+  away, once.
+- There is no proximity fuse: a torpedo goes off when it touches the
+  ground, a unit, a piece of debris or a shot (its armour is 1).
+- **End of life**: when its `LifeTime` is up, or its target is gone, the
+  engine stops and the homing with it. The torpedo sinks at half a g, its
+  nose following the way it moves a little below it, and it keeps its way
+  along the nose, so it noses over and falls faster and faster until it
+  hits the ground, where it goes off. A spent torpedo can still hit a unit.
+- Bubbles (`EXPLOSIO.DES` 22) trail it every 0.16 s (twice the entry's
+  `DisplayTime`), from half a second after the launch, while its engine
+  runs.
+- The Torch leaves its burning torch (`DEBRIS.DES` 22) on the ground, which
+  draws torpedoes while it lasts.
+- `Range`, `Min/MaxClimbingAngle` and `VelocityIncrease/Decrease` (0 on all
+  types) change nothing.
+
+Not followed:
+- Every half second a homing torpedo checks whether the ground is between it
+  and its target and then steers round it; Vertigo's torpedoes don't.
+- Flash, Leech and Torch torpedoes go off in a large flash, the others in a
+  medium one, at sizes Vertigo's effects don't take; Vertigo shows a medium
+  explosion for all.
+- The Cluster Bomb's burst flings out two rings of shards a second apart;
+  Vertigo deals area damage instead (appendix H).
+- The Hammerhead's spin is not shown.

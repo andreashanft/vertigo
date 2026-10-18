@@ -44,9 +44,17 @@ struct TorpedoType
     float noise = 0;
     float maxVelocity = 0;  // m/s
     float acceleration = 0; // m/s^2
-    float turnRate = 0;     // rad/s
+    float retardation = 0;  // m/s^2
+    float sideFriction = 0; // 1/s, of the speed across the nose
+    // turning, yaw and pitch: the most angular acceleration and speed (rad/s^2, rad/s) and the
+    // friction on the angular speed (1/s)
+    Vector2D angleAcceleration;
+    Vector2D angleVelocity;
+    Vector2D angleFriction;
+    float agility = 0;      // the agile homing types: the share of the velocity turned to the target per tick
+    float influence = 1;    // the chance that a decoy can draw it away
     float lifeTime = 0;
-    float sensorRange = 0;  // m, how far a homing torpedo finds its target
+    float sensorRange = 0;  // m, how far a homing torpedo finds a decoy
     int kineticStrength = 0;
     int shockStrength = 0;
     int kineticShield = 1;
@@ -55,6 +63,8 @@ struct TorpedoType
     static const TorpedoType* get(int type) { return type >= 0 && type < int(all().size()) ? &all()[type] : nullptr; }
     bool isDecoy() const { return model == "estroker.mod"; } // the Torch
     bool isCluster() const { return model == "ripper.mod"; } // bursts with area damage
+    bool isAgile() const { return agile; }
+    bool agile = false;     // Tiger Shark II, Man Eater II, Hammerhead, Flash Shark III, Leech I and II
 };
 
 
@@ -80,6 +90,12 @@ public:
 
 private:
     void detonate(const Vector3D &position, ActiveObject *hit);
+    bool targetAlive() const;
+    void spend();
+    // turns the nose towards the point within the type's angular limits
+    void turnTowards(const Vector3D &point, float elapsedTime);
+    // the speed along the nose towards this, the speed across it dying away
+    void drive(float speed, float elapsedTime);
 
 private:
     const TorpedoType &m_type;
@@ -90,6 +106,11 @@ private:
     float m_speed;
     float m_time;
     float m_trailTime;
+    Vector2D m_turn = Vector2D(0);  // angular speed, yaw and pitch (rad/s)
+    float m_startDistance = 0;      // from the target at launch
+    bool m_influenced;              // whether a decoy can still draw it away
+    bool m_spent = false;           // its time is up: it sinks until it hits the ground
+    bool m_decoy = false;           // drawn away by a decoy
 };
 
 
