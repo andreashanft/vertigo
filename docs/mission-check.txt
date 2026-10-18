@@ -1,273 +1,82 @@
 s00101: 49 objects
-  20x unread key: movable#/ai
-  4x unread key: movable#/card
-  22x unread key: movable#/pz
 s00102: 54 objects
-  22x unread key: movable#/ai
-  4x unread key: movable#/card
-  23x unread key: movable#/pz
 s00103: 28 objects
-  9x unread key: movable#/ai
-  2x unread key: movable#/card
-  17x unread key: movable#/pz
 s00104: 44 objects
-  21x unread key: movable#/ai
-  2x unread key: movable#/card
-  18x unread key: movable#/pz
 s00105: 1 objects
-  1x unread key: movable#/ai
 s00106: 27 objects
-  8x unread key: movable#/ai
-  2x unread key: movable#/card
-  17x unread key: movable#/pz
 s00201: 91 objects
-  16x unread key: movable#/ai
-  4x unread key: movable#/pz
 s00202: 104 objects
-  19x unread key: movable#/ai
-  4x unread key: movable#/card
-  79x unread key: movable#/pz
 s00203: 264 objects
-  12x unread key: movable#/ai
-  4x unread key: movable#/pz
 s00204: 21 objects
-  11x unread key: movable#/ai
-  9x unread key: movable#/pz
 s00205: 14 objects
-  7x unread key: movable#/ai
-  2x unread key: movable#/card
-  5x unread key: movable#/pz
 s00301: 94 objects
-  37x unread key: movable#/ai
-  11x unread key: movable#/card
-  6x unread key: movable#/pz
 s00302: 10 objects
-  9x unread key: movable#/ai
 s00303: 15 objects
-  9x unread key: movable#/ai
-  5x unread key: movable#/pz
 s00304: 6 objects
-  5x unread key: movable#/ai
 s00401: 197 objects
-  33x unread key: movable#/ai
-  14x unread key: movable#/card
-  14x unread key: movable#/pz
 s00402: 44 objects
   1x condition: Empty faction 1
-  15x unread key: movable#/ai
-  28x unread key: movable#/pz
 s00403: 39 objects
-  19x unread key: movable#/ai
-  5x unread key: movable#/card
-  14x unread key: movable#/pz
 s00404: 57 objects
   8x condition: No unit has objective 4 (achieved)
-  33x unread key: movable#/ai
-  4x unread key: movable#/card
-  17x unread key: movable#/pz
 s00405: 180 objects
-  43x unread key: movable#/ai
-  5x unread key: movable#/card
 s00406: 178 objects
-  36x unread key: movable#/ai
-  11x unread key: movable#/card
-  75x unread key: movable#/pz
 s00601: 18 objects
-  15x unread key: movable#/ai
 s00701: 25 objects
-  18x unread key: movable#/ai
-  3x unread key: movable#/card
-  2x unread key: movable#/pz
 s00702: 22 objects
-  16x unread key: movable#/ai
-  3x unread key: movable#/card
-  2x unread key: movable#/pz
 s00703: 21 objects
-  15x unread key: movable#/ai
-  3x unread key: movable#/card
-  2x unread key: movable#/pz
 s00704: 113 objects
-  40x unread key: movable#/ai
-  3x unread key: movable#/card
-  34x unread key: movable#/pz
 s00705: 21 objects
-  16x unread key: movable#/ai
-  3x unread key: movable#/card
-  2x unread key: movable#/pz
 s00706: 38 objects
-  32x unread key: movable#/ai
 s00902: 75 objects
-  14x unread key: movable#/ai
-  5x unread key: movable#/card
-  17x unread key: movable#/pz
 s00903: 75 objects
-  12x unread key: movable#/ai
-  5x unread key: movable#/card
-  17x unread key: movable#/pz
 s01001: 27 objects
-  19x unread key: movable#/ai
-  1x unread key: movable#/card
-  1x unread key: movable#/pz
 s01002: 8 objects
-  7x unread key: movable#/ai
 s01101: 13 objects
-  8x unread key: movable#/ai
-  1x unread key: movable#/card
 s01201: 62 objects
-  34x unread key: movable#/ai
-  2x unread key: movable#/card
-  23x unread key: movable#/pz
 s01202: 22 objects
-  11x unread key: movable#/ai
-  6x unread key: movable#/card
-  5x unread key: movable#/pz
 s01203: 75 objects
-  21x unread key: movable#/ai
-  21x unread key: movable#/card
-  30x unread key: movable#/pz
 s01301: 84 objects
-  25x unread key: movable#/ai
-  5x unread key: movable#/card
-  15x unread key: movable#/pz
 s01302: 43 objects
-  23x unread key: movable#/ai
-  5x unread key: movable#/card
-  9x unread key: movable#/pz
 s01303: 55 objects
-  33x unread key: movable#/ai
-  5x unread key: movable#/card
-  9x unread key: movable#/pz
 s01304: 74 objects
-  26x unread key: movable#/ai
-  5x unread key: movable#/card
-  9x unread key: movable#/pz
 s01305: 36 objects
-  19x unread key: movable#/ai
-  5x unread key: movable#/card
-  9x unread key: movable#/pz
 s01306: 124 objects
-  38x unread key: movable#/ai
-  4x unread key: movable#/card
-  18x unread key: movable#/pz
 s01307: 27 objects
-  7x unread key: movable#/ai
-  4x unread key: movable#/card
-  14x unread key: movable#/pz
 s01308: 6 objects
-  5x unread key: movable#/ai
-  1x unread key: movable#/card
 s01501: 66 objects
-  50x unread key: movable#/ai
-  14x unread key: movable#/pz
 s01601: 26 objects
-  16x unread key: movable#/ai
-  5x unread key: movable#/card
-  2x unread key: movable#/pz
 s01602: 92 objects
-  49x unread key: movable#/ai
-  4x unread key: movable#/card
-  33x unread key: movable#/pz
 s01701: 41 objects
-  31x unread key: movable#/ai
-  4x unread key: movable#/card
-  2x unread key: movable#/pz
 s01702: 43 objects
-  34x unread key: movable#/ai
-  4x unread key: movable#/card
-  2x unread key: movable#/pz
 s01801: 170 objects
-  41x unread key: movable#/ai
-  30x unread key: movable#/card
-  39x unread key: movable#/pz
 s01802: 181 objects
   2x condition: No unit has objective 9 (achieved)
-  55x unread key: movable#/ai
-  30x unread key: movable#/card
-  38x unread key: movable#/pz
 s01803: 128 objects
-  33x unread key: movable#/ai
-  30x unread key: movable#/card
-  38x unread key: movable#/pz
 s01804: 132 objects
-  36x unread key: movable#/ai
-  30x unread key: movable#/card
-  38x unread key: movable#/pz
 s01805: 51 objects
-  26x unread key: movable#/ai
-  11x unread key: movable#/card
-  11x unread key: movable#/pz
 s01806: 39 objects
-  18x unread key: movable#/ai
-  3x unread key: movable#/card
-  17x unread key: movable#/pz
 s02001: 46 objects
-  3x unread key: movable#/ai
-  6x unread key: movable#/card
-  37x unread key: movable#/pz
 s02002: 27 objects
-  14x unread key: movable#/ai
-  3x unread key: movable#/card
-  4x unread key: movable#/pz
 s02003: 50 objects
   1x condition: No unit has objective 13 (achieved)
   1x condition: No unit has objective 15 (achieved)
-  12x unread key: movable#/ai
-  11x unread key: movable#/card
-  26x unread key: movable#/pz
 s02004: 62 objects
-  10x unread key: movable#/ai
-  12x unread key: movable#/card
-  37x unread key: movable#/pz
 s02005: 63 objects
-  17x unread key: movable#/ai
-  7x unread key: movable#/card
-  37x unread key: movable#/pz
 s02006: 62 objects
   1x condition: No unit has objective 7 (failed)
-  16x unread key: movable#/ai
-  7x unread key: movable#/card
-  37x unread key: movable#/pz
 s02007: 71 objects
-  26x unread key: movable#/ai
-  6x unread key: movable#/card
-  37x unread key: movable#/pz
 s02201: 133 objects
-  55x unread key: movable#/ai
-  19x unread key: movable#/card
-  55x unread key: movable#/pz
 s02202: 150 objects
-  82x unread key: movable#/ai
-  12x unread key: movable#/card
-  49x unread key: movable#/pz
 s02203: 141 objects
-  67x unread key: movable#/ai
-  16x unread key: movable#/card
-  55x unread key: movable#/pz
 s02204: 95 objects
-  40x unread key: movable#/ai
-  4x unread key: movable#/card
-  46x unread key: movable#/pz
 s02205: 190 objects
-  55x unread key: movable#/ai
-  4x unread key: movable#/card
-  76x unread key: movable#/pz
 strai0: 129 objects
-  45x unread key: movable#/ai
-  84x unread key: movable#/pz
 strai1: 197 objects
-  48x unread key: movable#/ai
-  148x unread key: movable#/pz
 strai2: 140 objects
-  48x unread key: movable#/ai
 strai3: 282 objects
-  83x unread key: movable#/ai
-  6x unread key: movable#/card
-  97x unread key: movable#/pz
 
 Total: 71 missions, 5388 objects
-  1849x unread key: movable#/ai
-  1634x unread key: movable#/pz
-  424x unread key: movable#/card
   12x condition: No unit has objective # (achieved)
   1x condition: Empty faction #
   1x condition: No unit has objective # (failed)

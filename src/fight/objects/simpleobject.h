@@ -35,6 +35,8 @@ public:
     SimpleObject(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float scale = 1/32.0f);
 
 public:
+    // turns the model about the vertical; a yaw turns it clockwise, as a boat's heading does
+    void setYaw(float yaw);
 
 public:
     void draw();
@@ -43,7 +45,8 @@ public:
 protected:
     Module *m_base;
     float m_scale;
-    BoundingBox m_localBox; // m_box before it is moved to the object's position
+    float m_yaw = 0;
+    BoundingBox m_localBox; // m_box before it is turned and moved to the object's position
 };
 
 

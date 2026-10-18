@@ -95,6 +95,13 @@ namespace {
 const float CurrentPushSlow = 3.1f;
 const float CurrentPushFast = 9.0f;
 
+// the player and active buildings face one of four ways, card 0, 2, 4 or 6; any other card leaves
+// them facing as card 0 does (cargo ships take all eight)
+float quarterHeading(int card)
+{
+    return card >= 0 && card <= 6 && card % 2 == 0 ? card*glm::quarter_pi<float>() : 0.0f;
+}
+
 }
 
 
@@ -220,6 +227,9 @@ Scenario::Scenario(const String &name) :
         // sle 0 keeps the unit running anywhere on the map; 1 (or no key) lets it sleep out of the
         // player's sonar range (docs/ROADMAP.md, appendix J)
         info.sleeps = !m_file.contains("sle") || m_file.value("sle").toInt() == 1;
+        // ai (0 to 3 on some boats, bombers and tanks) does nothing in the original; taken here so
+        // the mission check doesn't list it
+        m_file.value("ai");
 
         switch (placeholder ? 0 : type) {
         case TypeBoat:
@@ -257,6 +267,8 @@ Scenario::Scenario(const String &name) :
 
         case TypeBuilding:
             {
+                if (m_file.value("pz").toInt() != 0)
+                    loadIssue("unhandled: ground plan with pz != 0");
                 objectDes.load(String("vfx:sobjects/gp%1x%1_%2.des").arg(m_file.value("siz").toInt() + 1).arg(m_file.value("buityp").toInt()));
                 object = new Building(this, objectDes, m_file.value("siz").toInt(), m_file.value("card", 0).toInt() * 45.0f, m_file.value("px").toInt(), m_file.value("py").toInt(), m_file.value("refx").toInt(), m_file.value("refy").toInt());
             }
@@ -282,7 +294,7 @@ Scenario::Scenario(const String &name) :
 
         case TypePlayer:
             m_position = getPosition();
-            m_yaw = m_file.value("card").toInt()*glm::quarter_pi<float>();
+            m_yaw = quarterHeading(m_file.value("card").toInt());
             m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
             entry.condTrigger = m_conditionManager.addCondition(0);
             entry.condSignal = &m_eventPlayerDestroyed;
@@ -321,8 +333,10 @@ Scenario::Scenario(const String &name) :
 
         case TypeActiveBuilding:
             {
-                object = new SimpleObject(this, objectDes, info, 16);
-                object->setPosition(getPosition());
+                SimpleObject *building = new SimpleObject(this, objectDes, info, 16);
+                building->setYaw(quarterHeading(m_file.value("card", 0).toInt()));
+                building->setPosition(getPosition());
+                object = building;
             }
             break;
 
