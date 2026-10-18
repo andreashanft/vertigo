@@ -37,9 +37,15 @@ namespace fight {
 
 namespace {
 
-// the cluster torpedo's burst damages everything around it (TORPEDO.DES: "KineticStrength Area = 7600")
-const float ClusterRadius = 31.0f;
-const int ClusterStrength = 7600;
+// the Cluster Bomb's shards (SHOOT.DES 7 and 8, "KineticStrength Area = 7600" in TORPEDO.DES): a ring
+// a metre out at the burst, another 6.25 m out a second later
+const float ShardsNear = 1.0f;
+const float ShardsFar = 6.25f;
+const float ShardsDelay = 1.0f;
+// a homing torpedo looks for the ground between it and its goal this often (s)
+const float LookInterval = 0.5f;
+// and climbs this far over it (m)
+const float Climb = 31.25f;
 // a bubble (EXPLOSIO.DES 22) behind the torpedo every two of its frames' time, from half a
 // second after the launch (docs/ROADMAP.md, appendix S)
 const float TrailInterval = 0.16f;
@@ -94,6 +100,7 @@ const std::vector<TorpedoType>& TorpedoType::all()
         type.agility = bodies.value("agility", 0.5f).toFloat();
         type.lifeTime = bodies.value("lifetime", 6).toFloat();
         type.agile = i == 7 || i == 9 || i == 10 || i == 13 || i == 19 || i == 20;
+        type.index = i;
         bodies.setSection(String("offense%1").arg(i));
         type.kineticStrength = bodies.value("kineticstrength").toInt();
         type.shockStrength = bodies.value("shockstrength").toInt();
@@ -192,6 +199,15 @@ bool Torpedo::update(float elapsedTime)
         return false;
 
     m_time += elapsedTime;
+    if (isBursting())
+    {
+        if (m_time >= m_burstTime + ShardsDelay)
+        {
+            shards(ShardsFar, glm::radians(30.0f));
+            disable();
+        }
+        return false;
+    }
     if (!m_spent && (m_time >= m_type.lifeTime || (m_target && !targetAlive())))
         spend();
 
@@ -222,6 +238,15 @@ bool Torpedo::update(float elapsedTime)
             else
                 m_decoy = false;
         }
+        // every half second it looks whether the ground is between it and its goal, and while
+        // it is, makes for a way over it (the agile types start looking once they turn)
+        if (m_time >= m_nextLook && (!m_type.isAgile() || m_time >= AgileStart))
+        {
+            m_nextLook = m_time + LookInterval;
+            Vector3D hit, normal;
+            m_blocked = m_scenario->surface().testCollision(m_position, goal, 0.5f, hit, normal);
+        }
+        const Vector3D aim = m_blocked ? detour(goal) : goal;
         // it slows down closing in: from its top speed at the launch distance to a mix of the
         // target's speed and its own
         const float share = std::min(1.0f, glm::length(goal - m_position)/m_startDistance);
@@ -238,7 +263,7 @@ bool Torpedo::update(float elapsedTime)
                 float speed = glm::length(m_velocity);
                 speed = wanted > speed ? std::min(wanted, speed + m_type.acceleration*elapsedTime)
                                        : std::max(wanted, speed - m_type.retardation*elapsedTime);
-                const Vector3D way = goal - m_position;
+                const Vector3D way = aim - m_position;
                 const float keep = std::pow(1.0f - m_type.agility, AgilityTicks*elapsedTime);
                 const Vector3D current = glm::length(m_velocity) > 1e-3f ? glm::normalize(m_velocity) : m_dir;
                 const Vector3D blended = current*keep + (glm::length(way) > 1e-3f ? glm::normalize(way) : m_dir)*(1 - keep);
@@ -249,7 +274,7 @@ bool Torpedo::update(float elapsedTime)
         }
         else
         {
-            turnTowards(goal, elapsedTime);
+            turnTowards(aim, elapsedTime);
             drive((1.5f*targetSpeed + 0.3f*vmax)*(1 - share) + vmax*share, elapsedTime);
         }
     }
@@ -275,14 +300,7 @@ bool Torpedo::update(float elapsedTime)
     Vector3D position, normal;
     if (m_scenario->surface().testCollision(m_position, next, 0.5f, position, normal))
     {
-        // the Torch leaves its burning torch on the ground, which draws torpedoes while it lasts
-        if (m_type.isDecoy())
-        {
-            Billboard *torch = m_scenario->effectManager().getBillboard(Effects::Debris_22);
-            m_scenario->effectManager().addDebris(Effects::Debris_22, position + normal*0.5f, Vector3D(0, 0, 1));
-            m_scenario->addDecoy(position, torch ? torch->lifeTime() : 16.0f);
-        }
-        detonate(position, nullptr);
+        detonate(position + normal*0.5f, nullptr, true);
         return false;
     }
     Object *hit = m_scenario->collisionManager().testCollision(m_position, next, 0.5f, position, normal, nullptr, m_owner);
@@ -305,43 +323,107 @@ bool Torpedo::update(float elapsedTime)
 }
 
 
-void Torpedo::detonate(const Vector3D &position, ActiveObject *hit)
+// (docs/ROADMAP.md, appendix S) The Flash Sharks and Leeches go off on the ground in a large flash
+// and elsewhere in a large ECM impact, sized to their hull (1.6, 2 or 2.4 times its radius); the
+// Torch in a small large flash, leaving its burning torch, which draws torpedoes while it lasts;
+// the Cluster Bomb in a large puff and two rings of shards; the others in a medium explosion
+void Torpedo::detonate(const Vector3D &position, ActiveObject *hit, bool ground)
 {
-    if (!m_enabled)
+    if (!m_enabled || isBursting())
         return;
-    disable();
-    if (m_type.isCluster())
+    if (hit)
+        hit->damage(m_type.kineticStrength, m_type.shockStrength, position, m_owner);
+
+    auto sized = [this, &position](Effects effect, float factor) {
+        Billboard *billboard = m_scenario->effectManager().getBillboard(effect);
+        const float sprite = billboard ? billboard->box().maxPoint().x : 1.0f;
+        m_scenario->effectManager().addEffect(effect, position, 0, factor*radius()/std::max(sprite, 0.01f));
+    };
+    const Effects flash = ground ? Effects::Explosion_2 : Effects::Explosion_17;
+    bool big = false;
+    switch (m_type.index)
     {
-        // everything near the burst, less further away
-        auto blast = [this, &position](ActiveObject *unit) {
-            if (!unit || unit == m_owner || !unit->isEnabled())
-                return;
-            const float distance = glm::length(unit->center() - position);
-            if (distance < ClusterRadius)
-                unit->damage(int(ClusterStrength*(1 - 0.5f*distance/ClusterRadius)), 0, position, m_owner);
-        };
-        if (!m_scenario->playerDestroyed())
-            blast(m_scenario->player());
-        for (const auto &record : m_scenario->objectRecords())
-            blast(dynamic_cast<ActiveObject *>(record.object));
-        m_scenario->effectManager().addEffect(Effects::Explosion_2, position);
-        for (int i = 0; i < 5; i++)
-            m_scenario->effectManager().addEffect(Effects::Explosion_9, position + Vector3D(util::random()%21 - 10, util::random()%21 - 10, util::random()%11 - 5));
+    case 11: case 19: sized(flash, 1.6f); big = true; break;
+    case 12: case 20: sized(flash, 2.0f); big = true; break;
+    case 13: sized(flash, 2.4f); big = true; break;
+    case 21:
+        {
+            sized(Effects::Explosion_2, 0.9f);
+            Billboard *torch = m_scenario->effectManager().getBillboard(Effects::Debris_22);
+            m_scenario->effectManager().addDebris(Effects::Debris_22, position, Vector3D(0, 0, 1));
+            m_scenario->addDecoy(position, torch ? torch->lifeTime() : 16.0f);
+        }
+        break;
+    case 18:
+        sized(Effects::Explosion_5, 0.9f);
+        m_target = nullptr;
+        m_burstTime = m_time;
+        m_burstHeading = std::atan2(m_dir.y, m_dir.x);
+        setPosition(position);
+        shards(ShardsNear, 0);
         sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, position.x, position.y, position.z);
         m_scenario->explosionAt(position, 1.0f);
         return;
+    default:
+        m_scenario->effectManager().addEffect(Effects::Explosion_1, position);
     }
-    if (hit)
-        hit->damage(m_type.kineticStrength, m_type.shockStrength, position, m_owner);
-    m_scenario->effectManager().addEffect(Effects::Explosion_1, position);
-    sfx::SampleMap::playAt(sfx::Sample::Explosion_Small, position.x, position.y, position.z);
+    disable();
+    sfx::SampleMap::playAt(big ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, position.x, position.y, position.z);
     m_scenario->explosionAt(position, 0.7f);
+}
+
+
+// six shards (SHOOT.DES 7) 60 degrees apart, then twelve (SHOOT.DES 8) 30 degrees apart starting 15
+// degrees on, each from that far out round the burst and flying outwards a little upwards
+void Torpedo::shards(float distance, float turn)
+{
+    float angle = m_burstHeading + turn;
+    auto shard = [this, distance, &angle](Effects type) {
+        const Vector3D out(std::cos(angle), std::sin(angle), 0);
+        m_scenario->effectManager().addProjectile(type, m_position + out*distance, glm::normalize(out + Vector3D(0, 0, 0.2f)), m_owner);
+    };
+    for (int i = 0; i < 6; i++, angle += glm::radians(60.0f))
+        shard(Effects::Shoot_7);
+    angle += glm::radians(15.0f);
+    for (int i = 0; i < 12; i++, angle += glm::radians(30.0f))
+        shard(Effects::Shoot_8);
+}
+
+
+float Torpedo::radius() const
+{
+    const Vector3D dim = m_model ? m_model->box().dim()*m_type.scale : Vector3D(1);
+    return 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+}
+
+
+// Over the ground in its way: towards the goal, but well above the ground it would hit within a
+// second and a half's way (and two hull radii), and climbing steeply while the ground three
+// quarters of a second ahead comes within half a radius of its hull
+Vector3D Torpedo::detour(const Vector3D &goal) const
+{
+    const Vector3D toGoal = glm::length(goal - m_position) > 1e-3f ? glm::normalize(goal - m_position) : m_dir;
+    const float ahead = 2*radius() + 1.5f*m_speed;
+    Vector3D aim = goal;
+    Vector3D hit, normal;
+    if (m_scenario->surface().testCollision(m_position, m_position + toGoal*ahead, 0.5f, hit, normal) ||
+        m_scenario->surface().testCollision(m_position, m_position + m_dir*ahead, 0.5f, hit, normal))
+    {
+        aim = m_position + toGoal*ahead;
+        aim.z = std::max(aim.z, hit.z + Climb);
+    }
+    const Vector3D probe = m_position + m_dir*(0.5f*m_scenario->surface().scale().x + 0.75f*m_speed);
+    if (m_scenario->surface().heightAt(probe.x, probe.y) > m_position.z - 1.5f*radius())
+        aim.z = std::max(aim.z, m_position.z + Climb);
+    return aim;
 }
 
 
 // a sphere of 1.5 m; only entering it counts, so the torpedo's own movement never hits itself
 bool Torpedo::intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal)
 {
+    if (isBursting())
+        return false;
     const float size = 1.5f + radius;
     const Vector3D toCentre = m_position - start;
     if (glm::length(toCentre) <= size)
@@ -365,6 +447,8 @@ void Torpedo::destroy()
 
 void Torpedo::draw()
 {
+    if (isBursting())
+        return;
     // the model's nose is +y
     Vector3D right = glm::cross(m_dir, Vector3D(0, 0, 1));
     right = glm::length(right) > 1e-3f ? glm::normalize(right) : Vector3D(1, 0, 0);

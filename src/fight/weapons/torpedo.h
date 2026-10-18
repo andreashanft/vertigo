@@ -65,6 +65,7 @@ struct TorpedoType
     bool isCluster() const { return model == "ripper.mod"; } // bursts with area damage
     bool isAgile() const { return agile; }
     bool agile = false;     // Tiger Shark II, Man Eater II, Hammerhead, Flash Shark III, Leech I and II
+    int index = 0;          // 0-21, the TORPEDO.DES entry
 };
 
 
@@ -81,6 +82,8 @@ public:
     const Vector3D& dir() const { return m_dir; }
     // done: exploded or run out; the scenario removes it
     bool isDone() const { return !m_enabled; }
+    // gone off but still at work (the Cluster Bomb's second ring of shards)
+    bool isBursting() const { return m_burstTime >= 0; }
 
 public:
     bool update(float elapsedTime);
@@ -89,7 +92,12 @@ public:
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
 
 private:
-    void detonate(const Vector3D &position, ActiveObject *hit);
+    void detonate(const Vector3D &position, ActiveObject *hit, bool ground = false);
+    // the Cluster Bomb's ring of shards at that distance (m), turned by that angle
+    void shards(float distance, float turn);
+    // where a homing torpedo makes for while the ground is between it and its goal
+    Vector3D detour(const Vector3D &goal) const;
+    float radius() const;
     bool targetAlive() const;
     void spend();
     // turns the nose towards the point within the type's angular limits
@@ -111,6 +119,10 @@ private:
     bool m_influenced;              // whether a decoy can still draw it away
     bool m_spent = false;           // its time is up: it sinks until it hits the ground
     bool m_decoy = false;           // drawn away by a decoy
+    bool m_blocked = false;         // the ground between it and its goal at the last look
+    float m_nextLook = 0;           // when it looks again (every half second)
+    float m_burstTime = -1;         // the Cluster Bomb's burst, -1 before it
+    float m_burstHeading = 0;
 };
 
 

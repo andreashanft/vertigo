@@ -34,7 +34,7 @@ debris and bodies. Tanks drive on the ground with turning turrets; cargo
 ships are built from their blocks with turrets on the hull, take hits as a
 whole and blow up block by block. Enemy guns use the object files' muzzles
 and volleys; 22 torpedo types with magazines, lock, homing, decoys and
-torpedo towers; the cluster torpedo bursts as area damage. Difficulty from
+torpedo towers; the cluster torpedo bursts into rings of shards. Difficulty from
 the main menu limits which units appear (`diff`) and how many attack the
 player at once.
 
@@ -91,7 +91,7 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
 | O2 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); how the original's run avoids the terrain on the way; whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; active mines running into buildings; whether the buzzer's torch is debris that touches things and goes out on the ground; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); how the original's run avoids the terrain on the way; whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; active mines running into buildings; whether the buzzer's torch is debris that touches things and goes out on the ground; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -393,8 +393,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   Flash or Leech torpedoes; gun shock damage is far below the shock shields.
 - Cluster torpedo: `TORPEDO.DES` entry 18 "Ripper" (LifeTime 6, MaxVelocity
   1800, KineticStrength 500, comment "KineticStrength Area = 7600"). It runs
-  straight like the Stanleys and bursts where it goes off (appendix S); the
-  original then flings out rings of shards, Vertigo deals 7600 within 31 m.
+  straight like the Stanleys and bursts into two rings of shards where it
+  goes off (appendix S).
 - `EXPLOSIO.DES`: 0–2 explosion with flash (S/M/L), 3–5 puff, 9–11 sparks,
   12–14 ground impact, 15–17 ECM impact, 18–20 and 24–26 ground dust, 21–23
   torpedo bubble. `DEBRIS.DES`: 0–2 plates, 3 engine, 4–8 small parts, 9–13
@@ -865,15 +865,36 @@ Read off in October 2026. All 22 types share one behaviour, with their
   itself towards the target: each tick the share `Agility` of it points at
   the target. Their wanted speed falls from `MaxVelocity` to the target's
   speed plus 0.4 of `MaxVelocity`. Vertigo takes the ticks at 30 a second.
-  The Hammerhead spins about its axis at 5 rad/s while it flies.
+  (A spin of 5 rad/s about the axis is set aside for the Hammerhead, but in
+  the branch of the ordinary homing types, which the Hammerhead never takes,
+  so it never shows.)
 - Every torpedo's speed across its nose dies away by `OrientationFrictionX`
   and Z per second (it slides in a turn); along the nose there is none. The
   water's currents push it as they push the boats.
 - With the type's `InfluenceProbability` (1, or 0.9 and 0.8 for the Tiger
   Sharks and Man Eaters) a decoy within reach can draw a homing torpedo
   away, once.
+- Every half second a homing torpedo looks whether the ground is between it
+  and its goal (at once after the launch, the agile types once they turn).
+  While it is, it steers round it: over the ground it would hit within its
+  way of 1.5 s plus two hull radii, and climbing steeply (1000 units, 31 m
+  above it) while the ground under its front, half a map cell and 0.75 s
+  ahead, comes within half a hull radius. Vertigo climbs over the ground in
+  the way by that rule but does not walk the map cells as the original does.
 - There is no proximity fuse: a torpedo goes off when it touches the
-  ground, a unit, a piece of debris or a shot (its armour is 1).
+  ground, a unit, a piece of debris or a shot (its armour is 1). The Flash
+  Sharks and Leeches go off on the ground in a large flash (`EXPLOSIO.DES`
+  2) and elsewhere in a large ECM impact (17), sized to 1.6 (Flash Shark I,
+  Leech I), 2 (Flash Shark II, Leech II) or 2.4 (Flash Shark III) times
+  their hull's radius; the Torch in a large flash 0.9 times its radius,
+  leaving its torch; the Cluster Bomb in a large puff (5) 0.9 times its
+  radius and its shards; all others in a medium explosion (1) at its own
+  size.
+- **Cluster Bomb**: where it goes off, six shards (`SHOOT.DES` 7) fly out
+  60° apart and then twelve (`SHOOT.DES` 8) 30° apart starting 15° on, each
+  from a metre out round the burst, level and a little upwards (a fifth of
+  their way); a second later the same again from 6.25 m out, turned by 30°.
+  The shards fly 31 m at 9.4 m/s with a strength of 7600 each.
 - **End of life**: when its `LifeTime` is up, or its target is gone, the
   engine stops and the homing with it. The torpedo sinks at half a g, its
   nose following the way it moves a little below it, and it keeps its way
@@ -882,17 +903,10 @@ Read off in October 2026. All 22 types share one behaviour, with their
 - Bubbles (`EXPLOSIO.DES` 22) trail it every 0.16 s (twice the entry's
   `DisplayTime`), from half a second after the launch, while its engine
   runs.
-- The Torch leaves its burning torch (`DEBRIS.DES` 22) on the ground, which
-  draws torpedoes while it lasts.
+- The Torch leaves its burning torch (`DEBRIS.DES` 22) where it goes off,
+  which draws torpedoes while it lasts.
 - `Range`, `Min/MaxClimbingAngle` and `VelocityIncrease/Decrease` (0 on all
   types) change nothing.
 
-Not followed:
-- Every half second a homing torpedo checks whether the ground is between it
-  and its target and then steers round it; Vertigo's torpedoes don't.
-- Flash, Leech and Torch torpedoes go off in a large flash, the others in a
-  medium one, at sizes Vertigo's effects don't take; Vertigo shows a medium
-  explosion for all.
-- The Cluster Bomb's burst flings out two rings of shards a second apart;
-  Vertigo deals area damage instead (appendix H).
-- The Hammerhead's spin is not shown.
+Vertigo sizes the explosions by the sprites' extent, which may not be the
+size the original measures them by.
