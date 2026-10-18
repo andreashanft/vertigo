@@ -89,6 +89,7 @@ private:
         float time;
         float rate;     // the speed of the animation
         int shield;     // debris: its armour
+        float life;     // debris: how long it lasts, 1 to 1.6 times its LifeTime
     };
 
     struct Batch

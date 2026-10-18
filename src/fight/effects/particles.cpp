@@ -21,6 +21,7 @@
 #include "sfx/samplemap.h"
 #include "fight/scenario.h"
 #include "gfx/texture.h"
+#include "util/random.h"
 
 #include "gfx/gl.hpp"
 #include <glm/gtx/norm.hpp>
@@ -32,8 +33,8 @@ namespace fight {
 
 namespace {
 
-// Lift in DEBRIS.DES is negative (the pieces sink); this turns it into m/s^2
-const float DebrisLiftScale = 4.0f;
+// Lift in DEBRIS.DES is in g and negative (the pieces sink); this turns it into m/s^2
+const float DebrisLiftScale = 9.81f;
 // bubbles disappear this far from the player (squared)
 const float BubbleRange2 = 50.0f*50.0f;
 // dust plays at this fraction of its speed, rising slowly
@@ -75,7 +76,8 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
         return false;
     if (glm::distance2(position, m_scenario->position()) > Range*Range)
         return false;
-    m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate, billboard->kineticShield() });
+    const float life = motion == Motion::Debris ? billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX)) : 0;
+    m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate, billboard->kineticShield(), life });
     return true;
 }
 
@@ -141,7 +143,7 @@ bool Particles::update(Particle &particle, float elapsedTime)
                 return false;
             }
             particle.time += elapsedTime;
-            if (particle.time >= billboard->lifeTime())
+            if (particle.time >= particle.life)
             {
                 if (ends)
                     endDebris(particle, int(Effects::Explosion_5), int(sfx::Sample::Explosion_Small));

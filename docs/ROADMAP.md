@@ -91,7 +91,7 @@ with unresolved conditions checked (G4), the station chosen after a mission
 | O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
 | O2 | `card` on active buildings | S | 51 of 424 carry 2, 4 or 6; buildings turn by `card`·45°. Look at s00401's hydrogen tank 2066 (`card` 6) in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; active mines running into buildings; whether the buzzer's torch is debris that touches things and goes out on the ground; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength); how fast debris sinks |
+| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the cluster burst, the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; active mines running into buildings; whether the buzzer's torch is debris that touches things and goes out on the ground; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -731,7 +731,11 @@ only touches when the faster of the two pairs with the other.
   strength. A shot (armor 1) stops there, and a torpedo (armor 1) goes up
   there. A piece goes out in an explosion and its sound when its armor is
   gone (entry 4, a medium puff), when it touches the ground (entry 12, a
-  ground impact) or when its `LifeTime` is up (entry 5, a large puff).
+  ground impact, as a shot's) or when its time is up (entry 5, a large
+  puff). A piece slows down by its `Friction` (per second, of its speed)
+  and sinks by its `Lift` in g (9.81 m/s²), and lasts 1 to 1.6 times its
+  `LifeTime`, so that nearly every piece flung out of a destroyed boat
+  sinks to the ground and goes out there.
   Resting mines, towers and buildings are never faster, so debris never
   touches them.
 - **Trash** (`TRASH.DES`, armor 1, strength 2 to 5) never moves and has no
@@ -776,8 +780,15 @@ the front and back of its hull. The unit counts as destroyed from the start
 of the sequence. Explosions of entries 0 to 2 sound as big explosions, the
 others as small ones.
 
-The player's boat is then watched from outside, the death view, with "DEATH
-VIEW" (FIGHTEXT 18) at the bottom left of the view and no cockpit. The
+The player's boat is then watched from outside, the death view, without
+the cockpit (read off from the original's screen in October 2026): the
+world fills rows 64 to 415 and columns 23 to 612 of the 640×480 screen, the
+rest of those rows in the water's dark blue; above and below are black bars
+with a grey line in rows 60 and 419. "DEATH VIEW" (FIGHTEXT 18) is at
+column 8, row 405, and the menu at the end has no box, all in the green
+font and centred over the world: "GAME OVER" (FIGHTEXT 58) at row 152, the
+options at rows 172 and 187. Vertigo shows the world in the cockpit view's
+scale (60° over the 480 rows). The
 camera starts in the hull and keeps moving a tenth of a second's worth (a
 factor of 10 per second) towards its place three hull radii out, 45° above
 the hull and circling it at 45° a second, measured in the hull's own frame,
@@ -789,6 +800,9 @@ was destroyed. The original shows other outside views (chase, fly around,
 pass by, look, look at; FIGHTEXT 14–19) that Vertigo doesn't have.
 
 Not compared or not followed:
+- The original's death menu showed the options abort and restart (FIGHTEXT
+  64, 65); whether it adds loading the last game (66) in the campaign is
+  not compared; Vertigo always does.
 - Vertigo stops the hull once it is gone; whether the original's hidden
   hull drifts on (the camera would follow it) is not read.
 - One kind of unit leaves no wreck body; which one is not known.

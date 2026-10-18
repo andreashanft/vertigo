@@ -635,7 +635,6 @@ void Scenario::setBoat(game::Boat *boat)
 void Scenario::setRect(const RectF &rect, const Vector2D &center, float fovY)
 {
     m_projectionMatrix = glm::translate(Vector3D(center, 0)) * glm::perspective(glm::radians(fovY), float(rect.width / rect.height), 0.1f, 500.0f);
-    m_deathProjectionMatrix = glm::perspective(glm::radians(fovY), float(rect.width / rect.height), 0.1f, 500.0f);
     m_projectionMatrixInverted = glm::inverse(m_projectionMatrix);
 }
 
@@ -781,7 +780,7 @@ void Scenario::explosionAt(const Vector3D &position, float strength)
 
 void Scenario::draw()
 {
-    draw(playerDestroyed() ? m_deathProjectionMatrix : m_projectionMatrix, m_cameraMatrix);
+    draw(m_projectionMatrix, m_cameraMatrix);
 }
 
 

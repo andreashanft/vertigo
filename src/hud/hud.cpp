@@ -407,6 +407,7 @@ void HUD::start(fight::Scenario *scenario)
     m_successShown = false;
     m_failureShown = false;
     m_deathTime = -1;
+    m_menu->setOverView(false);
     m_menu->open(MissionMenu::Page::None);
     m_scenario->headMotion().setStrength(headMotion());
     // the CD's audio tracks, as the game data import copies them out of the CD image, at half
@@ -505,6 +506,7 @@ void HUD::updateMissionState()
         if (m_deathTime < 0)
         {
             m_deathTime = m_scenario->time();
+            m_menu->setOverView(true);
             m_menu->notice({ text(13) }, 3.0f);
         }
         // the menu once the destruction sequence is over and the death view has watched the
@@ -731,16 +733,44 @@ void HUD::drawFrame()
 
 
 // The death view (docs/ROADMAP.md, appendix R): the world from outside the boat, without the
-// cockpit and its instruments, "DEATH VIEW" (FIGHTEXT 18) at the bottom left and the menu on top
+// cockpit and its instruments, in rows 64 to 415 and columns 23 to 612 of the view, the rest of
+// those rows in the water's blue, black bars above and below with a grey line in rows 60 and
+// 419, "DEATH VIEW" (FIGHTEXT 18) at the bottom left and the menu over the world
 void HUD::drawDeathView(double pixelRatio)
 {
-    glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
-    m_scenario->draw();
-
-    setupGL(false);
+    const Point topLeft(23, 64), bottomRight(613, 416);
     m_integerScale = true;
+    const Point a = project(topLeft), b = project(bottomRight);
+    // the HUD's integer scale in window pixels
+    const float scale = rect().width*m_integerScaleProjectionMatrix[0][0]/2;
+    const float x0 = rect().x + a.x*scale, x1 = rect().x + b.x*scale;
+    const float y0 = a.y*scale, y1 = b.y*scale;
+    // window rows (from the bottom, in device pixels) of the view's rows
+    auto rowGL = [&](int row) { return int(std::lround((rect().y + rect().height - project(Point(0, row)).y*scale)*pixelRatio)); };
+    auto fill = [](int x, int y, int width, int height, float grey, float blue) {
+        glScissor(x, y, width, height);
+        glClearColor(grey, grey, grey + blue, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
+    };
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_SCISSOR_TEST);
+    const int wide = 1 << 20;
+    fill(0, rowGL(61), wide, rowGL(60) - rowGL(61), 0.3f, 0);
+    fill(0, rowGL(420), wide, rowGL(419) - rowGL(420), 0.3f, 0);
+    fill(0, rowGL(416), wide, rowGL(64) - rowGL(416), 0, 0.15f);
+    const int left = int(std::lround(x0*pixelRatio)), width = int(std::lround((x1 - x0)*pixelRatio));
+    glScissor(left, rowGL(416), width, rowGL(64) - rowGL(416));
+    glViewport(left, rowGL(416), width, rowGL(64) - rowGL(416));
+    // the cockpit view's scale (60° over the 480 rows), cut to the picture
+    const float fovY = 2*std::atan(std::tan(glm::radians(30.0f))*(bottomRight.y - topLeft.y)/480);
+    m_scenario->draw(glm::perspective(fovY, (x1 - x0)/(y1 - y0), 0.1f, 500.0f), m_scenario->cameraMatrix());
+    glDisable(GL_SCISSOR_TEST);
+
+    glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
+    setupGL(false);
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
-    fontGreen().draw(txt::StringTable::get(txt::StringFight(18)), project(Point(8, 470)));
+    fontGreen().draw(txt::StringTable::get(txt::StringFight(18)), project(Point(8, 405)));
     m_menu->doDraw();
     m_integerScale = false;
 

@@ -267,7 +267,6 @@ private:
     float m_deathYaw = 0;
     float m_deathPitch = 0;
     float m_deathDistance = 0;
-    Matrix m_deathProjectionMatrix;    // centred on the view, without the cockpit's offset
     float m_dimming = 1;
 
     float m_left;

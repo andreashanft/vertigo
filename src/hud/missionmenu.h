@@ -59,7 +59,7 @@ public:
     // the master monitor's rect (in the 640x480 art)
     void setScreen(const Rect &rect) { m_screen = rect; }
     // whether the master monitor shows a menu now, and drawing it there
-    bool onScreen() const { return m_page != Page::None && m_screen.width > 0; }
+    bool onScreen() const { return m_page != Page::None && m_screen.width > 0 && !m_overView; }
     void drawOnScreen();
     // the autopilot's destinations (up to 9), and after Action::Autopilot the one chosen (a
     // single one is chosen from the start: the autopilot goes there without a menu)
@@ -76,6 +76,9 @@ public:
     // a tap: the option at this point (in the coordinates the menu is drawn in), or -1, and taking it
     int optionAt(const Point &point) const;
     Action choose(int option);
+    // the death view: the menu and the notices over the world, without the box (docs/ROADMAP.md,
+    // appendix R)
+    void setOverView(bool overView) { m_overView = overView; }
     // shows the lines for a few seconds while no menu is open
     void notice(const StringList &lines, float seconds);
 
@@ -109,6 +112,7 @@ private:
     // the option highlighted for a game controller, while it is used
     bool m_highlight = false;
     int m_selected = 0;
+    bool m_overView = false;
     StringList m_notice;
     unsigned int m_noticeEnd;
 
