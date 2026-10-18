@@ -215,44 +215,54 @@ void Particles::draw()
     const Vector3D eye = m_scenario->position();
     const Vector3D forward = -camera[2];
 
-    for (Batch &batch : m_batches)
-        batch.vertices.clear();
+    // culled beyond the fog and behind the camera, the rest from the farthest to the nearest
+    m_order.clear();
     for (const Particle &particle : m_particles)
     {
-        // culled beyond the fog and behind the camera
         const Vector3D way = particle.position - eye;
         const float distance2 = glm::length2(way);
         if (distance2 > Range*Range || (glm::dot(way, forward) < 0 && distance2 > 100.0f))
             continue;
+        m_order.emplace_back(distance2, &particle);
+    }
+    std::sort(m_order.begin(), m_order.end(), [](const auto &a, const auto &b) { return a.first > b.first; });
+
+    // in that order, a batch for each run of the same texture
+    std::size_t batches = 0;
+    for (const auto &entry : m_order)
+    {
+        const Particle &particle = *entry.second;
         Vector3D corners[4];
         const Vector2D *texCoords;
         gfx::Texture *texture;
         particle.billboard->quad(particle.position, particle.angle, particle.scale, particle.time, camera, corners, texCoords, texture);
         const bool blendColor = particle.billboard->blendColor();
-        auto batch = std::find_if(m_batches.begin(), m_batches.end(), [&](const Batch &batch) {
-            return batch.texture->id() == texture->id() && batch.blendColor == blendColor;
-        });
-        if (batch == m_batches.end())
+        if (batches == 0 || m_batches[batches - 1].texture->id() != texture->id() || m_batches[batches - 1].blendColor != blendColor)
         {
-            m_batches.push_back(Batch{ texture, blendColor, {} });
-            batch = m_batches.end() - 1;
+            if (batches == m_batches.size())
+                m_batches.emplace_back();
+            m_batches[batches].texture = texture;
+            m_batches[batches].blendColor = blendColor;
+            m_batches[batches].vertices.clear();
+            batches++;
         }
         for (int i = 0; i < 4; i++)
-            batch->vertices.push_back({ corners[i], texCoords[i] });
+            m_batches[batches - 1].vertices.push_back({ corners[i], texCoords[i] });
     }
 
+    // the sprites leave the depth buffer alone: the soft edges the filtering gives them only add
+    // to what is behind them and don't hide the sprites further back, which come first
     gfx::Pipeline::setAlphaTest(true);
-    for (Batch &batch : m_batches)
+    glDepthMask(GL_FALSE);
+    for (std::size_t i = 0; i < batches; i++)
     {
-        if (batch.vertices.empty())
-            continue;
-        if (batch.blendColor)
-            glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
+        const Batch &batch = m_batches[i];
+        glBlendFunc(batch.blendColor ? GL_SRC_COLOR : GL_SRC_ALPHA, batch.blendColor ? GL_ONE_MINUS_SRC_COLOR : GL_ONE_MINUS_SRC_ALPHA);
         batch.texture->bind();
         gfx::Pipeline::drawQuads(batch.vertices.data(), int(batch.vertices.size()));
-        if (batch.blendColor)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_TRUE);
     gfx::Pipeline::setAlphaTest(false);
 }
 

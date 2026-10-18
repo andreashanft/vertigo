@@ -35,9 +35,9 @@ class Scenario;
 
 
 // Lightweight sprites: explosions, debris, bubbles, torpedo trails and dust. They live in one pool
-// with a fixed size and are drawn in batches, one per texture. Ambient particles (bubbles, dust)
-// only take the first three quarters of the pool, so they never crowd out explosions. Particles
-// beyond the fog are neither spawned nor drawn.
+// with a fixed size and are drawn from the farthest to the nearest, in batches of the same
+// texture. Ambient particles (bubbles, dust) only take the first three quarters of the pool, so
+// they never crowd out explosions. Particles beyond the fog are neither spawned nor drawn.
 class Particles
 {
 public:
@@ -109,6 +109,7 @@ private:
 private:
     Scenario *m_scenario;
     std::vector<Particle> m_particles;
+    std::vector<std::pair<float, const Particle *>> m_order;  // the ones drawn, by distance squared
     std::vector<Batch> m_batches;  // kept between frames to reuse their memory
     struct Ending
     {
