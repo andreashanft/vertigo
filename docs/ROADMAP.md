@@ -458,7 +458,7 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
 - **Paralysis**: a boat whose energy defence collapses (a Flash Shark or a
   Leech) shows "ist paralysiert" and starts turning about its three axes at
   random rates of up to 0.227 rad/s each, without explosions or debris; the
-  hit itself shows only the torpedo's blue flash. After 5 s it has lost its
+  hit itself shows only the torpedo's blue flash. After 3 s it has lost its
   way and stops turning, and then hangs still where it is, neither sinking
   nor going away (watched for a minute on a pirate bomber in s00601), so it
   can still be boarded, identified or destroyed; destroying it starts the destruction

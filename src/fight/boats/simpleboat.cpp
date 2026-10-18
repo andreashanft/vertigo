@@ -41,8 +41,8 @@ namespace fight {
 // a paralysed boat (docs/ROADMAP.md, appendix J): the most it turns about each axis (rad/s), how
 // long it turns and coasts and how fast its way runs out meanwhile (1/s)
 const float ParalysedSpin = 0.227f;
-const float ParalysedCoast = 5.0f;
-const float ParalysedBrake = 1.0f;
+const float ParalysedCoast = 3.0f;
+const float ParalysedBrake = 1.5f;
 
 
 SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float yaw) :
@@ -326,7 +326,7 @@ void SimpleBoat::updateVelocity(float elapsedTime)
 
 
 // the drift after an energy defence's collapse (docs/ROADMAP.md, appendix J): the boat turns
-// about its three axes at random rates up to 0.227 rad/s and loses its way for 5 s, then stays
+// about its three axes at random rates up to 0.227 rad/s and loses its way for 3 s, then stays
 // still where it is, to be boarded or finished off
 bool SimpleBoat::startTumbling()
 {
