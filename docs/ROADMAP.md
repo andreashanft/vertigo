@@ -35,7 +35,7 @@ ships are built from their blocks with turrets on the hull, take hits as a
 whole and blow up block by block. Enemy guns use the object files' muzzles
 and volleys; 22 torpedo types with magazines, lock, homing, decoys and
 torpedo towers; the cluster torpedo bursts into rings of shards. Difficulty from
-the main menu limits which units appear (`diff`) and how many attack the
+the options limits which units appear (`diff`) and how many attack the
 player at once.
 
 **Currents (phase 2).** The `[CurrentNNNN]` cells push the player and AI
