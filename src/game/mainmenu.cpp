@@ -82,7 +82,7 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
 
     m_lblVersion.setFont(fontSmall);
     m_lblVersion.setPosition(2, 2);
-    m_lblVersion.setText("Vertigo 0.1");
+    m_lblVersion.setText("Vertigo " VERTIGO_VERSION);
     m_lblBar1.setTexture(texBar);
     m_lblBar1.setPosition(140, 256);
     m_lblBar2.setTexture(texBar);

@@ -22,6 +22,7 @@
 #include "sound.h"
 #include <map>
 #include <cassert>
+#include <cstdint>
 #include <vector>
 
 
