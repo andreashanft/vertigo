@@ -341,13 +341,23 @@ if(GIT_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.git)
     execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --format=%h%x20%cd --date=format:%d/%m/%Y
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         OUTPUT_VARIABLE VERTIGO_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-    # configure again after a commit or a branch switch
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/.git/HEAD)
-    file(READ ${PROJECT_SOURCE_DIR}/.git/HEAD VERTIGO_GIT_HEAD)
-    if(VERTIGO_GIT_HEAD MATCHES "^ref: (.*)")
-        string(STRIP "${CMAKE_MATCH_1}" VERTIGO_GIT_REF)
-        if(EXISTS ${PROJECT_SOURCE_DIR}/.git/${VERTIGO_GIT_REF})
-            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/.git/${VERTIGO_GIT_REF})
+    # configure again after a commit or a branch switch (in a worktree .git is a file naming the
+    # worktree's own directory, and the branches live in the common one)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir --path-format=absolute --git-common-dir
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE VERTIGO_GIT_DIRS OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    string(REPLACE "\n" ";" VERTIGO_GIT_DIRS "${VERTIGO_GIT_DIRS}")
+    list(LENGTH VERTIGO_GIT_DIRS VERTIGO_GIT_DIR_COUNT)
+    if(VERTIGO_GIT_DIR_COUNT EQUAL 2)
+        list(GET VERTIGO_GIT_DIRS 0 VERTIGO_GIT_DIR)
+        list(GET VERTIGO_GIT_DIRS 1 VERTIGO_GIT_COMMON_DIR)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${VERTIGO_GIT_DIR}/HEAD)
+        file(READ ${VERTIGO_GIT_DIR}/HEAD VERTIGO_GIT_HEAD)
+        if(VERTIGO_GIT_HEAD MATCHES "^ref: (.*)")
+            string(STRIP "${CMAKE_MATCH_1}" VERTIGO_GIT_REF)
+            if(EXISTS ${VERTIGO_GIT_COMMON_DIR}/${VERTIGO_GIT_REF})
+                set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${VERTIGO_GIT_COMMON_DIR}/${VERTIGO_GIT_REF})
+            endif()
         endif()
     endif()
 endif()

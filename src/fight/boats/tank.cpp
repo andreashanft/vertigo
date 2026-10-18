@@ -168,10 +168,10 @@ bool Tank::update(float elapsedTime)
     stirUpDust(elapsedTime);
     if (m_unitGun)
     {
-        // the muzzles turn with the turret around its pivot
+        // the muzzles ([StaticGun] Relative*) sit on the gun module, as a tower's on its turret:
+        // they turn with it around its pivot, which the turret aims from
         const glm::mat3 frame = m_orientationInverted*turretRotation();
-        const Vector3D pivot = m_pivot*m_scale;
-        const Vector3D origin = m_position + m_orientationInverted*pivot - frame*pivot;
+        const Vector3D origin = m_position + m_orientationInverted*(m_pivot*m_scale);
         m_unitGun->update(elapsedTime, m_trigger, origin, frame[1], frame[2], frame[0]);
     }
 

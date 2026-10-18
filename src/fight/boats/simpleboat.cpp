@@ -118,13 +118,28 @@ SimpleBoat::~SimpleBoat()
 
 void SimpleBoat::steerTo(const Vector3D &point, float speed)
 {
+    steer(point, speed, 40.0f);
+}
+
+
+// the nose to the point's own direction, the pitch to its true elevation (docs/ROADMAP.md, appendix
+// J): the guns fire along the nose
+void SimpleBoat::pointAt(const Vector3D &point, float speed)
+{
+    steer(point, speed, glm::length(Vector2D(point - m_position)));
+}
+
+
+// the pitch makes for the point's height over this horizontal way
+void SimpleBoat::steer(const Vector3D &point, float speed, float reach)
+{
     const Vector3D way = point - m_position;
     const Vector3D local = m_orientation*way;
 
     // positive turns to the right (yaw) and pitch the nose down
     const float yawError = std::atan2(local.x, local.y);
     const float pitch = std::asin(glm::clamp(dir().z, -1.0f, 1.0f));
-    const float targetPitch = glm::clamp(std::atan2(way.z, 40.0f), -m_minClimbingAngle, m_maxClimbingAngle);
+    const float targetPitch = glm::clamp(std::atan2(way.z, reach), -m_minClimbingAngle, m_maxClimbingAngle);
     m_turnVelocity = Vector3D(glm::clamp(2.0f*(pitch - targetPitch), -1.0f, 1.0f), 0, glm::clamp(1.5f*yawError, -1.0f, 1.0f));
 
     // slow down while turning towards a point to the side or behind
