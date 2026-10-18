@@ -39,7 +39,7 @@ namespace fight {
 
 
 // a paralysed boat (docs/ROADMAP.md, appendix J): the most it turns about each axis (rad/s), how
-// long it coasts and how fast its way runs out meanwhile (1/s)
+// long it turns and coasts and how fast its way runs out meanwhile (1/s)
 const float ParalysedSpin = 0.227f;
 const float ParalysedCoast = 5.0f;
 const float ParalysedBrake = 1.0f;
@@ -326,8 +326,8 @@ void SimpleBoat::updateVelocity(float elapsedTime)
 
 
 // the drift after an energy defence's collapse (docs/ROADMAP.md, appendix J): the boat turns
-// about its three axes at random rates up to 0.227 rad/s for good, loses its way within 5 s and
-// stays where it is, to be boarded or finished off
+// about its three axes at random rates up to 0.227 rad/s and loses its way for 5 s, then stays
+// still where it is, to be boarded or finished off
 bool SimpleBoat::startTumbling()
 {
     if (this == m_scenario->player() || isGroundVehicle())
@@ -344,17 +344,17 @@ bool SimpleBoat::startTumbling()
 
 void SimpleBoat::updateTumble(float elapsedTime)
 {
+    // the boat turns and its way runs out, and then it hangs still in the water
+    if (m_scenario->time() >= m_tumbleEnd)
+    {
+        m_velocity = Vector3D(0);
+        return;
+    }
     m_orientation *= glm::mat3(glm::rotate(m_spin.x*elapsedTime, Vector3D(1, 0, 0))) * glm::mat3(glm::rotate(m_spin.y*elapsedTime, Vector3D(0, 1, 0)))
                    * glm::mat3(glm::rotate(m_spin.z*elapsedTime, Vector3D(0, 0, 1)));
     m_orientationInverted = glm::transpose(m_orientation);
-    // the way runs out, and then the boat hangs in the water
-    if (m_scenario->time() < m_tumbleEnd)
-    {
-        m_velocity *= std::exp(-ParalysedBrake*elapsedTime);
-        move(m_velocity*elapsedTime);
-    }
-    else
-        m_velocity = Vector3D(0);
+    m_velocity *= std::exp(-ParalysedBrake*elapsedTime);
+    move(m_velocity*elapsedTime);
 }
 
 

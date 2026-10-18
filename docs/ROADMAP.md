@@ -458,10 +458,10 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
 - **Paralysis**: a boat whose energy defence collapses (a Flash Shark or a
   Leech) shows "ist paralysiert" and starts turning about its three axes at
   random rates of up to 0.227 rad/s each, without explosions or debris; the
-  hit itself shows only the torpedo's blue flash. It loses its way within
-  5 s and then hangs where it is, turning on, neither sinking nor going away
-  (watched for a minute on a pirate bomber in s00601), so it can still be
-  boarded, identified or destroyed; destroying it starts the destruction
+  hit itself shows only the torpedo's blue flash. After 5 s it has lost its
+  way and stops turning, and then hangs still where it is, neither sinking
+  nor going away (watched for a minute on a pirate bomber in s00601), so it
+  can still be boarded, identified or destroyed; destroying it starts the destruction
   sequence (appendix R). Vertigo does the same for boats; tanks and towers
   still blow up, their paralysis is not read.
 - **Order slots** end in two ways: the break condition is checked every

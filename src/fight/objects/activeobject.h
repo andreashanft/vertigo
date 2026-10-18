@@ -118,8 +118,8 @@ public:
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
-    // an energy defence that has collapsed: a boat drifts helplessly with a slow spin, without
-    // explosions, and stays (anything else blows up and is gone); as its armour was never taken
+    // an energy defence that has collapsed: a boat drifts helplessly with a slow spin for a few
+    // seconds, without explosions, and stays (anything else blows up and is gone); as its armour was never taken
     // down, it doesn't count as destroyed for the mission's conditions (docs/ROADMAP.md, appendix J)
     void explode();
     // an Explode order: the destruction sequence (a boat, docs/ROADMAP.md, appendix R; anything
