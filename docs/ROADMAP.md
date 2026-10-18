@@ -326,9 +326,11 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   events ("<name> wurde angegriffen / zerstört / identifiziert /
   paralysiert / infiltriert", "ist angekommen", FIGHTEXT 5–10) in amber.
   An event is logged only for a unit with a name, when the mission uses
-  that event for it (something depends on it) and its count is reached;
-  the mission's end lines (FIGHTEXT 11–13) are logged the same way (not in
-  Vertigo yet). Whether the original also shows the events as they happen
+  that event for it (something depends on it) and its count is reached.
+  The mission's end lines (FIGHTEXT 11–13) go through the same rule without
+  a unit, so they are not logged in normal play; only a hidden switch that
+  logs every event (a Ctrl key combination) logs them, and Vertigo has no
+  such switch. Whether the original also shows the events as they happen
   is not compared.
 - B lays the mission's briefing over the view in the same box, titled
   FIGHTEXT 24 with FIGHTEXT 23 as the footer; B or Enter turns its two
