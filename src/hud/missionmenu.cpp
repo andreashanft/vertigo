@@ -304,11 +304,16 @@ Rect MissionMenu::layout(const std::vector<Line> &lines, std::vector<Rect> &plac
     int lineHeight = fontHeight + 4;
     Rect rect;
     if (onScreen()) {
-        // in the middle of the monitor, closer together, so that nine destinations fit
-        const int room = m_screen.height - 8 - gaps;
+        // in the middle of the monitor, closer together, so that nine destinations fit (on the
+        // screen, as the font is: the monitor's corners projected)
+        const Point topLeft = m_hud->project(m_screen.pos());
+        const Point bottomRight = m_hud->project(m_screen.pos() + m_screen.size());
+        const Rect screen(topLeft, bottomRight - topLeft);
+        const int margin = (bottomRight.y - topLeft.y)*4/std::max(m_screen.height, 1);
+        const int room = screen.height - 2*margin - gaps;
         lineHeight = std::max(fontHeight, std::min(fontHeight + 2, room/std::max(int(lines.size()), 1)));
         const int height = int(lines.size())*lineHeight + gaps;
-        rect = Rect(m_hud->project(m_screen.pos() + Point(0, std::max(4, (m_screen.height - height)/2))), Point(m_screen.width, height));
+        rect = Rect(screen.x, screen.y + std::max(margin, (screen.height - height)/2), screen.width, height);
     } else {
         const int height = int(lines.size())*lineHeight + gaps + 8;
         rect = m_hud->projectCenter(Rect(m_center.x - BoxWidth/2, m_center.y - height/2, BoxWidth, height));
