@@ -1,415 +1,271 @@
 s00101: 49 objects
   20x unread key: movable#/ai
   4x unread key: movable#/card
-  20x unread key: movable#/eng
   22x unread key: movable#/pz
-  29x unread key: movable#/sle
 s00102: 54 objects
   22x unread key: movable#/ai
   4x unread key: movable#/card
-  22x unread key: movable#/eng
   23x unread key: movable#/pz
-  26x unread key: movable#/sle
 s00103: 28 objects
   9x unread key: movable#/ai
   2x unread key: movable#/card
-  9x unread key: movable#/eng
   17x unread key: movable#/pz
-  11x unread key: movable#/sle
 s00104: 44 objects
   21x unread key: movable#/ai
   2x unread key: movable#/card
-  21x unread key: movable#/eng
   18x unread key: movable#/pz
-  24x unread key: movable#/sle
 s00105: 1 objects
   1x unread key: movable#/ai
-  1x unread key: movable#/eng
-  1x unread key: movable#/sle
 s00106: 27 objects
   8x unread key: movable#/ai
   2x unread key: movable#/card
-  8x unread key: movable#/eng
   17x unread key: movable#/pz
-  10x unread key: movable#/sle
 s00201: 91 objects
   16x unread key: movable#/ai
-  16x unread key: movable#/eng
   4x unread key: movable#/pz
-  30x unread key: movable#/sle
 s00202: 104 objects
   19x unread key: movable#/ai
   4x unread key: movable#/card
-  19x unread key: movable#/eng
   79x unread key: movable#/pz
-  23x unread key: movable#/sle
 s00203: 264 objects
   12x unread key: movable#/ai
-  12x unread key: movable#/eng
   4x unread key: movable#/pz
-  77x unread key: movable#/sle
 s00204: 21 objects
   11x unread key: movable#/ai
-  11x unread key: movable#/eng
   9x unread key: movable#/pz
-  11x unread key: movable#/sle
 s00205: 14 objects
   7x unread key: movable#/ai
   2x unread key: movable#/card
-  7x unread key: movable#/eng
   5x unread key: movable#/pz
-  9x unread key: movable#/sle
 s00301: 94 objects
   37x unread key: movable#/ai
   11x unread key: movable#/card
-  37x unread key: movable#/eng
   6x unread key: movable#/pz
-  66x unread key: movable#/sle
 s00302: 10 objects
   9x unread key: movable#/ai
-  9x unread key: movable#/eng
-  9x unread key: movable#/sle
 s00303: 15 objects
   9x unread key: movable#/ai
-  9x unread key: movable#/eng
   5x unread key: movable#/pz
-  9x unread key: movable#/sle
 s00304: 6 objects
   5x unread key: movable#/ai
-  5x unread key: movable#/eng
-  11x unread key: movable#/sle
 s00401: 197 objects
   33x unread key: movable#/ai
   14x unread key: movable#/card
-  33x unread key: movable#/eng
   14x unread key: movable#/pz
-  181x unread key: movable#/sle
 s00402: 44 objects
   1x condition: Empty faction 1
   15x unread key: movable#/ai
-  15x unread key: movable#/eng
   28x unread key: movable#/pz
-  15x unread key: movable#/sle
 s00403: 39 objects
   19x unread key: movable#/ai
   5x unread key: movable#/card
-  19x unread key: movable#/eng
   14x unread key: movable#/pz
-  24x unread key: movable#/sle
 s00404: 57 objects
   8x condition: No unit has objective 4 (achieved)
   33x unread key: movable#/ai
   4x unread key: movable#/card
-  33x unread key: movable#/eng
   17x unread key: movable#/pz
-  37x unread key: movable#/sle
 s00405: 180 objects
   43x unread key: movable#/ai
   5x unread key: movable#/card
-  43x unread key: movable#/eng
-  231x unread key: movable#/sle
 s00406: 178 objects
   36x unread key: movable#/ai
   11x unread key: movable#/card
-  36x unread key: movable#/eng
   75x unread key: movable#/pz
-  100x unread key: movable#/sle
 s00601: 18 objects
   15x unread key: movable#/ai
-  15x unread key: movable#/eng
-  16x unread key: movable#/sle
 s00701: 25 objects
   18x unread key: movable#/ai
   3x unread key: movable#/card
-  18x unread key: movable#/eng
   2x unread key: movable#/pz
-  22x unread key: movable#/sle
 s00702: 22 objects
   16x unread key: movable#/ai
   3x unread key: movable#/card
-  16x unread key: movable#/eng
   2x unread key: movable#/pz
-  23x unread key: movable#/sle
 s00703: 21 objects
   15x unread key: movable#/ai
   3x unread key: movable#/card
-  15x unread key: movable#/eng
   2x unread key: movable#/pz
-  19x unread key: movable#/sle
 s00704: 113 objects
   40x unread key: movable#/ai
   3x unread key: movable#/card
-  40x unread key: movable#/eng
   34x unread key: movable#/pz
-  74x unread key: movable#/sle
 s00705: 21 objects
   16x unread key: movable#/ai
   3x unread key: movable#/card
-  16x unread key: movable#/eng
   2x unread key: movable#/pz
-  20x unread key: movable#/sle
 s00706: 38 objects
   32x unread key: movable#/ai
-  32x unread key: movable#/eng
-  33x unread key: movable#/sle
 s00902: 75 objects
   14x unread key: movable#/ai
   5x unread key: movable#/card
-  14x unread key: movable#/eng
   17x unread key: movable#/pz
-  58x unread key: movable#/sle
 s00903: 75 objects
   12x unread key: movable#/ai
   5x unread key: movable#/card
-  12x unread key: movable#/eng
   17x unread key: movable#/pz
-  57x unread key: movable#/sle
 s01001: 27 objects
   19x unread key: movable#/ai
   1x unread key: movable#/card
-  19x unread key: movable#/eng
   1x unread key: movable#/pz
-  22x unread key: movable#/sle
 s01002: 8 objects
   7x unread key: movable#/ai
-  7x unread key: movable#/eng
-  8x unread key: movable#/sle
 s01101: 13 objects
   8x unread key: movable#/ai
   1x unread key: movable#/card
-  8x unread key: movable#/eng
-  10x unread key: movable#/sle
 s01201: 62 objects
   34x unread key: movable#/ai
   2x unread key: movable#/card
-  34x unread key: movable#/eng
   23x unread key: movable#/pz
-  42x unread key: movable#/sle
 s01202: 22 objects
   11x unread key: movable#/ai
   6x unread key: movable#/card
-  11x unread key: movable#/eng
   5x unread key: movable#/pz
-  20x unread key: movable#/sle
 s01203: 75 objects
   21x unread key: movable#/ai
   21x unread key: movable#/card
-  21x unread key: movable#/eng
   30x unread key: movable#/pz
-  44x unread key: movable#/sle
 s01301: 84 objects
   25x unread key: movable#/ai
   5x unread key: movable#/card
-  25x unread key: movable#/eng
   15x unread key: movable#/pz
-  67x unread key: movable#/sle
 s01302: 43 objects
   23x unread key: movable#/ai
   5x unread key: movable#/card
-  23x unread key: movable#/eng
   9x unread key: movable#/pz
-  33x unread key: movable#/sle
 s01303: 55 objects
   33x unread key: movable#/ai
   5x unread key: movable#/card
-  33x unread key: movable#/eng
   9x unread key: movable#/pz
-  43x unread key: movable#/sle
 s01304: 74 objects
   26x unread key: movable#/ai
   5x unread key: movable#/card
-  26x unread key: movable#/eng
   9x unread key: movable#/pz
-  64x unread key: movable#/sle
 s01305: 36 objects
   19x unread key: movable#/ai
   5x unread key: movable#/card
-  19x unread key: movable#/eng
   9x unread key: movable#/pz
-  25x unread key: movable#/sle
 s01306: 124 objects
   38x unread key: movable#/ai
   4x unread key: movable#/card
-  38x unread key: movable#/eng
   18x unread key: movable#/pz
-  115x unread key: movable#/sle
 s01307: 27 objects
   7x unread key: movable#/ai
   4x unread key: movable#/card
-  7x unread key: movable#/eng
   14x unread key: movable#/pz
-  12x unread key: movable#/sle
 s01308: 6 objects
   5x unread key: movable#/ai
   1x unread key: movable#/card
-  5x unread key: movable#/eng
-  6x unread key: movable#/sle
 s01501: 66 objects
   50x unread key: movable#/ai
-  50x unread key: movable#/eng
   14x unread key: movable#/pz
-  51x unread key: movable#/sle
 s01601: 26 objects
   16x unread key: movable#/ai
   5x unread key: movable#/card
-  16x unread key: movable#/eng
   2x unread key: movable#/pz
-  22x unread key: movable#/sle
 s01602: 92 objects
   49x unread key: movable#/ai
   4x unread key: movable#/card
-  49x unread key: movable#/eng
   33x unread key: movable#/pz
-  56x unread key: movable#/sle
 s01701: 41 objects
   31x unread key: movable#/ai
   4x unread key: movable#/card
-  31x unread key: movable#/eng
   2x unread key: movable#/pz
-  37x unread key: movable#/sle
 s01702: 43 objects
   34x unread key: movable#/ai
   4x unread key: movable#/card
-  34x unread key: movable#/eng
   2x unread key: movable#/pz
-  39x unread key: movable#/sle
 s01801: 170 objects
   41x unread key: movable#/ai
   30x unread key: movable#/card
-  41x unread key: movable#/eng
   39x unread key: movable#/pz
-  104x unread key: movable#/sle
 s01802: 181 objects
   2x condition: No unit has objective 9 (achieved)
   55x unread key: movable#/ai
   30x unread key: movable#/card
-  55x unread key: movable#/eng
   38x unread key: movable#/pz
-  117x unread key: movable#/sle
 s01803: 128 objects
   33x unread key: movable#/ai
   30x unread key: movable#/card
-  33x unread key: movable#/eng
   38x unread key: movable#/pz
-  79x unread key: movable#/sle
 s01804: 132 objects
   36x unread key: movable#/ai
   30x unread key: movable#/card
-  36x unread key: movable#/eng
   38x unread key: movable#/pz
-  82x unread key: movable#/sle
 s01805: 51 objects
   26x unread key: movable#/ai
   11x unread key: movable#/card
-  26x unread key: movable#/eng
   11x unread key: movable#/pz
-  38x unread key: movable#/sle
 s01806: 39 objects
   18x unread key: movable#/ai
   3x unread key: movable#/card
-  18x unread key: movable#/eng
   17x unread key: movable#/pz
-  21x unread key: movable#/sle
 s02001: 46 objects
   3x unread key: movable#/ai
   6x unread key: movable#/card
-  3x unread key: movable#/eng
   37x unread key: movable#/pz
-  9x unread key: movable#/sle
 s02002: 27 objects
   14x unread key: movable#/ai
   3x unread key: movable#/card
-  14x unread key: movable#/eng
   4x unread key: movable#/pz
-  25x unread key: movable#/sle
 s02003: 50 objects
   1x condition: No unit has objective 13 (achieved)
   1x condition: No unit has objective 15 (achieved)
   12x unread key: movable#/ai
   11x unread key: movable#/card
-  12x unread key: movable#/eng
   26x unread key: movable#/pz
-  23x unread key: movable#/sle
 s02004: 62 objects
   10x unread key: movable#/ai
   12x unread key: movable#/card
-  10x unread key: movable#/eng
   37x unread key: movable#/pz
-  23x unread key: movable#/sle
 s02005: 63 objects
   17x unread key: movable#/ai
   7x unread key: movable#/card
-  17x unread key: movable#/eng
   37x unread key: movable#/pz
-  24x unread key: movable#/sle
 s02006: 62 objects
   1x condition: No unit has objective 7 (failed)
   16x unread key: movable#/ai
   7x unread key: movable#/card
-  16x unread key: movable#/eng
   37x unread key: movable#/pz
-  23x unread key: movable#/sle
 s02007: 71 objects
   26x unread key: movable#/ai
   6x unread key: movable#/card
-  26x unread key: movable#/eng
   37x unread key: movable#/pz
-  33x unread key: movable#/sle
 s02201: 133 objects
   55x unread key: movable#/ai
   19x unread key: movable#/card
-  55x unread key: movable#/eng
   55x unread key: movable#/pz
-  77x unread key: movable#/sle
 s02202: 150 objects
   82x unread key: movable#/ai
   12x unread key: movable#/card
-  82x unread key: movable#/eng
   49x unread key: movable#/pz
-  118x unread key: movable#/sle
 s02203: 141 objects
   67x unread key: movable#/ai
   16x unread key: movable#/card
-  67x unread key: movable#/eng
   55x unread key: movable#/pz
-  94x unread key: movable#/sle
 s02204: 95 objects
   40x unread key: movable#/ai
   4x unread key: movable#/card
-  40x unread key: movable#/eng
   46x unread key: movable#/pz
-  65x unread key: movable#/sle
 s02205: 190 objects
   55x unread key: movable#/ai
   4x unread key: movable#/card
-  55x unread key: movable#/eng
   76x unread key: movable#/pz
-  89x unread key: movable#/sle
 strai0: 129 objects
   45x unread key: movable#/ai
-  45x unread key: movable#/eng
   84x unread key: movable#/pz
-  45x unread key: movable#/sle
 strai1: 197 objects
   48x unread key: movable#/ai
-  48x unread key: movable#/eng
   148x unread key: movable#/pz
-  48x unread key: movable#/sle
 strai2: 140 objects
   48x unread key: movable#/ai
-  48x unread key: movable#/eng
-  138x unread key: movable#/sle
 strai3: 282 objects
   83x unread key: movable#/ai
   6x unread key: movable#/card
-  83x unread key: movable#/eng
   97x unread key: movable#/pz
-  126x unread key: movable#/sle
 
 Total: 71 missions, 5388 objects
-  3373x unread key: movable#/sle
   1849x unread key: movable#/ai
-  1849x unread key: movable#/eng
   1634x unread key: movable#/pz
   424x unread key: movable#/card
   12x condition: No unit has objective # (achieved)

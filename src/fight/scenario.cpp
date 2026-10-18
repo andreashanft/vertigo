@@ -496,6 +496,8 @@ Scenario::Scenario(const String &name) :
                 const bool moves = dynamic_cast<SimpleBoat *>(unit) != nullptr;
                 for (const OrderSlot &slot : orderSlots)
                 {
+                    if (slot.type == OrderSlot::None)
+                        continue;
                     const bool forAll = slot.type == OrderSlot::Wait || slot.type == OrderSlot::CardinalPatrol ||
                                         slot.type == OrderSlot::CardinalAttack || slot.type == OrderSlot::Explode;
                     if (!OrderSlot::isImplemented(slot.type))
@@ -575,8 +577,10 @@ Scenario::Scenario(const String &name) :
 
     for (auto &pending : pendingOrders)
     {
+        // an empty slot never runs, so its break condition (some name objectives no unit has) is never set up
         for (OrderSlot &slot : pending.second)
-            slot.breakCondition = m_conditionManager.addBreakCondition(slot.cond1, slot.dep1, slot.ref1, slot.op, slot.cond2, slot.dep2, slot.ref2, slot.del);
+            if (slot.type != OrderSlot::None)
+                slot.breakCondition = m_conditionManager.addBreakCondition(slot.cond1, slot.dep1, slot.ref1, slot.op, slot.cond2, slot.dep2, slot.ref2, slot.del);
         pending.first->setOrders(new Orders(this, pending.first, pending.second));
     }
 
