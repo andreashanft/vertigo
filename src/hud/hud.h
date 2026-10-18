@@ -246,6 +246,7 @@ private:
 
     bool m_paused;
     bool m_frozen;          // mission time and sounds stopped (pause or menu)
+    float m_dimming = 1;    // the pause's fade: 1 normally, 0 when paused
     sfx::Music m_music;     // the mission's CD track
     bool m_successShown;
     bool m_failureShown;

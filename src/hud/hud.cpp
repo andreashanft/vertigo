@@ -403,6 +403,7 @@ void HUD::start(fight::Scenario *scenario)
     m_navPoint = -1;
     m_paused = false;
     m_frozen = false;
+    m_dimming = 1;
     m_successShown = false;
     m_failureShown = false;
     m_deathTime = -1;
@@ -439,7 +440,12 @@ void HUD::step(float elapsedTime)
 
     // (also in a pause)
     m_touch->update(elapsedTime);
-    setFrozen(m_paused || m_menu->pauses());
+    // P fades the world into the water's dark blue in half a second, the mission going on until it
+    // is dark, and back in as the mission goes on again (docs/ROADMAP.md, appendix E)
+    const float pauseFade = 0.5f;
+    m_dimming = glm::clamp(m_dimming + (m_paused ? -elapsedTime : elapsedTime)/pauseFade, 0.0f, 1.0f);
+    m_scenario->setDimming(m_dimming);
+    setFrozen((m_paused && m_dimming <= 0) || m_menu->pauses());
     m_music.update();
     if (m_frozen)
         elapsedTime = 0;
@@ -468,6 +474,9 @@ void HUD::pause()
     if (!m_scenario)
         return;
     m_paused = true;
+    // the app interrupted: dark at once
+    m_dimming = 0;
+    m_scenario->setDimming(m_dimming);
     setFrozen(true);
 }
 

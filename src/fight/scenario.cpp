@@ -1060,7 +1060,7 @@ float Scenario::brightness() const
     float brightness = glm::clamp(m_time/fadeIn, 0.0f, 1.0f);
     if (m_failTime >= 0)
         brightness *= glm::clamp(1.0f - (m_time - m_failTime)/fadeOut, 0.0f, 1.0f);
-    return brightness;
+    return brightness*m_dimming;
 }
 
 

@@ -329,6 +329,13 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   STP, SYN, VOL.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
   `i` armor/system status, F5–F12 turret orders, `u` nearest enemy.
+- P fades the world to the water's dark blue: the shading's brightness falls
+  evenly to nothing in half a second, so that the terrain and the objects all
+  take the tables' darkest row, while the mission still runs; only then do
+  time and sound stop. Resuming starts the mission at once and fades the
+  brightness back up in half a second. The same fade also runs over a
+  second in and out, probably at the mission's start and end (not compared;
+  Vertigo fades in over 1.5 s and out over 2 s).
 
 ### F. Texts (`TXT/FIGHTEXT.DES`)
 
