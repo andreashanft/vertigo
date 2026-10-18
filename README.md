@@ -36,7 +36,7 @@ make
 
 GitHub Actions builds and tests Vertigo on Ubuntu 24.04 (and on macOS) for
 every commit on master. Each run keeps the Linux build for 30 days as the
-artifact `vertigo-linux-x86_64-<commit>`, with SDL 3 built in; it needs
+artifact `vertigo-<version>-linux-x86_64-<commit>`, with SDL 3 built in; it needs
 OpenAL (`libopenal1`) and OpenGL 3.2. Ubuntu 24.04 has no SDL 3 package, so
 building there means building SDL 3 first, as
 [the workflow](.github/workflows/build.yml) does.

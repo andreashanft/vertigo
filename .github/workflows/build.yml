@@ -82,16 +82,20 @@ jobs:
           readelf -d build/vertigo | grep NEEDED
           if readelf -d build/vertigo | grep NEEDED | grep libSDL3; then exit 1; fi
 
+      # named with the version of CMakeLists.txt's project()
       - name: Pack
+        id: pack
         run: |
+          version=$(sed -nE 's/^project\(vertigo VERSION ([0-9.]+)\)$/\1/p' CMakeLists.txt)
           cmake --install build --prefix "$PWD/package/vertigo"
           cp README.md LICENSE AUTHORS package/vertigo/
-          tar -C package -czf vertigo-linux-x86_64.tar.gz vertigo
+          tar -C package -czf "vertigo-$version-linux-x86_64.tar.gz" vertigo
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: vertigo-linux-x86_64-${{ github.sha }}
-          path: vertigo-linux-x86_64.tar.gz
+          name: vertigo-${{ steps.pack.outputs.version }}-linux-x86_64-${{ github.sha }}
+          path: vertigo-${{ steps.pack.outputs.version }}-linux-x86_64.tar.gz
           retention-days: 30
 
   macos:

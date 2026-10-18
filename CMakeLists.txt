@@ -6,7 +6,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(CMAKE_OSX_DEPLOYMENT_TARGET 18.6 CACHE STRING "The oldest iPadOS Vertigo runs on")
 endif()
 
-project(vertigo)
+# 1.0.0 will be the feature-complete clone; see CLAUDE.md for the patch number
+project(vertigo VERSION 0.9.0)
 
 if(IOS)
     enable_language(OBJCXX)
