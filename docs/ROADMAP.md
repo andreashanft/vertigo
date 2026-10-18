@@ -234,7 +234,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 | destroy | armour below zero | 2, 5, 9 |
 | attack | first hit by another unit | 3 |
 | identify | sonar | 4 |
-| paralyze | energy defence below zero (the unit then tumbles away, appendix J) | 6 |
+| paralyze | energy defence below zero (a boat then drifts helplessly and stays, appendix J) | 6 |
 | finish ("ist angekommen") | own GotoWithArrive reaches its point | 7 |
 | board ("wurde infiltriert") | target of another unit's GotoWithInfiltrate | 8 |
 
@@ -454,6 +454,15 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   explosion is the destruction sequence of a destroyed unit (appendix R);
   the armour is untouched, so the unit is not "destroyed" for the mission's
   conditions (the AD Augmented Mod found the same).
+- **Paralysis**: a boat whose energy defence collapses (a Flash Shark or a
+  Leech) shows "ist paralysiert" and starts turning about its three axes at
+  random rates of up to 0.227 rad/s each, without explosions or debris; the
+  hit itself shows only the torpedo's blue flash. It loses its way within
+  5 s and then hangs where it is, turning on, neither sinking nor going away
+  (watched for a minute on a pirate bomber in s00601), so it can still be
+  boarded, identified or destroyed; destroying it starts the destruction
+  sequence (appendix R). Vertigo does the same for boats; tanks and towers
+  still blow up, their paralysis is not read.
 - **Order slots** end in two ways: the break condition is checked every
   frame, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
   CardinalPatrol after `dur`, Goto and GotoWithArrive at their point,
@@ -838,9 +847,6 @@ Not compared or not followed:
   Vertigo still blows them up at once.
 - The original's explosions in the sequence come in sizes that Vertigo's
   effects don't take, as with the mines (appendix Q).
-- An energy defence that collapses makes a boat tumble with a small random
-  spin (up to 0.23 rad/s) and no explosions in the original; Vertigo still
-  sets off three explosions first (appendix J).
 
 ### S. What the original's torpedoes do
 

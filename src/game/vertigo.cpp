@@ -465,6 +465,8 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
                         line += " attacked";
                     if (unit->eventDestroy()->isCompleted())
                         line += " destroyed";
+                    else if (unit->eventParalyze()->isCompleted())
+                        line += " paralysed";
                     if (unit->isAsleep())
                         line += " asleep";
                 }

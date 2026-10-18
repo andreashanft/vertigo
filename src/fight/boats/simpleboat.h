@@ -143,8 +143,8 @@ protected:
 
     Vector3D m_angleVelocity;
     Vector3D m_turnVelocity;
-    Vector3D m_spin;            // the tumble's angular velocity
-    float m_tumbleEnd = 0;      // and when it ends at the latest
+    Vector3D m_spin;            // the paralysed drift's angular velocity
+    float m_tumbleEnd = 0;      // and when its way has run out
 
     int m_wreckStep = -1;              // the destruction sequence's next burst, -1 if none
     float m_wreckNext = 0;             // when it is due

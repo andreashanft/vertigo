@@ -38,6 +38,13 @@
 namespace fight {
 
 
+// a paralysed boat (docs/ROADMAP.md, appendix J): the most it turns about each axis (rad/s), how
+// long it coasts and how fast its way runs out meanwhile (1/s)
+const float ParalysedSpin = 0.227f;
+const float ParalysedCoast = 5.0f;
+const float ParalysedBrake = 1.0f;
+
+
 SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float yaw) :
     SimpleObject(scenario, file, info),
     m_velocityTarget(0),
@@ -318,18 +325,16 @@ void SimpleBoat::updateVelocity(float elapsedTime)
 }
 
 
-// the tumble after an Explode order or an energy defence's collapse (docs/ROADMAP.md, appendix J):
-// the boat spins at random, loses its way and sinks, until it touches the ground or half a
-// minute is over
+// the drift after an energy defence's collapse (docs/ROADMAP.md, appendix J): the boat turns
+// about its three axes at random rates up to 0.227 rad/s for good, loses its way within 5 s and
+// stays where it is, to be boarded or finished off
 bool SimpleBoat::startTumbling()
 {
     if (this == m_scenario->player() || isGroundVehicle())
         return false;
     auto unit = [](float scale) { return scale*(2.0f*util::random()/float(RAND_MAX) - 1.0f); };
-    m_spin = Vector3D(unit(1.5f), unit(1.5f), unit(1.5f));
-    if (glm::length(m_spin) < 0.5f)
-        m_spin = Vector3D(0, 0, 1.0f);
-    m_tumbleEnd = m_scenario->time() + 30.0f;
+    m_spin = Vector3D(unit(ParalysedSpin), unit(ParalysedSpin), unit(ParalysedSpin));
+    m_tumbleEnd = m_scenario->time() + ParalysedCoast;
     m_tumbling = true;
     m_trigger = false;
     m_scenario->disengagePlayer(this);
@@ -342,13 +347,14 @@ void SimpleBoat::updateTumble(float elapsedTime)
     m_orientation *= glm::mat3(glm::rotate(m_spin.x*elapsedTime, Vector3D(1, 0, 0))) * glm::mat3(glm::rotate(m_spin.y*elapsedTime, Vector3D(0, 1, 0)))
                    * glm::mat3(glm::rotate(m_spin.z*elapsedTime, Vector3D(0, 0, 1)));
     m_orientationInverted = glm::transpose(m_orientation);
-    // the way runs out and the boat sinks
-    m_velocity *= std::exp(-0.5f*elapsedTime);
-    m_velocity.z = std::max(m_velocity.z - 2.0f*elapsedTime, -4.0f);
-    move(m_velocity*elapsedTime);
-    const float ground = m_scenario->surface().heightAt(m_position.x, m_position.y);
-    if (m_position.z - m_collisionRadius <= ground + 0.5f || m_scenario->time() >= m_tumbleEnd)
-        vanish();
+    // the way runs out, and then the boat hangs in the water
+    if (m_scenario->time() < m_tumbleEnd)
+    {
+        m_velocity *= std::exp(-ParalysedBrake*elapsedTime);
+        move(m_velocity*elapsedTime);
+    }
+    else
+        m_velocity = Vector3D(0);
 }
 
 

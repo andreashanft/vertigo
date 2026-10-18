@@ -167,9 +167,11 @@ void ActiveObject::explode()
 {
     if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling)
         return;
-    blowUp(3);
     if (!startTumbling())
+    {
+        blowUp(3);
         vanish();
+    }
 }
 
 
