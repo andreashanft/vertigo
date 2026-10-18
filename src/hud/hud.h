@@ -95,6 +95,8 @@ public:
     // where the autopilot can take the boat once the mission is accomplished, chosen in its menu
     // (none: it leaves at once, as in test mode and training); after eventSuccess the one chosen
     void setDestinations(const StringList &names);
+    // the mission's briefing texts for the briefing page (B): the text, the targets and the tips
+    void setBriefing(const StringList &text, const StringList &targets, const StringList &tips);
     int destination() const;
     // the mission is over and the game over menu is shown
     util::event<>& eventFailure() { return m_eventFailure; }

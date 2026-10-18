@@ -157,6 +157,7 @@ void Training::startScenario()
 {
     m_briefing->deleteLater();
     m_briefing = nullptr;
+    m_hud->setBriefing(m_mission->textB(), m_mission->textP(), m_mission->textS());
     m_hud->start(m_scenario);
     m_funcSetRenderer(m_hud.get());
 }

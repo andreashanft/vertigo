@@ -52,12 +52,18 @@ const int TextX = 107;
 const int FooterY = 418;
 const int FooterRight = 575;
 const int HelpPages = 3;
+// the briefing's targets and tips: eighteen characters in from the log's left edge, each in its
+// half of the rows (a heading, its underline and up to eight lines)
+const int BriefingX = TimeX + 18*6;
+const int BriefingHalf = 10;
 
 // the help files' columns: key, what it does, key, what it does
 const int HelpSplit[3] = { 13, 48, 61 };
 
 // FIGHTEXT: the titles and footers
-const int TextHelpFooter = 20, TextHelpTitle = 21, TextRadioFooter = 59, TextRadioTitle = 60;
+const int TextTargets = 0, TextTargetsLine = 1, TextTips = 2, TextTipsLine = 3;
+const int TextHelpFooter = 20, TextHelpTitle = 21, TextBriefingFooter = 23, TextBriefingTitle = 24;
+const int TextRadioFooter = 59, TextRadioTitle = 60;
 
 String fightText(int n)
 {
@@ -127,6 +133,7 @@ void Pages::open(Page page)
 {
     m_page = page;
     m_helpPage = 0;
+    m_briefingPage = 0;
 }
 
 
@@ -134,6 +141,16 @@ void Pages::next()
 {
     if (m_page == Page::Help)
         m_helpPage = (m_helpPage + 1) % HelpPages;
+    else if (m_page == Page::Briefing)
+        m_briefingPage = 1 - m_briefingPage;
+}
+
+
+void Pages::setBriefing(const StringList &text, const StringList &targets, const StringList &tips)
+{
+    m_briefingText = text;
+    m_briefingTargets = targets;
+    m_briefingTips = tips;
 }
 
 
@@ -153,6 +170,8 @@ void Pages::draw()
     drawFrame(box);
     if (m_page == Page::Help)
         drawHelp(box);
+    else if (m_page == Page::Briefing)
+        drawBriefing(box);
     else
         drawRadio(box);
 }
@@ -205,6 +224,30 @@ void Pages::drawRadio(const Rect &box)
         font.draw(entry.text.toUpper(), place(box, TextX, y));
     }
     drawFooter(box, fightText(TextRadioFooter));
+}
+
+
+// the first page has the text centred line by line, the second the targets in the upper half of the
+// rows and the tips in the lower, both headings shown even without lines
+void Pages::drawBriefing(const Rect &box)
+{
+    gfx::Font &font = m_hud->fontGreen();
+    m_hud->fontYellow().draw(fightText(TextBriefingTitle), Rect(box.x, place(box, 0, TitleY).y, box.width, -1), true, false);
+    if (m_briefingPage == 0) {
+        for (int i = 0; i < m_briefingText.count() && i < Rows; i++)
+            font.draw(capitals(m_briefingText.at(i)), Rect(box.x, place(box, 0, FirstLineY + i*LineHeight).y, box.width, -1), true, false);
+    } else {
+        const StringList *lists[2] = { &m_briefingTargets, &m_briefingTips };
+        const int headings[2][2] = { { TextTargets, TextTargetsLine }, { TextTips, TextTipsLine } };
+        for (int half = 0; half < 2; half++) {
+            const int top = half*BriefingHalf;
+            font.draw(capitals(fightText(headings[half][0])), place(box, BriefingX, FirstLineY + top*LineHeight));
+            font.draw(fightText(headings[half][1]), place(box, BriefingX, FirstLineY + (top + 1)*LineHeight));
+            for (int i = 0; i < lists[half]->count() && i < BriefingHalf - 2; i++)
+                font.draw(capitals(lists[half]->at(i)), place(box, BriefingX, FirstLineY + (top + 2 + i)*LineHeight));
+        }
+    }
+    drawFooter(box, fightText(TextBriefingFooter));
 }
 
 

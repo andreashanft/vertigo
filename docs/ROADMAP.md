@@ -53,8 +53,8 @@ something, escorts fly in formation and fight within 150 m of their place.
 Sleeping units, the attacker lists, `car` and `con` follow the original too.
 
 **HUD (phase 4).** Pause, the voxel radar, the slave monitors' weapon, armor
-and system state pages with F1–F4 and I, the key help (H) and the radio log
-(M) laid over the view, the
+and system state pages with F1–F4 and I, the key help (H), the radio log
+(M) and the briefing (B) laid over the view, the
 Fixer's repairs (appendix O), the lamps, the under-fire, current and radiation symbols, ALERT and
 THREAT with their beeps and voices, friendly-fire warnings, the torpedo lock
 and countdown, the turret menu and brackets, the armor symbol, the aim help,
@@ -316,6 +316,15 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   the mission's end lines (FIGHTEXT 11–13) are logged the same way (not in
   Vertigo yet). Whether the original also shows the events as they happen
   is not compared.
+- B lays the mission's briefing over the view in the same box, titled
+  FIGHTEXT 24 with FIGHTEXT 23 as the footer; B or Enter turns its two
+  pages (Enter does not select a torpedo then), Esc closes, and it opens on
+  the first. The first page has the mission file's `[B]` text, up to twenty
+  lines each centred. The second has the targets (FIGHTEXT 0, its underline
+  1 and `[P]`) in rows 0 to 9 and the tips (FIGHTEXT 2/3 and `[S]`) in rows
+  10 to 19, eighteen characters (108 px) in from the log's left edge; the
+  headings stand even without lines, and no mission has more than eight of
+  either. All of it is in capitals.
 - Turret states from GLOBWEAP `TurretState0–8`: ARM, SCA, FIR, JAM, EMP, LOC,
   STP, SYN, VOL.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,

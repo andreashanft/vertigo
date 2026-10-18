@@ -35,13 +35,14 @@ namespace hud {
 class HUD;
 
 
-// The two pages the original lays over the view (docs/ROADMAP.md, appendix E): the key help
-// (H, its pages from VFX/COCKPIT/HELP0-2.TXT, H turns them, Esc closes) and the log of the radio
-// messages and the units' events (M; Esc or M closes). The mission goes on underneath.
+// The pages the original lays over the view (docs/ROADMAP.md, appendix E): the key help (H, its
+// pages from VFX/COCKPIT/HELP0-2.TXT, H turns them, Esc closes), the log of the radio messages and
+// the units' events (M; Esc or M closes) and the mission's briefing (B; its text, then its targets
+// and tips; B or Enter turns, Esc closes). The mission goes on underneath.
 class Pages : public ui::Widget
 {
 public:
-    enum class Page { None, Help, Radio };
+    enum class Page { None, Help, Radio, Briefing };
 
 public:
     Pages(HUD *hud);
@@ -50,8 +51,10 @@ public:
     Page page() const { return m_page; }
     void open(Page page);
     void close() { m_page = Page::None; }
-    // the help's next page
+    // the help's or the briefing's next page
     void next();
+    // the mission's texts for the briefing: the text, the targets and the tips
+    void setBriefing(const StringList &text, const StringList &targets, const StringList &tips);
 
 protected:
     void draw();
@@ -67,6 +70,7 @@ private:
     void drawDots(int x1, int x2, int y);
     void drawHelp(const Rect &box);
     void drawRadio(const Rect &box);
+    void drawBriefing(const Rect &box);
     // right-aligned at the box's bottom right
     void drawFooter(const Rect &box, const String &text);
 
@@ -75,6 +79,10 @@ private:
     Page m_page = Page::None;
     int m_helpPage = 0;
     std::vector<std::vector<HelpLine>> m_help;
+    int m_briefingPage = 0;
+    StringList m_briefingText;
+    StringList m_briefingTargets;
+    StringList m_briefingTips;
     gfx::Texture m_black;
     gfx::Texture m_dot;
 };

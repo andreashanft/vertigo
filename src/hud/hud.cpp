@@ -530,6 +530,12 @@ void HUD::setDestinations(const StringList &names)
 }
 
 
+void HUD::setBriefing(const StringList &text, const StringList &targets, const StringList &tips)
+{
+    m_pages->setBriefing(text, targets, tips);
+}
+
+
 int HUD::destination() const
 {
     return m_menu->destinations().isEmpty() ? -1 : m_menu->destination();
@@ -797,8 +803,8 @@ void HUD::press(input::KeyEvent *e)
         return;
     }
 
-    // the help (H turns its pages) and the radio log lie over the view until Esc (or M) closes
-    // them; the boat is still steered meanwhile
+    // the help (H turns its pages), the radio log and the briefing (B or Enter turns its pages)
+    // lie over the view until Esc (or M) closes them; the boat is still steered meanwhile
     if (m_pages->page() != Pages::Page::None)
     {
         if (e->key() == input::Key_Escape || (e->key() == input::Key_M && m_pages->page() == Pages::Page::Radio))
@@ -806,7 +812,8 @@ void HUD::press(input::KeyEvent *e)
             m_pages->close();
             return;
         }
-        if (e->key() == input::Key_H && m_pages->page() == Pages::Page::Help)
+        if ((e->key() == input::Key_H && m_pages->page() == Pages::Page::Help) ||
+            ((e->key() == input::Key_B || e->key() == input::Key_Return || e->key() == input::Key_Enter) && m_pages->page() == Pages::Page::Briefing))
         {
             m_pages->next();
             return;
@@ -825,6 +832,11 @@ void HUD::press(input::KeyEvent *e)
     if (e->key() == input::Key_M && !(e->modifiers() & ~input::KeypadModifier))
     {
         m_pages->open(Pages::Page::Radio);
+        return;
+    }
+    if (e->key() == input::Key_B && !(e->modifiers() & ~input::KeypadModifier))
+    {
+        m_pages->open(Pages::Page::Briefing);
         return;
     }
     // Alt+I sets the Fixer's repair priority (appendix O)

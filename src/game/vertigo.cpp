@@ -21,6 +21,7 @@
 #include "game/renderer.h"
 #include "game/boat.h"
 #include "game/items.h"
+#include "game/mission.h"
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/simpleboat.h"
@@ -205,6 +206,12 @@ int Vertigo::start()
 void Vertigo::startScenario()
 {
     m_scenario.reset(new fight::Scenario(m_options.scenario));
+    // the briefing of the mission that plays the scenario (s00101 of m00101, strai3 of mtrai3)
+    const String mission = "m" + m_options.scenario.toLower().mid(1);
+    if (util::exists(util::DataPath::resolve(String("dat:mission/%1.des").arg(mission)))) {
+        const Mission briefing(mission, -1);
+        m_hud->setBriefing(briefing.textB(), briefing.textP(), briefing.textS());
+    }
     m_hud->start(m_scenario.get());
     for (const Options::Drive &drive : m_options.drive) {
         fight::SimpleBoat *unit = nullptr;

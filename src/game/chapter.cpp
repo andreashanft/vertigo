@@ -424,6 +424,7 @@ void Chapter::startScenario()
         }
     }
     m_HUD->setDestinations(names);
+    m_HUD->setBriefing(m_mission->textB(), m_mission->textP(), m_mission->textS());
     m_HUD->start(m_scenario);
     m_funcSetRenderer(m_HUD.get());
 }
