@@ -315,7 +315,7 @@ if(IOS)
         # iPad only: the game is 4:3
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY 2
         XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
-        XCODE_ATTRIBUTE_MARKETING_VERSION 0.1
+        XCODE_ATTRIBUTE_MARKETING_VERSION ${PROJECT_VERSION}
         XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION 1
         # Xcode runs it optimised: a Debug build draws several times slower (20 instead of 120
         # frames a second on an iPad Pro from 2018)
@@ -331,6 +331,8 @@ if(IOS)
 else()
     add_executable(vertigo WIN32 ${SOURCES})
 endif()
+# the version, for the main menu and --help
+target_compile_definitions(vertigo PRIVATE VERTIGO_VERSION="${PROJECT_VERSION}")
 target_link_libraries(vertigo SDL3::SDL3 ${OPENAL_LIBRARY})
 # the version the help page shows: the last commit and its date (the original shows its own)
 set(VERTIGO_VERSION "V0.1")

@@ -251,7 +251,7 @@ SDL_AppResult end(int code)
 SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
 {
     util::CommandLine parser(
-        "Open-source clone of Archimedean Dynasty / Schleichfahrt.\n\n"
+        "Vertigo " VERTIGO_VERSION ", an open-source clone of Archimedean Dynasty / Schleichfahrt.\n\n"
         "Starting a mission directly (test mode) ends with exit code 0 on success,\n"
         "1 if the mission failed, 2 if it was aborted, 3 on --timeout and 4 if the\n"
         "player was destroyed.");

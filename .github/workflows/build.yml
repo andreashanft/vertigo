@@ -1,0 +1,122 @@
+# Builds and tests Vertigo for every commit on master (and for pull requests to it): on Linux,
+# where the build is also packed up for download (Actions › the run › Artifacts), and on macOS.
+# The tests are those of ctest; the missions need the game's data, which the repository doesn't
+# have.
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# a newer commit of a pull request makes its older runs pointless
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-24.04
+    env:
+      # Ubuntu 24.04 has no SDL 3, so it is built from the release the iPad build uses (see
+      # CMakeLists.txt), linked in statically: the game then runs wherever OpenAL is installed.
+      # SDL opens X11, Wayland and the rest at run time if the system has them; its audio is
+      # left out, as the game plays its sounds with OpenAL.
+      SDL_VERSION: 3.4.18
+      SDL_SHA256: 9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config libglm-dev libopenal-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
+            libxtst-dev libxkbcommon-dev libwayland-dev libdecor-0-dev libegl1-mesa-dev \
+            libgl1-mesa-dev libgles2-mesa-dev libdbus-1-dev libudev-dev
+
+      # (with other packages above or other options below, raise the last number so that SDL is
+      # built again)
+      - name: Restore SDL
+        id: sdl
+        uses: actions/cache@v6
+        with:
+          path: ~/sdl3
+          key: sdl3-${{ env.SDL_VERSION }}-ubuntu-24.04-2
+
+      - name: Build SDL
+        if: steps.sdl.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL -o sdl.tar.gz "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-$SDL_VERSION.tar.gz"
+          echo "$SDL_SHA256  sdl.tar.gz" | sha256sum -c -
+          tar -xzf sdl.tar.gz
+          cmake -S "SDL3-$SDL_VERSION" -B sdl-build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$HOME/sdl3" -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF \
+            -DSDL_AUDIO=OFF
+          cmake --build sdl-build
+          cmake --install sdl-build
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$HOME/sdl3"
+
+      # (on past errors, so that a run shows them all)
+      - name: Build
+        run: cmake --build build -- -k 0
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      # the program starts (without data and window: --help only) and needs no SDL library of its
+      # own (the libraries it names; ldd would add theirs, such as OpenAL's ALSA and sndio)
+      - name: Start
+        run: |
+          build/vertigo --help
+          readelf -d build/vertigo | grep NEEDED
+          if readelf -d build/vertigo | grep NEEDED | grep libSDL3; then exit 1; fi
+
+      # named with the version of CMakeLists.txt's project()
+      - name: Pack
+        id: pack
+        run: |
+          version=$(sed -nE 's/^project\(vertigo VERSION ([0-9.]+)\)$/\1/p' CMakeLists.txt)
+          cmake --install build --prefix "$PWD/package/vertigo"
+          cp README.md LICENSE AUTHORS package/vertigo/
+          tar -C package -czf "vertigo-$version-linux-x86_64.tar.gz" vertigo
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vertigo-${{ steps.pack.outputs.version }}-linux-x86_64-${{ github.sha }}
+          path: vertigo-${{ steps.pack.outputs.version }}-linux-x86_64.tar.gz
+          retention-days: 30
+
+  macos:
+    name: macOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install packages
+        run: brew install sdl3 glm
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      # (as many compilers at once as the runner has cores; without a number make starts one for
+      # every file, more than its memory takes)
+      - name: Build
+        run: cmake --build build --parallel "$(sysctl -n hw.ncpu)"
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Start
+        run: build/vertigo --help
