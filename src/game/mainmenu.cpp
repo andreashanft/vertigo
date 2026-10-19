@@ -142,10 +142,11 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnTrainingBack.setFont(fontLarge);
     m_btnTrainingBack.setText(txt::StringTable::get(txt::MainMenu));
 
-    // the open mission: one of the four boats, then its depot and the missions
+    // the open mission: one of the four boats, then its depot and the missions; as in the
+    // original, a page below a submenu has the path in its title, e.g. TRAINING\OPEN MISSION
     m_lblOpenTitle.setFont(fontMedium);
     m_lblOpenTitle.setPosition(145, 256 - fontMedium.height() - 2);
-    m_lblOpenTitle.setText(txt::StringTable::get(txt::OpenMission));
+    m_lblOpenTitle.setText(txt::StringTable::get(txt::MainMenu_Training) + "\\" + txt::StringTable::get(txt::OpenMission));
     int y = 288;
     for (const auto &boat : OpenMission::boats()) {
         const int type = boat.first;
