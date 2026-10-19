@@ -39,6 +39,8 @@ public:
     void setPressedTexture(const gfx::Texture &texture);
     void setDisabledTexture(const gfx::Texture &texture);
     void setDisabledFont(const gfx::Font &font);
+    // without a texture of its own, a disabled button shows its texture this opaque
+    void setDisabledOpacity(float opacity);
 
 protected:
     void draw();
@@ -51,6 +53,7 @@ private:
     gfx::Texture m_pressedTexture;
     gfx::Texture m_disabledTexture;
     gfx::Font m_disabledFont;
+    float m_disabledOpacity = 1.0f;
     util::event<> m_eventClicked;
 };
 

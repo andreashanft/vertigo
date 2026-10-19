@@ -74,6 +74,8 @@ Desktop::Desktop(const String &name) :
     m_btnNotebook = new ui::Button([this]() { showNotebook(); }, &m_lblBackground);
     m_btnNotebook->setTexture(gfx::Image::loadPCX("gfx:pic/notebook/nbklein.pcx"));
     m_btnNotebook->setPosition(572, 424);
+    // while a window is open, half transparent (the notebook takes its place)
+    m_btnNotebook->setDisabledOpacity(0.5f);
 
     m_notebook.hide();
 
@@ -216,7 +218,7 @@ void Desktop::showRoom(int index)
         [this]() { hideCursor(); }
     );
     setRootWidget(m_room);
-    m_btnNotebook->hide();
+    m_btnNotebook->disable();
     m_room->setPosition((640 - m_room->width()) / 2, (480 - m_room->height()) / 2);
     m_backgroundSound.setVolume(0.3f);
 }
@@ -228,7 +230,7 @@ void Desktop::hideRoom()
     setRootWidget(&m_lblBackground);
     m_room->deleteLater();
     m_room = NULL;
-    m_btnNotebook->show();
+    m_btnNotebook->enable();
     m_backgroundSound.setVolume(1.0f);
     checkDialogs();
 }
@@ -263,7 +265,7 @@ void Desktop::showEnCom(Dialog *dialog)
     m_enCom = new EnCom(dialog, [this]() { hideEnCom(); });
     setRootWidget(m_enCom);
 
-    m_btnNotebook->hide();
+    m_btnNotebook->disable();
     m_backgroundSound.setVolume(0.3f);
     sfx::SoundSystem::get()->sound(sfx::EnComShow)->play();
     sfx::SoundSystem::get()->sound(sfx::NotebookBackground)->playLoop();
@@ -283,7 +285,7 @@ void Desktop::hideEnCom()
     m_enCom->deleteLater();
     m_enCom = NULL;
 
-    m_btnNotebook->show();
+    m_btnNotebook->enable();
     sfx::SoundSystem::get()->sound(sfx::NotebookBackground)->stop();
     sfx::SoundSystem::get()->sound(sfx::EnComHide)->play();
     m_backgroundSound.setVolume(1.0f);
