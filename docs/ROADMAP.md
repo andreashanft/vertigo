@@ -83,10 +83,11 @@ players build it in Xcode, side-load an IPA or use AltStore PAL in the EU.
 **Later additions.** Mission music (G1), minefields as columns (G2), the
 armour and energy defence percentages `inte`/`eint` (G3), the five missions
 with unresolved conditions checked (G4), the station chosen after a mission
-(G6), the four training missions in the main menu (G7); the AI feeling hits
-only through its energy defence, attack runs that turn when the terrain is
-in the way, escorts placed from hull to hull (J), active mines going up on
-buildings and the buzzer's torch going out like other debris (Q).
+(G6), the four training missions in the main menu (G7); level pipelines
+(N); the AI feeling hits only through its energy defence, attack runs that
+turn when the terrain is in the way, escorts placed from hull to hull (J),
+active mines going up on buildings and the buzzer's torch going out like
+other debris (Q).
 
 ## What is open
 
@@ -690,6 +691,16 @@ two cells apart therefore flatten a four-by-four area together, but a single
 cluster leaves its western and northern neighbours alone. `p` and `l` also
 scale sixteen values of the patch's shading by 0.35, a darkening as far as
 read, which Vertigo does not do yet; `o` does neither.
+
+Every cluster below 1000 stands at its reference height, whether it lifts
+the ground or not: a cluster with `o` keeps that height over lower or
+higher ground. The pipelines rely on it: each segment (`GP1X1_8`,
+`rohr_005`) names the cell of the line's first piece as `refx`/`refy`, so
+the line runs level from the top of that piece, an elbow (`GP1X1_7`,
+`rohr_004`, with `p`) rising from its flattened ground, across dips and
+rises (s00202's three lines run 13 m over the bottom of the dip they
+cross). Vertigo does the same; a lifting cluster rests on its smoothed
+ground, the others at the smoothed ground's height in the reference cell.
 
 ### O. What the original's Fixer does
 

@@ -60,16 +60,16 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle
             cluster.offset.z = m_clusters[heightRef - 1000].offset.z + 256*cluster.scale; // TODO: test moar
         else
         {
-            // the ground is flattened to the building's reference cell; with HeightReference -1 to
-            // the cluster's own cell
-            if (file.value("SurfaceLifting").toString() == "p")
-            {
-                if (heightRef == 0)
-                    scenario->surface().setHeight(clusterX, clusterY, refx, refy);
-                else
-                    scenario->surface().setHeight(clusterX, clusterY, clusterX, clusterY);
-            }
-            cluster.offset.z = scenario->surface().heightAt((clusterX + 0.5f)*scale.x, (clusterY + 0.5f)*scale.y);
+            // the cluster stands at the height of the building's reference cell, with
+            // HeightReference -1 at its own cell's; with SurfaceLifting p the ground under it is
+            // flattened to that height and it rests on it, without it keeps the height over lower
+            // or higher ground, so the pipes run level (docs/ROADMAP.md, appendix N)
+            const int heightX = heightRef < 0 ? clusterX : refx, heightY = heightRef < 0 ? clusterY : refy;
+            const bool lifts = file.value("SurfaceLifting").toString() == "p" || heightRef < 0;
+            if (lifts)
+                scenario->surface().setHeight(clusterX, clusterY, heightX, heightY);
+            const int groundX = lifts ? clusterX : heightX, groundY = lifts ? clusterY : heightY;
+            cluster.offset.z = scenario->surface().heightAt((groundX + 0.5f)*scale.x, (groundY + 0.5f)*scale.y);
         }
 
         switch (file.value("cardinal").toString().toLatin1()[0]) {
