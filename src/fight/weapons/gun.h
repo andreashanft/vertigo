@@ -57,9 +57,12 @@ public:
 
     float defect() const { return m_defect; }
     int ammo() const { return m_ammo; }
+    // the rounds left as the displays count them: one round fires all the barrels in turn
+    int rounds() const { return m_muzzles.empty() ? m_ammo : int((m_ammo + m_muzzles.size() - 1)/m_muzzles.size()); }
     int shots() const { return m_shots; }  // fired so far
     bool usesAmmo() const { return m_energyDemand == 0.0f; }
     const String& shortName() const { return m_shortName; }
+    const String& longName() const { return m_longName; }
     String stateName() const { return GunStates ? GunStates[m_state].shortName : String(); }
     String stateText() const { return GunStates ? GunStates[m_state].longName : String(); }
     State state() const { return m_state; }
@@ -74,7 +77,8 @@ public:
 
 public:
     bool update(float elapsedTime);
-    void fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right);
+    // one barrel, the barrels in turn; or all of them at once (a turret firing in sync)
+    void fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right, bool allBarrels = false);
 
 protected:
     Scenario *m_scenario;

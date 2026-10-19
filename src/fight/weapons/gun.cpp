@@ -129,7 +129,7 @@ bool Gun::update(float elapsedTime)
 }
 
 
-void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right)
+void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right, bool allBarrels)
 {
     if (m_state != StateReady)
         return;
@@ -146,8 +146,9 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
         m_stateTime = m_scenario->time() + m_defectDelay*(0.5f + random());
         return;
     }
-    // one barrel fires per pull, the barrels in turn (appendix K)
-    if (!m_muzzles.empty())
+    // one barrel fires per pull, the barrels in turn (appendix K), or all of them
+    const size_t barrelsFired = allBarrels ? m_muzzles.size() : std::min<size_t>(1, m_muzzles.size());
+    for (size_t i = 0; i < barrelsFired; i++)
     {
         const Vector3D &muzzle = m_muzzles[m_nextMuzzle % m_muzzles.size()];
         m_nextMuzzle = (m_nextMuzzle + 1) % m_muzzles.size();
@@ -155,7 +156,7 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
     }
     m_shots++;
     if (usesAmmo())
-        m_ammo--;
+        m_ammo = std::max(0, m_ammo - int(std::max<size_t>(1, barrelsFired)));
     // the player's guns sound in the cockpit, others where they fire
     if (m_owner && m_owner != m_scenario->player())
         sfx::SampleMap::playAt(m_sample, pos.x, pos.y, pos.z);
@@ -165,7 +166,7 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
     // however little is left; the gun then waits for its rearming time and for the pool to hold
     // more than the whole demand again (appendix K)
     if (!usesAmmo() && m_owner)
-        m_owner->drawEnergy(m_energyDemand/barrels(m_model));
+        m_owner->drawEnergy(m_energyDemand*std::max<size_t>(1, barrelsFired)/barrels(m_model));
     m_state = usesAmmo() ? StateRearming : StateEnergyDelay;
     m_stateTime = m_scenario->time() + m_rearmingTime;
 }

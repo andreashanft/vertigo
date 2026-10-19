@@ -48,11 +48,13 @@
 #include "activesonar.h"
 #include "master.h"
 #include "mastermonitor.h"
+#include "sfx/samplemap.h"
 #include "sonarmonitor.h"
 #include "autopilot.h"
 #include "horizon.h"
 #include "debugoverlay.h"
 #include "missionmenu.h"
+#include "pages.h"
 #include "pause.h"
 #include "alert.h"
 #include "slavemonitor.h"
@@ -187,6 +189,7 @@ HUD::HUD() :
     m_debugOverlay(nullptr),
     m_debugOverlayVisible(false),
     m_menu(nullptr),
+    m_pages(nullptr),
     m_paused(false),
     m_frozen(false),
     m_successShown(false),
@@ -280,15 +283,16 @@ void HUD::load(game::Boat *boat)
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
 
-    // status monitors: with two, the first shows a weapon and the second the armor (I switches it
-    // to the systems and back); a single one shows a weapon (I steps through all three pages)
+    // status monitors: with two, the first shows a weapon and the second the armor; I switches
+    // between the armor and the system state (a single one starts on a weapon; F1-F4 bring it back)
     m_slaveMonitors.clear();
     for (int i = 0; i < 2; i++)
     {
         file.setSection(String("slavemonitor%1").arg(i));
         if (!file.contains("X1"))
             continue;
-        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Weapon : SlaveMonitor::Page::Armor);
+        SlaveMonitor *monitor = new SlaveMonitor(this, file, i == 0 ? SlaveMonitor::Page::Weapon : SlaveMonitor::Page::Armor,
+                                                 i == 0 ? fight::Scenario::Monitor::Slave0 : fight::Scenario::Monitor::Slave1);
         m_children.emplace_back(monitor);
         m_slaveMonitors.push_back(monitor);
     }
@@ -311,6 +315,8 @@ void HUD::load(game::Boat *boat)
 
     m_menu = new MissionMenu(this, m_center);
     m_children.emplace_back(m_menu);
+    m_pages = new Pages(this);
+    m_children.emplace_back(m_pages);
 
     m_integerScale = true;
 
@@ -344,11 +350,11 @@ void HUD::load(game::Boat *boat)
     m_children.emplace_back(masterMonitor);
 
     file.setSection("roundmonitor0");
-    m_sonar1 = new SonarMonitor(this, file, 360);
+    m_sonar1 = new SonarMonitor(this, file, 360, fight::Scenario::Monitor::Round0);
     m_children.emplace_back(m_sonar1);
 
     file.setSection("roundmonitor1");
-    m_sonar2 = new SonarMonitor(this, file, 180);
+    m_sonar2 = new SonarMonitor(this, file, 180, fight::Scenario::Monitor::Round1);
     m_children.emplace_back(m_sonar2);
 
     m_integerScale = false;
@@ -399,9 +405,11 @@ void HUD::start(fight::Scenario *scenario)
     m_navPoint = -1;
     m_paused = false;
     m_frozen = false;
+    m_dimming = 1;
     m_successShown = false;
     m_failureShown = false;
     m_deathTime = -1;
+    m_menu->setOverView(false);
     m_menu->open(MissionMenu::Page::None);
     m_scenario->headMotion().setStrength(headMotion());
     // the CD's audio tracks, as the game data import copies them out of the CD image, at half
@@ -435,7 +443,12 @@ void HUD::step(float elapsedTime)
 
     // (also in a pause)
     m_touch->update(elapsedTime);
-    setFrozen(m_paused || m_menu->pauses());
+    // P fades the world into the water's dark blue in half a second, the mission going on until it
+    // is dark, and back in as the mission goes on again (docs/ROADMAP.md, appendix E)
+    const float pauseFade = 0.5f;
+    m_dimming = glm::clamp(m_dimming + (m_paused ? -elapsedTime : elapsedTime)/pauseFade, 0.0f, 1.0f);
+    m_scenario->setDimming(m_dimming);
+    setFrozen((m_paused && m_dimming <= 0) || m_menu->pauses());
     m_music.update();
     if (m_frozen)
         elapsedTime = 0;
@@ -464,6 +477,9 @@ void HUD::pause()
     if (!m_scenario)
         return;
     m_paused = true;
+    // the app interrupted: dark at once
+    m_dimming = 0;
+    m_scenario->setDimming(m_dimming);
     setFrozen(true);
 }
 
@@ -492,9 +508,12 @@ void HUD::updateMissionState()
         if (m_deathTime < 0)
         {
             m_deathTime = m_scenario->time();
+            m_menu->setOverView(true);
             m_menu->notice({ text(13) }, 3.0f);
         }
-        else if (m_scenario->time() >= m_deathTime + 3.0f && page != MissionMenu::Page::Died)
+        // the menu once the destruction sequence is over and the death view has watched the
+        // wreck for eight seconds (docs/ROADMAP.md, appendix R)
+        else if (m_scenario->time() >= m_deathTime + 10.0f && page != MissionMenu::Page::Died)
         {
             m_menu->open(MissionMenu::Page::Died);
             m_eventDied();
@@ -523,6 +542,12 @@ void HUD::updateMissionState()
 void HUD::setDestinations(const StringList &names)
 {
     m_menu->setDestinations(names);
+}
+
+
+void HUD::setBriefing(const StringList &text, const StringList &targets, const StringList &tips)
+{
+    m_pages->setBriefing(text, targets, tips);
 }
 
 
@@ -671,6 +696,11 @@ void HUD::drawFrame()
 
     // the GL viewport is in device pixels, the rects in logical pixels
     const double pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
+    if (m_scenario->playerDestroyed())
+    {
+        drawDeathView(pixelRatio);
+        return;
+    }
     if (showsModel() && drawModel(pixelRatio))
     {
         drawTouchControls(pixelRatio);
@@ -695,10 +725,58 @@ void HUD::drawFrame()
     m_integerScale = true;
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
+    m_pages->doDraw();
     m_integerScale = false;
 
     if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+    drawTouchControls(pixelRatio);
+}
+
+
+// The death view (docs/ROADMAP.md, appendix R): the world from outside the boat, without the
+// cockpit and its instruments, in rows 64 to 415 and columns 23 to 612 of the view, the rest of
+// those rows in the water's blue, black bars above and below with a grey line in rows 60 and
+// 419, "DEATH VIEW" (FIGHTEXT 18) at the bottom left and the menu over the world
+void HUD::drawDeathView(double pixelRatio)
+{
+    const Point topLeft(23, 64), bottomRight(613, 416);
+    m_integerScale = true;
+    const Point a = project(topLeft), b = project(bottomRight);
+    // the HUD's integer scale in window pixels
+    const float scale = rect().width*m_integerScaleProjectionMatrix[0][0]/2;
+    const float x0 = rect().x + a.x*scale, x1 = rect().x + b.x*scale;
+    const float y0 = a.y*scale, y1 = b.y*scale;
+    // window rows (from the bottom, in device pixels) of the view's rows
+    auto rowGL = [&](int row) { return int(std::lround((rect().y + rect().height - project(Point(0, row)).y*scale)*pixelRatio)); };
+    auto fill = [](int x, int y, int width, int height, float grey, float blue) {
+        glScissor(x, y, width, height);
+        glClearColor(grey, grey, grey + blue, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
+    };
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_SCISSOR_TEST);
+    const int wide = 1 << 20;
+    fill(0, rowGL(61), wide, rowGL(60) - rowGL(61), 0.3f, 0);
+    fill(0, rowGL(420), wide, rowGL(419) - rowGL(420), 0.3f, 0);
+    fill(0, rowGL(416), wide, rowGL(64) - rowGL(416), 0, 0.15f);
+    const int left = int(std::lround(x0*pixelRatio)), width = int(std::lround((x1 - x0)*pixelRatio));
+    glScissor(left, rowGL(416), width, rowGL(64) - rowGL(416));
+    glViewport(left, rowGL(416), width, rowGL(64) - rowGL(416));
+    // the cockpit view's scale (60° over the 480 rows), cut to the picture
+    const float fovY = 2*std::atan(std::tan(glm::radians(30.0f))*(bottomRight.y - topLeft.y)/480);
+    m_scenario->draw(glm::perspective(fovY, (x1 - x0)/(y1 - y0), 0.1f, 500.0f), m_scenario->cameraMatrix());
+    glDisable(GL_SCISSOR_TEST);
+
+    glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
+    setupGL(false);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
+    fontGreen().draw(txt::StringTable::get(txt::StringFight(18)), project(Point(8, 405)));
+    m_menu->doDraw();
+    m_integerScale = false;
+
+    glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
     drawTouchControls(pixelRatio);
 }
 
@@ -761,6 +839,7 @@ bool HUD::drawModel(double pixelRatio)
     m_integerScale = true;
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
     m_menu->doDraw();
+    m_pages->doDraw();
     m_integerScale = false;
 
     glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
@@ -791,9 +870,46 @@ void HUD::press(input::KeyEvent *e)
         return;
     }
 
+    // the help (H turns its pages), the radio log and the briefing (B or Enter turns its pages)
+    // lie over the view until Esc (or M) closes them; the boat is still steered meanwhile
+    if (m_pages->page() != Pages::Page::None)
+    {
+        if (e->key() == input::Key_Escape || (e->key() == input::Key_M && m_pages->page() == Pages::Page::Radio))
+        {
+            m_pages->close();
+            return;
+        }
+        if ((e->key() == input::Key_H && m_pages->page() == Pages::Page::Help) ||
+            ((e->key() == input::Key_B || e->key() == input::Key_Return || e->key() == input::Key_Enter) && m_pages->page() == Pages::Page::Briefing))
+        {
+            m_pages->next();
+            return;
+        }
+    }
     if (e->key() == input::Key_Escape)
     {
         m_menu->open(MissionMenu::Page::Main);
+        return;
+    }
+    if (e->key() == input::Key_H && !(e->modifiers() & ~input::KeypadModifier))
+    {
+        m_pages->open(Pages::Page::Help);
+        return;
+    }
+    if (e->key() == input::Key_M && !(e->modifiers() & ~input::KeypadModifier))
+    {
+        m_pages->open(Pages::Page::Radio);
+        return;
+    }
+    if (e->key() == input::Key_B && !(e->modifiers() & ~input::KeypadModifier))
+    {
+        m_pages->open(Pages::Page::Briefing);
+        return;
+    }
+    // Alt+I sets the Fixer's repair priority (appendix O)
+    if (e->key() == input::Key_I && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
+    {
+        m_scenario->player()->cycleFixer();
         return;
     }
     if (e->key() == input::Key_O)
@@ -875,17 +991,14 @@ void HUD::press(input::KeyEvent *e)
         {
         case SlaveMonitor::Page::Weapon: monitor->setPage(SlaveMonitor::Page::Armor); break;
         case SlaveMonitor::Page::Armor: monitor->setPage(SlaveMonitor::Page::Systems); break;
-        case SlaveMonitor::Page::Systems:
-            monitor->setPage(m_slaveMonitors.size() > 1 ? SlaveMonitor::Page::Armor : SlaveMonitor::Page::Weapon);
-            break;
+        case SlaveMonitor::Page::Systems: monitor->setPage(SlaveMonitor::Page::Armor); break;
         }
     }
-    // F1-F4: the gun, the magazine or a turret on the weapon page
+    // F1-F4: the gun, the magazine or a turret on the weapon page, or the overview of all weapons
     if (e->key() >= input::Key_F1 && e->key() <= input::Key_F4 && !(e->modifiers() & input::AltModifier) && !m_slaveMonitors.empty())
     {
-        SlaveMonitor *monitor = m_slaveMonitors.front();
-        monitor->setPage(SlaveMonitor::Page::Weapon);
-        monitor->showWeapon(SlaveMonitor::Weapon(e->key() - input::Key_F1));
+        m_slaveMonitors.front()->pressWeaponKey(SlaveMonitor::Weapon(e->key() - input::Key_F1));
+        sfx::SampleMap::get(sfx::Sample::Sample5).play();
     }
     if (e->key() == input::Key_A)
     {

@@ -65,6 +65,8 @@ public:
     ConditionEvent* eventBoard() { return &m_eventBoard; }
 
     int iff() const { return m_info.iff; }
+    // the faction that decides contacts (docs/ROADMAP.md, appendix Q): only different ones touch
+    virtual int contactFaction() const { return iff(); }
     const String& name() const { return m_info.name; }
     const String& cargo() const { return m_info.cargo; }
     // the unit's sensor (sen, -1 if the mission gives none) and its range (senr, metres, 0 if none);
@@ -116,11 +118,13 @@ public:
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
-    // an Explode order, and an energy defence that has collapsed: three explosions, then the unit
-    // tumbles away with a random spin (a boat; anything else is simply gone) and, as its armour
-    // was never taken down, doesn't count as destroyed for the mission's conditions
-    // (docs/ROADMAP.md, appendix J)
+    // an energy defence that has collapsed: a boat drifts helplessly with a slow spin for a few
+    // seconds, without explosions, and stays (anything else blows up and is gone); as its armour was never taken
+    // down, it doesn't count as destroyed for the mission's conditions (docs/ROADMAP.md, appendix J)
     void explode();
+    // an Explode order: the destruction sequence (a boat, docs/ROADMAP.md, appendix R; anything
+    // else blows up at once), without counting as destroyed for the mission's conditions
+    void wreck();
     bool isTumbling() const { return m_tumbling; }
     virtual void identify();
     // whether the sonar shows it (a cargo ship shows its blocks instead)
@@ -154,8 +158,10 @@ protected:
     // the explosions and debris shared by destroy() and explode(), and the going
     void blowUp(int explosions);
     void vanish();
-    // starts the tumble; false if the unit can't (then it vanishes)
+    // starts the paralysed drift; false if the unit can't (then it blows up and vanishes)
     virtual bool startTumbling() { return false; }
+    // starts the destruction sequence; false if the unit has none (then it blows up at once)
+    virtual bool startWreck() { return false; }
 
 protected:
     ConditionEvent m_eventDestroy;

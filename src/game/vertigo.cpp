@@ -21,6 +21,7 @@
 #include "game/renderer.h"
 #include "game/boat.h"
 #include "game/items.h"
+#include "game/mission.h"
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/simpleboat.h"
@@ -137,7 +138,8 @@ int Vertigo::start()
                 std::cerr << "Unknown item " << item.second << " (see --list-items)" << std::endl;
                 return ExitUsage;
             }
-            if (!m_boat->getMounting(item.first)) {
+            // DEFE takes the items without a mounting: armour, skin, sensor, buzzers, the Fixer
+            if (item.first != "DEFE" && !m_boat->getMounting(item.first)) {
                 std::cerr << "The boat has no mounting " << item.first << std::endl;
                 return ExitUsage;
             }
@@ -204,6 +206,12 @@ int Vertigo::start()
 void Vertigo::startScenario()
 {
     m_scenario.reset(new fight::Scenario(m_options.scenario));
+    // the briefing of the mission that plays the scenario (s00101 of m00101, strai3 of mtrai3)
+    const String mission = "m" + m_options.scenario.toLower().mid(1);
+    if (util::exists(util::DataPath::resolve(String("dat:mission/%1.des").arg(mission)))) {
+        const Mission briefing(mission, -1);
+        m_hud->setBriefing(briefing.textB(), briefing.textP(), briefing.textS());
+    }
     m_hud->start(m_scenario.get());
     for (const Options::Drive &drive : m_options.drive) {
         fight::SimpleBoat *unit = nullptr;
@@ -457,6 +465,8 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
                         line += " attacked";
                     if (unit->eventDestroy()->isCompleted())
                         line += " destroyed";
+                    else if (unit->eventParalyze()->isCompleted())
+                        line += " paralysed";
                     if (unit->isAsleep())
                         line += " asleep";
                 }

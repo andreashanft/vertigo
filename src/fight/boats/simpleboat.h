@@ -48,8 +48,10 @@ public:
     void setFullThrottle(bool fullThrottle) { m_fullThrottle = fullThrottle; }
     void setTurnVelocity(const Vector3D &turnVelocity) { m_turnVelocity = turnVelocity; }
 
-    // steering for the AI orders: head for a point at a speed, or stay in place
+    // steering for the AI orders: head for a point at a speed (climbing to its height within a
+    // short way), point the nose straight at it (to fire along the nose), or stay in place
     void steerTo(const Vector3D &point, float speed);
+    void pointAt(const Vector3D &point, float speed);
     void hold();
 
     // the [Attack] settings of the object file, distances in metres
@@ -79,6 +81,12 @@ public:
     float collisionRadius() const { return m_collisionRadius; }
     virtual bool isGroundVehicle() const { return false; }
     bool startTumbling() override;
+    // the destruction sequence (docs/ROADMAP.md, appendix R): bursts of explosions and debris
+    // over two seconds while the hull drifts and spins, then the hull is gone
+    bool isWrecking() const { return m_wreckStep >= 0; }
+    bool wreckGone() const { return m_wreckGone; }
+    // the hull's radius (metres), which the death view keeps its distance by
+    float hullRadius() const;
     // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)
     virtual bool engagesHostiles() const { return true; }
     // where the gun points; units with a turret turn it with aimAt()
@@ -92,19 +100,31 @@ public:
     void updateVelocity(float elapsedTime);
     void updateOrientation(float elapsedTime);
     void updateTumble(float elapsedTime);
+    void updateWreck(float elapsedTime);
     void draw();
     void arm(int model, txt::DesFile &file);
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
 
 protected:
     void updateBox();
+    // turns and runs towards the point, the pitch making for its height over the given horizontal way
+    void steer(const Vector3D &point, float speed, float reach);
     // moves by delta, sliding along the terrain and the objects in the way
     void move(Vector3D delta);
     // the part of delta that doesn't run into another unit, a tower or a building: up to the
     // contact, then along it (mines, effects and the unit it docks on are left out)
-    Vector3D slideAlongObjects(const Vector3D &position, const Vector3D &delta);
+    // also sets off mines and runs into debris on the way, at the given speed (m/s; the
+    // velocity's if negative)
+    Vector3D slideAlongObjects(const Vector3D &position, const Vector3D &delta, float speed = -1);
     // big ships push through; the others steer round them
     virtual bool collidesWithObjects() const { return true; }
+    bool startWreck() override;
+    // the sequence's bursts: explosion type (EXPLOSIO.DES) at a random spot of the hull, scattered
+    // over spread hull radii lengthwise and upwards; a piece of debris (DEBRIS.DES) flung out at an
+    // elevation between the two angles
+    void wreckExplosion(int type, float spread);
+    void wreckDebris(int index, float minElevation, float maxElevation);
+    void nextWreckStep();
 
 protected:
     glm::mat3 m_orientation;
@@ -123,8 +143,17 @@ protected:
 
     Vector3D m_angleVelocity;
     Vector3D m_turnVelocity;
-    Vector3D m_spin;            // the tumble's angular velocity
-    float m_tumbleEnd = 0;      // and when it ends at the latest
+    Vector3D m_spin;            // the paralysed drift's angular velocity
+    float m_tumbleEnd = 0;      // and when its way has run out
+
+    int m_wreckStep = -1;              // the destruction sequence's next burst, -1 if none
+    float m_wreckNext = 0;             // when it is due
+    bool m_wreckRuns = false;          // a boat that keeps its course until it hits the ground
+    float m_wreckRunEnd = 0;
+    bool m_wreckGone = false;          // the hull is gone (the player's death view goes on)
+    Vector3D m_wreckAcceleration;      // m/s², drawn anew at every burst
+    Vector3D m_wreckSpinAcceleration;  // rad/s² about the hull's own axes
+    Vector3D m_wreckSpin;
 
     Vector3D m_maxAngleVelocity;
     Vector3D m_angleFriction;

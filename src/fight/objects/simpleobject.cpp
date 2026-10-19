@@ -19,6 +19,7 @@
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "gfx/pipeline.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 
 namespace fight {
@@ -42,10 +43,19 @@ SimpleObject::SimpleObject(Scenario *scenario, txt::DesFile &file, const ObjectI
 }
 
 
+void SimpleObject::setYaw(float yaw)
+{
+    m_yaw = yaw;
+    m_box = m_localBox.transform(glm::rotate(glm::translate(Matrix(1), m_position), -yaw, Vector3D(0, 0, 1)));
+}
+
+
 void SimpleObject::draw()
 {
     gfx::Pipeline::pushMatrix();
     gfx::Pipeline::translate(m_position);
+    if (m_yaw != 0)
+        gfx::Pipeline::rotate(-glm::degrees(m_yaw), Vector3D(0, 0, 1));
     gfx::Pipeline::scale(m_scale);
     m_base->draw();
     gfx::Pipeline::popMatrix();
@@ -54,9 +64,12 @@ void SimpleObject::draw()
 
 bool SimpleObject::intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal)
 {
-    if (m_base->intersect((start - m_position)/m_scale, dir, radius/m_scale, distance, normal))
+    // into the model's frame, turned back by its yaw
+    const glm::mat3 toModel = glm::mat3(glm::rotate(Matrix(1), m_yaw, Vector3D(0, 0, 1)));
+    if (m_base->intersect(toModel*(start - m_position)/m_scale, toModel*dir, radius/m_scale, distance, normal))
     {
         distance *= m_scale;
+        normal = glm::transpose(toModel)*normal;
         return true;
     }
     return false;

@@ -20,12 +20,13 @@
 #include "fight/scenario.h"
 #include "fight/objects/turretbase.h"
 #include "fight/weapons/torpedo.h"
+#include "sfx/samplemap.h"
 #include "txt/desfile.h"
 #include "util/random.h"
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
-#include <glm/gtc/constants.hpp>
+#include <algorithm>
 #include <cmath>
 
 
@@ -34,37 +35,35 @@ namespace fight {
 
 namespace {
 
-float random()
+// uniform in [-1, 1]
+float spread()
 {
-    return util::random()/float(RAND_MAX);
+    return 2.0f*util::random()/float(RAND_MAX) - 1.0f;
 }
-
-// The data has no turn rates for the player's turrets; the turret models (TURRETn.DES) mostly turn
-// at 1.5 rad/s, so they do too. A shot leaves once the turret is within this angle of its aim.
-const float TurnRate = 1.5f;
-const float AimTolerance = 0.035f;
 
 }
 
 
-PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int softwareItem, const Vector3D &mount, float defect) :
+PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int softwareItem, const Vector3D &mount, int side, float defect) :
     m_scenario(scenario),
     m_player(player),
     m_gun(scenario, gunItem - 3073, player),
     m_mount(mount),
-    m_order(Order::Sync),
-    m_state(State::Sync),
+    m_side(side),
+    m_order(Order::Search),
+    m_state(State::Scanning),
     m_target(nullptr),
-    m_lockTime(0),
+    m_attackTarget(nullptr),
+    m_lockEnd(0),
     m_nextScan(0),
-    m_shots(0),
-    m_volleyEnd(0),
-    m_aim(0, 1, 0)
+    m_volleyLeft(0),
+    m_volleyEnd(0)
 {
     m_gun.addMuzzles(Vector3D(0), gunItem);
     m_gun.setDefect(defect);
 
-    // items 7169-7177 are Software0-8: Claw (torpedoes), Punisher (vessels), Eraser (both); 9 is "No Software"
+    // items 7169-7177 are Software0-8: Claw V1.6-V3.6 (torpedoes), Punisher V1.0-V2.2 (vessels),
+    // Eraser V0.8-V1.4 (both); 9 is "No Software"
     const int index = softwareItem >= 7169 && softwareItem <= 7177 ? softwareItem - 7169 : 9;
     txt::DesFile file("vfx:sobjects/globweap.des");
     file.setSection(String("software%1").arg(index));
@@ -101,63 +100,51 @@ const StringList& turretStateNames(bool brief)
 }
 
 
+// a jammed gun shows as such, whatever the turret is doing
 String PlayerTurret::stateName() const
 {
-    return turretStateNames(true).value(int(m_state));
+    return turretStateNames(true).value(int(m_gun.state() == Gun::StateJammed ? State::Jammed : m_state));
 }
 
 
 String PlayerTurret::stateText() const
 {
-    return turretStateNames(false).value(int(m_state));
+    return turretStateNames(false).value(int(m_gun.state() == Gun::StateJammed ? State::Jammed : m_state));
 }
 
 
-void PlayerTurret::setOrder(Order order)
+bool PlayerTurret::setOrder(Order order)
 {
+    if ((order == Order::Attack || order == Order::Search) && !hasSoftware())
+        return false;
     m_order = order;
+    release();
+    switch (order)
+    {
+    case Order::Stop: m_state = State::Stopped; break;
+    case Order::Sync: m_state = State::Sync; break;
+    case Order::Attack:
+    case Order::Search:
+        // it searches at once
+        m_attackTarget = order == Order::Attack ? m_scenario->target().locked() : nullptr;
+        m_state = State::Scanning;
+        m_nextScan = m_scenario->time();
+        break;
+    }
+    return true;
+}
+
+
+void PlayerTurret::release()
+{
     m_target = nullptr;
     m_targetIsTorpedo = false;
-    m_lockTime = 0;
-    m_shots = 0;
 }
 
 
 Vector3D PlayerTurret::mountPosition() const
 {
     return m_player->position() + m_player->right()*m_mount.x + m_player->dir()*m_mount.y + m_player->up()*m_mount.z;
-}
-
-
-Vector3D PlayerTurret::toWorld(const Vector3D &local) const
-{
-    return m_player->right()*local.x + m_player->dir()*local.y + m_player->up()*local.z;
-}
-
-
-Vector3D PlayerTurret::toLocal(const Vector3D &world) const
-{
-    return Vector3D(glm::dot(world, m_player->right()), glm::dot(world, m_player->dir()), glm::dot(world, m_player->up()));
-}
-
-
-bool PlayerTurret::turnTo(const Vector3D &direction, float elapsedTime)
-{
-    const Vector3D wanted = glm::normalize(toLocal(direction));
-    const float angle = std::acos(glm::clamp(glm::dot(m_aim, wanted), -1.0f, 1.0f));
-    const float step = TurnRate*elapsedTime;
-    if (angle <= step)
-        m_aim = wanted;
-    else
-    {
-        // rotate within the plane of both directions (any plane when they are opposite)
-        Vector3D axis = glm::cross(m_aim, wanted);
-        if (glm::length(axis) < 1e-4f)
-            axis = glm::cross(m_aim, std::abs(m_aim.z) < 0.9f ? Vector3D(0, 0, 1) : Vector3D(1, 0, 0));
-        axis = glm::normalize(axis);
-        m_aim = glm::normalize(m_aim*std::cos(step) + glm::cross(axis, m_aim)*std::sin(step));
-    }
-    return angle - step < AimTolerance;
 }
 
 
@@ -185,33 +172,115 @@ bool PlayerTurret::isValid(ActiveObject *target) const
 }
 
 
-// the nearest target the software looks for, within the gun's range
+// the turret covers the half above the boat (side 0) or below it (side 1)
+bool PlayerTurret::onSide(const ActiveObject *target) const
+{
+    const float above = glm::dot(target->center() - m_player->position(), m_player->up());
+    return m_side == 0 ? above >= 0 : above <= 0;
+}
+
+
+bool PlayerTurret::inSight(const ActiveObject *target) const
+{
+    Vector3D position, normal;
+    return !m_scenario->surface().testCollision(m_player->center(), target->center(), 0.0f, position, normal);
+}
+
+
+bool PlayerTurret::torpedoAfterPlayer() const
+{
+    for (const auto &torpedo : m_scenario->torpedoes())
+        if (!torpedo->isDone() && torpedo->target() == m_player)
+            return true;
+    return false;
+}
+
+
+// the nearest torpedo after the player (Claw, Eraser first), else the nearest unit attacking the
+// player (Punisher, Eraser), else the target of an attack order; each on the turret's side, in
+// sight and a contact of the sonar
 ActiveObject* PlayerTurret::search() const
 {
-    ActiveObject *nearest = nullptr;
-    float nearestDistance = m_gun.range();
-    auto consider = [&](ActiveObject *unit) {
-        const float distance = glm::length(unit->center() - m_player->position());
-        if (distance < nearestDistance)
-        {
-            nearest = unit;
-            nearestDistance = distance;
-        }
+    auto contact = [this](const ActiveObject *object) {
+        return std::any_of(m_scenario->sonar().begin(), m_scenario->sonar().end(), [object](const Sonar::SonarEntry &entry) { return entry.object == object; });
     };
+    auto usable = [&](ActiveObject *object) {
+        return isValid(object) && onSide(object) && inSight(object) && contact(object);
+    };
+    auto nearer = [this](ActiveObject *a, ActiveObject *b) {
+        return !b || glm::length(a->center() - m_player->position()) < glm::length(b->center() - m_player->position());
+    };
+
+    ActiveObject *nearest = nullptr;
     if (m_software.torpedoes)
         for (const auto &torpedo : m_scenario->torpedoes())
-            if (!torpedo->isDone() && torpedo->owner() != m_player &&
-                (torpedo->target() == m_player || (torpedo->owner() && m_scenario->isHostile(Scenario::PlayerFaction, torpedo->owner()->iff()))))
-                consider(torpedo.get());
-    if (m_software.vessels)
-        for (const auto &record : m_scenario->objectRecords())
-        {
-            ActiveObject *unit = dynamic_cast<ActiveObject *>(record.object);
-            const bool vessel = dynamic_cast<SimpleBoat *>(unit) || dynamic_cast<TurretBase *>(unit);
-            if (vessel && isValid(unit) && m_scenario->isHostile(Scenario::PlayerFaction, unit->iff()))
-                consider(unit);
-        }
+            if (torpedo->target() == m_player && usable(torpedo.get()) && nearer(torpedo.get(), nearest))
+                nearest = torpedo.get();
+    if (!nearest && m_software.vessels)
+        for (ActiveObject *unit : m_scenario->playerAttackerList())
+            if (!isTorpedo(unit) && usable(unit) && nearer(unit, nearest))
+                nearest = unit;
+    if (!nearest && m_attackTarget && usable(m_attackTarget))
+        nearest = m_attackTarget;
     return nearest;
+}
+
+
+// whether the turret stays on its target: on its side and in sight, and a vessel only as long as
+// the software allows (Claw and Eraser leave it for incoming torpedoes, Punisher keeps only units
+// attacking the player, Eraser such units once any attack)
+bool PlayerTurret::keeps(ActiveObject *target) const
+{
+    if (!onSide(target) || !inSight(target))
+        return false;
+    if (m_targetIsTorpedo)
+        return true;
+    const std::vector<ActiveObject*> &attackers = m_scenario->playerAttackerList();
+    const bool attacking = std::find(attackers.begin(), attackers.end(), target) != attackers.end();
+    if (!m_software.vessels)
+        return !torpedoAfterPlayer();
+    if (!m_software.torpedoes)
+        return attacking;
+    return !torpedoAfterPlayer() && (attackers.empty() || attacking);
+}
+
+
+// a shot at a point scattered round the target by the software's accuracy, led for the target's
+// motion; nothing leaves when the shot can't catch up
+void PlayerTurret::fireAt(ActiveObject *target)
+{
+    const Vector3D dim = target->box().dim();
+    const float size = std::max(dim.x, std::max(dim.y, dim.z));
+    const bool vessel = m_targetIsTorpedo || (dynamic_cast<SimpleBoat *>(target) && !static_cast<SimpleBoat *>(target)->isGroundVehicle());
+    const float scatter = (1 - m_software.hit)*size*(vessel ? 1.0f : 0.5f);
+    const Vector3D point = target->center() + scatter*Vector3D(spread(), spread(), spread());
+
+    const Vector3D mount = mountPosition();
+    const Vector3D offset = point - mount;
+    const Vector3D velocity = target->velocity();
+    const float speed = m_gun.projectileSpeed();
+    // |offset + velocity*t| = speed*t
+    const float a = glm::dot(velocity, velocity) - speed*speed;
+    const float b = 2*glm::dot(offset, velocity);
+    const float c = glm::dot(offset, offset);
+    float t;
+    if (std::abs(a) < 1e-6f)
+        t = b < 0 ? -c/b : -1;
+    else
+    {
+        const float discriminant = b*b - 4*a*c;
+        if (discriminant < 0)
+            return;
+        const float root = std::sqrt(discriminant);
+        const float t1 = (-b - root)/(2*a), t2 = (-b + root)/(2*a);
+        t = t1 > 0 && (t1 < t2 || t2 <= 0) ? t1 : t2;
+    }
+    if (t <= 0)
+        return;
+    const Vector3D dir = glm::normalize(offset + velocity*t);
+    Vector3D right = glm::cross(dir, m_player->up());
+    right = glm::length(right) > 1e-3f ? glm::normalize(right) : m_player->right();
+    m_gun.fire(mount, dir, glm::cross(right, dir), right);
 }
 
 
@@ -219,93 +288,84 @@ void PlayerTurret::update(float elapsedTime, bool playerFiring)
 {
     m_gun.update(elapsedTime);
     const float time = m_scenario->time();
+    const bool ready = m_gun.state() == Gun::StateReady;
 
     switch (m_order)
     {
     case Order::Stop:
-        m_state = State::Stopped;
-        turnTo(m_player->dir(), elapsedTime);
         return;
 
     case Order::Sync:
-        m_state = State::Sync;
-        if (turnTo(m_player->dir(), elapsedTime) && playerFiring && m_gun.state() == Gun::StateReady)
-            m_gun.fire(mountPosition(), m_player->dir(), m_player->up(), m_player->right());
+        // each pull of the main gun's trigger fires the turret's own gun too, straight ahead and
+        // from all its barrels at once
+        if (m_state == State::Rearming && ready)
+            m_state = State::Sync;
+        if (playerFiring && ready)
+        {
+            m_gun.fire(mountPosition(), m_player->dir(), m_player->up(), m_player->right(), true);
+            m_state = State::Rearming;
+        }
         return;
 
     case Order::Attack:
-        {
-            ActiveObject *locked = m_scenario->target().locked();
-            if (locked != m_target)
-            {
-                m_target = locked;
-                m_targetIsTorpedo = false;
-                m_lockTime = 0;
-            }
-        }
-        break;
-
     case Order::Search:
-        if (time >= m_nextScan)
+        break;
+    }
+
+    if (m_gun.usesAmmo() && m_gun.ammo() <= 0)
+    {
+        release();
+        m_state = State::Empty;
+        return;
+    }
+
+    if (m_target && (!isValid(m_target) || !keeps(m_target)))
+    {
+        release();
+        m_state = State::Scanning;
+        m_nextScan = time + m_software.scan;
+    }
+
+    if (!m_target)
+    {
+        m_state = State::Scanning;
+        if (!hasSoftware() || time < m_nextScan)
+            return;
+        m_target = search();
+        if (!m_target)
         {
             m_nextScan = time + m_software.scan;
-            if (!isValid(m_target))
-            {
-                m_target = m_software.torpedoes || m_software.vessels ? search() : nullptr;
-                m_targetIsTorpedo = isTorpedo(m_target);
-                m_lockTime = 0;
-            }
+            return;
         }
-        break;
-    }
-
-    if (!isValid(m_target))
-    {
-        m_target = nullptr;
-        m_state = State::Scanning;
-        turnTo(m_player->dir(), elapsedTime);
-        return;
-    }
-
-    // lead the target; the software's accuracy decides how far off a shot may go
-    const Vector3D mount = mountPosition();
-    const float distance = glm::length(m_target->center() - mount);
-    const float flight = m_gun.projectileSpeed() > 0 ? distance/m_gun.projectileSpeed() : 0;
-    const Vector3D aim = glm::normalize(m_target->center() + m_target->velocity()*flight + m_aimError - mount);
-    const bool aligned = turnTo(aim, elapsedTime);
-    if (m_lockTime < m_software.lock)
-    {
-        m_lockTime += elapsedTime;
+        // the lock-on starts with the turret's whirr
+        m_targetIsTorpedo = isTorpedo(m_target);
+        m_lockEnd = time + m_software.lock;
+        m_volleyLeft = m_software.volleyShots;
         m_state = State::Locking;
+        sfx::SampleMap::get(sfx::Sample::Engine_Turret).play();
         return;
     }
-    if (time < m_volleyEnd)
+
+    if (m_state == State::Locking && time < m_lockEnd)
+        return;
+    if (m_state == State::Volley)
     {
+        if (time < m_volleyEnd)
+            return;
+        m_volleyLeft = m_software.volleyShots;
+    }
+    m_state = ready ? State::Firing : State::Rearming;
+    if (!ready)
+        return;
+
+    // a volley is volleyShots + 1 shots, one barrel each, then a pause
+    fireAt(m_target);
+    m_state = State::Rearming;
+    if (m_volleyLeft-- <= 0)
+    {
+        m_volleyEnd = time + m_software.volleyDelay;
         m_state = State::Volley;
-        return;
     }
-    if (distance > m_gun.range() || !aligned)
-    {
-        m_state = State::Locking;
-        return;
-    }
-    const Vector3D barrel = toWorld(m_aim);
-    Vector3D right = glm::cross(barrel, m_player->up());
-    right = glm::length(right) > 1e-3f ? glm::normalize(right) : m_player->right();
-    if (m_gun.state() == Gun::StateReady)
-    {
-        m_gun.fire(mount, barrel, glm::cross(right, barrel), right);
-        const float error = (1 - m_software.hit)*6.0f*random();
-        const float angle = random()*glm::two_pi<float>();
-        m_aimError = Vector3D(error*std::cos(angle), error*std::sin(angle), 0);
-        if (++m_shots >= m_software.volleyShots)
-        {
-            m_shots = 0;
-            m_volleyEnd = time + m_software.volleyDelay;
-        }
-    }
-    m_state = m_gun.state() == Gun::StateJammed ? State::Jammed : m_gun.state() == Gun::StateEmpty ? State::Empty :
-              m_gun.state() == Gun::StateRearming ? State::Rearming : State::Firing;
 }
 
 

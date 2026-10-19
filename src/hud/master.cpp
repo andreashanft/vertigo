@@ -48,9 +48,7 @@ Master::Master(HUD *hud, Rect rect) :
     m_passiveBlue(hud->getImage("hudscnpb"), false),
     m_passiveGreen(hud->getImage("hudscnpg"), false),
     m_passiveRed(hud->getImage("hudscnpr"), false),
-    m_turretGreen(hud->getImage("hudturgr"), false),
-    m_turretYellow(hud->getImage("hudturye"), false),
-    m_turretRed(hud->getImage("hudturre"), false),
+    m_turretCross(hud->getImage("hudturr"), false),
     m_lockActiveYellow(hud->getImage("hudlocaa"), false),
     m_lockActiveGreen(hud->getImage("hudlocag"), false),
     m_lockActiveRed(hud->getImage("hudlocar"), false),
@@ -96,21 +94,29 @@ void Master::draw()
         drawPoint(point4, rect, true, true, true);
     }
 
-    // the turrets' targets
+    // each turret's target from its lock-on, while it locks on and fires: a cross of four
+    // diagonal strokes; for a target off to the side (or behind) its centre sits on the HUD's
+    // edge towards it, so that only the inner half shows
     for (int i = 0; i < 2; i++)
     {
         const fight::PlayerTurret *turret = m_hud->scenario()->player()->turret(i);
         if (!turret || !turret->target())
             continue;
-        const Vector4D point4 = m * Vector4D(turret->target()->center(), 1);
-        if (point4.z > 0)
-            continue;
-        const Point point = glm::round(Vector2D(point4)/point4.w);
         const fight::PlayerTurret::State state = turret->state();
-        gfx::Texture &bracket = state == fight::PlayerTurret::State::Locking ? m_turretYellow :
-                                state == fight::PlayerTurret::State::Firing || state == fight::PlayerTurret::State::Volley ||
-                                state == fight::PlayerTurret::State::Rearming ? m_turretRed : m_turretGreen;
-        bracket.draw(point.x - bracket.width()/2, point.y - bracket.height()/2, &m_clipRect);
+        if (state != fight::PlayerTurret::State::Locking && state != fight::PlayerTurret::State::Firing &&
+            state != fight::PlayerTurret::State::Volley && state != fight::PlayerTurret::State::Rearming)
+            continue;
+        const Vector4D point4 = m * Vector4D(turret->target()->center(), 1);
+        const Vector2D centre(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
+        const Vector2D half(rect.width/2.0f, rect.height/2.0f);
+        Vector2D offset = Vector2D(point4)/std::abs(point4.w) - centre;
+        if (point4.z > 0)
+            offset = -offset*1000.0f;
+        const float reach = std::max(std::abs(offset.x)/half.x, std::abs(offset.y)/half.y);
+        if (reach > 1)
+            offset /= reach;
+        const Point point = glm::round(centre + offset);
+        m_turretCross.draw(point.x - m_turretCross.width()/2, point.y - m_turretCross.height()/2, &m_clipRect);
     }
 
     if (m_hud->navPoint() >= 0)
@@ -187,11 +193,16 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
             tex = isFriend && m_hud->scenario()->blink() ? &m_lockPassiveGreen : &m_lockPassiveRed;
         tex->draw(point.x - tex->width()/2, point.y - tex->height()/2, &m_clipRect);
 
+        // the distance, and while a homing torpedo locks on the seconds left to one decimal on the
+        // same line ("72M  0:5S", the original's separator is a colon), the two centred together
+        String line = isPassive ? String() : String("%1M").arg(static_cast<int>(glm::round(target.distance())));
         if (torpedoLock && player->lockProgress() < 1)
-            m_hud->fontYellow().draw(String::number(int(std::ceil(player->lockRemaining()))), Rect(point.x - 100, point.y + 38, 200, -1), true, false, &m_clipRect);
-
-        if (!isPassive)
-            m_hud->fontGreen().draw(String("%1M").arg(static_cast<int>(glm::round(target.distance()))), Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);
+        {
+            const int tenths = static_cast<int>(std::ceil(10*player->lockRemaining()));
+            line += String("%1%2:%3S").arg(line.isEmpty() ? "" : "  ").arg(tenths/10).arg(tenths % 10);
+        }
+        if (!line.isEmpty())
+            m_hud->fontGreen().draw(line, Rect(point.x - 100, point.y + 26, 200, -1), true, false, &m_clipRect);
 
         if (target.locked() == nullptr)
             return;

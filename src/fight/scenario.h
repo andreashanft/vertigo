@@ -28,6 +28,7 @@
 #include "gfx/texturemanager.h"
 #include "game/input.hpp"
 #include "txt/desfile.h"
+#include "txt/stringtable.h"
 #include "boats/player.h"
 #include "surface/surface.h"
 #include "effects/effectmanager.h"
@@ -90,14 +91,24 @@ public:
     float height() const { return m_height; }
     float depth() const { return m_depth - m_position.z; }
     // the whole picture's brightness, 0 to 1: fading in at the start and out once the mission
-    // has failed, as the original does
+    // has failed, as the original does, times the pause's dimming
     float brightness() const;
+    // 1 normally, 0 when paused: the world goes into the water's dark blue
+    void setDimming(float dimming) { m_dimming = dimming; }
     // less than this far below the surface the radiation symbol blinks and the monitors flicker,
     // less than RadiationAlertDepth the alert comes too (docs/ROADMAP.md, appendix D)
-    static constexpr float RadiationDepth = 100;
+    static constexpr float RadiationDepth = 99;
     static constexpr float RadiationAlertDepth = 60;
-    // a monitor blanks out for single frames at random in the radiation; each monitor its own
-    bool monitorBlanked(int monitor) const;
+    // the radiation's strength: 0 a hundred metres below the surface and deeper, 1 at the surface
+    float radiation() const;
+    // In the radiation a monitor shows nothing until its next refresh, at random, the more often
+    // the closer the boat is to the surface; each monitor refreshes at its own rate
+    enum class Monitor { Master, Slave0, Slave1, Round0, Round1 };
+    bool monitorBlanked(Monitor monitor) const;
+    // the height of the water's surface
+    float surfaceLevel() const { return m_depth; }
+    // the throttle set to that speed (m/s), as near the surface
+    void holdThrottle(float velocity);
     // the CD track of the mission's music, as numbered on the CD (0: none)
     int cdTrack() const { return m_cdTrack > 0 ? m_cdTrack + 1 : 0; }
     float time() const { return m_time; }
@@ -109,7 +120,9 @@ public:
     int playerId() const { return m_playerId; }
     // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
     void playerHit(ActiveObject *unit, bool destroyed);
-    void destroyPlayer() { m_eventPlayerDestroyed.complete(); }
+    // the player's boat is destroyed: the death view watches its destruction sequence from
+    // outside (docs/ROADMAP.md, appendix R)
+    void destroyPlayer();
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
     Player* player() const { return m_player.get(); }
@@ -119,6 +132,7 @@ public:
     bool engagePlayer(ActiveObject *unit);
     void disengagePlayer(ActiveObject *unit);
     int playerAttackers() const { return int(m_playerAttackers.size()); }
+    const std::vector<ActiveObject*>& playerAttackerList() const { return m_playerAttackers; }
 
     Surface& surface() { return m_surface; }
 
@@ -141,6 +155,19 @@ public:
     CollisionManager& collisionManager() { return m_collisionManager; }
     ConditionManager& conditionManager() { return m_conditionManager; }
     std::vector<ConditionRadio*>& radio() { return m_radio; }
+    // the radio messages and the units' events as the log (the M key) lists them, oldest first
+    enum class LogColor { Green, Red, Amber };
+    struct LogEntry
+    {
+        float time;     // mission seconds
+        String text;
+        LogColor color;
+    };
+    const std::vector<LogEntry>& log() const { return m_log; }
+    void log(const String &text, LogColor color);
+    // "<name> wurde angegriffen" and the like (FIGHTEXT 5-10), in amber: the original logs a
+    // unit's event only when the unit has a name and the mission uses that event
+    void logEvent(const String &name, const ConditionEvent *event, txt::StringFight what);
     Sonar& sonar() { return m_sonar; }
     Target& target() { return m_target; }
     // the pilot's head in the cockpit (shown by the 3D cockpit only)
@@ -212,6 +239,7 @@ private:
     CollisionManager m_collisionManager;
     ConditionManager m_conditionManager;
     std::vector<ConditionRadio*> m_radio;
+    std::vector<LogEntry> m_log;
     Sonar m_sonar;
     Target m_target;
     HeadMotion m_headMotion;
@@ -240,6 +268,14 @@ private:
 
     float m_time;
     float m_failTime = -1;      // when the mission failed, -1 while it hasn't
+    // the death view: the camera's place, its heading and elevation round the hull and its
+    // distance in hull radii
+    void updateDeathView(float elapsedTime);
+    Vector3D m_deathCamera;
+    float m_deathYaw = 0;
+    float m_deathPitch = 0;
+    float m_deathDistance = 0;
+    float m_dimming = 1;
 
     float m_left;
     float m_right;

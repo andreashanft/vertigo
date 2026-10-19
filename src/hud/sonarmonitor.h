@@ -23,6 +23,7 @@
 #include "ui/widget.h"
 #include "gfx/texture.h"
 #include "lamp.h"
+#include "fight/scenario.h"
 
 
 namespace txt { class DesFile; }
@@ -38,7 +39,7 @@ class SonarMonitor : public ui::Widget
 {
 public:
     // the lamp beside it (from the monitor's section) lights its upper slot while the active sonar is on
-    SonarMonitor(HUD *hud, const txt::DesFile &file, int scale);
+    SonarMonitor(HUD *hud, const txt::DesFile &file, int scale, fight::Scenario::Monitor monitor);
 
 public:
     int scale() const { return m_scale; }
@@ -52,6 +53,7 @@ private:
     Point m_point;
     int m_radius;
     int m_scale;
+    fight::Scenario::Monitor m_monitor;  // which one, for the radiation's flicker
 
     gfx::Texture m_center;
     gfx::Texture m_nav;

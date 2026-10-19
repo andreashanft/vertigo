@@ -172,15 +172,23 @@ void Billboard::draw(const Vector3D &position, float angle, float scale, float t
     for (int i = 0; i < 4; i++)
         vertices[i] = { corners[i], texCoords[i] };
 
+    // a glowing sprite adds to what is behind it and leaves the depth buffer alone, so its soft
+    // edges don't cut into the sprites drawn after it (Particles::draw)
     if (m_blendColor)
+    {
         glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
+        glDepthMask(GL_FALSE);
+    }
     gfx::Pipeline::setAlphaTest(true);
 
     texture->bind();
     gfx::Pipeline::drawQuads(vertices, 4);
 
     if (m_blendColor)
+    {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_TRUE);
+    }
     gfx::Pipeline::setAlphaTest(false);
 }
 

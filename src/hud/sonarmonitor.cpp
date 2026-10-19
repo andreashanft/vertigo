@@ -37,12 +37,13 @@ gfx::Image dot(gfx::Rgb color)
     return image;
 }
 
-SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale) :
+SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale, fight::Scenario::Monitor monitor) :
     ui::Widget(hud->widget()),
     m_hud(hud),
     m_point(file.value("X1").toInt(), file.value("Y1").toInt()),
     m_radius(file.value("Radius").toInt()),
     m_scale(scale),
+    m_monitor(monitor),
     m_lamp(hud, file)
 {
     m_center.fromImage(dot(0xffa88400), true);
@@ -55,6 +56,8 @@ SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale) :
 
 void SonarMonitor::draw()
 {
+    if (m_hud->scenario()->monitorBlanked(m_monitor))
+        return;
     m_lamp.draw(m_hud->scenario()->sonar().isActive());
     Point point = m_hud->project(m_point);
     int radius = (m_hud->project(m_point + Point(0, m_radius)) - point).y;
@@ -84,6 +87,9 @@ void SonarMonitor::draw()
 
     for (const auto &entry : m_hud->scenario()->sonar())
     {
+        // the original draws no neutral contact here once the sonar tells friend from foe
+        if (entry.isNeutral)
+            continue;
         Vector2D dir = Vector2D(m * Vector4D(entry.object->position(), 1));
         float distance = glm::length(dir);
         if (distance < m_scale)

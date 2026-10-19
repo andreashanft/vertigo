@@ -210,6 +210,7 @@ set(SOURCES
     hud/slavemonitor.h
     hud/sonarmonitor.cpp
     hud/symbols.cpp
+    hud/pages.cpp
     hud/symbols.h
     hud/sonarmonitor.h
     hud/autopilot.cpp
@@ -333,6 +334,34 @@ endif()
 # the version, for the main menu and --help
 target_compile_definitions(vertigo PRIVATE VERTIGO_VERSION="${PROJECT_VERSION}")
 target_link_libraries(vertigo SDL3::SDL3 ${OPENAL_LIBRARY})
+# the help page shows the version with the last commit and its date (the original shows its own)
+set(VERTIGO_COMMIT "")
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.git)
+    execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --format=%h%x20%cd --date=format:%d/%m/%Y
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE VERTIGO_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    # configure again after a commit or a branch switch (in a worktree .git is a file naming the
+    # worktree's own directory, and the branches live in the common one)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir --path-format=absolute --git-common-dir
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE VERTIGO_GIT_DIRS OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    string(REPLACE "\n" ";" VERTIGO_GIT_DIRS "${VERTIGO_GIT_DIRS}")
+    list(LENGTH VERTIGO_GIT_DIRS VERTIGO_GIT_DIR_COUNT)
+    if(VERTIGO_GIT_DIR_COUNT EQUAL 2)
+        list(GET VERTIGO_GIT_DIRS 0 VERTIGO_GIT_DIR)
+        list(GET VERTIGO_GIT_DIRS 1 VERTIGO_GIT_COMMON_DIR)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${VERTIGO_GIT_DIR}/HEAD)
+        file(READ ${VERTIGO_GIT_DIR}/HEAD VERTIGO_GIT_HEAD)
+        if(VERTIGO_GIT_HEAD MATCHES "^ref: (.*)")
+            string(STRIP "${CMAKE_MATCH_1}" VERTIGO_GIT_REF)
+            if(EXISTS ${VERTIGO_GIT_COMMON_DIR}/${VERTIGO_GIT_REF})
+                set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${VERTIGO_GIT_COMMON_DIR}/${VERTIGO_GIT_REF})
+            endif()
+        endif()
+    endif()
+endif()
+target_compile_definitions(vertigo PRIVATE VERTIGO_COMMIT="${VERTIGO_COMMIT}")
 if(APPLE)
     # Apple deprecated its OpenAL, but it is in the SDKs
     set_source_files_properties(sfx/music.cpp sfx/sound.cpp sfx/soundsystem.cpp sfx/stream.cpp PROPERTIES COMPILE_OPTIONS -Wno-deprecated-declarations)

@@ -42,7 +42,7 @@ constexpr void (*glBindFragDataLocation)(GLuint, GLuint, const GLchar *) = nullp
 #define GFX_GL_FUNCTIONS_1_1(X) \
     X(glBindTexture) X(glBlendFunc) X(glClear) X(glClearColor) X(glDeleteTextures) X(glDepthFunc) X(glDepthMask) \
     X(glDisable) X(glDrawArrays) X(glDrawElements) X(glEnable) X(glFinish) X(glFrontFace) X(glGenTextures) X(glGetError) \
-    X(glGetFloatv) X(glGetIntegerv) X(glGetString) X(glIsEnabled) X(glPixelStorei) X(glReadPixels) X(glTexImage2D) \
+    X(glGetFloatv) X(glGetIntegerv) X(glGetString) X(glIsEnabled) X(glPixelStorei) X(glReadPixels) X(glScissor) X(glTexImage2D) \
     X(glTexParameterf) X(glTexParameteri) X(glTexSubImage2D) X(glViewport)
 
 // later ones, with glext.h's types
@@ -140,6 +140,7 @@ GFX_GL_OPTIONAL_FUNCTIONS(GFX_GL_DECLARE)
 #define glPixelStorei gfx_glPixelStorei
 #define glReadPixels gfx_glReadPixels
 #define glRenderbufferStorage gfx_glRenderbufferStorage
+#define glScissor gfx_glScissor
 #define glShaderSource gfx_glShaderSource
 #define glTexImage2D gfx_glTexImage2D
 #define glTexParameterf gfx_glTexParameterf

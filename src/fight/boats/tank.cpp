@@ -159,7 +159,7 @@ bool Tank::update(float elapsedTime)
 
     const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0);
     const Vector3D previous = m_position;
-    Vector3D delta = slideAlongObjects(m_position, heading*m_speed*elapsedTime);
+    Vector3D delta = slideAlongObjects(m_position, heading*m_speed*elapsedTime, std::abs(m_speed));
     delta.z = 0;
     setPosition(m_position + delta);
     m_velocity = elapsedTime > 0 ? (m_position - previous)/elapsedTime : Vector3D(0);
@@ -168,10 +168,10 @@ bool Tank::update(float elapsedTime)
     stirUpDust(elapsedTime);
     if (m_unitGun)
     {
-        // the muzzles turn with the turret around its pivot
+        // the muzzles ([StaticGun] Relative*) sit on the gun module, as a tower's on its turret:
+        // they turn with it around its pivot, which the turret aims from
         const glm::mat3 frame = m_orientationInverted*turretRotation();
-        const Vector3D pivot = m_pivot*m_scale;
-        const Vector3D origin = m_position + m_orientationInverted*pivot - frame*pivot;
+        const Vector3D origin = m_position + m_orientationInverted*(m_pivot*m_scale);
         m_unitGun->update(elapsedTime, m_trigger, origin, frame[1], frame[2], frame[0]);
     }
 

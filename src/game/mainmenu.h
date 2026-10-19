@@ -31,7 +31,7 @@ namespace game {
 class MainMenu : public Menu
 {
 private:
-    enum State { Invalid, Presents, Title, Loading };
+    enum State { Invalid, Presents, Title, Loading, Credits };
 
 public:
     MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void(int)> funcStartTraining,
@@ -44,6 +44,7 @@ private:
     void showTraining();
     void showOptions();
     void showLoading();
+    void showCredits(int page);
     void updateDifficulty();
     void updateOptions();
 
@@ -67,8 +68,8 @@ private:
     ui::Label m_lblMainTitle;
     ui::Button m_btnMainNew;
     ui::Button m_btnMainLoad;
-    ui::Button m_btnMainDifficulty;
     ui::Button m_btnMainTraining;
+    ui::Button m_btnMainCredits;
     ui::Button m_btnMainOptions;
     ui::Button m_btnMainQuit;
     ui::Label m_lblNew;
@@ -86,6 +87,7 @@ private:
     ui::Label m_lblOptions;
     ui::Label m_lblOptionsTitle;
     ui::Button m_btnOptionsBack;
+    ui::Button m_btnOptionsDifficulty;
     // the notebook's options and the touch screen's, each a button that switches it
     struct Option
     {
@@ -99,6 +101,10 @@ private:
     ui::Label m_lblLoading;
     ui::Label m_lblLoadingTitle;
     ui::Label m_lblLoadingWait;
+    // the credits: four full-screen pictures, twelve seconds each
+    ui::Label m_credits;
+    int m_creditsPage = 0;
+    util::ElapsedTimer m_creditsTime;
 
     sfx::Sound m_backgroundSound;
     String m_name;

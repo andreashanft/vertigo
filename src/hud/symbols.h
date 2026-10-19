@@ -46,7 +46,9 @@ private:
 };
 
 
-// The symbol block: torpedo lock complete (HUDSYM1), radiation (HUDSYM2, not yet), current (HUDSYM3)
+// The symbol block (docs/ROADMAP.md, appendix E): radiation (HUDSYM2) in the first slot, a water
+// current (HUDSYM3) in the second, the marker under fire (HUDSYM1) in the third. Each symbol
+// blinks on its own clock from the moment it is switched on: half a second on, half a second off.
 class Symbols : public ui::Widget
 {
 public:
@@ -56,11 +58,22 @@ protected:
     void draw();
 
 private:
+    struct Symbol
+    {
+        Symbol(HUD *hud, const char *image, int x);
+        // switches the symbol on or off and draws it in its blink phase
+        void draw(bool on, float time, const Rect &block);
+
+        gfx::Texture texture;
+        int x;              // the slot's offset in the block
+        float shownAt = -1; // when it was switched on, -1 while off
+    };
+
     HUD *m_hud;
     Rect m_rect;
-    gfx::Texture m_lock;
-    gfx::Texture m_radiation;
-    gfx::Texture m_current;
+    Symbol m_radiation;
+    Symbol m_current;
+    Symbol m_attacked;
 };
 
 

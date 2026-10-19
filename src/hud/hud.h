@@ -46,6 +46,7 @@ namespace hud {
 
 class SonarMonitor;
 class MissionMenu;
+class Pages;
 class SlaveMonitor;
 class Cockpit3D;
 class TouchControls;
@@ -94,6 +95,8 @@ public:
     // where the autopilot can take the boat once the mission is accomplished, chosen in its menu
     // (none: it leaves at once, as in test mode and training); after eventSuccess the one chosen
     void setDestinations(const StringList &names);
+    // the mission's briefing texts for the briefing page (B): the text, the targets and the tips
+    void setBriefing(const StringList &text, const StringList &targets, const StringList &tips);
     int destination() const;
     // the mission is over and the game over menu is shown
     util::event<>& eventFailure() { return m_eventFailure; }
@@ -158,6 +161,7 @@ private:
     // leaves with success, through the destination menu if there are destinations
     void engageAutopilot();
     bool drawModel(double pixelRatio);
+    void drawDeathView(double pixelRatio);
     void updateLook(float elapsedTime);
     void menuAction(int action);
     input::KeyEvent buttonKey(input::Button button);
@@ -238,10 +242,12 @@ private:
     ui::Widget* m_debugOverlay;
     bool m_debugOverlayVisible;
     MissionMenu* m_menu;
+    Pages* m_pages;
     std::vector<SlaveMonitor*> m_slaveMonitors;
 
     bool m_paused;
     bool m_frozen;          // mission time and sounds stopped (pause or menu)
+    float m_dimming = 1;    // the pause's fade: 1 normally, 0 when paused
     sfx::Music m_music;     // the mission's CD track
     bool m_successShown;
     bool m_failureShown;

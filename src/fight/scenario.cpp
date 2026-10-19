@@ -95,6 +95,13 @@ namespace {
 const float CurrentPushSlow = 3.1f;
 const float CurrentPushFast = 9.0f;
 
+// the player and active buildings face one of four ways, card 0, 2, 4 or 6; any other card leaves
+// them facing as card 0 does (cargo ships take all eight)
+float quarterHeading(int card)
+{
+    return card >= 0 && card <= 6 && card % 2 == 0 ? card*glm::quarter_pi<float>() : 0.0f;
+}
+
 }
 
 
@@ -220,6 +227,9 @@ Scenario::Scenario(const String &name) :
         // sle 0 keeps the unit running anywhere on the map; 1 (or no key) lets it sleep out of the
         // player's sonar range (docs/ROADMAP.md, appendix J)
         info.sleeps = !m_file.contains("sle") || m_file.value("sle").toInt() == 1;
+        // ai (0 to 3 on some boats, bombers and tanks) does nothing in the original; taken here so
+        // the mission check doesn't list it
+        m_file.value("ai");
 
         switch (placeholder ? 0 : type) {
         case TypeBoat:
@@ -257,6 +267,8 @@ Scenario::Scenario(const String &name) :
 
         case TypeBuilding:
             {
+                if (m_file.value("pz").toInt() != 0)
+                    loadIssue("unhandled: ground plan with pz != 0");
                 objectDes.load(String("vfx:sobjects/gp%1x%1_%2.des").arg(m_file.value("siz").toInt() + 1).arg(m_file.value("buityp").toInt()));
                 object = new Building(this, objectDes, m_file.value("siz").toInt(), m_file.value("card", 0).toInt() * 45.0f, m_file.value("px").toInt(), m_file.value("py").toInt(), m_file.value("refx").toInt(), m_file.value("refy").toInt());
             }
@@ -282,7 +294,7 @@ Scenario::Scenario(const String &name) :
 
         case TypePlayer:
             m_position = getPosition();
-            m_yaw = m_file.value("card").toInt()*glm::quarter_pi<float>();
+            m_yaw = quarterHeading(m_file.value("card").toInt());
             m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
             entry.condTrigger = m_conditionManager.addCondition(0);
             entry.condSignal = &m_eventPlayerDestroyed;
@@ -321,8 +333,10 @@ Scenario::Scenario(const String &name) :
 
         case TypeActiveBuilding:
             {
-                object = new SimpleObject(this, objectDes, info, 16);
-                object->setPosition(getPosition());
+                SimpleObject *building = new SimpleObject(this, objectDes, info, 16);
+                building->setYaw(quarterHeading(m_file.value("card", 0).toInt()));
+                building->setPosition(getPosition());
+                object = building;
             }
             break;
 
@@ -496,6 +510,8 @@ Scenario::Scenario(const String &name) :
                 const bool moves = dynamic_cast<SimpleBoat *>(unit) != nullptr;
                 for (const OrderSlot &slot : orderSlots)
                 {
+                    if (slot.type == OrderSlot::None)
+                        continue;
                     const bool forAll = slot.type == OrderSlot::Wait || slot.type == OrderSlot::CardinalPatrol ||
                                         slot.type == OrderSlot::CardinalAttack || slot.type == OrderSlot::Explode;
                     if (!OrderSlot::isImplemented(slot.type))
@@ -575,8 +591,10 @@ Scenario::Scenario(const String &name) :
 
     for (auto &pending : pendingOrders)
     {
+        // an empty slot never runs, so its break condition (some name objectives no unit has) is never set up
         for (OrderSlot &slot : pending.second)
-            slot.breakCondition = m_conditionManager.addBreakCondition(slot.cond1, slot.dep1, slot.ref1, slot.op, slot.cond2, slot.dep2, slot.ref2, slot.del);
+            if (slot.type != OrderSlot::None)
+                slot.breakCondition = m_conditionManager.addBreakCondition(slot.cond1, slot.dep1, slot.ref1, slot.op, slot.cond2, slot.dep2, slot.ref2, slot.del);
         pending.first->setOrders(new Orders(this, pending.first, pending.second));
     }
 
@@ -653,9 +671,16 @@ void Scenario::update(float elapsedTime)
     m_pitch = dir.z < -1.0f ? -glm::half_pi<float>() : dir.z > 1.0f ? glm::half_pi<float>() : glm::asin(dir.z);
     m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
 
-    m_cameraMatrixInverted = Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_position, 1));
-    m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
-    m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
+    if (playerDestroyed())
+    {
+        updateDeathView(elapsedTime);
+    }
+    else
+    {
+        m_cameraMatrixInverted = Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_position, 1));
+        m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
+        m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
+    }
 
     m_conditionManager.update(elapsedTime);
     if (m_failTime < 0 && m_conditionManager.failed())
@@ -724,6 +749,19 @@ void Scenario::update(float elapsedTime)
 }
 
 
+void Scenario::log(const String &text, LogColor color)
+{
+    m_log.push_back({ m_time, text, color });
+}
+
+
+void Scenario::logEvent(const String &name, const ConditionEvent *event, txt::StringFight what)
+{
+    if (!name.isEmpty() && event->isUsed())
+        log(name + " " + txt::StringTable::get(what), LogColor::Amber);
+}
+
+
 bool Scenario::engagePlayer(ActiveObject *unit)
 {
     if (std::find(m_playerAttackers.begin(), m_playerAttackers.end(), unit) != m_playerAttackers.end())
@@ -761,6 +799,48 @@ void Scenario::explosionAt(const Vector3D &position, float strength)
 void Scenario::draw()
 {
     draw(m_projectionMatrix, m_cameraMatrix);
+}
+
+
+void Scenario::destroyPlayer()
+{
+    if (playerDestroyed())
+        return;
+    m_eventPlayerDestroyed.complete();
+    // the camera starts in the hull and moves out to its place beside it
+    m_deathCamera = m_player->position();
+    m_deathYaw = -glm::half_pi<float>();
+    m_deathPitch = glm::quarter_pi<float>();
+    m_deathDistance = 3.0f;
+}
+
+
+// The death view (docs/ROADMAP.md, appendix R): the camera circles the hull at 45° a second, 45°
+// above it and three hull radii away, in the hull's own frame, moving a tenth of a second's worth
+// towards that place every frame and always looking at the hull. Once the hull is gone it comes
+// down level and closes in to half a radius.
+void Scenario::updateDeathView(float elapsedTime)
+{
+    m_deathYaw += glm::quarter_pi<float>()*elapsedTime;
+    if (m_player->wreckGone())
+    {
+        m_deathPitch -= m_deathPitch*std::min(1.0f, 1.5f*elapsedTime);
+        if (m_deathDistance > 0.5f)
+            m_deathDistance -= 1.25f*elapsedTime;
+    }
+    const float d = m_deathDistance*m_player->hullRadius();
+    const Vector3D offset(-d*std::cos(m_deathPitch)*std::sin(m_deathYaw), d*std::cos(m_deathPitch)*std::cos(m_deathYaw), d*std::sin(m_deathPitch));
+    const Vector3D target = m_player->position();
+    const Vector3D place = target + glm::transpose(m_player->orientation())*offset;
+    m_deathCamera += (place - m_deathCamera)*std::min(1.0f, 10.0f*elapsedTime);
+
+    Vector3D forward = target - m_deathCamera;
+    forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : m_player->dir();
+    Vector3D right = glm::cross(forward, Vector3D(0, 0, 1));
+    right = glm::length(right) > 1e-3f ? glm::normalize(right) : m_player->right();
+    const Vector3D up = glm::cross(right, forward);
+    m_cameraMatrixInverted = Matrix(Vector4D(right, 0), Vector4D(up, 0), Vector4D(-forward, 0), Vector4D(m_deathCamera, 1));
+    m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
 }
 
 
@@ -803,6 +883,9 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
             object->draw();
     for (const auto &torpedo : m_torpedoes)
         torpedo->draw();
+    // the death view sees the player's hull until it is gone
+    if (playerDestroyed() && !m_player->wreckGone())
+        m_player->draw();
     gfx::Pipeline::setTableShading(false);
 
     // the sprites glow by themselves and fade with the distance
@@ -1047,17 +1130,41 @@ float Scenario::brightness() const
     float brightness = glm::clamp(m_time/fadeIn, 0.0f, 1.0f);
     if (m_failTime >= 0)
         brightness *= glm::clamp(1.0f - (m_time - m_failTime)/fadeOut, 0.0f, 1.0f);
-    return brightness;
+    return brightness*m_dimming;
 }
 
 
-bool Scenario::monitorBlanked(int monitor) const
+float Scenario::radiation() const
 {
-    if (depth() >= RadiationDepth)
+    return glm::clamp(1.0f - depth()/100.0f, 0.0f, 1.0f);
+}
+
+
+// (docs/ROADMAP.md, appendix D) Each refresh draws the monitor with a chance of 1 - 0.7 times the
+// radiation, from 1 a hundred metres down to 0.3 at the surface, and leaves it blank otherwise
+// until the next refresh
+bool Scenario::monitorBlanked(Monitor monitor) const
+{
+    const float radiation = this->radiation();
+    if (radiation <= 0)
         return false;
-    // a hash of the frame's time, so the drawing takes nothing from the game's random numbers
-    const float noise = glm::fract(std::sin(m_time*(971.3f + 37.1f*monitor) + monitor)*43758.5f);
-    return noise < 0.06f;
+    static const float refresh[5] = { 0.1f, 0.2f, 0.18f, 0.21f, 0.23f };
+    const int index = int(monitor);
+    const float tick = std::floor(m_time/refresh[index]);
+    // a hash of the refresh, so the drawing takes nothing from the game's random numbers
+    const float noise = glm::fract(std::sin(tick*12.9898f + index*78.233f)*43758.5453f);
+    return noise >= 1.0f - 0.7f*radiation;
+}
+
+
+void Scenario::holdThrottle(float velocity)
+{
+    m_velocityTarget = velocity;
+    if (m_player->engineRunning())
+    {
+        m_player->setVelocityTarget(velocity);
+        m_player->setFullThrottle(false);
+    }
 }
 
 

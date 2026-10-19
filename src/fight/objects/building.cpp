@@ -60,15 +60,14 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle
             cluster.offset.z = m_clusters[heightRef - 1000].offset.z + 256*cluster.scale; // TODO: test moar
         else
         {
+            // the ground is flattened to the building's reference cell; with HeightReference -1 to
+            // the cluster's own cell
             if (file.value("SurfaceLifting").toString() == "p")
             {
                 if (heightRef == 0)
-                    scenario->surface().setHeight(clusterX, clusterY, refx, refy, 0);
+                    scenario->surface().setHeight(clusterX, clusterY, refx, refy);
                 else
-                {
-                    util::Debug() << "Untested: HeightReference = -1";
-                    scenario->surface().setHeight(clusterX, clusterY, clusterX, clusterY, -4); // TODO: test
-                }
+                    scenario->surface().setHeight(clusterX, clusterY, clusterX, clusterY);
             }
             cluster.offset.z = scenario->surface().heightAt((clusterX + 0.5f)*scale.x, (clusterY + 0.5f)*scale.y);
         }

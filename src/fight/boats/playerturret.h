@@ -31,10 +31,12 @@ class Player;
 class Scenario;
 
 
-// A turret of the player's boat. Its order decides what it does: fire with the main gun (sync),
-// attack the player's target, search and destroy, or nothing. The software (GLOBWEAP [SoftwareN])
-// decides what it searches for (Claw: attacking torpedoes, Punisher: hostile vessels, Eraser: both),
-// how often it scans, how long it locks on before firing, how accurately, and its volleys.
+// A turret of the player's boat (docs/ROADMAP.md, appendix T). Its order decides what it does:
+// fire with the main gun (sync), attack the player's target, search and destroy, or nothing. The
+// software (GLOBWEAP [SoftwareN]) decides what it searches for among the units and torpedoes
+// after the player (Claw: torpedoes, Punisher: vessels, Eraser: both), how often it searches, how
+// long it locks on before firing, how far its shots scatter, and its volleys. Without software it
+// can only fire in sync.
 class PlayerTurret
 {
 public:
@@ -43,17 +45,21 @@ public:
     enum class State { Rearming, Scanning, Firing, Jammed, Empty, Locking, Stopped, Sync, Volley };
 
 public:
-    PlayerTurret(Scenario *scenario, Player *player, int gunItem, int softwareItem, const Vector3D &mount, float defect);
+    // side 0 covers the upper half round the boat, 1 the lower
+    PlayerTurret(Scenario *scenario, Player *player, int gunItem, int softwareItem, const Vector3D &mount, int side, float defect);
 
 public:
     Order order() const { return m_order; }
-    void setOrder(Order order);
+    // false (and nothing changes) for an attack or search order without software
+    bool setOrder(Order order);
+    bool hasSoftware() const { return m_software.torpedoes || m_software.vessels; }
     State state() const { return m_state; }
     String stateName() const;
     String stateText() const;  // the state written out (GLOBWEAP verbose)
     String softwareName() const { return m_software.shortName; }
     const Gun& gun() const { return m_gun; }
-    // nullptr once the target is gone (a torpedo is deleted when it explodes)
+    Gun& gun() { return m_gun; }
+    // the target it has locked on, nullptr while it has none (a torpedo is deleted when it explodes)
     ActiveObject* target() const { return isValid(m_target) ? m_target : nullptr; }
 
     void update(float elapsedTime, bool playerFiring);
@@ -63,7 +69,7 @@ private:
     {
         String shortName;
         bool torpedoes = false;
-        bool vessels = true;
+        bool vessels = false;
         float hit = 0.8f;
         float scan = 0.5f;
         float lock = 2.0f;
@@ -72,13 +78,15 @@ private:
     };
 
     ActiveObject* search() const;
+    bool keeps(ActiveObject *target) const;
+    bool onSide(const ActiveObject *target) const;
+    bool inSight(const ActiveObject *target) const;
     bool isValid(ActiveObject *target) const;
     bool isTorpedo(const ActiveObject *target) const;
+    bool torpedoAfterPlayer() const;
+    void release();
+    void fireAt(ActiveObject *target);
     Vector3D mountPosition() const;
-    Vector3D toWorld(const Vector3D &local) const;
-    Vector3D toLocal(const Vector3D &world) const;
-    // turns towards the world direction, returns whether the turret points there
-    bool turnTo(const Vector3D &direction, float elapsedTime);
 
 private:
     Scenario *m_scenario;
@@ -86,16 +94,16 @@ private:
     Gun m_gun;
     Software m_software;
     Vector3D m_mount;      // in the boat's coordinates
+    int m_side;
     Order m_order;
     State m_state;
     ActiveObject *m_target;
+    ActiveObject *m_attackTarget;  // the player's target when the attack order was given
     bool m_targetIsTorpedo = false;
-    float m_lockTime;
+    float m_lockEnd;       // the lock-on ends then
     float m_nextScan;
-    int m_shots;           // fired in the current volley
+    int m_volleyLeft;      // shots left in the current volley after the next
     float m_volleyEnd;     // the pause after a volley ends then
-    Vector3D m_aimError;
-    Vector3D m_aim;        // where the turret points, in the boat's coordinates
 };
 
 

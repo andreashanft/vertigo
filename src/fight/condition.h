@@ -43,6 +43,8 @@ public:
 public:
     virtual void complete();
     bool isCompleted() const { return m_completed; }
+    // the mission makes something depend on it
+    bool isUsed() const { return !m_dependInc.empty() || !m_dependDec.empty(); }
 
 protected:
     bool m_completed;

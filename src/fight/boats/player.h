@@ -66,6 +66,16 @@ public:
     // a side's armor is below 10 %: ALERT, with the "system collapse" voice when it starts
     bool isCritical() const;
     float speed() const { return m_speed; };
+
+    // the Fixer, the repair robot (docs/ROADMAP.md, appendix O): the system it mends now and the
+    // one the pilot forced with Alt+I (0 none/automatic, 1 armour, 2 gun, 3 torpedo magazine,
+    // 4 and 5 the turrets)
+    bool hasFixer() const { return m_fixer; }
+    int fixerSystem() const { return m_fixerSystem; }
+    int fixerForced() const { return m_fixerForced; }
+    void cycleFixer();
+    // the torpedo magazine's condition, 0 to 1 (the Fixer mends it; nothing else uses it yet)
+    float magazineCondition() const { return m_magazineCondition; }
     float noise() const;
     float range() const;
 
@@ -93,9 +103,16 @@ private:
     bool m_lockAnnounced;
     int m_threats;
     bool m_threatBlink;
+    int m_attackers = 0;     // how many units fought the player last frame
     bool m_critical = false;
     bool m_alertBlink = false;
     bool m_radiation = false;
+    // near the surface (docs/ROADMAP.md, appendix D): held below it from 40 m up until 70 m down,
+    // never above 10 m
+    static constexpr float SurfaceHoldDepth = 40;
+    static constexpr float SurfaceReleaseDepth = 70;
+    static constexpr float SurfaceLimitDepth = 10;
+    bool m_surfaceHold = false;
     float m_nextRadiationVoice = 0;
     float m_nextRadiationBeep = 0;
 
@@ -124,6 +141,16 @@ private:
     bool m_firing;
     Gun m_gun;
     std::unique_ptr<PlayerTurret> m_turrets[2];
+
+    // the Fixer
+    void updateFixer();
+    int fixerChoice(float threshold) const;
+    bool m_fixer = false;
+    int m_fixerSystem = 1;      // the Fixer starts on the armour
+    int m_fixerForced = 0;
+    int m_fixerSide = -1;        // the armour side under repair
+    float m_fixerNext = 0;       // when the next step is due
+    float m_magazineCondition = 1;
 };
 
 
