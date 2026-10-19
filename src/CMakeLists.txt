@@ -130,6 +130,8 @@ set(SOURCES
     game/movie.h
     game/notebook.cpp
     game/notebook.h
+    game/openmission.cpp
+    game/openmission.h
     game/renderer.cpp
     game/renderer.h
     game/room.cpp

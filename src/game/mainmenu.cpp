@@ -20,6 +20,7 @@
 #include "hud/touchcontrols.h"
 #include "sfx/music.hpp"
 #include "mainmenu.h"
+#include "openmission.h"
 #include "training.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
@@ -35,7 +36,7 @@
 namespace game {
 
 MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void(int)> funcStartTraining,
-                   std::function<void()> funcQuit) :
+                   std::function<void(int)> funcStartOpenMission, std::function<void()> funcQuit) :
     m_state(Invalid),
     m_lblVersion(&m_title),
     m_lblBar1(&m_title),
@@ -57,6 +58,10 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_lblTraining(&m_title, false),
     m_lblTrainingTitle(&m_lblTraining),
     m_btnTrainingBack([this]() { showMain(); }, &m_lblTraining),
+    m_btnTrainingOpen([this]() { showOpenMission(); }, &m_lblTraining),
+    m_lblOpen(&m_title, false),
+    m_lblOpenTitle(&m_lblOpen),
+    m_btnOpenBack([this]() { showTraining(); }, &m_lblOpen),
     m_lblOptions(&m_title, false),
     m_lblOptionsTitle(&m_lblOptions),
     m_btnOptionsBack([this]() { showMain(); }, &m_lblOptions),
@@ -67,7 +72,8 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_cursor(false),
     m_funcStartGame(std::move(funcStartGame)),
     m_funcLoadGame(std::move(funcLoadGame)),
-    m_funcStartTraining(std::move(funcStartTraining))
+    m_funcStartTraining(std::move(funcStartTraining)),
+    m_funcStartOpenMission(std::move(funcStartOpenMission))
 {
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
 
@@ -105,14 +111,13 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnMainLoad.setAlignment(ui::Label::AlignHCenter);
     m_btnMainLoad.setText(txt::StringTable::get(txt::MainMenu_Load));
 
-    // the training missions, if the data has them
+    // the training missions the data has, and below them the open mission
     const StringList trainings = Training::names();
     m_btnMainTraining.setFont(fontLarge);
     m_btnMainTraining.setPosition(0, 328);
     m_btnMainTraining.setWidth(640);
     m_btnMainTraining.setAlignment(ui::Label::AlignHCenter);
     m_btnMainTraining.setText(txt::StringTable::get(txt::MainMenu_Training));
-    m_btnMainTraining.setVisible(!trainings.isEmpty());
 
     m_lblTrainingTitle.setFont(fontMedium);
     m_lblTrainingTitle.setPosition(145, 256 - fontMedium.height() - 2);
@@ -126,11 +131,38 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
         button.setAlignment(ui::Label::AlignHCenter);
         button.setText(trainings[i].toUpper());
     }
+    m_btnTrainingOpen.setFont(fontLarge);
+    m_btnTrainingOpen.setPosition(0, 308 + 20*trainings.size());
+    m_btnTrainingOpen.setWidth(640);
+    m_btnTrainingOpen.setAlignment(ui::Label::AlignHCenter);
+    m_btnTrainingOpen.setText(txt::StringTable::get(txt::OpenMission));
     m_btnTrainingBack.setPosition(0, 428);
     m_btnTrainingBack.setWidth(640);
     m_btnTrainingBack.setAlignment(ui::Button::AlignHCenter);
     m_btnTrainingBack.setFont(fontLarge);
     m_btnTrainingBack.setText(txt::StringTable::get(txt::MainMenu));
+
+    // the open mission: one of the four boats, then its depot and the missions
+    m_lblOpenTitle.setFont(fontMedium);
+    m_lblOpenTitle.setPosition(145, 256 - fontMedium.height() - 2);
+    m_lblOpenTitle.setText(txt::StringTable::get(txt::OpenMission));
+    int y = 288;
+    for (const auto &boat : OpenMission::boats()) {
+        const int type = boat.first;
+        m_btnOpenBoats.emplace_back([this, type]() { m_funcStartOpenMission(type); }, &m_lblOpen);
+        ui::Button &button = m_btnOpenBoats.back();
+        button.setFont(fontLarge);
+        button.setPosition(0, y);
+        button.setWidth(640);
+        button.setAlignment(ui::Label::AlignHCenter);
+        button.setText(boat.second.toUpper());
+        y += 20;
+    }
+    m_btnOpenBack.setPosition(0, 428);
+    m_btnOpenBack.setWidth(640);
+    m_btnOpenBack.setAlignment(ui::Button::AlignHCenter);
+    m_btnOpenBack.setFont(fontLarge);
+    m_btnOpenBack.setText(txt::StringTable::get(txt::MainMenu_Training));
 
     // as in the original, below the training
     m_btnMainCredits.setFont(fontLarge);
@@ -366,6 +398,7 @@ void MainMenu::showMain()
     m_lblNew.hide();
     m_lblLoad.hide();
     m_lblTraining.hide();
+    m_lblOpen.hide();
     m_lblOptions.hide();
     m_lblLoading.hide();
 }
@@ -418,7 +451,15 @@ void MainMenu::showLoad()
 void MainMenu::showTraining()
 {
     m_lblMain.hide();
+    m_lblOpen.hide();
     m_lblTraining.show();
+}
+
+
+void MainMenu::showOpenMission()
+{
+    m_lblTraining.hide();
+    m_lblOpen.show();
 }
 
 

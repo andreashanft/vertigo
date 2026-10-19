@@ -92,6 +92,7 @@ Vertigo::Vertigo(const Options &options) :
        [this](String name) { startGame(name); },
        [this](String name) { loadGame(name); },
        [this](int index) { startTraining(index); },
+       [this](int boatType) { startOpenMission(boatType); },
        [this]() { m_window.close(); }
     )
 {
@@ -606,6 +607,21 @@ void Vertigo::endTraining()
 {
     m_window.setRenderer(&m_mainMenu);
     m_training.release()->deleteLater();
+}
+
+void Vertigo::startOpenMission(int boatType)
+{
+    m_openMission.reset(new OpenMission(boatType,
+        [this](Renderer *renderer) { m_window.setRenderer(renderer); },
+        [this]() { endOpenMission(); }
+    ));
+    m_window.setRenderer(m_openMission.get());
+}
+
+void Vertigo::endOpenMission()
+{
+    m_window.setRenderer(&m_mainMenu);
+    m_openMission.release()->deleteLater();
 }
 
 void Vertigo::introFinished()

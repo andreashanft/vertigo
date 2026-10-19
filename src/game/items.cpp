@@ -28,6 +28,8 @@ String trimEnd(const String& str);
 namespace game {
 
 Items *items = NULL;
+// the main menu's open mission: every item for sale at its base price
+bool openOffer = false;
 
 Items::Items()
 {
@@ -151,8 +153,20 @@ const std::map<int, Items::Item>& Items::all()
 }
 
 
+void Items::setOpenOffer(bool open)
+{
+    openOffer = open;
+}
+
+
 void Items::insertType(Type type, std::vector<int> &list)
 {
+    if (openOffer) {
+        for (const auto &pair : items->m_items)
+            if (pair.second.type == type)
+                list.push_back(pair.second.model);
+        return;
+    }
     Station station = util::value(Chapter::get()->stations(), Chapter::get()->currentStation());
     for (const auto &pair : items->m_items)
         if (pair.second.type == type && station.depotPrices().find(pair.second.model) != station.depotPrices().end())
@@ -205,6 +219,8 @@ int Items::getDepotPrice(int model)
     if (item == items->m_items.end())
         return 0;
     // stations that don't sell an item use its base price
+    if (openOffer)
+        return (int)(0.9*item->second.cost);
     Station station = util::value(Chapter::get()->stations(), Chapter::get()->currentStation());
     auto factor = station.depotPrices().find(model);
     return (int)(0.9*item->second.cost*(factor != station.depotPrices().end() ? factor->second : 1.0f));

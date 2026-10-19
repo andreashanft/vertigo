@@ -21,6 +21,7 @@
 #include "chapter.h"
 #include "mainmenu.h"
 #include "movie.h"
+#include "openmission.h"
 #include "training.h"
 #include "window.h"
 
@@ -114,6 +115,8 @@ private:
     void endGame();
     void startTraining(int index);
     void endTraining();
+    void startOpenMission(int boatType);
+    void endOpenMission();
     void introFinished();
     void createMainMenu(bool skipToTitle);
     void createChapter();
@@ -127,6 +130,7 @@ private:
     std::unique_ptr<Movie> m_intro;
     std::unique_ptr<Chapter> m_chapter;
     std::unique_ptr<Training> m_training;
+    std::unique_ptr<OpenMission> m_openMission;
     String m_name;
 
     // test mode, and the main menu's --keys, --click and --screenshot
