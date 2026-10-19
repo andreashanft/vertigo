@@ -486,11 +486,15 @@ if (m_scenario && !m_options.trace.empty() && m_scenario->time() >= m_nextTrace)
             ++it;
             continue;
         }
-        // the mouse moves there first, so the button under it is highlighted as for a player
+        // the mouse moves there first, so the button under it is highlighted as for a player; a
+        // drag moves it with the button held
         const PointD pos = m_window.renderer()->imageToScreen(it->pos);
+        const PointD to = m_window.renderer()->imageToScreen(it->to);
         m_window.post(Window::EventType::MouseMove, input::MouseEvent(pos, input::NoButton, input::NoButton));
         m_window.post(Window::EventType::MousePress, input::MouseEvent(pos, input::LeftButton, input::LeftButton));
-        m_window.post(Window::EventType::MouseRelease, input::MouseEvent(pos, input::LeftButton, input::NoButton));
+        if (to != pos)
+            m_window.post(Window::EventType::MouseMove, input::MouseEvent(to, input::NoButton, input::LeftButton));
+        m_window.post(Window::EventType::MouseRelease, input::MouseEvent(to, input::LeftButton, input::NoButton));
         it = m_clicks.erase(it);
     }
     for (auto it = m_screenshots.begin(); it != m_screenshots.end(); ) {

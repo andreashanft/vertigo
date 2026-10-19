@@ -175,7 +175,7 @@ bool Room::mousePressEvent(const Point &pos, input::MouseButton button)
         return true;
     }
 
-    return false;
+    return Frame::mousePressEvent(pos, button);
 }
 
 

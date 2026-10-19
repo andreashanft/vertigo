@@ -20,6 +20,8 @@
 #include "gfx/font.h"
 #include "gfx/image.h"
 #include "sfx/soundsystem.h"
+#include <SDL3/SDL_platform_defines.h>
+#include <algorithm>
 
 namespace ui {
 
@@ -86,8 +88,10 @@ void Frame::setupFrame(const Size &size, const String &title, bool closable)
 
     texture.update((size.width - 170) / 2, 0, gfx::Image::load("gfx:img/desktop/gui/bortw.img", colorTable));
 
+    const gfx::Image exit = gfx::Image::load("gfx:img/desktop/gui/gdexitu.img", colorTable);
     m_btnClose.setVisible(closable);
-    m_btnClose.setTexture(gfx::Image::load("gfx:img/desktop/gui/gdexitu.img", colorTable));
+    m_btnClose.setTexture(exit);
+    m_btnClose.setSize(exit.width(), exit.height());
     m_btnClose.setPressedTexture(gfx::Image::load("gfx:img/desktop/gui/gdexitd.img", colorTable));
 
     setTexture(texture);
@@ -113,6 +117,45 @@ void Frame::closeFrame()
 {
     sfx::SoundSystem::get()->sound(sfx::FrameClose)->play();
     m_funcClose();
+}
+
+bool Frame::mousePressEvent(const Point &pos, input::MouseButton button)
+{
+    const Rect frame = mapToGlobal(Rect(Point(0), size()));
+#if defined(SDL_PLATFORM_IOS)
+    if (!frame.contains(pos)) {
+        if (!m_btnClose.isVisible())
+            return false;
+        closeFrame();
+        return true;
+    }
+#endif
+    // the content is where the room's or the depot's picture is
+    const Rect content = mapToGlobal(Rect(9, 15, int(width()) - 18, int(height()) - 24));
+    const Rect close = m_btnClose.mapToGlobal(Rect(Point(0), m_btnClose.size()));
+    if (button == input::LeftButton && frame.contains(pos) && !content.contains(pos) && !(m_btnClose.isVisible() && close.contains(pos))) {
+        m_dragging = true;
+        m_dragOffset = pos - frame.pos();
+    }
+    // (left to the others, as dragging doesn't click)
+    return false;
+}
+
+void Frame::mouseReleaseEvent(const Point &pos, input::MouseButton button)
+{
+    if (button == input::LeftButton)
+        m_dragging = false;
+}
+
+void Frame::mouseMoveEvent(const Point &pos)
+{
+    if (!m_dragging)
+        return;
+
+    // all of the window stays on the screen
+    const Point origin = mapToGlobal(Rect(Point(0), size())).pos() - rect().pos();
+    const Point to = pos - m_dragOffset;
+    setPosition(std::clamp(to.x, 0, 640 - int(width())) - origin.x, std::clamp(to.y, 0, 480 - int(height())) - origin.y);
 }
 
 gfx::Image Frame::getBorder(const gfx::ColorTable &colorTable, int id)
