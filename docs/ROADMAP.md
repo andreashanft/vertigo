@@ -88,7 +88,7 @@ plans, level pipelines and the darkened ground under buildings and towers
 (N); the AI feeling hits only through its energy defence, attack runs that
 turn when the terrain is in the way, escorts placed from hull to hull (J),
 active mines going up on buildings and the buzzer's torch going out like
-other debris (Q); additive explosions, shots and bubbles (H).
+other debris (Q); additive explosions and shots, and the tanks' dust (H).
 
 ## What is open
 
@@ -96,7 +96,7 @@ other debris (Q); additive explosions, shots and bubbles (H).
 |---|---|---|---|
 | O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the tanks' dust sprite; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -419,15 +419,24 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   sprites at the `[Anim] Scale` times 4/255 of the frame, about two thirds
   of that for the explosions and half for the shots.
 - Sprite blending (read off in October 2026): with `Transparency = 1` in
-  `CONFIG.DES` (the default) the explosions (all of `EXPLOSIO.DES`, the
-  torpedo bubbles and the dust among them), the shots and the bubbles are
-  additive: each channel becomes about what was behind plus the sprite's
-  colour, clipped at full, so overlapping sprites get brighter up to white.
-  Exactly, in RGB565, twice (half the colour behind + 0.5125 of the
-  sprite's colour from its `MOD_nnn.S16` table, as the models take theirs).
-  Palette entry 0 is left out. The debris and the trash cover what is
-  behind them, as all sprites do with `Transparency = 0`. Vertigo had only the explosions 0–11 and the shots blending, darker than
-  additive (the colour times itself plus the rest of what was behind).
+  `CONFIG.DES` (the default) the explosions and the shots are additive: each
+  channel becomes about what was behind plus the sprite's colour, clipped at
+  full, so overlapping sprites get brighter up to white. Exactly, in RGB565,
+  twice (half the colour behind + 0.5125 of the sprite's colour from its
+  `MOD_nnn.S16` table, as the models take theirs). Palette entry 0 is left
+  out. The ground dust (18–20 and 24–26), the bubbles, the debris and the
+  trash cover what is behind them at their full colour (the original's
+  pictures: dark blue bubbles over bright ground, brown dust over the
+  water), as all sprites do with `Transparency = 0`. Vertigo had only the
+  explosions 0–11 and the shots blending, darker than additive.
+- Tank dust (read off in October 2026): while a tank drives, one puff every
+  0.2 to 0.3 s behind one of its tracks, picked at random, 0.6 to 1.1 of
+  its half width out from the middle; explosion 20 (upright) or 26 (rolled)
+  at random, sized by its speed over its top speed times 0.8 to 1.0, then
+  0.7 to 1.3 as every explosion, its frames 0.75 to 1.25 of `DisplayTime`.
+  The ground vehicles (`GVEHICLE.DES`) puff every 0.16 to 0.3 s, always
+  explosion 20. Vertigo had a puff behind both tracks every 0.1 to 0.2 s,
+  playing at 0.4 of its speed, so a tank left a band of dust.
 
 ### I. Mission result
 

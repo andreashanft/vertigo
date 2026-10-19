@@ -42,8 +42,10 @@ namespace {
 const float GunTurnRate = 1.5f;
 const float MinPitch = -0.17f;
 const float MaxPitch = 1.0f;
-// a puff of dust behind each track this often at full speed (10 m/s), less often when slower
-const float DustInterval = 0.15f;
+// while it drives, a puff of dust behind one of its tracks every 0.2 to 0.3 s, the larger the
+// faster it goes (docs/ROADMAP.md, appendix H)
+const float DustInterval = 0.2f;
+const float DustSpread = 0.1f;
 
 }
 
@@ -182,24 +184,23 @@ bool Tank::update(float elapsedTime)
 void Tank::stirUpDust(float elapsedTime)
 {
     const float speed = std::abs(m_speed);
-    if (speed < 1.0f)
+    if (speed < 0.1f || m_maxVelocity <= 0)
         return;
-    m_dustTime -= elapsedTime*std::min(speed/10.0f, 1.0f);
+    m_dustTime -= elapsedTime;
     if (m_dustTime > 0)
         return;
-    m_dustTime += DustInterval*(0.7f + 0.6f*util::random()/float(RAND_MAX));
+    m_dustTime = DustInterval + DustSpread*util::random()/float(RAND_MAX);
 
-    // at the rear corners, on the ground; small, medium or large by the vehicle's size
+    // at the rear, 0.6 to 1.1 of the half width to the left or the right, on the ground
     const Vector3D dim = m_localBox.dim();
-    const int size = std::max(dim.x, dim.y) < 6.0f ? 0 : std::max(dim.x, dim.y) < 12.0f ? 1 : 2;
-    for (const float side : { -1.0f, 1.0f })
-    {
-        const Vector3D local(side*0.4f*dim.x + 0.5f*(m_localBox.minPoint().x + m_localBox.maxPoint().x), m_localBox.minPoint().y, m_localBox.minPoint().z);
-        Vector3D position = m_position + m_orientationInverted*local;
-        position.z = ground(position.x, position.y);
-        const Vector3D drift = -dir()*0.3f*speed + right()*side*0.5f;
-        m_scenario->effectManager().addDust(position, size, drift);
-    }
+    const float side = util::random()%2 ? 1.0f : -1.0f;
+    const float out = (0.6f + 0.5f*util::random()/float(RAND_MAX))*0.5f*dim.x;
+    const Vector3D local(side*out + 0.5f*(m_localBox.minPoint().x + m_localBox.maxPoint().x), m_localBox.minPoint().y, m_localBox.minPoint().z);
+    Vector3D position = m_position + m_orientationInverted*local;
+    position.z = ground(position.x, position.y);
+    const Vector3D drift = -dir()*0.3f*speed + right()*side*0.5f;
+    const float scale = std::min(speed/m_maxVelocity, 1.0f)*(0.8f + 0.2f*util::random()/float(RAND_MAX));
+    m_scenario->effectManager().addDust(position, drift, scale);
 }
 
 

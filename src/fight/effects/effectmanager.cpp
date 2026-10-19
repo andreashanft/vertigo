@@ -51,12 +51,13 @@ EffectManager::EffectManager(Scenario *scenario) :
 {
     txt::DesFile file;
 
-    // the explosions, shots and bubbles are additive, the debris and trash cover what is behind them
+    // the explosions and shots are additive; the ground dust (18-20, 24-26), the debris, the trash
+    // and the bubbles cover what is behind them
     file.load("vfx:sobjects/explosio.des");
     for (int i = 0; i < 27; i++)
         m_billboards.emplace(std::piecewise_construct,
             std::forward_as_tuple((Effects)((int)Effects::Explosion_0 + i)),
-            std::forward_as_tuple(m_scenario->textureManager(), file, i));
+            std::forward_as_tuple(m_scenario->textureManager(), file, i, !(i >= 18 && i <= 20) && i < 24));
     file.load("vfx:sobjects/shoot.des");
     for (int i = 0; i < 9; i++)
         m_billboards.emplace(std::piecewise_construct,
@@ -76,7 +77,7 @@ EffectManager::EffectManager(Scenario *scenario) :
     for (int i = 0; i < 3; i++)
         m_billboards.emplace(std::piecewise_construct,
             std::forward_as_tuple((Effects)((int)Effects::Bubble_0 + i)),
-            std::forward_as_tuple(m_scenario->textureManager(), file, i));
+            std::forward_as_tuple(m_scenario->textureManager(), file, i, false));
 }
 
 
@@ -118,10 +119,14 @@ void EffectManager::addDebris(Effects debris, const Vector3D &position, const Ve
 }
 
 
-void EffectManager::addDust(const Vector3D &position, int size, const Vector3D &velocity)
+void EffectManager::addDust(const Vector3D &position, const Vector3D &velocity, float scale)
 {
-    const Effects dust = Effects(int(Effects::Explosion_18) + glm::clamp(size, 0, 2));
-    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity);
+    // the large ground dust, upright, or the other large dust, rolled, at random; like the other
+    // explosions 0.7 to 1.3 of the given size, its frames 0.75 to 1.25 of their time
+    const bool ground = util::random()%2;
+    const Effects dust = ground ? Effects::Explosion_20 : Effects::Explosion_26;
+    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity, ground ? 0 : 360*random(),
+                    scale*(0.7f + 0.6f*random()), 0, 1/(0.75f + 0.5f*random()));
 }
 
 

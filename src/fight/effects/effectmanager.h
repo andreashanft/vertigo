@@ -52,8 +52,8 @@ public:
     {
         return m_particles.hitDebris(start, end, radius, speed, kinetic, hit);
     }
-    // ground dust (EXPLOSIO "bodenstaub") stirred up at the position, size 0-2 (small to large)
-    void addDust(const Vector3D &position, int size, const Vector3D &velocity);
+    // a puff of ground dust stirred up at the position, scale times its [Size] Scale
+    void addDust(const Vector3D &position, const Vector3D &velocity, float scale);
     Projectile* addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction, ActiveObject *owner = nullptr);
 
     const Particles& particles() const { return m_particles; }

@@ -47,7 +47,7 @@ public:
         Debris,     // flies off, slows down and sinks; goes out on the ground, at the end of its
                     // LifeTime or when it is hit (docs/ROADMAP.md, appendix Q)
         Bubble,     // rises (the billboard's Velocity) until it is far from the player; loops
-        Dust,       // plays its animation slowly while drifting up
+        Dust,       // plays its animation while drifting up
     };
 
     static const int Capacity = 3000;
