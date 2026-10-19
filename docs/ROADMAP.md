@@ -88,7 +88,7 @@ plans, level pipelines and the darkened ground under buildings and towers
 (N); the AI feeling hits only through its energy defence, attack runs that
 turn when the terrain is in the way, escorts placed from hull to hull (J),
 active mines going up on buildings and the buzzer's torch going out like
-other debris (Q).
+other debris (Q); additive explosions, shots and bubbles (H).
 
 ## What is open
 
@@ -418,6 +418,16 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   plasma shot 1 m, and the sparks of a hit 0.8 to 2.4 m. Vertigo had the
   sprites at the `[Anim] Scale` times 4/255 of the frame, about two thirds
   of that for the explosions and half for the shots.
+- Sprite blending (read off in October 2026): with `Transparency = 1` in
+  `CONFIG.DES` (the default) the explosions (all of `EXPLOSIO.DES`, the
+  torpedo bubbles and the dust among them), the shots and the bubbles are
+  additive: each channel becomes about what was behind plus the sprite's
+  colour, clipped at full, so overlapping sprites get brighter up to white.
+  Exactly, in RGB565, twice (half the colour behind + 0.5125 of the
+  sprite's colour from its `MOD_nnn.S16` table, as the models take theirs).
+  Palette entry 0 is left out. The debris and the trash cover what is
+  behind them, as all sprites do with `Transparency = 0`. Vertigo had only the explosions 0–11 and the shots blending, darker than
+  additive (the colour times itself plus the rest of what was behind).
 
 ### I. Mission result
 

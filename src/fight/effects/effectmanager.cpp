@@ -50,12 +50,13 @@ EffectManager::EffectManager(Scenario *scenario) :
     m_particles(scenario)
 {
     txt::DesFile file;
-    
+
+    // the explosions, shots and bubbles are additive, the debris and trash cover what is behind them
     file.load("vfx:sobjects/explosio.des");
     for (int i = 0; i < 27; i++)
         m_billboards.emplace(std::piecewise_construct,
             std::forward_as_tuple((Effects)((int)Effects::Explosion_0 + i)),
-            std::forward_as_tuple(m_scenario->textureManager(), file, i, i < 12));
+            std::forward_as_tuple(m_scenario->textureManager(), file, i));
     file.load("vfx:sobjects/shoot.des");
     for (int i = 0; i < 9; i++)
         m_billboards.emplace(std::piecewise_construct,
@@ -75,7 +76,7 @@ EffectManager::EffectManager(Scenario *scenario) :
     for (int i = 0; i < 3; i++)
         m_billboards.emplace(std::piecewise_construct,
             std::forward_as_tuple((Effects)((int)Effects::Bubble_0 + i)),
-            std::forward_as_tuple(m_scenario->textureManager(), file, i, false));
+            std::forward_as_tuple(m_scenario->textureManager(), file, i));
 }
 
 

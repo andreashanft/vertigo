@@ -97,7 +97,7 @@ private:
     struct Batch
     {
         gfx::Texture *texture;
-        bool blendColor;
+        bool additive;
         std::vector<gfx::Pipeline::Vertex> vertices;
     };
 

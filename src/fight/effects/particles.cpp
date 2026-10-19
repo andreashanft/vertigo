@@ -231,13 +231,13 @@ void Particles::draw()
         const Vector2D *texCoords;
         gfx::Texture *texture;
         particle.billboard->quad(particle.position, particle.angle, particle.scale, particle.time, camera, corners, texCoords, texture);
-        const bool blendColor = particle.billboard->blendColor();
-        if (batches == 0 || m_batches[batches - 1].texture->id() != texture->id() || m_batches[batches - 1].blendColor != blendColor)
+        const bool additive = particle.billboard->additive();
+        if (batches == 0 || m_batches[batches - 1].texture->id() != texture->id() || m_batches[batches - 1].additive != additive)
         {
             if (batches == m_batches.size())
                 m_batches.emplace_back();
             m_batches[batches].texture = texture;
-            m_batches[batches].blendColor = blendColor;
+            m_batches[batches].additive = additive;
             m_batches[batches].vertices.clear();
             batches++;
         }
@@ -252,7 +252,7 @@ void Particles::draw()
     for (std::size_t i = 0; i < batches; i++)
     {
         const Batch &batch = m_batches[i];
-        glBlendFunc(batch.blendColor ? GL_SRC_COLOR : GL_SRC_ALPHA, batch.blendColor ? GL_ONE_MINUS_SRC_COLOR : GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, batch.additive ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
         batch.texture->bind();
         gfx::Pipeline::drawQuads(batch.vertices.data(), int(batch.vertices.size()));
     }

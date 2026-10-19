@@ -35,8 +35,8 @@ namespace fight {
 Vector3D square[4] = { Vector3D(-1, 1, 0), Vector3D(1, 1, 0), Vector3D(1, -1, 0), Vector3D(-1, -1, 0) };
 
 
-Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index, bool blendColor) :
-    m_blendColor(blendColor)
+Billboard::Billboard(gfx::TextureManager &texMan, txt::DesFile &file, int index, bool additive) :
+    m_additive(additive)
 {
     file.setSection(String("size%1").arg(index));
     m_scale = file.value("scale").toFloat();
@@ -172,11 +172,11 @@ void Billboard::draw(const Vector3D &position, float angle, float scale, float t
     for (int i = 0; i < 4; i++)
         vertices[i] = { corners[i], texCoords[i] };
 
-    // a glowing sprite adds to what is behind it and leaves the depth buffer alone, so its soft
-    // edges don't cut into the sprites drawn after it (Particles::draw)
-    if (m_blendColor)
+    // an additive sprite adds its colour to what is behind it and leaves the depth buffer alone,
+    // so its soft edges don't cut into the sprites drawn after it (Particles::draw)
+    if (m_additive)
     {
-        glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         glDepthMask(GL_FALSE);
     }
     gfx::Pipeline::setAlphaTest(true);
@@ -184,7 +184,7 @@ void Billboard::draw(const Vector3D &position, float angle, float scale, float t
     texture->bind();
     gfx::Pipeline::drawQuads(vertices, 4);
 
-    if (m_blendColor)
+    if (m_additive)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDepthMask(GL_TRUE);
