@@ -137,7 +137,7 @@ master monitor's target picture, D/H/V/N and R.
 | G6 | Station after a mission | Done. The original's autopilot menu (FIGHTEXT) opens with Alt+A once the mission is accomplished and lists the open stations; with one destination the autopilot goes there at once. The menus show on the master monitor, also in the 3D cockpit |
 | G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing. Below them Vertigo's own OFFENE MISSION: one of the four boats, the depot with every item and $10,000,000, then any of the 71 scenarios, played as test mode plays it |
 | G8 | Destruction and death view | Done. A destroyed boat goes through the original's sequence of explosions and debris before its hull is gone, and the player's boat is watched from outside in the death view (appendix R) |
-| G9 | Credits | Done. CREDITS in the main menu, between TRAINING and the options, as in the original: `gfx/pic/title/credits0`–`3.r16` (640×480, RGB565) full screen, twelve seconds each, then back to the menu; a key or a click ends them at once (read off in October 2026). The difficulty, which the original's main menu cycles, is the first line of Vertigo's options |
+| G9 | Credits | Done. CREDITS in the main menu, between TRAINING and the options, as in the original: `gfx/pic/title/credits0`–`3.r16` (640×480, RGB565) full screen, twelve seconds each, then back to the menu; a key or a click ends them at once (read off in October 2026). The difficulty, which the original's main menu cycles, is the first line of Vertigo's options; these are in the medium font, 15 pixels apart, as on the original's option pages |
 
 ## Open questions and how to settle them
 

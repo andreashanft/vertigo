@@ -201,16 +201,17 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
         m_options[1 + i].on = txt::StringTable::get(movies[i][0]);
         m_options[1 + i].off = txt::StringTable::get(movies[i][1]);
     }
-    m_btnOptionsDifficulty.setFont(fontLarge);
-    m_btnOptionsDifficulty.setPosition(0, 288);
+    // as on the original's option pages: the medium font, 15 pixels apart
+    m_btnOptionsDifficulty.setFont(fontMedium);
+    m_btnOptionsDifficulty.setPosition(0, 293);
     m_btnOptionsDifficulty.setWidth(640);
     m_btnOptionsDifficulty.setAlignment(ui::Label::AlignHCenter);
     updateDifficulty();
     for (std::size_t i = 0; i < m_options.size(); i++) {
         m_btnOptions.emplace_back([this, i]() { m_options[i].setValue(!m_options[i].value()); updateOptions(); }, &m_lblOptions);
         ui::Button &button = m_btnOptions.back();
-        button.setFont(fontLarge);
-        button.setPosition(0, 308 + 20*int(i));
+        button.setFont(fontMedium);
+        button.setPosition(0, 308 + 15*int(i));
         button.setWidth(640);
         button.setAlignment(ui::Label::AlignHCenter);
     }
