@@ -56,7 +56,15 @@ private:
     };
 
 public:
-    Depot(std::function<void()> &&funcClose);
+    // who pays: the chapter's credits, or the main menu's open mission's budget
+    struct Account
+    {
+        std::function<int()> credits;
+        std::function<void(int)> add;
+    };
+
+public:
+    Depot(Boat *boat, Account account, std::function<void()> &&funcClose);
 
 private:
     void flip();
@@ -116,6 +124,7 @@ private:
     ui::Button m_repairButton;
 
     Boat *m_boat;
+    Account m_account;
     int m_side;
     int m_mounting;
     std::vector<int> m_list1;

@@ -35,13 +35,14 @@ private:
 
 public:
     MainMenu(std::function<void(String)> funcStartGame, std::function<void(String)> funcLoadGame, std::function<void(int)> funcStartTraining,
-             std::function<void()> funcQuit);
+             std::function<void(int)> funcStartOpenMission, std::function<void()> funcQuit);
 
 private:
     void showMain();
     void showNew();
     void showLoad();
     void showTraining();
+    void showOpenMission();
     void showOptions();
     void showLoading();
     void showCredits(int page);
@@ -84,6 +85,12 @@ private:
     ui::Label m_lblTrainingTitle;
     ui::Button m_btnTrainingBack;
     std::list<ui::Button> m_btnTrainingMissions;
+    ui::Button m_btnTrainingOpen;
+    // the open mission's boats
+    ui::Label m_lblOpen;
+    ui::Label m_lblOpenTitle;
+    ui::Button m_btnOpenBack;
+    std::list<ui::Button> m_btnOpenBoats;
     ui::Label m_lblOptions;
     ui::Label m_lblOptionsTitle;
     ui::Button m_btnOptionsBack;
@@ -113,6 +120,7 @@ private:
     std::function<void(String)> m_funcStartGame;
     std::function<void(String)> m_funcLoadGame;
     std::function<void(int)> m_funcStartTraining;
+    std::function<void(int)> m_funcStartOpenMission;
     String m_loadingGame;
 };
 

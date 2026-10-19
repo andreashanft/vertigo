@@ -199,6 +199,12 @@ The main menu's Training has the original's four training missions, each with
 its briefing and its own boat, outside the story. Afterwards the game goes back
 to the menu.
 
+Below them, Open Mission (Offene Mission) plays any mission of the game outside
+the story, as `vertigo s00101` does: pick one of the four boats, fit it out in
+the depot, which sells every item and leaves you $10,000,000 to spend, then pick
+the mission. When it is over, or aborted, the list of missions comes back with
+the boat as it was fitted out; DEPOT there changes the fittings again.
+
 ## Testing
 
 Vertigo can start a mission directly, which is meant for testing:
