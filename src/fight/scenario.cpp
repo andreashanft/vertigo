@@ -49,6 +49,7 @@
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/gtx/norm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <algorithm>
 #include <cmath>
@@ -1110,27 +1111,53 @@ int Scenario::threatsTo(const ActiveObject *unit) const
 }
 
 
-bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const
+// Within the type's sonar range: the Tiger and Man Eater Sharks and the Flash Sharks (sen 3) take the
+// nearest buzzer, whoever dropped it; the Thresher and Bull Sharks (sen 4) the nearest buzzer
+// of a hostile faction, or else what is loudest by its noise over the distance squared, the
+// target or a hostile torch, if that is more than 3 over the range squared; the others (sen 99)
+// never turn away
+int Scenario::lure(const Torpedo *torpedo) const
 {
-    float nearest = range;
-    bool found = false;
-    auto consider = [&](const Vector3D &candidate) {
-        const float distance = glm::length(candidate - position);
-        if (distance < nearest)
+    const int sensor = torpedo->type().sensor;
+    if (sensor != 3 && sensor != 4)
+        return 0;
+    const float range2 = torpedo->type().sensorRange*torpedo->type().sensorRange;
+    const Vector3D &position = torpedo->position();
+    std::vector<Particles::DecoyInfo> decoys;
+    m_effectManager.particles().decoys(decoys);
+
+    int buzzer = 0;
+    float nearest = range2;
+    for (const Particles::DecoyInfo &decoy : decoys)
+    {
+        const float distance2 = glm::distance2(decoy.position, position);
+        if (decoy.kind == Particles::Decoy::Buzzer && distance2 < nearest && (sensor == 3 || isHostile(torpedo->iff(), decoy.faction)))
         {
-            nearest = distance;
-            decoy = candidate;
-            found = true;
+            nearest = distance2;
+            buzzer = decoy.id;
         }
-    };
-    std::vector<Vector3D> torches;
-    m_effectManager.particles().decoys(torches);
-    for (const Vector3D &torch : torches)
-        consider(torch);
-    for (const auto &torpedo : m_torpedoes)
-        if (torpedo.get() != self && !torpedo->isDone() && torpedo->type().isDecoy())
-            consider(torpedo->position());
-    return found;
+    }
+    if (buzzer || sensor == 3)
+        return buzzer;
+
+    float loudest = 3/range2;
+    if (const ActiveObject *target = torpedo->target())
+    {
+        const float distance2 = std::max(glm::distance2(target->center(), position), 1e-3f);
+        if (distance2 < range2)
+            loudest = std::max(loudest, target->noise()/distance2);
+    }
+    int torch = 0;
+    for (const Particles::DecoyInfo &decoy : decoys)
+    {
+        const float distance2 = std::max(glm::distance2(decoy.position, position), 1e-3f);
+        if (decoy.kind == Particles::Decoy::Torch && distance2 < range2 && isHostile(torpedo->iff(), decoy.faction) && decoy.noise/distance2 > loudest)
+        {
+            loudest = decoy.noise/distance2;
+            torch = decoy.id;
+        }
+    }
+    return torch;
 }
 
 

@@ -136,14 +136,17 @@ public:
 
     Surface& surface() { return m_surface; }
 
-    // torpedoes in the water; homing ones turn to decoys (buzzers, the Torch) that are nearer than their target
+    // torpedoes in the water; some homing ones can be drawn away by decoys (buzzers, the Torch's torch)
     Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
     const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
     int torpedoesLaunched() const { return m_torpedoesLaunched; }
     // homing torpedoes on their way to the unit
     int threatsTo(const ActiveObject *unit) const;
-    // the nearest decoy within range: a burning torch (the buzzers' and the Torch's) or a decoy torpedo
-    bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
+    // the decoy that draws this homing torpedo away from its target, by its type's sensor; 0 if
+    // none does (docs/ROADMAP.md, appendix S)
+    int lure(const Torpedo *torpedo) const;
+    // where that decoy is and how it moves, false once it is gone
+    bool decoy(int id, Vector3D &position, Vector3D &velocity) const { return m_effectManager.particles().decoy(id, position, velocity); }
 
     // the water current's push at a position (m/s²), that of the cell the position is in
     Vector3D current(const Vector3D &position) const;

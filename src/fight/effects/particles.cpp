@@ -71,9 +71,7 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
     const bool ambient = motion == Motion::Bubble || motion == Motion::Dust;
     if (int(m_particles.size()) >= (ambient ? AmbientCapacity : Capacity))
         return false;
-    // a noisy piece (the buzzer's torch) draws torpedoes, so it lives wherever it is
-    const bool noisy = motion == Motion::Debris && billboard->noiseLevel() > 0;
-    if (!noisy && glm::distance2(position, m_scenario->position()) > Range*Range)
+    if (glm::distance2(position, m_scenario->position()) > Range*Range)
         return false;
     const float life = motion == Motion::Debris ? billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX)) : 0;
     m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate, billboard->kineticShield(), life });
@@ -81,11 +79,38 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
 }
 
 
-void Particles::decoys(std::vector<Vector3D> &positions) const
+// a decoy draws torpedoes, so it lives wherever it is
+bool Particles::addDecoy(Billboard *billboard, Decoy kind, int faction, const Vector3D &position, const Vector3D &velocity, float angle)
+{
+    if (int(m_particles.size()) >= Capacity)
+        return false;
+    const float life = billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX));
+    // clear of the ground, so that the Torch's torch, going off there, rises from it
+    Vector3D start = position;
+    start.z = std::max(start.z, m_scenario->surface().heightAt(start.x, start.y) + 0.5f*debrisRadius(billboard, 1) + 0.01f);
+    m_particles.push_back(Particle{ billboard, Motion::Debris, start, velocity, angle, 1, 0, 1, billboard->kineticShield(), life, kind, faction, ++m_lastDecoy });
+    return true;
+}
+
+
+void Particles::decoys(std::vector<DecoyInfo> &decoys) const
 {
     for (const Particle &particle : m_particles)
-        if (particle.motion == Motion::Debris && particle.billboard->noiseLevel() > 0)
-            positions.push_back(particle.position);
+        if (particle.decoy != Decoy::None)
+            decoys.push_back(DecoyInfo{ particle.id, particle.decoy, particle.faction, particle.billboard->noiseLevel(), particle.position });
+}
+
+
+bool Particles::decoy(int id, Vector3D &position, Vector3D &velocity) const
+{
+    for (const Particle &particle : m_particles)
+        if (particle.decoy != Decoy::None && particle.id == id)
+        {
+            position = particle.position;
+            velocity = particle.velocity;
+            return true;
+        }
+    return false;
 }
 
 

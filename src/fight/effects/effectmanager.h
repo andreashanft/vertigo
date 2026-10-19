@@ -47,6 +47,8 @@ public:
     void addEffect(Effects effect, const Vector3D &position, float angle = 0, float scale = 1);
     // a piece flying from the position in the direction, slowing down and sinking (DEBRIS.DES)
     void addDebris(Effects debris, const Vector3D &position, const Vector3D &direction);
+    // a buzzer or the Torch's torch, of that faction, at that velocity
+    void addDecoy(Effects debris, Particles::Decoy kind, int faction, const Vector3D &position, const Vector3D &velocity);
     // the piece of debris something moving runs into (Particles::hitDebris)
     bool hitDebris(const Vector3D &start, const Vector3D &end, float radius, float speed, int kinetic, Particles::DebrisHit &hit)
     {

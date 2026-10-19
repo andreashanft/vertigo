@@ -119,6 +119,12 @@ void EffectManager::addDebris(Effects debris, const Vector3D &position, const Ve
 }
 
 
+void EffectManager::addDecoy(Effects debris, Particles::Decoy kind, int faction, const Vector3D &position, const Vector3D &velocity)
+{
+    m_particles.addDecoy(getBillboard(debris), kind, faction, position, velocity, util::random()%360);
+}
+
+
 void EffectManager::addDust(const Vector3D &position, float size, bool groundOnly)
 {
     // the large ground dust, upright, or (a tank's, at random) the other large dust, rolled; like

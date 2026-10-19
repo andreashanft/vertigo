@@ -87,11 +87,13 @@ with unresolved conditions checked (G4), the station chosen after a mission
 plans, level pipelines and the darkened ground under buildings and towers
 (N); the AI feeling hits only through its energy defence, attack runs that
 turn when the terrain is in the way, escorts placed from hull to hull (J),
-active mines going up on buildings and the buzzer's torch going out like
-other debris (Q); additive explosions and shots, and the tanks' and
+active mines going up on buildings and decoys going out like other
+debris (Q); additive explosions and shots, and the tanks' and
 crawlers' dust (H); the tanks' fixed guns (J); the ground units' and big
 ships' destruction, boats braking as they blow up, and units counting as
-destroyed once they are gone (R, A); paralysed tanks and towers (J).
+destroyed once they are gone (R, A); paralysed tanks and towers (J); the
+torpedoes' launch speed and braking, the Subsonics passing through units,
+the Torch's torch, buzzers and which decoys draw which torpedoes (S).
 
 ## What is open
 
@@ -432,7 +434,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 - `EXPLOSIO.DES`: 0–2 explosion with flash (S/M/L), 3–5 puff, 9–11 sparks,
   12–14 ground impact, 15–17 ECM impact, 18–20 and 24–26 ground dust, 21–23
   torpedo bubble. `DEBRIS.DES`: 0–2 plates, 3 engine, 4–8 small parts, 9–13
-  large parts, 14–16 "Cadaver 1–3", 17 shrapnel, 22 torch (decoy, Noise 4);
+  large parts, 14–16 "Cadaver 1–3", 17 shrapnel, 18 and 19 buzzer, 20 and
+  21 dummy buzzer, 22 torch (decoy, Noise 4);
   `LifeTime`, `Friction`, `Lift`, `Min/MaxVelocity`.
 - Sprite sizes (read off in October 2026): a sprite is the frame's pixels on
   a square, each pixel 1/32 m, times the `[Size] Scale`; the `[Anim] Scale`
@@ -887,9 +890,9 @@ only touches when the faster of the two pairs with the other.
   shots, debris, torpedoes and mines, so the player and the other boats
   pass through it, and an active mine that runs into it goes up with it.
 
-Vertigo does the same. The buzzer's torch is debris like the rest: it
-draws torpedoes while it lasts and goes out on the ground, so one dropped
-near the ground burns for half a second, one dropped higher up for a few.
+Vertigo does the same. Buzzers and the Torch's torch are debris like the
+rest: they draw torpedoes while they last (appendix S) and go out on the
+ground.
 
 ### R. What the original does when a boat is destroyed
 
@@ -986,9 +989,16 @@ buildings follow an Explode order. Ground plans can't be destroyed.
 Read off in October 2026. All 22 types share one behaviour, with their
 `TORPEDO.DES` values:
 
+- A torpedo leaves its tube along the boat's nose at the boat's speed
+  (whichever way the boat moves) plus 8 m/s.
 - **Straight types** (Stanley I and II, Subsonic I and II, Cluster Bomb,
   Torch: `locktype` 0) speed up along the nose to `MaxVelocity` at
-  `MaxOrientationAcceleration`.
+  `MaxOrientationAcceleration`. The Subsonics, slower than most boats, are
+  mostly launched faster than that and brake to it.
+- `MaxOrientationRetardation` is the braking; all homing types and the
+  Subsonics give it as a negative value, the Stanleys, the Cluster Bomb and
+  the Torch, which are never launched faster than their top speed, as a
+  positive one. `MinVelocity` changes nothing.
 - **Homing types** turn their nose towards the target's centre: yaw and
   pitch each speed up by `MaxAngleAcceleration` A or B times the error over
   π (nothing within a degree), lose `AngleFriction` A or B of their angular
@@ -1009,9 +1019,20 @@ Read off in October 2026. All 22 types share one behaviour, with their
 - Every torpedo's speed across its nose dies away by `OrientationFrictionX`
   and Z per second (it slides in a turn); along the nose there is none. The
   water's currents push it as they push the boats.
-- With the type's `InfluenceProbability` (1, or 0.9 and 0.8 for the Tiger
-  Sharks and Man Eaters) a decoy within reach can draw a homing torpedo
-  away, once.
+- **Decoys**: with the type's `InfluenceProbability` (1, or 0.9 and 0.8 for
+  the Tiger Sharks and Man Eaters) a homing torpedo can be drawn away once.
+  Which decoys draw it depends on its `sen`, within `senr` (80 m): the Tiger
+  Sharks, Man Eaters and Flash Sharks (3) take the nearest buzzer,
+  whoever dropped it, so the player's own buzzers draw the player's own;
+  the Thresher and Bull Sharks (4) take the nearest buzzer of a hostile
+  faction, or else whatever is loudest by its noise over its distance
+  squared, so a hostile torch draws them when it is louder than their
+  target; all others (99) are never drawn away. A drawn torpedo makes for
+  the decoy and is spent (as below) once the decoy is gone.
+- **Buzzers**: the player's buzzer leaves the tail upwards and backwards
+  (twice the boat's up less its nose) at 12.5 m/s on top of the boat's own
+  velocity; nine in ten are buzzers (`DEBRIS.DES` 18), one in ten a dummy
+  (20) that draws nothing. They sink slowly and last 16 to 25.6 s.
 - Every half second a homing torpedo looks whether the ground is between it
   and its goal (at once after the launch, the agile types once they turn).
   While it is, it steers round it: over the ground it would hit within its
@@ -1022,7 +1043,12 @@ Read off in October 2026. All 22 types share one behaviour, with their
   cells, Vertigo by sweeping its smooth surface, which follows the same
   heights between the cells' corners.
 - There is no proximity fuse: a torpedo goes off when it touches the
-  ground, a unit, a piece of debris or a shot (its armour is 1). The Flash
+  ground, a unit, a piece of debris or a shot (its armour is 1). Whatever
+  it touches takes its strength off the torpedo's armour, and the
+  Subsonics' armour of 10,000,000 outlasts all of it: a Subsonic deals its
+  500 each time it goes into a unit and passes on through it, and goes off
+  only on the ground. A torpedo never touches the boat that launched it,
+  and boats don't bounce off torpedoes. The Flash
   Sharks and Leeches go off on the ground in a large flash (`EXPLOSIO.DES`
   2) and elsewhere in a large ECM impact (17), sized to 1.6 (Flash Shark I,
   Leech I), 2 (Flash Shark II, Leech II) or 2.4 (Flash Shark III) times
@@ -1043,13 +1069,19 @@ Read off in October 2026. All 22 types share one behaviour, with their
 - Bubbles (`EXPLOSIO.DES` 22) trail it every 0.16 s (twice the entry's
   `DisplayTime`), from half a second after the launch, while its engine
   runs.
-- The Torch leaves its burning torch (`DEBRIS.DES` 22) where it goes off,
-  which draws torpedoes while it lasts.
+- The Torch flies like a Stanley and is no decoy itself. Wherever it goes
+  off, spent or not, it leaves its burning torch (`DEBRIS.DES` 22) of the
+  launcher's faction, which goes straight up at 21.9 m/s, rises 21.7 m in
+  2.2 s, sinks again and lasts 16 to 25.6 s or until it touches the
+  ground; from the seabed it is back down after about 5 s.
+- No unit of the missions fires Subsonics or Torches.
 - `Range`, `Min/MaxClimbingAngle` and `VelocityIncrease/Decrease` (0 on all
   types) change nothing.
 
 Vertigo sizes the explosions by the sprites' extent, which may not be the
 size the original measures them by.
+Not covered: units whose sonar is `sen` 1 also take a hostile torch as a
+contact, and the units' sonar takes in buzzers; Vertigo's units ignore both.
 
 ### T. What the original's player turrets do
 
