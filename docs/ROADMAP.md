@@ -89,9 +89,10 @@ with unresolved conditions checked (G4), the station chosen after a mission
 
 | # | Item | Effort | Notes |
 |---|---|---|---|
-| O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
+| O1 | Turrets with boat guns | S | Partly done: in sync a turret fires all its gun's barrels at once for one round (appendix T), which is the AD Augmented Mod's four a salvo for a Vendetta III. Open: whether a turret firing on its own also fires all barrels (Vertigo fires one per shot) and what the mod's 16 for a four-barrel turret are |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); how the original's run avoids the terrain on the way; whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; active mines running into buildings; whether the buzzer's torch is debris that touches things and goes out on the ground; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the tanks' dust sprite; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O5 | Read but not followed | S each | What the original does is known (the appendices), Vertigo still differs: a hit counts for the AI when the energy defence changes, Vertigo takes any hit by another unit (J); a boat's run turns away when the terrain is in the way, Vertigo only keeps its point clear of the ground ahead (J); a flying boat leaves its yaw and pitch alone within 1° of the point, Vertigo turns until the error is gone (J); escort offsets are measured from hull to hull, Vertigo's from the centres (J); active mines run into buildings and go up, Vertigo's pass through them (Q); the buzzer's torch is debris and goes out when it touches the ground, Vertigo's rests there (Q); a building's cluster darkens the shading of the flattened patch by 0.35 (N); a homing torpedo walks the map cells to avoid the ground (S) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -137,14 +138,16 @@ master monitor's target picture, D/H/V/N and R.
 
 ## Open questions and how to settle them
 
-What is still unknown is in [what is open](#what-is-open) (O1–O4). Each
-question is settled by watching the original and reading its data, then
-implementing the behaviour independently. Settled this way so far: the
-currents (appendix D), the radiation (D), `sle`, `diff`, the attacker lists,
-`car`, `con`, Explode, the order slots, the sensors and the boats' and tanks'
-fighting (J), the energy pool, the energy guns, the booster and the jams (K),
-the boat's turning (L), the terrain's shading (M), the ground under
-buildings (N), the Fixer (O), the sonars' abilities (P) and the mines (Q).
+What is still unknown is in [what is open](#what-is-open) (O1–O4); O5 lists
+what is known but not yet followed. Each question is settled by watching the
+original and reading its data, then implementing the behaviour independently.
+Settled this way so far: the currents (appendix D), the radiation (D), `sle`,
+`diff`, the attacker lists, `car`, `con`, Explode, the order slots, the
+sensors and the boats' and tanks' fighting (J), the energy pool, the energy
+guns, the booster and the jams (K), the boat's turning (L), the terrain's
+shading (M), the ground under buildings (N), the Fixer (O), the sonars'
+abilities (P), the mines (Q), the destruction sequence (R), the torpedoes (S)
+and the player turrets (T).
 
 ## Appendix: reference data
 
