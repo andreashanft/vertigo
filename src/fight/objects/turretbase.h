@@ -43,6 +43,9 @@ public:
     Vector3D aim() const;
 
 private:
+    // an energy defence's collapse: a gun tower turns its gun to the front and lowers it, a
+    // torpedo tower stops launching, for good (docs/ROADMAP.md, appendix J)
+    bool startTumbling() override;
     // the point the turret turns around (world coordinates)
     Vector3D pivot() const { return m_position + m_turretPosition*m_scale; }
 

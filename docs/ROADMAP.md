@@ -30,9 +30,9 @@ missing conditions, the failure path and the mission end (Esc menu, death and
 failure screens, restart, abort, load, the autopilot's choice of station)
 are in. Units move with terrain and object collisions; shots know who fired
 them, the player is hit per side and dies, destroyed units explode with
-debris and bodies. Tanks drive on the ground with turning turrets; cargo
-ships are built from their blocks with turrets on the hull, take hits as a
-whole and blow up block by block. Enemy guns use the object files' muzzles
+debris and bodies. Tanks drive on the ground with tilting guns or a turning
+turret; cargo ships are built from their blocks with turrets on the hull,
+take hits as a whole and blow up block by block. Enemy guns use the object files' muzzles
 and volleys; 22 torpedo types with magazines, lock, homing, decoys and
 torpedo towers; the cluster torpedo bursts into rings of shards. Difficulty from
 the options limits which units appear (`diff`) and how many attack the
@@ -83,15 +83,25 @@ players build it in Xcode, side-load an IPA or use AltStore PAL in the EU.
 **Later additions.** Mission music (G1), minefields as columns (G2), the
 armour and energy defence percentages `inte`/`eint` (G3), the five missions
 with unresolved conditions checked (G4), the station chosen after a mission
-(G6), the four training missions in the main menu (G7).
+(G6), the four training missions in the main menu (G7); turned ground
+plans, level pipelines and the darkened ground under buildings and towers
+(N); the AI feeling hits only through its energy defence, attack runs that
+turn when the terrain is in the way, escorts placed from hull to hull (J),
+active mines going up on buildings and decoys going out like other
+debris (Q); additive explosions and shots, and the tanks' and
+crawlers' dust (H); the tanks' fixed guns (J); the ground units' and big
+ships' destruction, boats braking as they blow up, and units counting as
+destroyed once they are gone (R, A); paralysed tanks and towers (J); the
+torpedoes' launch speed and braking, the Subsonics passing through units,
+the Torch's torch, buzzers and which decoys draw which torpedoes (S).
 
 ## What is open
 
 | # | Item | Effort | Notes |
 |---|---|---|---|
-| O1 | Turrets with boat guns | S–M | The AD Augmented Mod's changelog says a turret given a boat gun fires that gun's projectiles from each barrel (a one-barrel turret with Vendetta III four a salvo, a four-barrel one 16); Vertigo fires one muzzle per pull. Compare in the original first |
+| O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); how the original's run avoids the terrain on the way; whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; how a hit counts for the AI (the original reacts when the energy defence changes, Vertigo on any hit by another unit); what an attacking boat does once its area time is up (the original may pick a new point every frame); the escort offsets measured from hull to hull; the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the dust sprite and the debris units; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; active mines running into buildings; whether the buzzer's torch is debris that touches things and goes out on the ground; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -131,20 +141,22 @@ master monitor's target picture, D/H/V/N and R.
 | G4 | Unresolved conditions | Done. The references `--check` reported are condition codes for objectives that no unit has; they never come true, and all five missions can still be won. s01802 lost two tanks' trigger area when it was made from s01801 (the AD mod fixes it), s02006 kept a radio message of a dropped objective (the plant's "direct hit" line waits on objective 7 failed, which s02005 has; the AD mod adds the pumps' and tanks' must-survive objective 7 back). s00404's eight late units wait for area 2087 *or* objective 4, so only the area calls them (the AD mod leaves it). s02003's area 2049 waits for objective 13 *or* generator 2071's loss, and the collector 2093's first order for objective 15; the AD mod's changelog calls that mission's triggers broken and removes both. s00402's empty faction: radio 5124 ("wir werden ihn rächen") waits for scout 2091's loss *and* faction 1 alive, but every pirate is faction 5; the original counts a faction without units as alive and plays the line, as Vertigo does (read off with the line's first condition made always true: it came at its delay); the AD mod drops the faction test |
 | G5 | s00705 | The idle player is destroyed in every seed now; only the player can destroy Marquez. Open: Schwartz's infiltration (O3) |
 | G6 | Station after a mission | Done. The original's autopilot menu (FIGHTEXT) opens with Alt+A once the mission is accomplished and lists the open stations; with one destination the autopilot goes there at once. The menus show on the master monitor, also in the 3D cockpit |
-| G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing. Below them Vertigo's own OFFENE MISSION: one of the four boats, the depot with every item and $10,000,000, then any of the 71 scenarios, played as test mode plays it |
+| G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing. Below them Vertigo's own OFFENE MISSION: one of the four boats with chapter 1's fittings but the Spy II sonar (chapter 1's Spy I has no IFF, so every contact would show as a friend), the depot with every item and $10,000,000, then any of the 71 scenarios, played as test mode plays it |
 | G8 | Destruction and death view | Done. A destroyed boat goes through the original's sequence of explosions and debris before its hull is gone, and the player's boat is watched from outside in the death view (appendix R) |
-| G9 | Credits | Done. CREDITS in the main menu, between TRAINING and the options, as in the original: `gfx/pic/title/credits0`–`3.r16` (640×480, RGB565) full screen, twelve seconds each, then back to the menu; a key or a click ends them at once (read off in October 2026). The difficulty, which the original's main menu cycles, is the first line of Vertigo's options |
+| G9 | Credits | Done. CREDITS in the main menu, between TRAINING and the options, as in the original: `gfx/pic/title/credits0`–`3.r16` (640×480, RGB565) full screen, twelve seconds each, then back to the menu; a key or a click ends them at once (read off in October 2026). The difficulty, which the original's main menu cycles, is the first line of Vertigo's options; these are in the medium font, 15 pixels apart, as on the original's option pages |
 
 ## Open questions and how to settle them
 
 What is still unknown is in [what is open](#what-is-open) (O1–O4). Each
 question is settled by watching the original and reading its data, then
-implementing the behaviour independently. Settled this way so far: the
-currents (appendix D), the radiation (D), `sle`, `diff`, the attacker lists,
-`car`, `con`, Explode, the order slots, the sensors and the boats' and tanks'
-fighting (J), the energy pool, the energy guns, the booster and the jams (K),
-the boat's turning (L), the terrain's shading (M), the ground under
-buildings (N), the Fixer (O), the sonars' abilities (P) and the mines (Q).
+implementing the behaviour independently.
+Settled this way so far: the currents (appendix D), the radiation (D), `sle`,
+`diff`, the attacker lists, `car`, `con`, Explode, the order slots, the
+sensors and the boats' and tanks' fighting (J), the energy pool, the energy
+guns, the booster and the jams (K), the boat's turning (L), the terrain's
+shading (M), the ground under buildings (N), the Fixer (O), the sonars'
+abilities (P), the mines (Q), the destruction sequence (R), the torpedoes (S)
+and the player turrets (T).
 
 ## Appendix: reference data
 
@@ -175,8 +187,32 @@ as +y (the half-hulls' open seam at +x confirms this); a turret stands at
 it (`Z` −1000), turned by `Alpha` counter-clockwise from the bow, at its own
 `[Size] Scale`/32. The mission position is the middle of the hull. A big ship
 takes hits as a whole on its own `[Defense]` shield (cargo ships
-20,000–60,000, Big Fat Mama 10,000,000); used up, it counts as destroyed,
-stops, and its blocks blow up one after another. The master monitor shows a
+20,000–60,000, Big Fat Mama 10,000,000). The block hit takes them on its
+own shield as well (`BBLOCK*.DES`, e.g. 10,000), which only shows a small
+explosion (entry 1) where it was hit when 60 % and again 80 % of it are
+gone, and then it is whole again; a block never goes on its own. When the
+ship's shield is used up (read off in October 2026) it brakes to a stop at
+its retardation, its turrets keep firing, and its blocks blow up in their
+order, the first at once and each next one 0.5 to 1.5 s after the one
+before. A block takes 2.7 s: it shakes by up to 5 cm, sinks faster and
+faster (10 to 40 units/s²) and turns slowly (up to 0.07 rad/s about two
+axes), with the boats' bursts and the debris 2, 2, 1 at 0.9 s (36° to
+72°) and 2, 1, 2, 1 at 2.0 s (0° to 36°) plus one body (14 or 15 two
+times in five each, 16 once),
+sample 18 two times in three at the start, and a big blast (entry 2, sized
+0.35 of its radius) on its side towards the player at 2.0 s; half of its
+turrets go up at the start and the rest at 1.6 s. Ship and blocks stay
+sonar contacts and targets until each is gone; the ship counts as destroyed
+when its first block is gone (in a squadron of several ships the original
+counts every block that goes, which Vertigo doesn't), and is gone with its
+last. Vertigo counted it destroyed at once, lost the lock and blew up a
+block every 0.3 to 0.7 s in a random order until then. A big ship's orders
+differ from a boat's: Patrol and Attack take it to the order's cell
+centre at `mih` over the ground, where it stops once within reach and
+waits out `dur` (so the Big Fat Mama, whose patrol is its own cell, never
+moves); Escort, Ambush, the cardinal orders and GotoWithInfiltrate leave it
+where it is; Wait, Goto, GotoWithArrive and Explode work as for boats.
+Vertigo patrolled them from random point to point until October 2026. The master monitor shows a
 picture chosen by the ship file's comment: `SHPSEACO` (bship0), `SHPTRITO`
 (1, 8), `SHPPOLAR` (2, 9), `SHPINDER` (3, 10), `SHPBIONT` (4, 7), `SHPBFM`
 (5, 6), `SHPCONTF` (cship0–9). Big ships turn at most 0.15 rad/s and climb at
@@ -398,7 +434,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 - `EXPLOSIO.DES`: 0–2 explosion with flash (S/M/L), 3–5 puff, 9–11 sparks,
   12–14 ground impact, 15–17 ECM impact, 18–20 and 24–26 ground dust, 21–23
   torpedo bubble. `DEBRIS.DES`: 0–2 plates, 3 engine, 4–8 small parts, 9–13
-  large parts, 14–16 "Cadaver 1–3", 17 shrapnel, 22 torch (decoy, Noise 4);
+  large parts, 14–16 "Cadaver 1–3", 17 shrapnel, 18 and 19 buzzer, 20 and
+  21 dummy buzzer, 22 torch (decoy, Noise 4);
   `LifeTime`, `Friction`, `Lift`, `Min/MaxVelocity`.
 - Sprite sizes (read off in October 2026): a sprite is the frame's pixels on
   a square, each pixel 1/32 m, times the `[Size] Scale`; the `[Anim] Scale`
@@ -411,6 +448,32 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   plasma shot 1 m, and the sparks of a hit 0.8 to 2.4 m. Vertigo had the
   sprites at the `[Anim] Scale` times 4/255 of the frame, about two thirds
   of that for the explosions and half for the shots.
+- Sprite blending (read off in October 2026): with `Transparency = 1` in
+  `CONFIG.DES` (the default) the explosions and the shots are additive: each
+  channel becomes about what was behind plus the sprite's colour, clipped at
+  full, so overlapping sprites get brighter up to white. Exactly, in RGB565,
+  twice (half the colour behind + 0.5125 of the sprite's colour from its
+  `MOD_nnn.S16` table, as the models take theirs). Palette entry 0 is left
+  out. The ground dust (18–20 and 24–26), the bubbles, the debris and the
+  trash cover what is behind them at their full colour (the original's
+  pictures: dark blue bubbles over bright ground, brown dust over the
+  water), as all sprites do with `Transparency = 0`. Vertigo had only the
+  explosions 0–11 and the shots blending, darker than additive.
+- Tank dust (read off in October 2026): while a tank drives, one puff every
+  0.2 to 0.3 s behind one of its tracks, picked at random, 0.6 to 1.1 of
+  its half width out from the middle; explosion 20 (upright) or 26 (rolled)
+  at random, sized by its speed over its top speed times its model's height
+  times 0.8 to 1.0, then 0.7 to 1.3 as every explosion, its frames 0.75 to
+  1.25 of `DisplayTime`. The puff stays where it was made. The crawlers
+  (`GVEHICLE.DES`) do the same every 0.16 to 0.3 s, always with explosion
+  20. Vertigo had a puff behind both tracks every 0.1 to 0.2 s, playing at
+  0.4 of its speed and drifting up, so a tank left a band of dust, and the
+  crawlers took the tanks' rule.
+- Explosion sizes: where the original gives an explosion a size of its own
+  (the building's and big ship's last blast, a building's explosions under
+  fire, the dust), that size is the sprite's scale, which comes out in
+  metres as with the mines (appendix Q); Vertigo divides it by the entry's
+  `[Size] Scale`.
 
 ### I. Mission result
 
@@ -462,8 +525,12 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   way and stops turning, and then hangs still where it is, neither sinking
   nor going away (watched for a minute on a pirate bomber in s00601), so it
   can still be boarded, identified or destroyed; destroying it starts the destruction
-  sequence (appendix R). Vertigo does the same for boats; tanks and towers
-  still blow up, their paralysis is not read.
+  sequence (appendix R). Vertigo does the same for boats. A tank or crawler
+  brakes to a stop for 5 s and then stays as it is for good; a gun tower
+  turns its gun to the front and lowers it to −14° for good; a torpedo
+  tower never launches again; buildings have no energy defence to collapse.
+  None of them blows up (read off in October 2026; Vertigo blew them up
+  until then).
 - **Order slots** end in two ways: the break condition is checked every
   frame, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
   CardinalPatrol after `dur`, Goto and GotoWithArrive at their point,
@@ -494,12 +561,16 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   500 per `[Noise] Level` step, so a level‑3 unit is heard up to the range,
   level 2 to 82 %, level 1 to 58 % of it; type 2 (active sonar) hears
   everything in range and adds 500 (one level) to the unit's own noise; type
-  3 picks up the player's boat only; type 4 the player, or others by the
-  passive rule. The sensor looks for hostiles every 1.5 s (0.7 s for types 3
-  and 4), keeps what it found while that lives, and takes the nearest (type 0
-  and 2), the loudest over its distance (1), the player (3), or the player if
-  in range else the loudest (4). The scenarios set `sen` and `senr` on most
-  boats (`sen 2` with 60–200 m is common).
+  3 picks up buzzers only; type 4 buzzers, or others by the passive rule.
+  The sensor looks for hostiles every 1.5 s (0.7 s for types 3 and 4),
+  keeps what it found while that lives, and takes the nearest (type 0 and
+  2), the loudest over its distance (1), the nearest buzzer, whoever dropped
+  it (3), or the nearest hostile buzzer, else the loudest (4). Types 1 and 4
+  also hear a hostile Torch's torch (appendix S); no other type takes
+  buzzers or torches, and dummy buzzers draw nobody. The scenarios set `sen`
+  and `senr` on most boats, always type 1 or 2 (`sen 2` with 60–200 m is
+  common). A fighting unit doesn't look again: it keeps its target by the
+  rules below.
 - **Choosing a target.** Patrol, Attack, Escort and Ambush orders fight; Wait,
   Goto, GotoWithArrive and GotoWithInfiltrate never do. Each frame: the
   order's enemy (`ene`) if the sensor has it within its range; else, in the
@@ -509,9 +580,10 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   type's rule), and the order goes on where it was with its time still
   running; the enemy takes over again once in range; a player who hits the
   unit takes over if nearer than the current target. "Hit" in the original is
-  a change of the energy defence in that frame; Vertigo takes any hit by
-  another unit (O4). The attacker lists above still cap how many fight the
-  player.
+  a change of the energy defence in that frame, so a hit by shells without
+  shock strength (`SHOOT.DES` 3 to 5, the guns that use rounds) goes
+  unnoticed; Vertigo does the same. The attacker lists above still cap how
+  many fight the player.
 - **The attack manoeuvre** of boats and bombers (bombers behave the same), with the
   `[Attack]` keys: *align* – pick a side by the four align probabilities
   (ahead within 30°, left or right between 30° and 150°, behind within 30°),
@@ -523,8 +595,8 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   picked. *Run* – lasts an attack time; with `AttackProbabilityTurn` the boat
   stops and turns on the spot, otherwise it flies at the target at 40–100 %
   of its speed, straight at it whatever the order's `mih`–`mah` band (if the
-  terrain is in the way it turns instead; Vertigo only keeps the point clear
-  of the ground ahead); it ends when
+  terrain comes between it and the target it turns on the spot instead for
+  the rest of the run, as Vertigo does too); it ends when
   the target has come within a flight radius, when the time is up, or, with
   `FlightProbabilityHit` decided at the start, with the first hit taken after
   the boat has fired. *Flight* – to one of four points by the UL/UR/DL/DR
@@ -540,10 +612,11 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   the turn and the run the boat points its nose at that position, the yaw
   and the pitch each turned towards the point's own direction (the pitch to
   its true elevation over the horizontal distance) in proportion to the
-  error, which they leave alone within 1° (Vertigo turns on until the error
-  is gone). A boat that has turned towards a standing player keeps hitting
-  it. A tank's muzzles (`[StaticGun] Relative*`) sit on its gun module
-  (`GunOffset*` or the `[GunTurret]` position) and turn with it; measured
+  error, which they leave alone within 1° (read, but Vertigo turns on
+  until the error is gone, O4). A boat that has turned towards a standing
+  player keeps hitting it. A tank's muzzles (`[StaticGun]
+  Relative*`) sit on its gun module (`GunOffset*` or the `[GunTurret]`
+  position) and turn with it; measured
   from the hull's origin they would lie under the hull (TANK0's at −13 units).
   A torpedo goes, once per phase when that phase's `*ProbabilityTorpedoFire`
   came up, when the nose points at the target within 18° in the horizontal
@@ -561,7 +634,10 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   (the original moves it there outright) matching the escorted unit's
   heading and speed; it leaves formation beyond 1.3 of that. It fights only
   within `ran` (150 m) of its place and ends the order when the escorted unit
-  is destroyed. The original measures the offsets from hull to hull (O4).
+  is destroyed. The original measures the offsets from hull to hull;
+  Vertigo takes the gap along the offset's direction from the escorted
+  hull's box to the escort's own, so an offset of 7 m to the side puts the
+  escort 7 m clear of the hull, not inside it.
 - **Tanks** fight in two phases with their own `[Attack]` keys. *Align*: the
   point lies at a distance between the align radii, 20–30° round the target
   from the tank's present bearing; which way round is decided by the
@@ -572,7 +648,11 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   without firing, until it is there or the align time is up; when hit,
   `AlignProbabilityHit` says whether it aligns anew or attacks at once.
   *Attack*: it drives at the target for an attack time (or until it reaches
-  it), its turret firing whenever the gun points within 14° of the target,
+  it), its turret firing whenever the gun points within 14° of the target
+  (a fixed `Gun` module, all tanks but TANK2, points along the hull and only
+  tilts, from 5° down to straight up at the hull's `MaxAngleVelocityB`, and
+  only at a target ahead; TANK2's `GunTurret` turns as well; Vertigo turned
+  every gun all round until October 2026),
   then aligns again. The original draws the attack speed between two of the
   unit's speeds of which the lower is not identified; Vertigo takes 40–100 %
   of the order's speed (O4). GotoWithInfiltrate is not compared (O4).
@@ -669,17 +749,50 @@ across a face. In the original's pictures at s00701's start the station, the
 turret and the tower come out within 3 to 6 units of Vertigo's in each
 channel.
 
-### N. How the original flattens the ground under buildings
+### N. How the original places buildings and flattens and darkens their ground
 
-Read off in October 2026. A building's cluster with `SurfaceLifting = p`
-sets four cells of the height map, its own cell and the ones east, south and
-south-east of it, to the reference height: the scenario's `refx`/`refy` cell
-for `HeightReference 0`, the cluster's own cell for `-1`; clusters with
-`HeightReference 1000 + n` sit on cluster n's roof and lift nothing. Clusters
-two cells apart therefore flatten a four-by-four area together, but a single
-cluster leaves its western and northern neighbours alone. `p` and `l` also
-scale sixteen values of the patch's shading by 0.35, a darkening as far as
-read, which Vertigo does not do yet; `o` does neither.
+Read off in October 2026.
+
+- **The square.** A ground plan of size `siz` covers a square of `siz` + 1
+  cells; cluster offset 0, 0 is its corner with the lowest cell numbers
+  (`px`, `py` − `siz`). `card` turns the square clockwise about its middle,
+  a quarter turn per two steps (2 east, 4 south, 6 west, as the currents
+  count), and every cluster's model with it; the cluster's own `Cardinal`
+  turns its model on top of that. So a turned plan of more than one cell
+  keeps its middle, and a line of pipe segments turned by 6 runs from its
+  elbow northwards, not southwards.
+- **Heights.** A cluster with `HeightReference` below 1000 stands at the
+  height map's value of the scenario's `refx`/`refy` cell (with `-1`, of its
+  own cell), whether it lifts the ground or not; with `1000 + n` it sits on
+  cluster n's roof. A cluster with `o` keeps that height over lower or
+  higher ground. The pipelines rely on it: each segment (`GP1X1_8`,
+  `rohr_005`) names the cell of the line's first piece as `refx`/`refy`, so
+  the line runs level from the top of that piece, an elbow (`GP1X1_7`,
+  `rohr_004`, with `p`) rising from its flattened ground, across dips and
+  rises (s00202's three lines run 13 m over the bottom of the dip they
+  cross). STRAI3's freight containers name a cell 23 cells away, on a steep
+  slope, and hang at its height, one of them over another.
+- **Flattening.** A cluster with `SurfaceLifting = p` (and every one with
+  `-1`) sets the four corners of its cell, its own and the ones east, south
+  and south-east of it, to that height. Clusters two cells apart therefore
+  flatten a four-by-four area together, but a single cluster leaves its
+  western and northern neighbours alone. Gun towers, torpedo towers and
+  active buildings (`typ` 2052, 2059, 2062) flatten their own cell to the
+  height of its corner in the same way.
+- **Darkening.** Each terrain vertex carries the vector the light part of
+  the shading takes its cosine from (appendix M). A cluster with `p` or `l`
+  sets the vectors of its cell's four corners to 0.35 of their length, as
+  do torpedo towers and active buildings; gun towers set them to 0.25. So
+  beyond the ambient part's reach (31 m) the ground under and around
+  buildings and towers keeps only that share of its light, fading back to
+  the full share over the neighbouring cells. A unit does this when it
+  appears: a tower that waits for its enable condition leaves the ground as
+  it is until then. In STRAI3 this darkens 449 corners.
+
+Vertigo does all of it. A lifting cluster rests on Vertigo's smoothed
+ground, the others at the height map's value. The darkening scales each
+terrain vertex's normal, interpolated between the map's corners, and the
+shading's light part follows the normal's length.
 
 ### O. What the original's Fixer does
 
@@ -753,7 +866,7 @@ kind, sized to 1.5 times its radius and without debris,
 the big explosion (sample 1), 3–8 the small one (16), 9–11 the metal hit
 (2), 12–14 the ground hit (15), 15–17 the EMS explosion (17). Vertigo does
 the same for the mines, their contacts with the player, boats, tanks,
-towers and ship segments; its explosions keep
+towers, buildings and ship segments; its explosions keep
 their own size, which comes within about 10 % of that. Running into a
 mine hits from below the window, so its explosion is mostly hidden by the
 cockpit.
@@ -781,8 +894,9 @@ only touches when the faster of the two pairs with the other.
   shots, debris, torpedoes and mines, so the player and the other boats
   pass through it, and an active mine that runs into it goes up with it.
 
-Vertigo does the same, except that the buzzer's torch, the one piece of
-debris that makes noise, keeps resting on the ground as before.
+Vertigo does the same. Buzzers and the Torch's torch are debris like the
+rest: they draw torpedoes while they last (appendix S) and go out on the
+ground.
 
 ### R. What the original does when a boat is destroyed
 
@@ -806,16 +920,19 @@ direction round and between two elevations, at the piece's own speed.
 At every step up to 1.6 s the hull gets a new random acceleration of up to
 30 units/s² (about 0.94 m/s²) on each axis and a new angular acceleration
 of up to 0.2 rad/s² about each of its own axes, so it drifts and spins up
-more and more. Another boat stops when the sequence starts; the player's
-boat drifts on. One boat in five instead keeps its course at 70 % of its
+more and more. Another boat's engine brakes it to a stop along its nose
+at `MaxOrientationRetardation` (Vertigo stopped it dead until October
+2026); the player's boat drifts on. One boat in five instead keeps its course at 70 % of its
 speed, its angular acceleration drawn anew every frame within 3 rad/s²,
 and after 1.6 s it waits until it hits the ground (or five seconds) before
 the last burst. At 2.0 s the hull is gone and the wreck stays: the player's
 boat leaves one body (DEBRIS.DES 16 half the time, 15 or 14 otherwise),
 another boat none, 16, 15 and 16, or all of 14 to 16, each as likely, flung
 out at 0° to 90° elevation; the player's boat also blows up (entry 2) at
-the front and back of its hull. The unit counts as destroyed from the start
-of the sequence. Explosions of entries 0 to 2 sound as big explosions, the
+the front and back of its hull. The unit counts as destroyed for the
+mission only when its hull is gone (at 2.0 s, later for one that keeps its
+course; Vertigo counted it at the start until October 2026); the player's
+boat at once. Explosions of entries 0 to 2 sound as big explosions, the
 others as small ones.
 
 The player's boat is then watched from outside, the death view, without
@@ -843,20 +960,49 @@ Not compared or not followed:
   not compared; Vertigo always does.
 - Vertigo stops the hull once it is gone; whether the original's hidden
   hull drifts on (the camera would follow it) is not read.
-- One kind of unit leaves no wreck body; which one is not known.
-- Tanks and other ground vehicles have a sequence of their own, not read;
-  Vertigo still blows them up at once.
+- Towers and buildings leave no wreck body.
 - The original's explosions in the sequence come in sizes that Vertigo's
   effects don't take, as with the mines (appendix Q).
+
+**Ground units** (read off in October 2026; Vertigo blew them up at once
+until then). Tanks, crawlers, gun and torpedo towers and buildings (typ
+2062) have the boats' bursts at the same times (the table above) about
+their middle, and their own debris:
+
+| Unit | 0.9 s, at 36° to 72° | 2.0 s, at 0° to 36° | Bodies (0° to 90°) | Gone |
+|---|---|---|---|---|
+| Tank | 2, 1, 3, 3 | 2, 2, 1, 3 | 14, 15 and 16 | 2.0 s |
+| Crawler | 2, 2, 1, 3, 3 | 2, 2, 2, 1, 3, 3 | 14, 15 and 16 | 2.0 s |
+| Tower | 2, 2, 1, 3, 3 | 2, 2, 2, 1, 3, 3 | none | 2.0 s |
+| Building | 2, 2, 1 | 2, 1, 2, 1 | none | 2.7 s |
+
+A tank or crawler brakes to a stop meanwhile and no longer turns. A
+building shakes by up to 5 cm about its place, tilts at up to 0.07 rad/s
+about both level axes, plays sample 18 three times in five at the start,
+and goes up in a big blast (entry 2, sized 0.35 of its radius) at 2.6 s on
+its side towards the player, half way up. Each counts as destroyed when it
+is gone, and the darkened ground under a building or tower turns light
+again (the flattened ground stays). Under fire a building shows 5 to 11
+small explosions (entry 8, 5 or 0, one, two and one in four) on its side
+towards the player within 1.5 s, sized 0.05 to 0.1 of its radius, when
+its armour falls below 40 % and again below 20 %. Of the ground units only
+buildings follow an Explode order. Ground plans can't be destroyed.
 
 ### S. What the original's torpedoes do
 
 Read off in October 2026. All 22 types share one behaviour, with their
 `TORPEDO.DES` values:
 
+- A torpedo leaves its tube along the boat's nose at the boat's speed
+  (whichever way the boat moves) plus 8 m/s.
 - **Straight types** (Stanley I and II, Subsonic I and II, Cluster Bomb,
   Torch: `locktype` 0) speed up along the nose to `MaxVelocity` at
-  `MaxOrientationAcceleration`.
+  `MaxOrientationAcceleration`. The Subsonics, slower than most boats, are
+  mostly launched faster than that and brake to it.
+- `MaxOrientationRetardation` is the braking; all homing types and the
+  Subsonics give it as a negative value, the Stanleys, the Cluster Bomb and
+  the Torch, which are never launched faster than their top speed, as a
+  positive one. `MinVelocity` changes nothing.
 - **Homing types** turn their nose towards the target's centre: yaw and
   pitch each speed up by `MaxAngleAcceleration` A or B times the error over
   π (nothing within a degree), lose `AngleFriction` A or B of their angular
@@ -877,18 +1023,36 @@ Read off in October 2026. All 22 types share one behaviour, with their
 - Every torpedo's speed across its nose dies away by `OrientationFrictionX`
   and Z per second (it slides in a turn); along the nose there is none. The
   water's currents push it as they push the boats.
-- With the type's `InfluenceProbability` (1, or 0.9 and 0.8 for the Tiger
-  Sharks and Man Eaters) a decoy within reach can draw a homing torpedo
-  away, once.
+- **Decoys**: with the type's `InfluenceProbability` (1, or 0.9 and 0.8 for
+  the Tiger Sharks and Man Eaters) a homing torpedo can be drawn away once.
+  Which decoys draw it depends on its `sen`, within `senr` (80 m): the Tiger
+  Sharks, Man Eaters and Flash Sharks (3) take the nearest buzzer,
+  whoever dropped it, so the player's own buzzers draw the player's own;
+  the Thresher and Bull Sharks (4) take the nearest buzzer of a hostile
+  faction, or else whatever is loudest by its noise over its distance
+  squared, so a hostile torch draws them when it is louder than their
+  target; all others (99) are never drawn away. A drawn torpedo makes for
+  the decoy and is spent (as below) once the decoy is gone.
+- **Buzzers**: the player's buzzer leaves the tail upwards and backwards
+  (twice the boat's up less its nose) at 12.5 m/s on top of the boat's own
+  velocity; nine in ten are buzzers (`DEBRIS.DES` 18), one in ten a dummy
+  (20) that draws nothing. They sink slowly and last 16 to 25.6 s.
 - Every half second a homing torpedo looks whether the ground is between it
   and its goal (at once after the launch, the agile types once they turn).
   While it is, it steers round it: over the ground it would hit within its
   way of 1.5 s plus two hull radii, and climbing steeply (1000 units, 31 m
   above it) while the ground under its front, half a map cell and 0.75 s
   ahead, comes within half a hull radius. Vertigo climbs over the ground in
-  the way by that rule but does not walk the map cells as the original does.
+  the way by that rule; the original finds that ground by walking the map
+  cells, Vertigo by sweeping its smooth surface, which follows the same
+  heights between the cells' corners.
 - There is no proximity fuse: a torpedo goes off when it touches the
-  ground, a unit, a piece of debris or a shot (its armour is 1). The Flash
+  ground, a unit, a piece of debris or a shot (its armour is 1). Whatever
+  it touches takes its strength off the torpedo's armour, and the
+  Subsonics' armour of 10,000,000 outlasts all of it: a Subsonic deals its
+  500 each time it goes into a unit and passes on through it, and goes off
+  only on the ground. A torpedo never touches the boat that launched it,
+  and boats don't bounce off torpedoes. The Flash
   Sharks and Leeches go off on the ground in a large flash (`EXPLOSIO.DES`
   2) and elsewhere in a large ECM impact (17), sized to 1.6 (Flash Shark I,
   Leech I), 2 (Flash Shark II, Leech II) or 2.4 (Flash Shark III) times
@@ -909,8 +1073,17 @@ Read off in October 2026. All 22 types share one behaviour, with their
 - Bubbles (`EXPLOSIO.DES` 22) trail it every 0.16 s (twice the entry's
   `DisplayTime`), from half a second after the launch, while its engine
   runs.
-- The Torch leaves its burning torch (`DEBRIS.DES` 22) where it goes off,
-  which draws torpedoes while it lasts.
+- The Torch flies like a Stanley and is no decoy itself. Wherever it goes
+  off, spent or not, it leaves its burning torch (`DEBRIS.DES` 22) of the
+  launcher's faction, which goes straight up at 21.9 m/s, rises 21.7 m in
+  2.2 s, sinks again and lasts 16 to 25.6 s or until it touches the
+  ground; from the seabed it is back down after about 5 s.
+- A unit with a passive sonar (`sen` 1) hears a hostile torch like a boat,
+  at noise level 4, and takes it for its target when it is the loudest
+  thing it hears while it looks for one; it fights the torch until it goes
+  out. A unit already fighting doesn't look, and towers, which take the
+  nearest hostile in their radius, don't either.
+- No unit of the missions fires Subsonics or Torches.
 - `Range`, `Min/MaxClimbingAngle` and `VelocityIncrease/Decrease` (0 on all
   types) change nothing.
 

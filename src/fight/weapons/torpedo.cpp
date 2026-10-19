@@ -56,6 +56,10 @@ const float AgileStart = 0.7f;
 const float AgilityTicks = 30.0f;
 // a spent torpedo sinks at half a g
 const float SpentSink = 0.5f*9.81f;
+// a torpedo leaves its tube along the boat's nose this much faster than the boat moves (m/s)
+const float LaunchSpeed = 8.0f;
+// the Torch's torch goes straight up at this speed (m/s), then sinks
+const float TorchSpeed = 700/32.0f;
 
 }
 
@@ -85,6 +89,7 @@ const std::vector<TorpedoType>& TorpedoType::all()
         bodies.setSection(String("noise%1").arg(i));
         type.noise = bodies.value("level").toFloat();
         bodies.setSection(String("sensor%1").arg(i));
+        type.sensor = bodies.value("sen", 99).toInt();
         type.sensorRange = bodies.value("senr", 80).toFloat();
         type.influence = bodies.value("influenceprobability", 1).toFloat();
         bodies.setSection(String("kinematics%1").arg(i));
@@ -119,12 +124,12 @@ Torpedo::Torpedo(Scenario *scenario, int type, const Vector3D &position, const V
     m_owner(owner),
     m_target(m_type.lockType != 0 ? target : nullptr),
     m_dir(glm::normalize(direction)),
-    m_speed(speed),
+    m_speed(speed + LaunchSpeed),
     m_time(0),
     m_trailTime(0)
 {
     m_position = position;
-    m_velocity = m_dir*speed;
+    m_velocity = m_dir*m_speed;
     m_noise = m_type.noise;
     m_kineticShield = m_kineticShieldMax = m_type.kineticShield;
     m_kineticStrength = m_type.kineticStrength;
@@ -141,7 +146,7 @@ Torpedo::Torpedo(Scenario *scenario, int type, const Vector3D &position, const V
 bool Torpedo::targetAlive() const
 {
     return m_target == m_scenario->player() ? !m_scenario->playerDestroyed()
-                                            : m_target->isEnabled() && !m_target->eventDestroy()->isCompleted();
+                                            : m_target->isEnabled() && !m_target->isDying();
 }
 
 
@@ -178,8 +183,9 @@ void Torpedo::turnTowards(const Vector3D &point, float elapsedTime)
 }
 
 
-// along the nose the speed makes for the wanted one at the type's acceleration or retardation;
-// across it the speed dies away by the type's friction (OrientationFrictionX and Z)
+// along the nose the speed makes for the wanted one at the type's acceleration or retardation
+// (the Subsonics give theirs as a negative value, the others as a positive one); across it the
+// speed dies away by the type's friction (OrientationFrictionX and Z)
 void Torpedo::drive(float speed, float elapsedTime)
 {
     float along = glm::dot(m_velocity, m_dir);
@@ -187,7 +193,7 @@ void Torpedo::drive(float speed, float elapsedTime)
     if (speed > along)
         along = std::min(speed, along + m_type.acceleration*elapsedTime);
     else
-        along = std::max(speed, along - m_type.retardation*elapsedTime);
+        along = std::max(speed, along - std::abs(m_type.retardation)*elapsedTime);
     across *= std::max(0.0f, 1.0f - m_type.sideFriction*elapsedTime);
     m_velocity = m_dir*along + across;
 }
@@ -208,7 +214,17 @@ bool Torpedo::update(float elapsedTime)
         }
         return false;
     }
-    if (!m_spent && (m_time >= m_type.lifeTime || (m_target && !targetAlive())))
+    // a decoy can draw a homing torpedo away once, and only with the type's InfluenceProbability;
+    // it then makes for the decoy and is spent once the decoy is gone
+    Vector3D goal, goalVelocity;
+    if (!m_spent && m_target)
+    {
+        if (m_influenced && (m_lure = m_scenario->lure(this)))
+            m_influenced = false;
+        if (m_lure && !m_scenario->decoy(m_lure, goal, goalVelocity))
+            spend();
+    }
+    if (!m_spent && (m_time >= m_type.lifeTime || (m_target && !m_lure && !targetAlive())))
         spend();
 
     if (m_spent)
@@ -223,20 +239,10 @@ bool Torpedo::update(float elapsedTime)
     }
     else if (m_target)
     {
-        // a decoy can draw it away once, and only with the type's InfluenceProbability
-        Vector3D goal = m_target->center();
-        Vector3D decoy;
-        if (m_influenced && m_scenario->decoyNear(m_position, m_type.sensorRange, this, decoy))
+        if (!m_lure)
         {
-            m_influenced = false;
-            m_decoy = true;
-        }
-        if (m_decoy)
-        {
-            if (m_scenario->decoyNear(m_position, m_type.sensorRange, this, decoy))
-                goal = decoy;
-            else
-                m_decoy = false;
+            goal = m_target->center();
+            goalVelocity = m_target->velocity();
         }
         // every half second it looks whether the ground is between it and its goal, and while
         // it is, makes for a way over it (the agile types start looking once they turn)
@@ -250,7 +256,7 @@ bool Torpedo::update(float elapsedTime)
         // it slows down closing in: from its top speed at the launch distance to a mix of the
         // target's speed and its own
         const float share = std::min(1.0f, glm::length(goal - m_position)/m_startDistance);
-        const float targetSpeed = glm::length(m_target->velocity());
+        const float targetSpeed = glm::length(goalVelocity);
         const float vmax = m_type.maxVelocity;
         if (m_type.isAgile())
         {
@@ -262,7 +268,7 @@ bool Torpedo::update(float elapsedTime)
                 // the speed as wanted, the velocity turned by the Agility per tick
                 float speed = glm::length(m_velocity);
                 speed = wanted > speed ? std::min(wanted, speed + m_type.acceleration*elapsedTime)
-                                       : std::max(wanted, speed - m_type.retardation*elapsedTime);
+                                       : std::max(wanted, speed - std::abs(m_type.retardation)*elapsedTime);
                 const Vector3D way = aim - m_position;
                 const float keep = std::pow(1.0f - m_type.agility, AgilityTicks*elapsedTime);
                 const Vector3D current = glm::length(m_velocity) > 1e-3f ? glm::normalize(m_velocity) : m_dir;
@@ -307,19 +313,36 @@ bool Torpedo::update(float elapsedTime)
     // a piece of debris before that: with its armour of 1 the torpedo goes up there
     // (docs/ROADMAP.md, appendix Q)
     Particles::DebrisHit debris;
-    if (m_scenario->effectManager().hitDebris(m_position, hit ? position : next, 0.5f, m_speed, m_type.kineticStrength, debris))
+    if (m_scenario->effectManager().hitDebris(m_position, hit ? position : next, 0.5f, m_speed, m_type.kineticStrength, debris) && !outlasts(debris.kinetic))
     {
         detonate(debris.position, nullptr);
         return false;
     }
-    if (hit)
+    // the Subsonics outlast what they hit: they deal their strength each time they go into a unit
+    // and pass through it
+    if (hit && hit != m_inside)
     {
-        detonate(position, dynamic_cast<ActiveObject *>(hit));
-        return false;
+        if (!outlasts(hit->kineticStrength()))
+        {
+            detonate(position, dynamic_cast<ActiveObject *>(hit));
+            return false;
+        }
+        if (ActiveObject *unit = dynamic_cast<ActiveObject *>(hit))
+            unit->damage(m_type.kineticStrength, m_type.shockStrength, position, m_owner);
     }
+    m_inside = hit;
 
     setPosition(next);
     return false;
+}
+
+
+// what it hits takes its strength off the torpedo's armour (every hit is at least 1); true if the
+// torpedo is still there
+bool Torpedo::outlasts(int kinetic)
+{
+    m_kineticShield -= std::max(1, kinetic);
+    return m_kineticShield > 0;
 }
 
 
@@ -349,9 +372,7 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit, bool ground)
     case 21:
         {
             sized(Effects::Explosion_2, 0.9f);
-            Billboard *torch = m_scenario->effectManager().getBillboard(Effects::Debris_22);
-            m_scenario->effectManager().addDebris(Effects::Debris_22, position, Vector3D(0, 0, 1));
-            m_scenario->addDecoy(position, torch ? torch->lifeTime() : 16.0f);
+            m_scenario->effectManager().addDecoy(Effects::Debris_22, Particles::Decoy::Torch, iff(), position, Vector3D(0, 0, TorchSpeed));
         }
         break;
     case 18:

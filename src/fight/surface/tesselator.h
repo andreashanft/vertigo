@@ -41,6 +41,7 @@ public:
 
 private:
     void InitIndices(int MaxLevel);
+    Vector3D shadingNormal(const Vector3D &normal, const Vector3D &position, const Vector3D &scale) const;
     void PrepareElementSubset(Element &element, int level, const Vector3D &scale, int x, int y, int textureId, const Vector2D &t0, const Vector2D &tu, const Vector2D &tv);
 
 private:

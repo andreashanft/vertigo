@@ -95,9 +95,25 @@ Vector3D TurretBase::aim() const
 }
 
 
+bool TurretBase::startTumbling()
+{
+    m_tumbling = true;
+    m_trigger = false;
+    m_targetYaw = 0;
+    m_targetPitch = -0.244f;
+    m_scenario->disengagePlayer(this);
+    return true;
+}
+
+
 bool TurretBase::update(float elapsedTime)
 {
-    ActiveObject::update(elapsedTime);
+    if (m_tumbling)
+        updateLaterExplosions();
+    else
+        ActiveObject::update(elapsedTime);
+    if ((m_tumbling && updateGroundWreck(elapsedTime)) || isGroundWrecking() || !isEnabled())
+        return false;
 
     // turn towards the target at the turret's rates
     const float yawError = std::remainder(m_targetYaw - m_yaw, glm::two_pi<float>());

@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "button.h"
+#include "gfx/pipeline.h"
 
 
 namespace ui {
@@ -60,15 +61,27 @@ void Button::setDisabledFont(const gfx::Font &font)
 }
 
 
+void Button::setDisabledOpacity(float opacity)
+{
+    m_disabledOpacity = opacity;
+}
+
+
 void Button::draw()
 {
     if (m_text.isEmpty()) {
-        if (!isEnabled() && m_disabledTexture.isValid())
+        if (!isEnabled() && m_disabledTexture.isValid()) {
             m_drawRect = util::roundRect(m_disabledTexture.draw());
-        else if (m_pressed && m_pressedTexture.isValid())
-            m_drawRect = util::roundRect(m_pressedTexture.draw());
-        else
+        } else if (!isEnabled() && m_disabledOpacity < 1.0f) {
+            const Vector4D color = gfx::Pipeline::color();
+            gfx::Pipeline::setColor(Vector4D(1, 1, 1, m_disabledOpacity));
             m_drawRect = util::roundRect(m_texture.draw());
+            gfx::Pipeline::setColor(color);
+        } else if (m_pressed && m_pressedTexture.isValid()) {
+            m_drawRect = util::roundRect(m_pressedTexture.draw());
+        } else {
+            m_drawRect = util::roundRect(m_texture.draw());
+        }
     } else {
         Point offset(m_pressed ? m_offset : 0);
 

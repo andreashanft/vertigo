@@ -261,7 +261,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("timeout", "End test mode, or the game, after this many seconds; such automated runs are silent and don't take the focus.", "seconds");
     parser.addOption("overlay", "Show the debug overlay (toggle with Ctrl+D).");
     parser.addOption("destroy", "Destroy these units one second into the mission (test mode), e.g. 2064,2068; the player's id destroys the player.", "ids");
-    parser.addOption("collapse", "Collapse these units' energy defence one second into the mission (test mode): boats drift helplessly with a slow spin for a few seconds, as after a Flash Shark's hit.", "ids");
+    parser.addOption("collapse", "Collapse these units' energy defence one second into the mission (test mode): boats drift helplessly with a slow spin for a few seconds, as after a Flash Shark's hit; tanks stop, towers fall silent.", "ids");
     parser.addOption("keys", "Press keys at the given seconds (test mode, or since the start), optionally holding them, e.g. 2=Esc,3=2,4=Alt+A,5=Down/0.5.", "time=key[/seconds]");
     parser.addOption("pad", "Work a virtual game controller at the given seconds (test mode, or since the start): buttons by an Xbox controller's names (A, B, X, Y, LB, RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or the given seconds, together with +; sticks as LeftX, LeftY, RightX or RightY with a value from -1 to 1 (y down), held for good or the given seconds, e.g. 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2.", "time=control[/seconds]");
     parser.addOption("touch", "Touch the screen at the given seconds (test mode, or since the start) at a point given as fractions of the window's width and height, for 0.1 s or the given seconds; with a second point the finger moves there in 0.1 s. Repeatable, for several fingers, e.g. --touch 2=0.9,0.8/1 --touch 3=0.2,0.7>0.2,0.5/2.", "time=x,y[>x,y][/seconds]");
@@ -279,7 +279,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
     parser.addOption("screenshot", "Save the window as PNG at the given mission seconds (test mode), or seconds since the start, e.g. 3=front.png.", "time=file");
     parser.addOption("fixed-step", "Advance the mission by 20 ms per frame instead of by the real time (test mode, with a window), so runs repeat exactly, e.g. for --screenshot.");
-    parser.addOption("click", "Click at the given seconds (test mode, or since the start) at a point of the 640x480 screen, e.g. 2=320,300.", "time=x,y");
+    parser.addOption("click", "Click at the given seconds (test mode, or since the start) at a point of the 640x480 screen, e.g. 2=320,300; with a second point the mouse drags from the first to it, e.g. 2=100,50>300,80.", "time=x,y[>x,y]");
     parser.addOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
     parser.addOption("data", "Use the game data in this directory for this run, instead of the remembered one.", "directory");
 
@@ -377,13 +377,23 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     }
     for (const std::string &value : parser.values("click")) {
         float time;
-        std::string point;
-        const StringList xy = timed(value, time, point) ? text(point).split(',') : StringList();
-        if (xy.size() != 2 || !isNumber(xy[0]) || !isNumber(xy[1])) {
-            std::cerr << "Invalid --click value " << value << ", expected time=x,y" << std::endl;
+        std::string rest;
+        const StringList points = timed(value, time, rest) ? text(rest).split('>') : StringList();
+        game::Vertigo::Options::Click click = { time, PointD(0), PointD(0) };
+        bool ok = points.size() >= 1 && points.size() <= 2;
+        for (int i = 0; ok && i < points.size(); i++) {
+            const StringList xy = points[i].split(',');
+            ok = xy.size() == 2 && isNumber(xy[0]) && isNumber(xy[1]);
+            if (ok)
+                (i == 0 ? click.pos : click.to) = PointD(xy[0].toFloat(), xy[1].toFloat());
+        }
+        if (!ok) {
+            std::cerr << "Invalid --click value " << value << ", expected time=x,y[>x,y]" << std::endl;
             return end(game::Vertigo::ExitUsage);
         }
-        options.clicks.push_back({ time, PointD(xy[0].toFloat(), xy[1].toFloat()) });
+        if (points.size() == 1)
+            click.to = click.pos;
+        options.clicks.push_back(click);
     }
     if (!ids(parser, "destroy", "unit ids", options.destroy))
         return end(game::Vertigo::ExitUsage);

@@ -253,9 +253,14 @@ void Player::dropBuzzer()
         return;
     }
     m_boat->useBuzzer();
-    const Vector3D position = m_position - dir()*5.0f;
-    m_scenario->addDecoy(position, 12.0f);
-    m_scenario->effectManager().addDebris(Effects::Debris_22, position, -dir());
+    // (docs/ROADMAP.md, appendix S) from the tail, upwards and backwards at 12.5 m/s on top of the
+    // boat's own velocity: a buzzer (DEBRIS.DES 18), one in ten a dummy (20) that draws nothing
+    const Vector3D position = m_position + dir()*m_localBox.minPoint().y;
+    const Vector3D velocity = glm::normalize(2.0f*up() - dir())*12.5f + m_velocity;
+    if (util::random()%10 == 0)
+        m_scenario->effectManager().addDecoy(Effects::Debris_20, Particles::Decoy::None, iff(), position, velocity);
+    else
+        m_scenario->effectManager().addDecoy(Effects::Debris_18, Particles::Decoy::Buzzer, iff(), position, velocity);
 }
 
 
@@ -397,9 +402,10 @@ bool Player::update(float elapsedTime)
         bool colSurface = m_scenario->surface().testCollision(m_position, m_position + delta, 1.5f, posSurface, normSurface);
 
         Vector3D posObject, normObject;
-        // trash and the player don't touch (docs/ROADMAP.md, appendix Q)
+        // trash and the player don't touch (docs/ROADMAP.md, appendix Q); torpedoes see to their
+        // own hits, the boat never bounces off them and its own never touch it (appendix S)
         Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this,
-                                                                         [](const Object *object) { return !dynamic_cast<const Trash *>(object); });
+                                                                         [](const Object *object) { return !dynamic_cast<const Trash *>(object) && !dynamic_cast<const Torpedo *>(object); });
 
         if (colObject && (!colSurface || glm::length2(posObject - m_position) < glm::length2(posSurface - m_position)))
         {

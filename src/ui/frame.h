@@ -38,6 +38,11 @@ public:
 
 protected:
     void closeFrame();
+    // the border, but not its close button, drags the window around the screen; on the iPad,
+    // without a right button, a tap beside a window that can be closed closes it
+    bool mousePressEvent(const Point &pos, input::MouseButton button);
+    void mouseReleaseEvent(const Point &pos, input::MouseButton button);
+    void mouseMoveEvent(const Point &pos);
 
 private:
     static int updateBorder(gfx::Texture texture, const gfx::ColorTable &colorTable, int x, int id);
@@ -47,6 +52,8 @@ private:
     std::function<void()> m_funcClose;
     ui::Label m_lblTitle;
     ui::Button m_btnClose;
+    bool m_dragging = false;
+    Point m_dragOffset;     // from the window's top left corner to the mouse
 };
 
 } // namespace ui

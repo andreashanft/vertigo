@@ -41,6 +41,8 @@ public:
 public:
     void draw();
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
+    // the hull's box in its own frame
+    const BoundingBox& localBox() const { return m_localBox; }
 
 protected:
     Module *m_base;

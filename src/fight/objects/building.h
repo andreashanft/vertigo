@@ -32,7 +32,7 @@ class Module;
 class Building : public Object
 {
 public:
-    Building(Scenario *scenario, txt::DesFile &file, int size, float angle, int x, int y, int refx, int refy);
+    Building(Scenario *scenario, txt::DesFile &file, int size, int card, int x, int y, int refx, int refy);
 
 public:
     void draw();

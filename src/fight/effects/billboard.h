@@ -37,14 +37,16 @@ class BoundingBox;
 class Billboard
 {
 public:
-    Billboard(gfx::TextureManager &texMan, txt::DesFile &name, int index, bool blendColor = true);
+    Billboard(gfx::TextureManager &texMan, txt::DesFile &name, int index, bool additive = true);
 
 public:
     // the frame shown at that time (the animation loops), facing the camera (its right, up and back axes)
     void quad(const Vector3D &position, float angle, float scale, float time, const glm::mat3 &camera,
               Vector3D corners[4], const Vector2D *&texCoords, gfx::Texture *&texture);
     void draw(const Vector3D &position, float angle, float scale, float time, const glm::mat3 &camera);
-    bool blendColor() const { return m_blendColor; }
+    // the sprite adds its colour to what is behind it, so overlapping sprites get brighter, up to
+    // white; otherwise it covers it, with palette entry 0 left out (docs/ROADMAP.md, appendix H)
+    bool additive() const { return m_additive; }
     // the colour of the light a glowing sprite gives off: its first frame's pixels averaged by
     // brightness, at full brightness; read from the image on the first call
     Vector3D lightColor();
@@ -82,7 +84,7 @@ private:
     std::vector<Stage> m_stages;
     String m_imageName;     // of the first stage
     float m_scale;
-    bool m_blendColor;
+    bool m_additive;
     bool m_lightColorKnown = false;
     Vector3D m_lightColor = Vector3D(0);
 

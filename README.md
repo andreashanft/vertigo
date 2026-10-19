@@ -158,7 +158,10 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 In the mission and turret menus the d-pad highlights an option, A takes it and
 B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a
 mission after its briefing, B or Start skips a movie, A confirms a new game's
-name. Menus and stations take the mouse, or touch on the iPad.
+name. Menus and stations take the mouse, or touch on the iPad. A station's
+windows (rooms, conversations, the depot) can be dragged by their frame; a
+right click closes a room or the depot, and so does a tap beside it on the
+iPad.
 
 ## Touch controls
 
@@ -231,7 +234,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   reaching them.
 - `--collapse 2050` collapses these units' energy defence one second in:
   boats drift helplessly with a slow spin for a few seconds, as after a
-  Flash Shark's hit.
+  Flash Shark's hit; tanks stop, gun towers lower their guns and torpedo
+  towers stop launching.
 - `--trace 2062,2055` prints these units' map cell, height above ground,
   speed, shield and current order every second; the player's id prints the
   player with the water current at its position and the four shield sides.
@@ -268,7 +272,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   are then mission seconds). Screenshots of two builds can be compared pixel
   by pixel this way, e.g. after changes to the renderer.
 - `--click 2=320,300` clicks at the given seconds at a point of the 640×480
-  screen (the mouse moves there first).
+  screen (the mouse moves there first); `--click 2=100,50>300,80` drags from
+  the first point to the second.
 - `--touch 2=0.9,0.8/1` puts a finger on the touch screen at the given
   seconds, at a point given as fractions of the window's width and height,
   for 0.1 s or the given seconds; `--touch 3=0.2,0.7>0.2,0.6/2` moves it to a

@@ -47,7 +47,7 @@ public:
         Debris,     // flies off, slows down and sinks; goes out on the ground, at the end of its
                     // LifeTime or when it is hit (docs/ROADMAP.md, appendix Q)
         Bubble,     // rises (the billboard's Velocity) until it is far from the player; loops
-        Dust,       // plays its animation slowly while drifting up
+        Dust,       // plays its animation where it was made
     };
 
     static const int Capacity = 3000;
@@ -74,6 +74,23 @@ public:
     };
     bool hitDebris(const Vector3D &start, const Vector3D &end, float radius, float speed, int kinetic, DebrisHit &hit);
 
+    // The pieces that draw torpedoes (docs/ROADMAP.md, appendix S): a buzzer (DEBRIS.DES 18, 19) or
+    // the Torch's torch (22), each of the faction that put it out and known by its id
+    enum class Decoy { None, Buzzer, Torch };
+    struct DecoyInfo
+    {
+        int id;
+        Decoy kind;
+        int faction;
+        float noise;
+        Vector3D position;
+    };
+    // adds a piece of debris as a decoy; false if it wasn't added
+    bool addDecoy(Billboard *billboard, Decoy kind, int faction, const Vector3D &position, const Vector3D &velocity, float angle);
+    void decoys(std::vector<DecoyInfo> &decoys) const;
+    // where that decoy is and how it moves, false once it is gone
+    bool decoy(int id, Vector3D &position, Vector3D &velocity) const;
+
     void update(float elapsedTime);
     void draw();
 
@@ -90,19 +107,20 @@ private:
         float rate;     // the speed of the animation
         int shield;     // debris: its armour
         float life;     // debris: how long it lasts, 1 to 1.6 times its LifeTime
+        Decoy decoy = Decoy::None;
+        int faction = -1;
+        int id = 0;     // decoys: known by this
     };
 
     struct Batch
     {
         gfx::Texture *texture;
-        bool blendColor;
+        bool additive;
         std::vector<gfx::Pipeline::Vertex> vertices;
     };
 
     // advances the particle, false when it is done
     bool update(Particle &particle, float elapsedTime);
-    // the debris that takes part in contacts (not the buzzer's torch)
-    static bool collides(const Particle &particle);
     // a piece of debris goes out in an explosion of its own, with its sound
     void endDebris(const Particle &particle, int explosion, int sample);
 
@@ -118,6 +136,7 @@ private:
         Vector3D position;
     };
     std::vector<Ending> m_endings;  // the debris that went out this frame, spawned after the update
+    int m_lastDecoy = 0;
 };
 
 

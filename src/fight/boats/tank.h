@@ -30,9 +30,9 @@ class Turret;
 
 
 // A ground vehicle (tanks and crawlers): drives on the ground, tilts with it
-// (at most MaxClimbingAngle) and steers by turning only. Its turret (the Gun module or the
-// GunTurret) turns towards what the orders aim at and back to the front when they stop aiming.
-// Moving, it stirs up dust behind its tracks.
+// (at most MaxClimbingAngle) and steers by turning only. Its fixed Gun module tilts up and down
+// towards what the orders aim at, a GunTurret turns towards it as well; both go back to the front
+// when the orders stop aiming. Moving, it stirs up dust behind its tracks.
 class Tank : public SimpleBoat
 {
 public:
@@ -45,12 +45,16 @@ public:
     void draw();
     void arm(int model, txt::DesFile &file);
     bool isGroundVehicle() const { return true; }
+    // an energy defence's collapse: it brakes to a stop and stays there for good
+    bool startTumbling() override;
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void aimAt(const Vector3D &point);
     Vector3D gunDirection() const;
 
 private:
     float ground(float x, float y) const;
+    // turns and speeds up or brakes as steerTo() and hold() want, along the ground
+    void drive(float elapsedTime);
     void alignToGround();
     void updateTurret(float elapsedTime);
     void stirUpDust(float elapsedTime);
@@ -73,6 +77,7 @@ private:
     float m_targetPitch;
     float m_aimHold;          // seconds until the turret returns to the front
     float m_dustTime;         // until the next puff of dust
+    float m_paralysedEnd = 0; // when a paralysed one stops for good
 };
 
 

@@ -54,6 +54,9 @@ void SimpleObject::draw()
 {
     gfx::Pipeline::pushMatrix();
     gfx::Pipeline::translate(m_position);
+    // a building tilts as it blows up
+    if (m_tilt != glm::mat3(1))
+        gfx::Pipeline::multiply(Matrix(m_tilt));
     if (m_yaw != 0)
         gfx::Pipeline::rotate(-glm::degrees(m_yaw), Vector3D(0, 0, 1));
     gfx::Pipeline::scale(m_scale);

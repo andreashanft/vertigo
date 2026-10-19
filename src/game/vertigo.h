@@ -73,8 +73,8 @@ public:
         // a finger from a point to another (fractions of the window), for this long
         struct Touch { float time; PointD from; PointD to; float hold; bool down = false; float start = 0; long long id = 0; };
         std::vector<Touch> touch;                       // touch the screen at these times
-        struct Click { float time; PointD pos; };
-        std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen
+        struct Click { float time; PointD pos; PointD to; };
+        std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen, released at to
         bool check = false;                             // report what the mission loader ignores
         StringList checkScenarios;                     // empty = all missions
     };

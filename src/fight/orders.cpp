@@ -29,6 +29,7 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/trigonometric.hpp>
 #include <algorithm>
+#include <limits>
 #include <cmath>
 
 
@@ -165,6 +166,7 @@ void Orders::start(int slot)
     }
     m_startTime = m_scenario->time();
     dropTarget();
+    m_arrived = false;
     m_lying = false;
     m_formation = false;
     m_dockStart = -1;
@@ -381,7 +383,7 @@ bool Orders::isAlive(const ActiveObject *unit) const
         return false;
     if (unit == m_scenario->player())
         return !m_scenario->playerDestroyed();
-    return unit->isEnabled() && !const_cast<ActiveObject *>(unit)->eventDestroy()->isCompleted();
+    return unit->isEnabled() && !unit->isDying();
 }
 
 
@@ -423,6 +425,13 @@ bool Orders::sees(const ActiveObject *unit) const
 }
 
 
+bool Orders::isBuzzer(const ActiveObject *unit)
+{
+    const DecoyContact *decoy = dynamic_cast<const DecoyContact *>(unit);
+    return decoy && decoy->isBuzzer();
+}
+
+
 bool Orders::detects(const ActiveObject *unit, float rangeFactor) const
 {
     if (!isAlive(unit) || unit == m_unit)
@@ -436,16 +445,17 @@ bool Orders::detects(const ActiveObject *unit, float rangeFactor) const
     case 0: return sees(unit);                                   // sight
     case 1: return hears(unit, distance2);                       // passive sonar
     case 2: return true;                                         // active sonar
-    case 3: return unit == m_scenario->player();                 // the player's boat only
-    case 4: return unit == m_scenario->player() || hears(unit, distance2);
+    case 3: return isBuzzer(unit);                               // buzzers only
+    case 4: return isBuzzer(unit) || hears(unit, distance2);
     default: return false;
     }
 }
 
 
 // looks every 1.5 s (0.7 s with sen 3 and 4) and keeps what it found while that lives: the nearest
-// hostile in range (sen 0 in sight, sen 2 regardless), the loudest one heard (sen 1), the player's
-// boat (sen 3), the player if in range else the loudest (sen 4)
+// hostile in range (sen 0 in sight, sen 2 regardless), the loudest one heard, a torch too (sen 1),
+// the nearest buzzer, whoever dropped it (sen 3), the nearest hostile buzzer, else the loudest one
+// heard, a torch too (sen 4); only the passive sonars take decoys (appendices J and S)
 ActiveObject* Orders::scan()
 {
     if (m_scenario->time() < m_nextScan)
@@ -455,11 +465,25 @@ ActiveObject* Orders::scan()
     m_scanned = nullptr;
     const float range = sensorRange();
     float best = 0;
+    ActiveObject *buzzer = nullptr;
+    float nearestBuzzer = range*range;
     auto consider = [&](ActiveObject *unit) {
-        if (!isHostile(unit) || !isAlive(unit))
+        if (!isAlive(unit) || unit == m_unit || !(type == 3 || isHostile(unit)))
             return;
         const float distance2 = glm::length2(unit->position() - m_unit->position());
         if (distance2 >= range*range)
+            return;
+        const DecoyContact *decoy = dynamic_cast<const DecoyContact *>(unit);
+        if (decoy && decoy->isBuzzer())
+        {
+            if ((type == 3 || type == 4) && distance2 < nearestBuzzer)
+            {
+                nearestBuzzer = distance2;
+                buzzer = unit;
+            }
+            return;
+        }
+        if (decoy && type != 1 && type != 4)
             return;
         float score = 0;
         switch (type)
@@ -470,25 +494,13 @@ ActiveObject* Orders::scan()
             score = 1/(distance2 + 1);
             break;
         case 1:
+        case 4:
             if (!hears(unit, distance2))
                 return;
             score = unit->noise()/(distance2 + 1);
             break;
         case 2:
             score = 1/(distance2 + 1);
-            break;
-        case 3:
-            if (unit != m_scenario->player())
-                return;
-            score = 1/(distance2 + 1);
-            break;
-        case 4:
-            if (unit == m_scenario->player())
-                score = 1e6f + 1/(distance2 + 1);
-            else if (hears(unit, distance2))
-                score = unit->noise()/(distance2 + 1);
-            else
-                return;
             break;
         default:
             return;
@@ -503,6 +515,10 @@ ActiveObject* Orders::scan()
     for (const auto &record : m_scenario->objectRecords())
         if (SimpleBoat *boat = dynamic_cast<SimpleBoat *>(record.object))
             consider(boat);
+    for (const auto &decoy : m_scenario->decoyContacts())
+        consider(decoy.get());
+    if (buzzer)
+        m_scanned = buzzer;
     return m_scanned;
 }
 
@@ -791,7 +807,10 @@ void Orders::updateFight(ActiveObject *target, float speed)
     case Fight::Run:
         {
             // the nose straight at the target, as the guns fire along it; the run flies at the
-            // target itself, not at the order's height band, kept only clear of the ground ahead
+            // target itself, not at the order's height band, kept clear of the ground ahead, and
+            // turns on the spot instead for the rest of its time once the terrain is in the way
+            if (m_fight == Fight::Run && !sees(target))
+                m_fight = Fight::Turn;
             const Vector3D aim = aimPoint(target);
             if (m_fight == Fight::Turn)
                 m_boat->pointAt(aim, 0);
@@ -1081,6 +1100,29 @@ void Orders::update()
         }
     }
 
+    // a big ship takes Patrol and Attack to the order's cell, at mih over the ground, and stays
+    // there once it is within reach of it, until the time is up; Escort, Ambush and
+    // GotoWithInfiltrate leave it where it is (docs/ROADMAP.md, appendix A)
+    if (m_boat->isBigShip() && slot.type != OrderSlot::Goto && slot.type != OrderSlot::GotoWithArrive)
+    {
+        m_unit->setTrigger(false);
+        if (slot.type != OrderSlot::Patrol && slot.type != OrderSlot::Attack)
+        {
+            m_boat->hold();
+            return;
+        }
+        Vector3D target = cellCentre(slot.refx, slot.refy);
+        target.z = m_scenario->surface().heightAt(target.x, target.y) + slot.mih;
+        if (m_arrived || glm::length(Vector2D(target) - Vector2D(m_unit->position())) < arriveRadius(m_boat->maxVelocity()))
+        {
+            m_arrived = true;
+            m_boat->hold();
+            return;
+        }
+        m_boat->steerTo(target, slowSpeed(target, speed));
+        return;
+    }
+
     switch (slot.type)
     {
     case OrderSlot::Goto:
@@ -1173,7 +1215,7 @@ void Orders::update()
     case OrderSlot::Escort:
         {
             SimpleBoat *escorted = dynamic_cast<SimpleBoat *>(findUnit(slot.esc));
-            if (!escorted || escorted->eventDestroy()->isCompleted())
+            if (!escorted || escorted->isDying())
             {
                 next();
                 return;
@@ -1184,10 +1226,30 @@ void Orders::update()
                 return;
             }
 
-            // the place: the offsets in the escorted unit's frame (nothing behind it), within the band
+            // the place: the offsets in the escorted unit's frame (nothing behind it), measured from
+            // hull to hull, within the band
             Vector3D offset = slot.offset;
             if (offset.y < 0)
                 offset.y = -1;
+            const float gap = glm::length(offset);
+            if (gap > 0)
+            {
+                // along the offset, out of the escorted hull's box, then the escort's own box
+                const Vector3D way = offset/gap;
+                auto extent = [&way](const BoundingBox &box, float sign) {
+                    float reach = std::numeric_limits<float>::max();
+                    for (int axis = 0; axis < 3; axis++)
+                    {
+                        const float along = sign*way[axis];
+                        if (along > 1e-4f)
+                            reach = std::min(reach, box.maxPoint()[axis]/along);
+                        else if (along < -1e-4f)
+                            reach = std::min(reach, box.minPoint()[axis]/along);
+                    }
+                    return std::max(reach, 0.0f);
+                };
+                offset = way*(extent(escorted->localBox(), 1) + gap + extent(m_boat->localBox(), -1));
+            }
             const Vector3D target = inBand(toWorld(escorted, offset), slot.mih, slot.mah);
             const float distance = glm::length(target - m_unit->position());
             const float escortedSpeed = glm::length(escorted->velocity());

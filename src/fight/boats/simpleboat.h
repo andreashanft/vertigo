@@ -84,11 +84,14 @@ public:
     // the destruction sequence (docs/ROADMAP.md, appendix R): bursts of explosions and debris
     // over two seconds while the hull drifts and spins, then the hull is gone
     bool isWrecking() const { return m_wreckStep >= 0; }
+    bool isDying() const override { return ActiveObject::isDying() || isWrecking(); }
     bool wreckGone() const { return m_wreckGone; }
     // the hull's radius (metres), which the death view keeps its distance by
     float hullRadius() const;
     // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)
     virtual bool engagesHostiles() const { return true; }
+    // a big ship: patrols and attacks go to the order's cell and stay there (Orders)
+    virtual bool isBigShip() const { return false; }
     // where the gun points; units with a turret turn it with aimAt()
     virtual Vector3D gunDirection() const { return dir(); }
 

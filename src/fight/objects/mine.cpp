@@ -19,7 +19,7 @@
 #include "fight/scenario.h"
 #include "fight/boats/player.h"
 #include "fight/collisionmanager.h"
-#include "fight/objects/turretbase.h"
+#include "fight/objects/building.h"
 #include "fight/boats/cargoship.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/effects/trash.h"
@@ -88,16 +88,18 @@ bool Mine::update(float elapsedTime)
     {
         Vector3D next = distance <= step ? goal : m_position + way*(step/distance);
         next.z = std::max(next.z, m_scenario->surface().heightAt(next.x, next.y) + GroundClearance*r);
-        // running into another faction's unit on the way
+        // running into another faction's unit or a building on the way
         Vector3D contact, normal;
         const Vector3D from = center();
         auto other = [this, player](const Object *object) {
+            if (dynamic_cast<const Building *>(object))
+                return true;
             const ActiveObject *unit = dynamic_cast<const ActiveObject *>(object);
             return unit && unit != player && collidesWith(unit);
         };
         if (Object *hit = m_scenario->collisionManager().testCollision(from, from + next - m_position, r, contact, normal, nullptr, this, other))
         {
-            collide(static_cast<ActiveObject *>(hit), contact);
+            collide(hit, contact);
             return false;
         }
         // debris slower than the mine
@@ -132,15 +134,17 @@ bool Mine::collidesWith(const ActiveObject *unit) const
 {
     if (!isEnabled() || m_eventDestroy.isCompleted() || !unit || unit == this || !unit->isEnabled() || unit->contactFaction() == contactFaction())
         return false;
-    return dynamic_cast<const SimpleBoat *>(unit) || dynamic_cast<const TurretBase *>(unit) || dynamic_cast<const CargoSegment *>(unit) ||
+    // boats, tanks, towers, turrets and buildings, ship segments and trash, never another mine
+    return (dynamic_cast<const SimpleObject *>(unit) && !dynamic_cast<const Mine *>(unit)) || dynamic_cast<const CargoSegment *>(unit) ||
            dynamic_cast<const Trash *>(unit);
 }
 
 
-void Mine::collide(ActiveObject *unit, const Vector3D &contact)
+void Mine::collide(Object *object, const Vector3D &contact)
 {
-    const int kinetic = unit->kineticStrength(), shock = unit->shockStrength();
-    unit->damage(m_kineticStrength, m_shockStrength, contact);
+    const int kinetic = object->kineticStrength(), shock = object->shockStrength();
+    if (ActiveObject *unit = dynamic_cast<ActiveObject *>(object))
+        unit->damage(m_kineticStrength, m_shockStrength, contact);
     damage(kinetic, shock, contact);
 }
 

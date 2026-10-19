@@ -76,6 +76,15 @@ void Tesselator::InitIndices(int MaxLevel)
 }
 
 
+// the normal in the world, as long as the share of the light the ground gets there (Surface::darken)
+Vector3D Tesselator::shadingNormal(const Vector3D &normal, const Vector3D &position, const Vector3D &scale) const
+{
+    const Vector3D n = normal/scale;
+    const float length = glm::length(n);
+    return length > 0 ? n*(m_surface->lightFactor(position.x, position.y)/length) : n;
+}
+
+
 void Tesselator::PrepareElementSubset(Element &element, int level, const Vector3D &scale, int x, int y, int textureId, const Vector2D &t0, const Vector2D &tu, const Vector2D &tv)
 {
 	int i, j, k, l;
@@ -92,7 +101,7 @@ void Tesselator::PrepareElementSubset(Element &element, int level, const Vector3
 
 	Vector3D o = spline.Beta_3_3(u, v);
 	Vector3D n = spline.Beta_norm(u, v);
-    element.addVertex(textureId, (o + trans)*scale, n/scale, t0 + tu*(u*dt) + tv*(v*dt));
+    element.addVertex(textureId, (o + trans)*scale, shadingNormal(n, o + trans, scale), t0 + tu*(u*dt) + tv*(v*dt));
     float z = o.z;
 
 	l = 2;
@@ -108,7 +117,7 @@ void Tesselator::PrepareElementSubset(Element &element, int level, const Vector3
 			{
 				o = spline.Beta_3_3(u, v);
                 n = spline.Beta_norm(u, v);
-                element.addVertex(textureId, (o + trans)*scale, n/scale, t0 + tu*(u*dt) + tv*(v*dt));
+                element.addVertex(textureId, (o + trans)*scale, shadingNormal(n, o + trans, scale), t0 + tu*(u*dt) + tv*(v*dt));
 			}
 			int tmp = du;
 			du = -dv;

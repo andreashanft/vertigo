@@ -57,6 +57,8 @@ set(SOURCES
     fight/boats/cargoship.h
     fight/objects/placeholder.cpp
     fight/objects/placeholder.h
+    fight/objects/decoycontact.cpp
+    fight/objects/decoycontact.h
     fight/objects/object.cpp
     fight/objects/object.h
     fight/objects/simpleobject.cpp

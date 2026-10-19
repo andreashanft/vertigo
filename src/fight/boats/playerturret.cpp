@@ -168,7 +168,7 @@ bool PlayerTurret::isValid(ActiveObject *target) const
     // not a torpedo in the water: a unit (units are never deleted during a mission), or a torpedo that is gone
     if (m_targetIsTorpedo && target == m_target)
         return false;
-    return target->isEnabled() && !target->eventDestroy()->isCompleted();
+    return target->isEnabled() && !target->isDying();
 }
 
 

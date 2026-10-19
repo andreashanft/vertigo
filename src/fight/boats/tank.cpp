@@ -37,13 +37,21 @@ namespace fight {
 
 namespace {
 
-// The Gun modules (panztur*) have no turn rates in the data; like the GunTurret's (TANTUR2) and
-// the turret models', theirs is 1.5 rad/s, faster than any hull turns (at most 1.1).
+// The GunTurret (TANTUR2) turns as the turret models, 1.5 rad/s if the data has no rate
 const float GunTurnRate = 1.5f;
 const float MinPitch = -0.17f;
 const float MaxPitch = 1.0f;
-// a puff of dust behind each track this often at full speed (10 m/s), less often when slower
-const float DustInterval = 0.15f;
+// a fixed Gun module (panztur*) only tilts, from 5 degrees down to straight up, at the hull's
+// pitch rate (MaxAngleVelocityB), and only at targets ahead (docs/ROADMAP.md, appendix J)
+const float GunMinPitch = -glm::radians(5.0f);
+const float GunMaxPitch = glm::half_pi<float>();
+// while it drives, a puff of dust behind one of its tracks every 0.2 to 0.3 s (a crawler 0.16 to
+// 0.3 s), the larger the faster it goes (docs/ROADMAP.md, appendix H)
+const float DustInterval = 0.2f;
+const float CrawlerDustInterval = 0.16f;
+const float DustMaxInterval = 0.3f;
+// a paralysed one brakes for 5 s, then it stays as it is
+const float ParalysedBrake = 5.0f;
 
 }
 
@@ -69,6 +77,7 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
         m_gunOffset = Vector3D(file.value("GunOffsetX").toFloat(), file.value("GunOffsetY").toFloat(), file.value("GunOffsetZ").toFloat());
         m_pivot = m_gunOffset;
         m_localBox.add(m_gun->box().translate(m_gunOffset).scale(m_scale));
+        m_turretRate = m_maxAngleVelocity.x;
     }
     file.setSection("gunturret");
     if (file.contains("name"))
@@ -145,25 +154,38 @@ void Tank::alignToGround()
 }
 
 
+bool Tank::startTumbling()
+{
+    m_tumbling = true;
+    m_trigger = false;
+    m_paralysedEnd = m_scenario->time() + ParalysedBrake;
+    m_scenario->disengagePlayer(this);
+    return true;
+}
+
+
 bool Tank::update(float elapsedTime)
 {
+    // destroyed or paralysed, it brakes to a stop where it is and no longer turns
+    const bool wrecking = isGroundWrecking();
+    if (wrecking || m_tumbling)
+    {
+        if (wrecking || m_scenario->time() < m_paralysedEnd)
+        {
+            hold();
+            m_turnVelocity = Vector3D(0);
+            drive(elapsedTime);
+        }
+        else
+            m_velocity = Vector3D(0);
+        if (wrecking)
+            updateGroundWreck(elapsedTime);
+        return false;
+    }
+
     if (m_orders)
         m_orders->update();
-
-    // steerTo() and hold() set the turn rate and the target speed
-    m_heading += m_turnVelocity.z*m_maxAngleVelocity.z*elapsedTime;
-    if (m_velocityTarget > m_speed)
-        m_speed = std::min(m_velocityTarget, m_speed + m_maxOrientationAcceleration*elapsedTime);
-    else
-        m_speed = std::max(m_velocityTarget, m_speed + m_maxOrientationRetardation*elapsedTime);
-
-    const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0);
-    const Vector3D previous = m_position;
-    Vector3D delta = slideAlongObjects(m_position, heading*m_speed*elapsedTime, std::abs(m_speed));
-    delta.z = 0;
-    setPosition(m_position + delta);
-    m_velocity = elapsedTime > 0 ? (m_position - previous)/elapsedTime : Vector3D(0);
-
+    drive(elapsedTime);
     updateTurret(elapsedTime);
     stirUpDust(elapsedTime);
     if (m_unitGun)
@@ -179,27 +201,46 @@ bool Tank::update(float elapsedTime)
 }
 
 
+void Tank::drive(float elapsedTime)
+{
+    // steerTo() and hold() set the turn rate and the target speed
+    m_heading += m_turnVelocity.z*m_maxAngleVelocity.z*elapsedTime;
+    if (m_velocityTarget > m_speed)
+        m_speed = std::min(m_velocityTarget, m_speed + m_maxOrientationAcceleration*elapsedTime);
+    else
+        m_speed = std::max(m_velocityTarget, m_speed + m_maxOrientationRetardation*elapsedTime);
+
+    const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0);
+    const Vector3D previous = m_position;
+    Vector3D delta = slideAlongObjects(m_position, heading*m_speed*elapsedTime, std::abs(m_speed));
+    delta.z = 0;
+    setPosition(m_position + delta);
+    m_velocity = elapsedTime > 0 ? (m_position - previous)/elapsedTime : Vector3D(0);
+}
+
+
 void Tank::stirUpDust(float elapsedTime)
 {
     const float speed = std::abs(m_speed);
-    if (speed < 1.0f)
+    if (speed < 0.1f || m_maxVelocity <= 0)
         return;
-    m_dustTime -= elapsedTime*std::min(speed/10.0f, 1.0f);
+    m_dustTime -= elapsedTime;
     if (m_dustTime > 0)
         return;
-    m_dustTime += DustInterval*(0.7f + 0.6f*util::random()/float(RAND_MAX));
+    const bool crawler = m_groundWreck == GroundWreck::Crawler;
+    const float interval = crawler ? CrawlerDustInterval : DustInterval;
+    m_dustTime = interval + (DustMaxInterval - interval)*util::random()/float(RAND_MAX);
 
-    // at the rear corners, on the ground; small, medium or large by the vehicle's size
+    // at the rear, 0.6 to 1.1 of the half width to the left or the right, on the ground, where it
+    // stays; as big as the vehicle is high times its share of its top speed and 0.8 to 1.0
     const Vector3D dim = m_localBox.dim();
-    const int size = std::max(dim.x, dim.y) < 6.0f ? 0 : std::max(dim.x, dim.y) < 12.0f ? 1 : 2;
-    for (const float side : { -1.0f, 1.0f })
-    {
-        const Vector3D local(side*0.4f*dim.x + 0.5f*(m_localBox.minPoint().x + m_localBox.maxPoint().x), m_localBox.minPoint().y, m_localBox.minPoint().z);
-        Vector3D position = m_position + m_orientationInverted*local;
-        position.z = ground(position.x, position.y);
-        const Vector3D drift = -dir()*0.3f*speed + right()*side*0.5f;
-        m_scenario->effectManager().addDust(position, size, drift);
-    }
+    const float side = util::random()%2 ? 1.0f : -1.0f;
+    const float out = (0.6f + 0.5f*util::random()/float(RAND_MAX))*0.5f*dim.x;
+    const Vector3D local(side*out + 0.5f*(m_localBox.minPoint().x + m_localBox.maxPoint().x), m_localBox.minPoint().y, m_localBox.minPoint().z);
+    Vector3D position = m_position + m_orientationInverted*local;
+    position.z = ground(position.x, position.y);
+    const float size = std::min(speed/m_maxVelocity, 1.0f)*m_localBox.maxPoint().z*(0.8f + 0.2f*util::random()/float(RAND_MAX));
+    m_scenario->effectManager().addDust(position, size, crawler);
 }
 
 
@@ -208,8 +249,18 @@ void Tank::aimAt(const Vector3D &point)
     if (!m_gun && !m_turret)
         return;
     const Vector3D way = m_orientation*(point - (m_position + m_orientationInverted*(m_pivot*m_scale)));
-    m_targetYaw = std::atan2(way.x, way.y);
-    m_targetPitch = glm::clamp(std::atan2(way.z, glm::length(Vector2D(way))), MinPitch, MaxPitch);
+    if (m_turret)
+    {
+        m_targetYaw = std::atan2(way.x, way.y);
+        m_targetPitch = glm::clamp(std::atan2(way.z, glm::length(Vector2D(way))), MinPitch, MaxPitch);
+    }
+    else
+    {
+        // the gun points along the hull; behind it, it levels out
+        if (way.y <= 0)
+            return;
+        m_targetPitch = glm::clamp(std::atan2(way.z, way.y), GunMinPitch, GunMaxPitch);
+    }
     m_aimHold = 1.0f;
 }
 
@@ -250,12 +301,12 @@ void Tank::draw()
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     gfx::Pipeline::scale(m_scale);
     m_base->draw();
-    // the turret turns around its pivot; only its yaw shows, the barrel's pitch isn't modelled
+    // the gun tilts around its origin; the turret turns around its pivot, only its yaw shows
     if (m_gun)
     {
         gfx::Pipeline::pushMatrix();
         gfx::Pipeline::translate(m_gunOffset);
-        gfx::Pipeline::rotate(-glm::degrees(m_turretYaw), Vector3D(0, 0, 1));
+        gfx::Pipeline::rotate(glm::degrees(m_turretPitch), Vector3D(1, 0, 0));
         m_gun->draw();
         gfx::Pipeline::popMatrix();
     }

@@ -30,6 +30,7 @@
 #include "txt/desfile.h"
 #include "txt/stringtable.h"
 #include "boats/player.h"
+#include "objects/decoycontact.h"
 #include "surface/surface.h"
 #include "effects/effectmanager.h"
 #include "conditionmanager.h"
@@ -136,14 +137,19 @@ public:
 
     Surface& surface() { return m_surface; }
 
-    // torpedoes in the water; homing ones turn to decoys (buzzers, the Torch) that are nearer than their target
+    // torpedoes in the water; some homing ones can be drawn away by decoys (buzzers, the Torch's torch)
     Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
     const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
     int torpedoesLaunched() const { return m_torpedoesLaunched; }
     // homing torpedoes on their way to the unit
     int threatsTo(const ActiveObject *unit) const;
-    void addDecoy(const Vector3D &position, float seconds);
-    bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
+    // the decoy that draws this homing torpedo away from its target, by its type's sensor; 0 if
+    // none does (docs/ROADMAP.md, appendix S)
+    int lure(const Torpedo *torpedo) const;
+    // where that decoy is and how it moves, false once it is gone
+    bool decoy(int id, Vector3D &position, Vector3D &velocity) const { return m_effectManager.particles().decoy(id, position, velocity); }
+    // the buzzers and the Torches' torches as contacts for the units' sensors; those gone stay, disabled
+    const std::vector<std::unique_ptr<DecoyContact>>& decoyContacts() const { return m_decoyContacts; }
 
     // the water current's push at a position (m/s²), that of the cell the position is in
     Vector3D current(const Vector3D &position) const;
@@ -198,6 +204,9 @@ public:
     void setStick(const Vector2D &stick) { m_stick = stick; }
 
 private:
+    // the cells of the towers and active buildings that have appeared, flattened to the height of
+    // their corner, with the light part of the ground's shading at the unit's share
+    void markGround();
     Vector3D getPosition();
     void loadIssue(const String &text);
 
@@ -252,11 +261,13 @@ private:
     std::unique_ptr<EngineSounds> m_engineSounds;
     std::list<std::unique_ptr<Torpedo>> m_torpedoes;
     int m_torpedoesLaunched = 0;
-    struct Decoy { Vector3D position; float until; };
-    std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
+    struct GroundMark { Object *object; int x, y; float shade; };
+    std::vector<GroundMark> m_groundMarks; // the units that haven't appeared yet
     std::vector<NavPoint*> m_navPoints;
     std::vector<ActiveObject*> m_playerAttackers;
+    std::vector<std::unique_ptr<DecoyContact>> m_decoyContacts;
+    int m_lastDecoyContact = 0;     // the decoy of the latest one
 
     char m_attitudeMatrix[9][9];
     int m_endType;
@@ -271,6 +282,7 @@ private:
     // the death view: the camera's place, its heading and elevation round the hull and its
     // distance in hull radii
     void updateDeathView(float elapsedTime);
+    void updateDecoyContacts();
     Vector3D m_deathCamera;
     float m_deathYaw = 0;
     float m_deathPitch = 0;

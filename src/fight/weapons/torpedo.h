@@ -54,6 +54,7 @@ struct TorpedoType
     float agility = 0;      // the agile homing types: the share of the velocity turned to the target per tick
     float influence = 1;    // the chance that a decoy can draw it away
     float lifeTime = 0;
+    int sensor = 99;        // which decoys draw it: 3 buzzers, 4 hostile buzzers and torches, 99 none
     float sensorRange = 0;  // m, how far a homing torpedo finds a decoy
     int kineticStrength = 0;
     int shockStrength = 0;
@@ -61,7 +62,7 @@ struct TorpedoType
 
     static const std::vector<TorpedoType>& all();
     static const TorpedoType* get(int type) { return type >= 0 && type < int(all().size()) ? &all()[type] : nullptr; }
-    bool isDecoy() const { return model == "estroker.mod"; } // the Torch
+    bool isTorch() const { return model == "estroker.mod"; } // leaves its torch, a decoy
     bool isCluster() const { return model == "ripper.mod"; } // bursts with area damage
     bool isAgile() const { return agile; }
     bool agile = false;     // Tiger Shark II, Man Eater II, Hammerhead, Flash Shark III, Leech I and II
@@ -93,6 +94,8 @@ public:
 
 private:
     void detonate(const Vector3D &position, ActiveObject *hit, bool ground = false);
+    // takes the strength of what it hit off its armour, false if that is gone
+    bool outlasts(int kinetic);
     // the Cluster Bomb's ring of shards at that distance (m), turned by that angle
     void shards(float distance, float turn);
     // where a homing torpedo makes for while the ground is between it and its goal
@@ -118,7 +121,8 @@ private:
     float m_startDistance = 0;      // from the target at launch
     bool m_influenced;              // whether a decoy can still draw it away
     bool m_spent = false;           // its time is up: it sinks until it hits the ground
-    bool m_decoy = false;           // drawn away by a decoy
+    int m_lure = 0;                 // the decoy that drew it away, 0 for none
+    Object *m_inside = nullptr;     // what a torpedo that outlasts its hits (the Subsonics) is passing through
     bool m_blocked = false;         // the ground between it and its goal at the last look
     float m_nextLook = 0;           // when it looks again (every half second)
     float m_burstTime = -1;         // the Cluster Bomb's burst, -1 before it

@@ -49,6 +49,7 @@
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/gtx/norm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <algorithm>
 #include <cmath>
@@ -252,7 +253,9 @@ Scenario::Scenario(const String &name) :
 
         case TypeTank:
             {
-                object = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                Tank *tank = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                tank->setGroundWreck(ActiveObject::GroundWreck::Tank);
+                object = tank;
                 object->setPosition(getPosition());
             }
             break;
@@ -260,7 +263,14 @@ Scenario::Scenario(const String &name) :
         case TypeTower:
         case TypeTorpedoTower:
             {
-                object = new TurretBase(this, objectDes, info);
+                TurretBase *tower = new TurretBase(this, objectDes, info);
+                tower->setGroundWreck(ActiveObject::GroundWreck::Tower);
+                tower->setGroundCell(m_file.value("px").toInt(), m_file.value("py").toInt());
+                object = tower;
+                // once it is there, a tower flattens its cell to the height of its corner and
+                // darkens the ground, a gun tower more than a torpedo tower (docs/ROADMAP.md,
+                // appendix N)
+                m_groundMarks.push_back({ object, m_file.value("px").toInt(), m_file.value("py").toInt(), type == TypeTower ? 0.25f : 0.35f });
                 object->setPosition(getPosition());
             }
             break;
@@ -270,7 +280,7 @@ Scenario::Scenario(const String &name) :
                 if (m_file.value("pz").toInt() != 0)
                     loadIssue("unhandled: ground plan with pz != 0");
                 objectDes.load(String("vfx:sobjects/gp%1x%1_%2.des").arg(m_file.value("siz").toInt() + 1).arg(m_file.value("buityp").toInt()));
-                object = new Building(this, objectDes, m_file.value("siz").toInt(), m_file.value("card", 0).toInt() * 45.0f, m_file.value("px").toInt(), m_file.value("py").toInt(), m_file.value("refx").toInt(), m_file.value("refy").toInt());
+                object = new Building(this, objectDes, m_file.value("siz").toInt(), m_file.value("card", 0).toInt(), m_file.value("px").toInt(), m_file.value("py").toInt(), m_file.value("refx").toInt(), m_file.value("refy").toInt());
             }
             break;
 
@@ -318,7 +328,9 @@ Scenario::Scenario(const String &name) :
             {
                 objectDes.load("vfx:sobjects/gvehicle.des");
                 desName = "gvehicle";
-                object = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                Tank *crawler = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                crawler->setGroundWreck(ActiveObject::GroundWreck::Crawler);
+                object = crawler;
                 object->setPosition(getPosition());
             }
             break;
@@ -334,6 +346,9 @@ Scenario::Scenario(const String &name) :
         case TypeActiveBuilding:
             {
                 SimpleObject *building = new SimpleObject(this, objectDes, info, 16);
+                building->setGroundWreck(ActiveObject::GroundWreck::Building);
+                building->setGroundCell(m_file.value("px").toInt(), m_file.value("py").toInt());
+                m_groundMarks.push_back({ building, m_file.value("px").toInt(), m_file.value("py").toInt(), 0.35f });
                 building->setYaw(quarterHeading(m_file.value("card", 0).toInt()));
                 building->setPosition(getPosition());
                 object = building;
@@ -659,6 +674,7 @@ void Scenario::setRect(const RectF &rect, const Vector2D &center, float fovY)
 
 void Scenario::update(float elapsedTime)
 {
+    markGround();
     m_time += elapsedTime;
 
     // pushed forward the stick lowers the nose, as the original's joystick (and the Up key)
@@ -690,7 +706,7 @@ void Scenario::update(float elapsedTime)
 
     // attackers that are gone or asleep leave the player's list
     m_playerAttackers.erase(std::remove_if(m_playerAttackers.begin(), m_playerAttackers.end(), [](ActiveObject *unit) {
-        return !unit->isEnabled() || unit->isAsleep() || unit->eventDestroy()->isCompleted();
+        return !unit->isEnabled() || unit->isAsleep() || unit->isDying();
     }), m_playerAttackers.end());
 
     // sleeping units (docs/ROADMAP.md, appendix J): beyond the player's sonar range plus 3 cells a unit
@@ -726,6 +742,7 @@ void Scenario::update(float elapsedTime)
     }
 
     m_effectManager.update(elapsedTime);
+    updateDecoyContacts();
 
     for (const auto &torpedo : m_torpedoes)
         torpedo->update(elapsedTime);
@@ -735,7 +752,6 @@ void Scenario::update(float elapsedTime)
         m_collisionManager.removeObject(torpedo.get());
         return true;
     });
-    m_decoys.erase(std::remove_if(m_decoys.begin(), m_decoys.end(), [this](const Decoy &d) { return d.until < m_time; }), m_decoys.end());
 
     m_sonar.update(elapsedTime);
 
@@ -1096,31 +1112,71 @@ int Scenario::threatsTo(const ActiveObject *unit) const
 }
 
 
-void Scenario::addDecoy(const Vector3D &position, float seconds)
+// a buzzer or torch put out since the last frame becomes a contact; the others follow their decoys
+void Scenario::updateDecoyContacts()
 {
-    m_decoys.push_back({ position, m_time + seconds });
+    for (const auto &contact : m_decoyContacts)
+        contact->follow();
+    std::vector<Particles::DecoyInfo> decoys;
+    m_effectManager.particles().decoys(decoys);
+    int last = m_lastDecoyContact;
+    for (const Particles::DecoyInfo &decoy : decoys)
+        if (decoy.id > m_lastDecoyContact)
+        {
+            m_decoyContacts.push_back(std::make_unique<DecoyContact>(this, decoy));
+            last = std::max(last, decoy.id);
+        }
+    m_lastDecoyContact = last;
 }
 
 
-bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const
+// Within the type's sonar range: the Tiger and Man Eater Sharks and the Flash Sharks (sen 3) take the
+// nearest buzzer, whoever dropped it; the Thresher and Bull Sharks (sen 4) the nearest buzzer
+// of a hostile faction, or else what is loudest by its noise over the distance squared, the
+// target or a hostile torch, if that is more than 3 over the range squared; the others (sen 99)
+// never turn away
+int Scenario::lure(const Torpedo *torpedo) const
 {
-    float nearest = range;
-    bool found = false;
-    auto consider = [&](const Vector3D &candidate) {
-        const float distance = glm::length(candidate - position);
-        if (distance < nearest)
+    const int sensor = torpedo->type().sensor;
+    if (sensor != 3 && sensor != 4)
+        return 0;
+    const float range2 = torpedo->type().sensorRange*torpedo->type().sensorRange;
+    const Vector3D &position = torpedo->position();
+    std::vector<Particles::DecoyInfo> decoys;
+    m_effectManager.particles().decoys(decoys);
+
+    int buzzer = 0;
+    float nearest = range2;
+    for (const Particles::DecoyInfo &decoy : decoys)
+    {
+        const float distance2 = glm::distance2(decoy.position, position);
+        if (decoy.kind == Particles::Decoy::Buzzer && distance2 < nearest && (sensor == 3 || isHostile(torpedo->iff(), decoy.faction)))
         {
-            nearest = distance;
-            decoy = candidate;
-            found = true;
+            nearest = distance2;
+            buzzer = decoy.id;
         }
-    };
-    for (const Decoy &d : m_decoys)
-        consider(d.position);
-    for (const auto &torpedo : m_torpedoes)
-        if (torpedo.get() != self && !torpedo->isDone() && torpedo->type().isDecoy())
-            consider(torpedo->position());
-    return found;
+    }
+    if (buzzer || sensor == 3)
+        return buzzer;
+
+    float loudest = 3/range2;
+    if (const ActiveObject *target = torpedo->target())
+    {
+        const float distance2 = std::max(glm::distance2(target->center(), position), 1e-3f);
+        if (distance2 < range2)
+            loudest = std::max(loudest, target->noise()/distance2);
+    }
+    int torch = 0;
+    for (const Particles::DecoyInfo &decoy : decoys)
+    {
+        const float distance2 = std::max(glm::distance2(decoy.position, position), 1e-3f);
+        if (decoy.kind == Particles::Decoy::Torch && distance2 < range2 && isHostile(torpedo->iff(), decoy.faction) && decoy.noise/distance2 > loudest)
+        {
+            loudest = decoy.noise/distance2;
+            torch = decoy.id;
+        }
+    }
+    return torch;
 }
 
 
@@ -1177,6 +1233,23 @@ Vector3D Scenario::current(const Vector3D &position) const
     const Vector3D &scale = m_surface.scale();
     const auto it = m_currentGrid.find(std::make_pair(int(glm::floor(position.x/scale.x/2)), int(glm::floor(position.y/scale.y/2))));
     return it != m_currentGrid.end() ? it->second : Vector3D(0);
+}
+
+
+void Scenario::markGround()
+{
+    m_groundMarks.erase(std::remove_if(m_groundMarks.begin(), m_groundMarks.end(), [this](const GroundMark &mark) {
+        if (!mark.object->isEnabled())
+            return false;
+        const Vector3D position = mark.object->position();
+        const float before = m_surface.heightAt(position.x, position.y);
+        m_surface.setHeight(mark.x, mark.y, mark.x, mark.y);
+        m_surface.darken(mark.x, mark.y, mark.shade);
+        m_surface.invalidate(mark.x, mark.y);
+        // it keeps its height over the flattened ground
+        mark.object->setPosition(position + Vector3D(0, 0, m_surface.heightAt(position.x, position.y) - before));
+        return true;
+    }), m_groundMarks.end());
 }
 
 

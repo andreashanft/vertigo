@@ -37,9 +37,6 @@ namespace {
 const float DebrisLiftScale = 9.81f;
 // bubbles disappear this far from the player (squared)
 const float BubbleRange2 = 50.0f*50.0f;
-// dust plays at this fraction of its speed, rising slowly
-const float DustRate = 0.4f;
-const float DustRise = 0.6f;
 const int AmbientCapacity = Particles::Capacity*3/4;
 // a piece of debris takes part in contacts once it is this old (s)
 const float DebrisGrace = 1.0f;
@@ -82,10 +79,38 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
 }
 
 
-// the buzzer's torch is the only piece that makes noise
-bool Particles::collides(const Particle &particle)
+// a decoy draws torpedoes, so it lives wherever it is
+bool Particles::addDecoy(Billboard *billboard, Decoy kind, int faction, const Vector3D &position, const Vector3D &velocity, float angle)
 {
-    return particle.motion == Motion::Debris && particle.billboard->noiseLevel() == 0;
+    if (int(m_particles.size()) >= Capacity)
+        return false;
+    const float life = billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX));
+    // clear of the ground, so that the Torch's torch, going off there, rises from it
+    Vector3D start = position;
+    start.z = std::max(start.z, m_scenario->surface().heightAt(start.x, start.y) + 0.5f*debrisRadius(billboard, 1) + 0.01f);
+    m_particles.push_back(Particle{ billboard, Motion::Debris, start, velocity, angle, 1, 0, 1, billboard->kineticShield(), life, kind, faction, ++m_lastDecoy });
+    return true;
+}
+
+
+void Particles::decoys(std::vector<DecoyInfo> &decoys) const
+{
+    for (const Particle &particle : m_particles)
+        if (particle.decoy != Decoy::None)
+            decoys.push_back(DecoyInfo{ particle.id, particle.decoy, particle.faction, particle.billboard->noiseLevel(), particle.position });
+}
+
+
+bool Particles::decoy(int id, Vector3D &position, Vector3D &velocity) const
+{
+    for (const Particle &particle : m_particles)
+        if (particle.decoy != Decoy::None && particle.id == id)
+        {
+            position = particle.position;
+            velocity = particle.velocity;
+            return true;
+        }
+    return false;
 }
 
 
@@ -97,7 +122,7 @@ bool Particles::hitDebris(const Vector3D &start, const Vector3D &end, float radi
     float nearestAlong = 2;
     for (Particle &particle : m_particles)
     {
-        if (!collides(particle) || particle.time < DebrisGrace || particle.shield <= 0 || glm::length(particle.velocity) >= speed)
+        if (particle.motion != Motion::Debris || particle.time < DebrisGrace || particle.shield <= 0 || glm::length(particle.velocity) >= speed)
             continue;
         const float along = length2 > 0 ? glm::clamp(glm::dot(particle.position - start, way)/length2, 0.0f, 1.0f) : 0.0f;
         const float reach = radius + debrisRadius(particle.billboard, particle.scale);
@@ -135,9 +160,8 @@ bool Particles::update(Particle &particle, float elapsedTime)
     case Motion::Debris:
         {
             // the pieces go out in a puff when hit or old and in a ground impact on the ground,
-            // each with its sound; the buzzer's torch rests on the ground until its time is up
-            const bool ends = collides(particle);
-            if (ends && particle.shield <= 0)
+            // each with its sound, the buzzer's torch too
+            if (particle.shield <= 0)
             {
                 endDebris(particle, int(Effects::Explosion_4), int(sfx::Sample::Explosion_Small));
                 return false;
@@ -145,24 +169,17 @@ bool Particles::update(Particle &particle, float elapsedTime)
             particle.time += elapsedTime;
             if (particle.time >= particle.life)
             {
-                if (ends)
-                    endDebris(particle, int(Effects::Explosion_5), int(sfx::Sample::Explosion_Small));
+                endDebris(particle, int(Effects::Explosion_5), int(sfx::Sample::Explosion_Small));
                 return false;
             }
             particle.velocity += (-billboard->friction()*particle.velocity + Vector3D(0, 0, billboard->lift()*DebrisLiftScale))*elapsedTime;
             particle.position += particle.velocity*elapsedTime;
             const float height = m_scenario->surface().heightAt(particle.position.x, particle.position.y);
-            if (ends && particle.position.z - 0.5f*debrisRadius(billboard, particle.scale) < height)
+            if (particle.position.z - 0.5f*debrisRadius(billboard, particle.scale) < height)
             {
                 particle.position.z = height;
                 endDebris(particle, int(Effects::Explosion_12), int(sfx::Sample::Explosion_Ground));
                 return false;
-            }
-            const float ground = height + 0.3f;
-            if (particle.position.z < ground)
-            {
-                particle.position.z = ground;
-                particle.velocity = Vector3D(0);
             }
             return true;
         }
@@ -173,9 +190,7 @@ bool Particles::update(Particle &particle, float elapsedTime)
         return glm::distance2(m_scenario->position(), particle.position) <= BubbleRange2;
 
     case Motion::Dust:
-        particle.time += elapsedTime*DustRate;
-        particle.position += (particle.velocity + Vector3D(0, 0, DustRise))*elapsedTime;
-        particle.velocity *= std::max(0.0f, 1.0f - 2.0f*elapsedTime);
+        particle.time += elapsedTime*particle.rate;
         return particle.time < billboard->duration();
     }
     return false;
@@ -236,13 +251,13 @@ void Particles::draw()
         const Vector2D *texCoords;
         gfx::Texture *texture;
         particle.billboard->quad(particle.position, particle.angle, particle.scale, particle.time, camera, corners, texCoords, texture);
-        const bool blendColor = particle.billboard->blendColor();
-        if (batches == 0 || m_batches[batches - 1].texture->id() != texture->id() || m_batches[batches - 1].blendColor != blendColor)
+        const bool additive = particle.billboard->additive();
+        if (batches == 0 || m_batches[batches - 1].texture->id() != texture->id() || m_batches[batches - 1].additive != additive)
         {
             if (batches == m_batches.size())
                 m_batches.emplace_back();
             m_batches[batches].texture = texture;
-            m_batches[batches].blendColor = blendColor;
+            m_batches[batches].additive = additive;
             m_batches[batches].vertices.clear();
             batches++;
         }
@@ -257,7 +272,7 @@ void Particles::draw()
     for (std::size_t i = 0; i < batches; i++)
     {
         const Batch &batch = m_batches[i];
-        glBlendFunc(batch.blendColor ? GL_SRC_COLOR : GL_SRC_ALPHA, batch.blendColor ? GL_ONE_MINUS_SRC_COLOR : GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, batch.additive ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
         batch.texture->bind();
         gfx::Pipeline::drawQuads(batch.vertices.data(), int(batch.vertices.size()));
     }
