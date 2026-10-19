@@ -1074,14 +1074,18 @@ Read off in October 2026. All 22 types share one behaviour, with their
   launcher's faction, which goes straight up at 21.9 m/s, rises 21.7 m in
   2.2 s, sinks again and lasts 16 to 25.6 s or until it touches the
   ground; from the seabed it is back down after about 5 s.
+- A unit with a passive sonar (`sen` 1) hears a hostile torch like a boat,
+  at noise level 4, and may take it for its target when it is the loudest
+  thing it hears; it fights the torch until it goes out. Towers, which
+  take the nearest hostile in their radius, don't.
 - No unit of the missions fires Subsonics or Torches.
 - `Range`, `Min/MaxClimbingAngle` and `VelocityIncrease/Decrease` (0 on all
   types) change nothing.
 
 Vertigo sizes the explosions by the sprites' extent, which may not be the
 size the original measures them by.
-Not covered: units whose sonar is `sen` 1 also take a hostile torch as a
-contact, and the units' sonar takes in buzzers; Vertigo's units ignore both.
+Not covered: sonars of `sen` 3 and 4 also take buzzers for contacts; no
+unit of the missions has one, and Vertigo's units ignore buzzers.
 
 ### T. What the original's player turrets do
 

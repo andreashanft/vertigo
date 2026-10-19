@@ -446,8 +446,8 @@ bool Orders::detects(const ActiveObject *unit, float rangeFactor) const
 
 
 // looks every 1.5 s (0.7 s with sen 3 and 4) and keeps what it found while that lives: the nearest
-// hostile in range (sen 0 in sight, sen 2 regardless), the loudest one heard (sen 1), the player's
-// boat (sen 3), the player if in range else the loudest (sen 4)
+// hostile in range (sen 0 in sight, sen 2 regardless), the loudest one heard, a torch too (sen 1),
+// the player's boat (sen 3), the player if in range else the loudest (sen 4)
 ActiveObject* Orders::scan()
 {
     if (m_scenario->time() < m_nextScan)
@@ -505,6 +505,10 @@ ActiveObject* Orders::scan()
     for (const auto &record : m_scenario->objectRecords())
         if (SimpleBoat *boat = dynamic_cast<SimpleBoat *>(record.object))
             consider(boat);
+    // the passive sonar hears a hostile torch like a boat, at its noise level of 4 (appendix S)
+    if (type == 1)
+        for (const auto &torch : m_scenario->torchContacts())
+            consider(torch.get());
     return m_scanned;
 }
 
