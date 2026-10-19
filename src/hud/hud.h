@@ -172,6 +172,7 @@ private:
     void pressKey(input::KeyEvent key, int source);
     void releaseKey(int source);
     void updateStick();
+    void releaseTouch();
     void startLook(const PointD &position);
     void moveLook(const PointD &position);
     int menuOption(const PointD &position);
