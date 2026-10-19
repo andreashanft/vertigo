@@ -338,8 +338,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   `WorldMinY` −5, `WorldMaxY` 20, `Projection` 30, `FlightY` 16, `ShadingTable`
   `VOX_000`), `[HUDAlertBlock]`, `[HUDThreatBlock]`, `[HUDPauseBlock]`,
   `[HUDSymbolBlock1]`, `[SlaveMonitor0/1]` (none in 000/Hiob), the monitors'
-  `Type` and `Lamp*` keys (`*.D16`, an off and an on frame). `[Flake]` is
-  unread.
+  `Type` and `Lamp*` keys (`*.D16`, RGB565 rows twice the lamp's width,
+  the lamp off on the left and on on the right). `[Flake]` is unread.
 - Images in `GFX/IMG/COCKPIT`: `HUDALERT`, `HUDPAUSE`, `HUDTHREA`/`HUDTHREY`,
   `HUDSYM1` (under fire), `HUDSYM2` (radiation), `HUDSYM3` (current), `HUDTURR` (a turret's
   aim cross, appendix T), `HUDTURGR/RE/YE` (never shown), `HUDLOCAA`/`HUDLOCPA` (lock rings),

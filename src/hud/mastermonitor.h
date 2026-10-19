@@ -48,7 +48,7 @@ private:
     HUD *m_hud;
     Rect m_rect;
     Rect m_observationRect;
-    Lamp m_lamp;                // upper slot while a target is locked (read before the voxel radar)
+    Lamp m_lamp;                // lit while a target is locked (read before the voxel radar)
     VoxelRadar m_voxelRadar;
     std::map<String, gfx::Texture> m_pictures;  // of big ships, loaded once
 };

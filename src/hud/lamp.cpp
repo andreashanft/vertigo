@@ -37,27 +37,29 @@ Lamp::Lamp(HUD *hud, const txt::DesFile &file) :
     const int pixels = m_rect.width*m_rect.height;
     if (int(bytes.size()) < 4*pixels)
         return;
-    const std::uint8_t *p = reinterpret_cast<const std::uint8_t *>(bytes.data());
+    const std::uint8_t *data = reinterpret_cast<const std::uint8_t *>(bytes.data());
     for (int frame = 0; frame < 2; frame++)
     {
         gfx::Image image(m_rect.width, m_rect.height, gfx::Image::ARGB32);
-        for (int i = 0; i < pixels; i++, p += 2)
-        {
-            const int c = p[0] | (p[1] << 8);
-            image.setPixel(i % m_rect.width, i/m_rect.width, gfx::rgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31));
-        }
+        for (int y = 0; y < m_rect.height; y++)
+            for (int x = 0; x < m_rect.width; x++)
+            {
+                const std::uint8_t *p = data + 2*((2*y + frame)*m_rect.width + x);
+                const int c = p[0] | (p[1] << 8);
+                image.setPixel(x, y, gfx::rgb(((c >> 11) & 31)*255/31, ((c >> 5) & 63)*255/63, (c & 31)*255/31));
+            }
         m_frames[frame] = gfx::Texture(image, false);
     }
     m_valid = true;
 }
 
 
-void Lamp::draw(bool upper)
+void Lamp::draw(bool lit)
 {
     if (!m_valid)
         return;
     const Rect rect = m_hud->projectCenter(m_rect);
-    m_frames[upper ? 1 : 0].draw(rect.x, rect.y);
+    m_frames[lit ? 1 : 0].draw(rect.x, rect.y);
 }
 
 

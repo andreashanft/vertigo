@@ -41,8 +41,8 @@ class HUD;
 // and the second the armor page; I switches between the armor page and the system state page
 // (on a single monitor too, which starts on the weapon page). F1-F4 pick the weapon page's
 // system: the gun, the magazine (the default) or a turret; the same key again shows the overview
-// of all weapons, and once more the system again. The lamp beside the monitor lights its upper
-// slot for the armor page.
+// of all weapons, and once more the system again. The lamp beside the monitor is lit for the
+// armor page.
 class SlaveMonitor : public ui::Widget
 {
 public:
