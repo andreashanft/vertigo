@@ -74,7 +74,9 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
     const bool ambient = motion == Motion::Bubble || motion == Motion::Dust;
     if (int(m_particles.size()) >= (ambient ? AmbientCapacity : Capacity))
         return false;
-    if (glm::distance2(position, m_scenario->position()) > Range*Range)
+    // a noisy piece (the buzzer's torch) draws torpedoes, so it lives wherever it is
+    const bool noisy = motion == Motion::Debris && billboard->noiseLevel() > 0;
+    if (!noisy && glm::distance2(position, m_scenario->position()) > Range*Range)
         return false;
     const float life = motion == Motion::Debris ? billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX)) : 0;
     m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate, billboard->kineticShield(), life });
@@ -82,10 +84,11 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
 }
 
 
-// the buzzer's torch is the only piece that makes noise
-bool Particles::collides(const Particle &particle)
+void Particles::decoys(std::vector<Vector3D> &positions) const
 {
-    return particle.motion == Motion::Debris && particle.billboard->noiseLevel() == 0;
+    for (const Particle &particle : m_particles)
+        if (particle.motion == Motion::Debris && particle.billboard->noiseLevel() > 0)
+            positions.push_back(particle.position);
 }
 
 
@@ -97,7 +100,7 @@ bool Particles::hitDebris(const Vector3D &start, const Vector3D &end, float radi
     float nearestAlong = 2;
     for (Particle &particle : m_particles)
     {
-        if (!collides(particle) || particle.time < DebrisGrace || particle.shield <= 0 || glm::length(particle.velocity) >= speed)
+        if (particle.motion != Motion::Debris || particle.time < DebrisGrace || particle.shield <= 0 || glm::length(particle.velocity) >= speed)
             continue;
         const float along = length2 > 0 ? glm::clamp(glm::dot(particle.position - start, way)/length2, 0.0f, 1.0f) : 0.0f;
         const float reach = radius + debrisRadius(particle.billboard, particle.scale);
@@ -135,9 +138,8 @@ bool Particles::update(Particle &particle, float elapsedTime)
     case Motion::Debris:
         {
             // the pieces go out in a puff when hit or old and in a ground impact on the ground,
-            // each with its sound; the buzzer's torch rests on the ground until its time is up
-            const bool ends = collides(particle);
-            if (ends && particle.shield <= 0)
+            // each with its sound, the buzzer's torch too
+            if (particle.shield <= 0)
             {
                 endDebris(particle, int(Effects::Explosion_4), int(sfx::Sample::Explosion_Small));
                 return false;
@@ -145,24 +147,17 @@ bool Particles::update(Particle &particle, float elapsedTime)
             particle.time += elapsedTime;
             if (particle.time >= particle.life)
             {
-                if (ends)
-                    endDebris(particle, int(Effects::Explosion_5), int(sfx::Sample::Explosion_Small));
+                endDebris(particle, int(Effects::Explosion_5), int(sfx::Sample::Explosion_Small));
                 return false;
             }
             particle.velocity += (-billboard->friction()*particle.velocity + Vector3D(0, 0, billboard->lift()*DebrisLiftScale))*elapsedTime;
             particle.position += particle.velocity*elapsedTime;
             const float height = m_scenario->surface().heightAt(particle.position.x, particle.position.y);
-            if (ends && particle.position.z - 0.5f*debrisRadius(billboard, particle.scale) < height)
+            if (particle.position.z - 0.5f*debrisRadius(billboard, particle.scale) < height)
             {
                 particle.position.z = height;
                 endDebris(particle, int(Effects::Explosion_12), int(sfx::Sample::Explosion_Ground));
                 return false;
-            }
-            const float ground = height + 0.3f;
-            if (particle.position.z < ground)
-            {
-                particle.position.z = ground;
-                particle.velocity = Vector3D(0);
             }
             return true;
         }

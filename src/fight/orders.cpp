@@ -29,6 +29,7 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/trigonometric.hpp>
 #include <algorithm>
+#include <limits>
 #include <cmath>
 
 
@@ -791,7 +792,10 @@ void Orders::updateFight(ActiveObject *target, float speed)
     case Fight::Run:
         {
             // the nose straight at the target, as the guns fire along it; the run flies at the
-            // target itself, not at the order's height band, kept only clear of the ground ahead
+            // target itself, not at the order's height band, kept clear of the ground ahead, and
+            // turns on the spot instead for the rest of its time once the terrain is in the way
+            if (m_fight == Fight::Run && !sees(target))
+                m_fight = Fight::Turn;
             const Vector3D aim = aimPoint(target);
             if (m_fight == Fight::Turn)
                 m_boat->pointAt(aim, 0);
@@ -1184,10 +1188,30 @@ void Orders::update()
                 return;
             }
 
-            // the place: the offsets in the escorted unit's frame (nothing behind it), within the band
+            // the place: the offsets in the escorted unit's frame (nothing behind it), measured from
+            // hull to hull, within the band
             Vector3D offset = slot.offset;
             if (offset.y < 0)
                 offset.y = -1;
+            const float gap = glm::length(offset);
+            if (gap > 0)
+            {
+                // along the offset, out of the escorted hull's box, then the escort's own box
+                const Vector3D way = offset/gap;
+                auto extent = [&way](const BoundingBox &box, float sign) {
+                    float reach = std::numeric_limits<float>::max();
+                    for (int axis = 0; axis < 3; axis++)
+                    {
+                        const float along = sign*way[axis];
+                        if (along > 1e-4f)
+                            reach = std::min(reach, box.maxPoint()[axis]/along);
+                        else if (along < -1e-4f)
+                            reach = std::min(reach, box.minPoint()[axis]/along);
+                    }
+                    return std::max(reach, 0.0f);
+                };
+                offset = way*(extent(escorted->localBox(), 1) + gap + extent(m_boat->localBox(), -1));
+            }
             const Vector3D target = inBand(toWorld(escorted, offset), slot.mih, slot.mah);
             const float distance = glm::length(target - m_unit->position());
             const float escortedSpeed = glm::length(escorted->velocity());

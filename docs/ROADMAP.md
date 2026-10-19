@@ -83,16 +83,18 @@ players build it in Xcode, side-load an IPA or use AltStore PAL in the EU.
 **Later additions.** Mission music (G1), minefields as columns (G2), the
 armour and energy defence percentages `inte`/`eint` (G3), the five missions
 with unresolved conditions checked (G4), the station chosen after a mission
-(G6), the four training missions in the main menu (G7).
+(G6), the four training missions in the main menu (G7); the AI feeling hits
+only through its energy defence, attack runs that turn when the terrain is
+in the way, escorts placed from hull to hull (J), active mines going up on
+buildings and the buzzer's torch going out like other debris (Q).
 
 ## What is open
 
 | # | Item | Effort | Notes |
 |---|---|---|---|
-| O1 | Turrets with boat guns | S | Partly done: in sync a turret fires all its gun's barrels at once for one round (appendix T), which is the AD Augmented Mod's four a salvo for a Vendetta III. Open: whether a turret firing on its own also fires all barrels (Vertigo fires one per shot) and what the mod's 16 for a four-barrel turret are |
+| O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the tanks' dust sprite; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
-| O5 | Read but not followed | S each | What the original does is known (the appendices), Vertigo still differs: a hit counts for the AI when the energy defence changes, Vertigo takes any hit by another unit (J); a boat's run turns away when the terrain is in the way, Vertigo only keeps its point clear of the ground ahead (J); a flying boat leaves its yaw and pitch alone within 1° of the point, Vertigo turns until the error is gone (J); escort offsets are measured from hull to hull, Vertigo's from the centres (J); active mines run into buildings and go up, Vertigo's pass through them (Q); the buzzer's torch is debris and goes out when it touches the ground, Vertigo's rests there (Q); a building's cluster darkens the shading of the flattened patch by 0.35 (N); a homing torpedo walks the map cells to avoid the ground (S) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the tanks' dust sprite; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the darkening of a lifted building's patch (appendix N) looks like on the ground, and whether it is switched on; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -138,9 +140,9 @@ master monitor's target picture, D/H/V/N and R.
 
 ## Open questions and how to settle them
 
-What is still unknown is in [what is open](#what-is-open) (O1–O4); O5 lists
-what is known but not yet followed. Each question is settled by watching the
-original and reading its data, then implementing the behaviour independently.
+What is still unknown is in [what is open](#what-is-open) (O1–O4). Each
+question is settled by watching the original and reading its data, then
+implementing the behaviour independently.
 Settled this way so far: the currents (appendix D), the radiation (D), `sle`,
 `diff`, the attacker lists, `car`, `con`, Explode, the order slots, the
 sensors and the boats' and tanks' fighting (J), the energy pool, the energy
@@ -512,9 +514,10 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   type's rule), and the order goes on where it was with its time still
   running; the enemy takes over again once in range; a player who hits the
   unit takes over if nearer than the current target. "Hit" in the original is
-  a change of the energy defence in that frame; Vertigo takes any hit by
-  another unit (O4). The attacker lists above still cap how many fight the
-  player.
+  a change of the energy defence in that frame, so a hit by shells without
+  shock strength (`SHOOT.DES` 3 to 5, the guns that use rounds) goes
+  unnoticed; Vertigo does the same. The attacker lists above still cap how
+  many fight the player.
 - **The attack manoeuvre** of boats and bombers (bombers behave the same), with the
   `[Attack]` keys: *align* – pick a side by the four align probabilities
   (ahead within 30°, left or right between 30° and 150°, behind within 30°),
@@ -526,8 +529,8 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   picked. *Run* – lasts an attack time; with `AttackProbabilityTurn` the boat
   stops and turns on the spot, otherwise it flies at the target at 40–100 %
   of its speed, straight at it whatever the order's `mih`–`mah` band (if the
-  terrain is in the way it turns instead; Vertigo only keeps the point clear
-  of the ground ahead); it ends when
+  terrain comes between it and the target it turns on the spot instead for
+  the rest of the run, as Vertigo does too); it ends when
   the target has come within a flight radius, when the time is up, or, with
   `FlightProbabilityHit` decided at the start, with the first hit taken after
   the boat has fired. *Flight* – to one of four points by the UL/UR/DL/DR
@@ -543,10 +546,11 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   the turn and the run the boat points its nose at that position, the yaw
   and the pitch each turned towards the point's own direction (the pitch to
   its true elevation over the horizontal distance) in proportion to the
-  error, which they leave alone within 1° (Vertigo turns on until the error
-  is gone). A boat that has turned towards a standing player keeps hitting
-  it. A tank's muzzles (`[StaticGun] Relative*`) sit on its gun module
-  (`GunOffset*` or the `[GunTurret]` position) and turn with it; measured
+  error, which they leave alone within 1° (read, but Vertigo turns on
+  until the error is gone, O4). A boat that has turned towards a standing
+  player keeps hitting it. A tank's muzzles (`[StaticGun]
+  Relative*`) sit on its gun module (`GunOffset*` or the `[GunTurret]`
+  position) and turn with it; measured
   from the hull's origin they would lie under the hull (TANK0's at −13 units).
   A torpedo goes, once per phase when that phase's `*ProbabilityTorpedoFire`
   came up, when the nose points at the target within 18° in the horizontal
@@ -564,7 +568,10 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   (the original moves it there outright) matching the escorted unit's
   heading and speed; it leaves formation beyond 1.3 of that. It fights only
   within `ran` (150 m) of its place and ends the order when the escorted unit
-  is destroyed. The original measures the offsets from hull to hull (O4).
+  is destroyed. The original measures the offsets from hull to hull;
+  Vertigo takes the gap along the offset's direction from the escorted
+  hull's box to the escort's own, so an offset of 7 m to the side puts the
+  escort 7 m clear of the hull, not inside it.
 - **Tanks** fight in two phases with their own `[Attack]` keys. *Align*: the
   point lies at a distance between the align radii, 20–30° round the target
   from the tank's present bearing; which way round is decided by the
@@ -756,7 +763,7 @@ kind, sized to 1.5 times its radius and without debris,
 the big explosion (sample 1), 3–8 the small one (16), 9–11 the metal hit
 (2), 12–14 the ground hit (15), 15–17 the EMS explosion (17). Vertigo does
 the same for the mines, their contacts with the player, boats, tanks,
-towers and ship segments; its explosions keep
+towers, buildings and ship segments; its explosions keep
 their own size, which comes within about 10 % of that. Running into a
 mine hits from below the window, so its explosion is mostly hidden by the
 cockpit.
@@ -784,8 +791,9 @@ only touches when the faster of the two pairs with the other.
   shots, debris, torpedoes and mines, so the player and the other boats
   pass through it, and an active mine that runs into it goes up with it.
 
-Vertigo does the same, except that the buzzer's torch, the one piece of
-debris that makes noise, keeps resting on the ground as before.
+Vertigo does the same. The buzzer's torch is debris like the rest: it
+draws torpedoes while it lasts and goes out on the ground, so one dropped
+near the ground burns for half a second, one dropped higher up for a few.
 
 ### R. What the original does when a boat is destroyed
 
@@ -889,7 +897,9 @@ Read off in October 2026. All 22 types share one behaviour, with their
   way of 1.5 s plus two hull radii, and climbing steeply (1000 units, 31 m
   above it) while the ground under its front, half a map cell and 0.75 s
   ahead, comes within half a hull radius. Vertigo climbs over the ground in
-  the way by that rule but does not walk the map cells as the original does.
+  the way by that rule; the original finds that ground by walking the map
+  cells, Vertigo by sweeping its smooth surface, which follows the same
+  heights between the cells' corners.
 - There is no proximity fuse: a torpedo goes off when it touches the
   ground, a unit, a piece of debris or a shot (its armour is 1). The Flash
   Sharks and Leeches go off on the ground in a large flash (`EXPLOSIO.DES`

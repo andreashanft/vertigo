@@ -349,9 +349,7 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit, bool ground)
     case 21:
         {
             sized(Effects::Explosion_2, 0.9f);
-            Billboard *torch = m_scenario->effectManager().getBillboard(Effects::Debris_22);
             m_scenario->effectManager().addDebris(Effects::Debris_22, position, Vector3D(0, 0, 1));
-            m_scenario->addDecoy(position, torch ? torch->lifeTime() : 16.0f);
         }
         break;
     case 18:

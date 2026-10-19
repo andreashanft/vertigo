@@ -142,7 +142,7 @@ public:
     int torpedoesLaunched() const { return m_torpedoesLaunched; }
     // homing torpedoes on their way to the unit
     int threatsTo(const ActiveObject *unit) const;
-    void addDecoy(const Vector3D &position, float seconds);
+    // the nearest decoy within range: a burning torch (the buzzers' and the Torch's) or a decoy torpedo
     bool decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const;
 
     // the water current's push at a position (m/s²), that of the cell the position is in
@@ -252,8 +252,6 @@ private:
     std::unique_ptr<EngineSounds> m_engineSounds;
     std::list<std::unique_ptr<Torpedo>> m_torpedoes;
     int m_torpedoesLaunched = 0;
-    struct Decoy { Vector3D position; float until; };
-    std::vector<Decoy> m_decoys;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
     std::vector<NavPoint*> m_navPoints;
     std::vector<ActiveObject*> m_playerAttackers;

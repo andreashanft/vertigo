@@ -77,8 +77,8 @@ public:
     // while the unit lies silent in ambush
     virtual float noise() const { return m_silent ? 0 : m_noise + (m_info.sensor == 2 ? 1 : 0); }
     void setSilent(bool silent) { m_silent = silent; }
-    // the unit took a hit from another unit within the last tenth of a second: the moment the
-    // AI reacts to being fired at
+    // the unit's energy defence changed within the last tenth of a second: the moment the AI
+    // reacts to being fired at
     bool hitRecently() const;
     bool isIdentified() const { return m_eventIdentify.isCompleted(); }
 

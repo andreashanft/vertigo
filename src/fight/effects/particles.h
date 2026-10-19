@@ -73,6 +73,8 @@ public:
         Vector3D position;
     };
     bool hitDebris(const Vector3D &start, const Vector3D &end, float radius, float speed, int kinetic, DebrisHit &hit);
+    // where the pieces that make noise are (the buzzer's torch), which draw torpedoes
+    void decoys(std::vector<Vector3D> &positions) const;
 
     void update(float elapsedTime);
     void draw();
@@ -101,8 +103,6 @@ private:
 
     // advances the particle, false when it is done
     bool update(Particle &particle, float elapsedTime);
-    // the debris that takes part in contacts (not the buzzer's torch)
-    static bool collides(const Particle &particle);
     // a piece of debris goes out in an explosion of its own, with its sound
     void endDebris(const Particle &particle, int explosion, int sample);
 

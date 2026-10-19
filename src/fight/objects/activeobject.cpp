@@ -110,8 +110,11 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
         if (!m_eventAttack.isCompleted())
             m_scenario->logEvent(name(), &m_eventAttack, txt::Fight6);
         m_eventAttack.complete();
-        m_hitTime = m_scenario->time();
     }
+    // the AI feels a hit when its energy defence changes, so shells without shock go unnoticed
+    // (docs/ROADMAP.md, appendix J)
+    if (shock != 0)
+        m_hitTime = m_scenario->time();
     const bool wasDestroyed = m_eventDestroy.isCompleted();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;

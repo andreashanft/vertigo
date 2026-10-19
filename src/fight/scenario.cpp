@@ -735,7 +735,6 @@ void Scenario::update(float elapsedTime)
         m_collisionManager.removeObject(torpedo.get());
         return true;
     });
-    m_decoys.erase(std::remove_if(m_decoys.begin(), m_decoys.end(), [this](const Decoy &d) { return d.until < m_time; }), m_decoys.end());
 
     m_sonar.update(elapsedTime);
 
@@ -1096,12 +1095,6 @@ int Scenario::threatsTo(const ActiveObject *unit) const
 }
 
 
-void Scenario::addDecoy(const Vector3D &position, float seconds)
-{
-    m_decoys.push_back({ position, m_time + seconds });
-}
-
-
 bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *self, Vector3D &decoy) const
 {
     float nearest = range;
@@ -1115,8 +1108,10 @@ bool Scenario::decoyNear(const Vector3D &position, float range, const Torpedo *s
             found = true;
         }
     };
-    for (const Decoy &d : m_decoys)
-        consider(d.position);
+    std::vector<Vector3D> torches;
+    m_effectManager.particles().decoys(torches);
+    for (const Vector3D &torch : torches)
+        consider(torch);
     for (const auto &torpedo : m_torpedoes)
         if (torpedo.get() != self && !torpedo->isDone() && torpedo->type().isDecoy())
             consider(torpedo->position());

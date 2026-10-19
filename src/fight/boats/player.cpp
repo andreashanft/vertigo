@@ -243,7 +243,6 @@ void Player::dropBuzzer()
     }
     m_boat->useBuzzer();
     const Vector3D position = m_position - dir()*5.0f;
-    m_scenario->addDecoy(position, 12.0f);
     m_scenario->effectManager().addDebris(Effects::Debris_22, position, -dir());
 }
 
