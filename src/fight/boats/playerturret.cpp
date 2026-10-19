@@ -296,12 +296,13 @@ void PlayerTurret::update(float elapsedTime, bool playerFiring)
         return;
 
     case Order::Sync:
-        // each pull of the main gun's trigger fires the turret's own gun too, straight ahead
+        // each pull of the main gun's trigger fires the turret's own gun too, straight ahead and
+        // from all its barrels at once
         if (m_state == State::Rearming && ready)
             m_state = State::Sync;
         if (playerFiring && ready)
         {
-            m_gun.fire(mountPosition(), m_player->dir(), m_player->up(), m_player->right());
+            m_gun.fire(mountPosition(), m_player->dir(), m_player->up(), m_player->right(), true);
             m_state = State::Rearming;
         }
         return;

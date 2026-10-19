@@ -77,7 +77,8 @@ public:
 
 public:
     bool update(float elapsedTime);
-    void fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right);
+    // one barrel, the barrels in turn; or all of them at once (a turret firing in sync)
+    void fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right, bool allBarrels = false);
 
 protected:
     Scenario *m_scenario;

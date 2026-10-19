@@ -948,7 +948,8 @@ Read off in October 2026.
   click still sounds); both search at once (SCA). A turret starts searching
   (SCA); one without software does nothing until it is set to sync. In sync
   each frame the fire key is held fires the turret's own gun straight ahead
-  from its mounting whenever it is ready, ARM until it is again. An empty
+  from its mounting whenever it is ready, from all its barrels at once (one
+  round), ARM until it is again. An empty
   gun shows EMP and lets go of the target; a jammed one shows JAM whatever
   the turret does.
 - **Barrels:** the main gun and each turret's gun count their barrels on
@@ -960,9 +961,10 @@ Read off in October 2026.
   begins, not while the turret tracks or fires.
 - **Aim cross:** `HUDTURR` (42×42, four diagonal strokes, red outside to
   yellow inside) sits on each turret's target from the lock-on through
-  firing, rearming and the volley pause, held at the HUD's edge when the
-  target is off to the side; never while scanning, stopped, in sync or
-  empty.
+  firing, rearming and the volley pause; for a target off to the side its
+  centre sits on the HUD's edge towards it and the HUD clips the outer
+  half, so only the two inner strokes show. Never while scanning, stopped,
+  in sync or empty.
 - **Turret page:** the gun's long name (GLOBWEAP, "MaximumImpact II"), the
   software and the state written out, all in red at all times, the gun's
   picture below; a boat without the turret shows an empty monitor. The gun
@@ -977,5 +979,6 @@ Read off in October 2026.
   in red when none are left; a state is red unless ready, the turrets'
   always. Each F key clicks (SMPMAP 5).
 
-Vertigo does the same. Not read: what the original draws when a turret's
-target is behind the boat.
+Vertigo does the same; the edge and the barrels in sync were watched in the
+original. Not read: what the original draws when a turret's target is
+behind the boat (Vertigo puts the cross on the edge away from it).

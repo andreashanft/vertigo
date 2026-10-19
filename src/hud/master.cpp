@@ -95,7 +95,8 @@ void Master::draw()
     }
 
     // each turret's target from its lock-on, while it locks on and fires: a cross of four
-    // diagonal strokes, kept at the HUD's edge for a target off to the side
+    // diagonal strokes; for a target off to the side (or behind) its centre sits on the HUD's
+    // edge towards it, so that only the inner half shows
     for (int i = 0; i < 2; i++)
     {
         const fight::PlayerTurret *turret = m_hud->scenario()->player()->turret(i);
@@ -106,11 +107,15 @@ void Master::draw()
             state != fight::PlayerTurret::State::Volley && state != fight::PlayerTurret::State::Rearming)
             continue;
         const Vector4D point4 = m * Vector4D(turret->target()->center(), 1);
+        const Vector2D centre(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
+        const Vector2D half(rect.width/2.0f, rect.height/2.0f);
+        Vector2D offset = Vector2D(point4)/std::abs(point4.w) - centre;
         if (point4.z > 0)
-            continue;
-        Point point = glm::round(Vector2D(point4)/point4.w);
-        point.x = glm::clamp(point.x, rect.x + m_turretCross.width()/2, rect.x + rect.width - m_turretCross.width()/2);
-        point.y = glm::clamp(point.y, rect.y + m_turretCross.height()/2, rect.y + rect.height - m_turretCross.height()/2);
+            offset = -offset*1000.0f;
+        const float reach = std::max(std::abs(offset.x)/half.x, std::abs(offset.y)/half.y);
+        if (reach > 1)
+            offset /= reach;
+        const Point point = glm::round(centre + offset);
         m_turretCross.draw(point.x - m_turretCross.width()/2, point.y - m_turretCross.height()/2, &m_clipRect);
     }
 
