@@ -15,38 +15,38 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
-#ifndef FIGHT_TORCHCONTACT_H
-#define FIGHT_TORCHCONTACT_H
-
-
-#include "activeobject.h"
+#include "decoycontact.h"
+#include "fight/scenario.h"
 
 
 namespace fight {
 
 
-// The torch a Torch torpedo leaves, as a contact for the units' passive sonar (sen 1), which
-// hear it like a boat and may take it for their target (docs/ROADMAP.md, appendix S). It follows
-// its piece of debris and is gone with it; nothing collides with it, shots and torpedoes put the
-// torch itself out.
-class TorchContact : public ActiveObject
+DecoyContact::DecoyContact(Scenario *scenario, const Particles::DecoyInfo &decoy) :
+    ActiveObject(scenario),
+    m_decoy(decoy.id),
+    m_kind(decoy.kind)
 {
-public:
-    TorchContact(Scenario *scenario, int decoy, int faction, float noise);
+    m_info.iff = decoy.faction;
+    m_info.name = isTorch() ? "Torch" : "Buzzer";
+    m_noise = decoy.noise;
+    m_kineticShield = m_kineticShieldMax = 1;
+    m_velocity = Vector3D(0);
+    follow();
+}
 
-public:
-    int decoy() const { return m_decoy; }
-    Vector3D center() const { return m_position; }
-    bool isContact() const { return false; }
-    // takes the torch's place and way; false, and disabled, once it has gone out
-    bool follow();
 
-private:
-    int m_decoy;
-};
+bool DecoyContact::follow()
+{
+    if (!isEnabled())
+        return false;
+    if (!m_scenario->decoy(m_decoy, m_position, m_velocity))
+    {
+        disable();
+        return false;
+    }
+    return true;
+}
 
 
 } // namespace fight
-
-
-#endif // FIGHT_TORCHCONTACT_H

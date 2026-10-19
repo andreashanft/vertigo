@@ -128,7 +128,8 @@ private:
     bool detects(const ActiveObject *unit, float rangeFactor) const;
     bool hears(const ActiveObject *unit, float distance2) const;
     bool sees(const ActiveObject *unit) const;
-    // the hostile the sensor finds, looked for every 1.5 s (0.7 s with sen 3 and 4)
+    static bool isBuzzer(const ActiveObject *unit);
+    // what the sensor finds, looked for every 1.5 s (0.7 s with sen 3 and 4)
     ActiveObject* scan();
     // the unit to fight: the ordered enemy in sensor range, the player at double range when hit, the scan
     ActiveObject* acquire(ActiveObject *enemy);

@@ -425,6 +425,13 @@ bool Orders::sees(const ActiveObject *unit) const
 }
 
 
+bool Orders::isBuzzer(const ActiveObject *unit)
+{
+    const DecoyContact *decoy = dynamic_cast<const DecoyContact *>(unit);
+    return decoy && decoy->isBuzzer();
+}
+
+
 bool Orders::detects(const ActiveObject *unit, float rangeFactor) const
 {
     if (!isAlive(unit) || unit == m_unit)
@@ -438,8 +445,8 @@ bool Orders::detects(const ActiveObject *unit, float rangeFactor) const
     case 0: return sees(unit);                                   // sight
     case 1: return hears(unit, distance2);                       // passive sonar
     case 2: return true;                                         // active sonar
-    case 3: return unit == m_scenario->player();                 // the player's boat only
-    case 4: return unit == m_scenario->player() || hears(unit, distance2);
+    case 3: return isBuzzer(unit);                               // buzzers only
+    case 4: return isBuzzer(unit) || hears(unit, distance2);
     default: return false;
     }
 }
@@ -447,7 +454,8 @@ bool Orders::detects(const ActiveObject *unit, float rangeFactor) const
 
 // looks every 1.5 s (0.7 s with sen 3 and 4) and keeps what it found while that lives: the nearest
 // hostile in range (sen 0 in sight, sen 2 regardless), the loudest one heard, a torch too (sen 1),
-// the player's boat (sen 3), the player if in range else the loudest (sen 4)
+// the nearest buzzer, whoever dropped it (sen 3), the nearest hostile buzzer, else the loudest one
+// heard, a torch too (sen 4); only the passive sonars take decoys (appendices J and S)
 ActiveObject* Orders::scan()
 {
     if (m_scenario->time() < m_nextScan)
@@ -457,11 +465,25 @@ ActiveObject* Orders::scan()
     m_scanned = nullptr;
     const float range = sensorRange();
     float best = 0;
+    ActiveObject *buzzer = nullptr;
+    float nearestBuzzer = range*range;
     auto consider = [&](ActiveObject *unit) {
-        if (!isHostile(unit) || !isAlive(unit))
+        if (!isAlive(unit) || unit == m_unit || !(type == 3 || isHostile(unit)))
             return;
         const float distance2 = glm::length2(unit->position() - m_unit->position());
         if (distance2 >= range*range)
+            return;
+        const DecoyContact *decoy = dynamic_cast<const DecoyContact *>(unit);
+        if (decoy && decoy->isBuzzer())
+        {
+            if ((type == 3 || type == 4) && distance2 < nearestBuzzer)
+            {
+                nearestBuzzer = distance2;
+                buzzer = unit;
+            }
+            return;
+        }
+        if (decoy && type != 1 && type != 4)
             return;
         float score = 0;
         switch (type)
@@ -472,25 +494,13 @@ ActiveObject* Orders::scan()
             score = 1/(distance2 + 1);
             break;
         case 1:
+        case 4:
             if (!hears(unit, distance2))
                 return;
             score = unit->noise()/(distance2 + 1);
             break;
         case 2:
             score = 1/(distance2 + 1);
-            break;
-        case 3:
-            if (unit != m_scenario->player())
-                return;
-            score = 1/(distance2 + 1);
-            break;
-        case 4:
-            if (unit == m_scenario->player())
-                score = 1e6f + 1/(distance2 + 1);
-            else if (hears(unit, distance2))
-                score = unit->noise()/(distance2 + 1);
-            else
-                return;
             break;
         default:
             return;
@@ -505,10 +515,10 @@ ActiveObject* Orders::scan()
     for (const auto &record : m_scenario->objectRecords())
         if (SimpleBoat *boat = dynamic_cast<SimpleBoat *>(record.object))
             consider(boat);
-    // the passive sonar hears a hostile torch like a boat, at its noise level of 4 (appendix S)
-    if (type == 1)
-        for (const auto &torch : m_scenario->torchContacts())
-            consider(torch.get());
+    for (const auto &decoy : m_scenario->decoyContacts())
+        consider(decoy.get());
+    if (buzzer)
+        m_scanned = buzzer;
     return m_scanned;
 }
 

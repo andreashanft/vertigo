@@ -15,37 +15,41 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
-#include "torchcontact.h"
-#include "fight/scenario.h"
+#ifndef FIGHT_DECOYCONTACT_H
+#define FIGHT_DECOYCONTACT_H
+
+
+#include "activeobject.h"
+#include "fight/effects/particles.h"
 
 
 namespace fight {
 
 
-TorchContact::TorchContact(Scenario *scenario, int decoy, int faction, float noise) :
-    ActiveObject(scenario),
-    m_decoy(decoy)
+// A buzzer or the Torch's torch as a contact for the units' sensors, which may take it for their
+// target (docs/ROADMAP.md, appendices J and S). It follows its piece of debris and is gone with it;
+// nothing collides with it, shots and torpedoes hit the debris itself.
+class DecoyContact : public ActiveObject
 {
-    m_info.iff = faction;
-    m_info.name = "Torch";
-    m_noise = noise;
-    m_kineticShield = m_kineticShieldMax = 1;
-    m_velocity = Vector3D(0);
-    follow();
-}
+public:
+    DecoyContact(Scenario *scenario, const Particles::DecoyInfo &decoy);
 
+public:
+    int decoy() const { return m_decoy; }
+    bool isBuzzer() const { return m_kind == Particles::Decoy::Buzzer; }
+    bool isTorch() const { return m_kind == Particles::Decoy::Torch; }
+    Vector3D center() const { return m_position; }
+    bool isContact() const { return false; }
+    // takes the decoy's place and way; false, and disabled, once it is gone
+    bool follow();
 
-bool TorchContact::follow()
-{
-    if (!isEnabled())
-        return false;
-    if (!m_scenario->decoy(m_decoy, m_position, m_velocity))
-    {
-        disable();
-        return false;
-    }
-    return true;
-}
+private:
+    int m_decoy;
+    Particles::Decoy m_kind;
+};
 
 
 } // namespace fight
+
+
+#endif // FIGHT_DECOYCONTACT_H

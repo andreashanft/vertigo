@@ -742,7 +742,7 @@ void Scenario::update(float elapsedTime)
     }
 
     m_effectManager.update(elapsedTime);
-    updateTorchContacts();
+    updateDecoyContacts();
 
     for (const auto &torpedo : m_torpedoes)
         torpedo->update(elapsedTime);
@@ -1112,21 +1112,21 @@ int Scenario::threatsTo(const ActiveObject *unit) const
 }
 
 
-// a torch lit since the last frame becomes a contact; the others follow their torches
-void Scenario::updateTorchContacts()
+// a buzzer or torch put out since the last frame becomes a contact; the others follow their decoys
+void Scenario::updateDecoyContacts()
 {
-    for (const auto &torch : m_torchContacts)
-        torch->follow();
+    for (const auto &contact : m_decoyContacts)
+        contact->follow();
     std::vector<Particles::DecoyInfo> decoys;
     m_effectManager.particles().decoys(decoys);
-    int last = m_lastTorchContact;
+    int last = m_lastDecoyContact;
     for (const Particles::DecoyInfo &decoy : decoys)
-        if (decoy.kind == Particles::Decoy::Torch && decoy.id > m_lastTorchContact)
+        if (decoy.id > m_lastDecoyContact)
         {
-            m_torchContacts.push_back(std::make_unique<TorchContact>(this, decoy.id, decoy.faction, decoy.noise));
+            m_decoyContacts.push_back(std::make_unique<DecoyContact>(this, decoy));
             last = std::max(last, decoy.id);
         }
-    m_lastTorchContact = last;
+    m_lastDecoyContact = last;
 }
 
 

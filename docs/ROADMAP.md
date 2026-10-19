@@ -561,12 +561,16 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   500 per `[Noise] Level` step, so a level‑3 unit is heard up to the range,
   level 2 to 82 %, level 1 to 58 % of it; type 2 (active sonar) hears
   everything in range and adds 500 (one level) to the unit's own noise; type
-  3 picks up the player's boat only; type 4 the player, or others by the
-  passive rule. The sensor looks for hostiles every 1.5 s (0.7 s for types 3
-  and 4), keeps what it found while that lives, and takes the nearest (type 0
-  and 2), the loudest over its distance (1), the player (3), or the player if
-  in range else the loudest (4). The scenarios set `sen` and `senr` on most
-  boats (`sen 2` with 60–200 m is common).
+  3 picks up buzzers only; type 4 buzzers, or others by the passive rule.
+  The sensor looks for hostiles every 1.5 s (0.7 s for types 3 and 4),
+  keeps what it found while that lives, and takes the nearest (type 0 and
+  2), the loudest over its distance (1), the nearest buzzer, whoever dropped
+  it (3), or the nearest hostile buzzer, else the loudest (4). Types 1 and 4
+  also hear a hostile Torch's torch (appendix S); no other type takes
+  buzzers or torches, and dummy buzzers draw nobody. The scenarios set `sen`
+  and `senr` on most boats, always type 1 or 2 (`sen 2` with 60–200 m is
+  common). A fighting unit doesn't look again: it keeps its target by the
+  rules below.
 - **Choosing a target.** Patrol, Attack, Escort and Ambush orders fight; Wait,
   Goto, GotoWithArrive and GotoWithInfiltrate never do. Each frame: the
   order's enemy (`ene`) if the sensor has it within its range; else, in the
@@ -1075,17 +1079,16 @@ Read off in October 2026. All 22 types share one behaviour, with their
   2.2 s, sinks again and lasts 16 to 25.6 s or until it touches the
   ground; from the seabed it is back down after about 5 s.
 - A unit with a passive sonar (`sen` 1) hears a hostile torch like a boat,
-  at noise level 4, and may take it for its target when it is the loudest
-  thing it hears; it fights the torch until it goes out. Towers, which
-  take the nearest hostile in their radius, don't.
+  at noise level 4, and takes it for its target when it is the loudest
+  thing it hears while it looks for one; it fights the torch until it goes
+  out. A unit already fighting doesn't look, and towers, which take the
+  nearest hostile in their radius, don't either.
 - No unit of the missions fires Subsonics or Torches.
 - `Range`, `Min/MaxClimbingAngle` and `VelocityIncrease/Decrease` (0 on all
   types) change nothing.
 
 Vertigo sizes the explosions by the sprites' extent, which may not be the
 size the original measures them by.
-Not covered: sonars of `sen` 3 and 4 also take buzzers for contacts; no
-unit of the missions has one, and Vertigo's units ignore buzzers.
 
 ### T. What the original's player turrets do
 

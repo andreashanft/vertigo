@@ -30,7 +30,7 @@
 #include "txt/desfile.h"
 #include "txt/stringtable.h"
 #include "boats/player.h"
-#include "objects/torchcontact.h"
+#include "objects/decoycontact.h"
 #include "surface/surface.h"
 #include "effects/effectmanager.h"
 #include "conditionmanager.h"
@@ -148,8 +148,8 @@ public:
     int lure(const Torpedo *torpedo) const;
     // where that decoy is and how it moves, false once it is gone
     bool decoy(int id, Vector3D &position, Vector3D &velocity) const { return m_effectManager.particles().decoy(id, position, velocity); }
-    // the Torches' torches as contacts for the units' passive sonar; those gone out stay, disabled
-    const std::vector<std::unique_ptr<TorchContact>>& torchContacts() const { return m_torchContacts; }
+    // the buzzers and the Torches' torches as contacts for the units' sensors; those gone stay, disabled
+    const std::vector<std::unique_ptr<DecoyContact>>& decoyContacts() const { return m_decoyContacts; }
 
     // the water current's push at a position (m/s²), that of the cell the position is in
     Vector3D current(const Vector3D &position) const;
@@ -266,8 +266,8 @@ private:
     std::vector<GroundMark> m_groundMarks; // the units that haven't appeared yet
     std::vector<NavPoint*> m_navPoints;
     std::vector<ActiveObject*> m_playerAttackers;
-    std::vector<std::unique_ptr<TorchContact>> m_torchContacts;
-    int m_lastTorchContact = 0;     // the decoy of the latest one
+    std::vector<std::unique_ptr<DecoyContact>> m_decoyContacts;
+    int m_lastDecoyContact = 0;     // the decoy of the latest one
 
     char m_attitudeMatrix[9][9];
     int m_endType;
@@ -282,7 +282,7 @@ private:
     // the death view: the camera's place, its heading and elevation round the hull and its
     // distance in hull radii
     void updateDeathView(float elapsedTime);
-    void updateTorchContacts();
+    void updateDecoyContacts();
     Vector3D m_deathCamera;
     float m_deathYaw = 0;
     float m_deathPitch = 0;
