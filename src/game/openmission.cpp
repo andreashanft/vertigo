@@ -41,6 +41,9 @@ namespace {
 // enough to buy the best of everything for any boat, several times over
 const int Budget = 10000000;
 
+// Spy II: friend or foe
+const int DefaultSonar = 6146;
+
 // the boats' files, from type 2049 on
 const char *const BoatFiles[] = { "hiob", "gator", "zorn", "succubus" };
 
@@ -98,6 +101,8 @@ OpenMission::OpenMission(int boatType, std::function<void(Renderer*)> funcSetRen
     txt::DesFile story("dat:story/ch1.des");
     m_loadout.reset(new Boat(story));
     m_loadout->upgrade(boatType);
+    // upgrade the sonar by default: chapter 1's Spy I has no IFF, so every contact would show as a friend
+    m_loadout->buy(DefaultSonar, "DEFE");
 
     // without saved games, loading the last one starts the mission anew
     m_hud->eventSuccess() += [this]() { stopScenario(); };
