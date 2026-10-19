@@ -58,6 +58,13 @@ public:
     // a building's cluster flattens the ground: the cell and its neighbours to the east, south and
     // south-east take the reference cell's height (docs/ROADMAP.md, appendix M)
     void setHeight(int x, int y, int refx, int refy);
+    // a building or tower darkens the ground it stands on: the light part of the shading at the
+    // cell's four corners is this share of its own (docs/ROADMAP.md, appendix N)
+    void darken(int x, int y, float factor);
+    // the terrain around the cell is built anew on its next draw
+    void invalidate(int x, int y);
+    // that share at a point of the map (in cells), between the corners
+    float lightFactor(float x, float y) const;
     bool testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal);
 
 private:
@@ -69,6 +76,7 @@ private:
     std::vector<gfx::Texture> m_textures;
     std::map<int, Element> m_elements;
     gfx::Image m_heightMap;
+    std::vector<float> m_lightFactors; // per corner of the map's cells
     std::vector<char> m_textureMap;
     std::vector<char> m_textureDir;
     Vector3D m_scale;

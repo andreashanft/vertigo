@@ -261,6 +261,10 @@ Scenario::Scenario(const String &name) :
         case TypeTorpedoTower:
             {
                 object = new TurretBase(this, objectDes, info);
+                // once it is there, a tower flattens its cell to the height of its corner and
+                // darkens the ground, a gun tower more than a torpedo tower (docs/ROADMAP.md,
+                // appendix N)
+                m_groundMarks.push_back({ object, m_file.value("px").toInt(), m_file.value("py").toInt(), type == TypeTower ? 0.25f : 0.35f });
                 object->setPosition(getPosition());
             }
             break;
@@ -270,7 +274,7 @@ Scenario::Scenario(const String &name) :
                 if (m_file.value("pz").toInt() != 0)
                     loadIssue("unhandled: ground plan with pz != 0");
                 objectDes.load(String("vfx:sobjects/gp%1x%1_%2.des").arg(m_file.value("siz").toInt() + 1).arg(m_file.value("buityp").toInt()));
-                object = new Building(this, objectDes, m_file.value("siz").toInt(), m_file.value("card", 0).toInt() * 45.0f, m_file.value("px").toInt(), m_file.value("py").toInt(), m_file.value("refx").toInt(), m_file.value("refy").toInt());
+                object = new Building(this, objectDes, m_file.value("siz").toInt(), m_file.value("card", 0).toInt(), m_file.value("px").toInt(), m_file.value("py").toInt(), m_file.value("refx").toInt(), m_file.value("refy").toInt());
             }
             break;
 
@@ -334,6 +338,7 @@ Scenario::Scenario(const String &name) :
         case TypeActiveBuilding:
             {
                 SimpleObject *building = new SimpleObject(this, objectDes, info, 16);
+                m_groundMarks.push_back({ building, m_file.value("px").toInt(), m_file.value("py").toInt(), 0.35f });
                 building->setYaw(quarterHeading(m_file.value("card", 0).toInt()));
                 building->setPosition(getPosition());
                 object = building;
@@ -659,6 +664,7 @@ void Scenario::setRect(const RectF &rect, const Vector2D &center, float fovY)
 
 void Scenario::update(float elapsedTime)
 {
+    markGround();
     m_time += elapsedTime;
 
     // pushed forward the stick lowers the nose, as the original's joystick (and the Up key)
@@ -1172,6 +1178,23 @@ Vector3D Scenario::current(const Vector3D &position) const
     const Vector3D &scale = m_surface.scale();
     const auto it = m_currentGrid.find(std::make_pair(int(glm::floor(position.x/scale.x/2)), int(glm::floor(position.y/scale.y/2))));
     return it != m_currentGrid.end() ? it->second : Vector3D(0);
+}
+
+
+void Scenario::markGround()
+{
+    m_groundMarks.erase(std::remove_if(m_groundMarks.begin(), m_groundMarks.end(), [this](const GroundMark &mark) {
+        if (!mark.object->isEnabled())
+            return false;
+        const Vector3D position = mark.object->position();
+        const float before = m_surface.heightAt(position.x, position.y);
+        m_surface.setHeight(mark.x, mark.y, mark.x, mark.y);
+        m_surface.darken(mark.x, mark.y, mark.shade);
+        m_surface.invalidate(mark.x, mark.y);
+        // it keeps its height over the flattened ground
+        mark.object->setPosition(position + Vector3D(0, 0, m_surface.heightAt(position.x, position.y) - before));
+        return true;
+    }), m_groundMarks.end());
 }
 
 

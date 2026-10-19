@@ -83,7 +83,8 @@ players build it in Xcode, side-load an IPA or use AltStore PAL in the EU.
 **Later additions.** Mission music (G1), minefields as columns (G2), the
 armour and energy defence percentages `inte`/`eint` (G3), the five missions
 with unresolved conditions checked (G4), the station chosen after a mission
-(G6), the four training missions in the main menu (G7); level pipelines
+(G6), the four training missions in the main menu (G7); turned ground
+plans, level pipelines and the darkened ground under buildings and towers
 (N); the AI feeling hits only through its energy defence, attack runs that
 turn when the terrain is in the way, escorts placed from hull to hull (J),
 active mines going up on buildings and the buzzer's torch going out like
@@ -95,7 +96,7 @@ other debris (Q).
 |---|---|---|---|
 | O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the tanks' dust sprite; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the darkening of a lifted building's patch (appendix N) looks like on the ground, and whether it is switched on; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; the tanks' dust sprite; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -680,27 +681,50 @@ across a face. In the original's pictures at s00701's start the station, the
 turret and the tower come out within 3 to 6 units of Vertigo's in each
 channel.
 
-### N. How the original flattens the ground under buildings
+### N. How the original places buildings and flattens and darkens their ground
 
-Read off in October 2026. A building's cluster with `SurfaceLifting = p`
-sets four cells of the height map, its own cell and the ones east, south and
-south-east of it, to the reference height: the scenario's `refx`/`refy` cell
-for `HeightReference 0`, the cluster's own cell for `-1`; clusters with
-`HeightReference 1000 + n` sit on cluster n's roof and lift nothing. Clusters
-two cells apart therefore flatten a four-by-four area together, but a single
-cluster leaves its western and northern neighbours alone. `p` and `l` also
-scale sixteen values of the patch's shading by 0.35, a darkening as far as
-read, which Vertigo does not do yet; `o` does neither.
+Read off in October 2026.
 
-Every cluster below 1000 stands at its reference height, whether it lifts
-the ground or not: a cluster with `o` keeps that height over lower or
-higher ground. The pipelines rely on it: each segment (`GP1X1_8`,
-`rohr_005`) names the cell of the line's first piece as `refx`/`refy`, so
-the line runs level from the top of that piece, an elbow (`GP1X1_7`,
-`rohr_004`, with `p`) rising from its flattened ground, across dips and
-rises (s00202's three lines run 13 m over the bottom of the dip they
-cross). Vertigo does the same; a lifting cluster rests on its smoothed
-ground, the others at the smoothed ground's height in the reference cell.
+- **The square.** A ground plan of size `siz` covers a square of `siz` + 1
+  cells; cluster offset 0, 0 is its corner with the lowest cell numbers
+  (`px`, `py` − `siz`). `card` turns the square clockwise about its middle,
+  a quarter turn per two steps (2 east, 4 south, 6 west, as the currents
+  count), and every cluster's model with it; the cluster's own `Cardinal`
+  turns its model on top of that. So a turned plan of more than one cell
+  keeps its middle, and a line of pipe segments turned by 6 runs from its
+  elbow northwards, not southwards.
+- **Heights.** A cluster with `HeightReference` below 1000 stands at the
+  height map's value of the scenario's `refx`/`refy` cell (with `-1`, of its
+  own cell), whether it lifts the ground or not; with `1000 + n` it sits on
+  cluster n's roof. A cluster with `o` keeps that height over lower or
+  higher ground. The pipelines rely on it: each segment (`GP1X1_8`,
+  `rohr_005`) names the cell of the line's first piece as `refx`/`refy`, so
+  the line runs level from the top of that piece, an elbow (`GP1X1_7`,
+  `rohr_004`, with `p`) rising from its flattened ground, across dips and
+  rises (s00202's three lines run 13 m over the bottom of the dip they
+  cross). STRAI3's freight containers name a cell 23 cells away, on a steep
+  slope, and hang at its height, one of them over another.
+- **Flattening.** A cluster with `SurfaceLifting = p` (and every one with
+  `-1`) sets the four corners of its cell, its own and the ones east, south
+  and south-east of it, to that height. Clusters two cells apart therefore
+  flatten a four-by-four area together, but a single cluster leaves its
+  western and northern neighbours alone. Gun towers, torpedo towers and
+  active buildings (`typ` 2052, 2059, 2062) flatten their own cell to the
+  height of its corner in the same way.
+- **Darkening.** Each terrain vertex carries the vector the light part of
+  the shading takes its cosine from (appendix M). A cluster with `p` or `l`
+  sets the vectors of its cell's four corners to 0.35 of their length, as
+  do torpedo towers and active buildings; gun towers set them to 0.25. So
+  beyond the ambient part's reach (31 m) the ground under and around
+  buildings and towers keeps only that share of its light, fading back to
+  the full share over the neighbouring cells. A unit does this when it
+  appears: a tower that waits for its enable condition leaves the ground as
+  it is until then. In STRAI3 this darkens 449 corners.
+
+Vertigo does all of it. A lifting cluster rests on Vertigo's smoothed
+ground, the others at the height map's value. The darkening scales each
+terrain vertex's normal, interpolated between the map's corners, and the
+shading's light part follows the normal's length.
 
 ### O. What the original's Fixer does
 

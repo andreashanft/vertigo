@@ -198,6 +198,9 @@ public:
     void setStick(const Vector2D &stick) { m_stick = stick; }
 
 private:
+    // the cells of the towers and active buildings that have appeared, flattened to the height of
+    // their corner, with the light part of the ground's shading at the unit's share
+    void markGround();
     Vector3D getPosition();
     void loadIssue(const String &text);
 
@@ -253,6 +256,8 @@ private:
     std::list<std::unique_ptr<Torpedo>> m_torpedoes;
     int m_torpedoesLaunched = 0;
     std::map<std::pair<int, int>, Vector3D> m_currentGrid; // by 2x2 block
+    struct GroundMark { Object *object; int x, y; float shade; };
+    std::vector<GroundMark> m_groundMarks; // the units that haven't appeared yet
     std::vector<NavPoint*> m_navPoints;
     std::vector<ActiveObject*> m_playerAttackers;
 

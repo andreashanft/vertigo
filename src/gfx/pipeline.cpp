@@ -103,7 +103,9 @@ void main()
         vNormal = n;
         vec3 toOrigin = shadeOrigin - eye.xyz;
         float d = length(toOrigin);
-        float facing = d > 0.0 ? dot(n, toOrigin)/d : 0.0;
+        // the light part follows the normal's length too, as the original's vertex vectors do: a
+        // shorter one darkens the ground under buildings (Surface::darken)
+        float facing = d > 0.0 ? dot(n, toOrigin)/d*length(normal) : 0.0;
         float ambient = shadeAmbient.x*max(1.0 - d/shadeAmbient.y, 0.0);
         float reach = (shadeLight.z - d)/(shadeLight.z - shadeLight.y);
         float light = reach > 0.0 ? shadeLight.x*pow(reach, shadeLight.w)*facing : 0.0;

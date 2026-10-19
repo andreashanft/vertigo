@@ -22,18 +22,33 @@
 #include "gfx/pipeline.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <cmath>
 
 namespace fight {
 
 
-Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle, int x, int y, int refx, int refy) :
+namespace {
+
+// the light part of the shading under a ground plan's lifted clusters, towers and active buildings
+// (Surface::darken)
+const float BuildingShade = 0.35f;
+
+}
+
+
+// The clusters lie on the building's square of size + 1 cells, offset 0, 0 at its corner with the
+// lowest cell numbers (x, y - size); card turns the square clockwise about its middle, a quarter turn per two steps,
+// and every cluster's model with it (docs/ROADMAP.md, appendix N).
+Building::Building(Scenario *scenario, txt::DesFile &file, int size, int card, int x, int y, int refx, int refy) :
     Object(scenario, file),
     m_size(size),
-    m_angle(angle)
+    m_angle(card % 2 == 0 ? (card/2 % 4)*90.0f : 0.0f)
 {
     int i = 0;
     Vector3D scale = scenario->surface().scale();
-    m_position = Vector3D(x + 0.5f, y + 0.5f - size, 0)*scale;
+    const float middle = 0.5f*size;
+    m_position = Vector3D(x + 0.5f + middle, y + 0.5f - size + middle, 0)*scale;
+    const int turns = int(m_angle)/90;
 
     while (file.sections().contains(String("cluster%1").arg(i))) {
         file.setSection(String("cluster%1").arg(i));
@@ -46,30 +61,39 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle
         cluster.scale = file.value("scale").toFloat() * 16;
 
         file.setSection(String("position%1").arg(i));
-        int offsetX = file.value("OffsetX").toInt();
-        int offsetY = file.value("OffsetY").toInt();
-        cluster.offset.x = offsetX;
-        cluster.offset.y = offsetY;
-        cluster.offset *= scale;
-
-        int clusterX = x + offsetX;
-        int clusterY = y + offsetY - size;
+        float offsetX = file.value("OffsetX").toInt() - middle;
+        float offsetY = file.value("OffsetY").toInt() - middle;
+        for (int turn = 0; turn < turns; turn++)
+        {
+            const float east = offsetY;
+            offsetY = -offsetX;
+            offsetX = east;
+        }
+        const int clusterX = x + int(std::lround(offsetX + middle));
+        const int clusterY = y - size + int(std::lround(offsetY + middle));
+        cluster.offset = Vector3D((clusterX + 0.5f)*scale.x, (clusterY + 0.5f)*scale.y, 0);
 
         int heightRef = file.value("HeightReference").toInt();
         if (heightRef >= 1000)
             cluster.offset.z = m_clusters[heightRef - 1000].offset.z + 256*cluster.scale; // TODO: test moar
         else
         {
-            // the cluster stands at the height of the building's reference cell, with
-            // HeightReference -1 at its own cell's; with SurfaceLifting p the ground under it is
-            // flattened to that height and it rests on it, without it keeps the height over lower
-            // or higher ground, so the pipes run level (docs/ROADMAP.md, appendix N)
+            // the cluster stands at the height map's value of the building's reference cell, with
+            // HeightReference -1 of its own cell; with SurfaceLifting p the ground under it is
+            // flattened to that value and it rests on it, without it keeps the height over lower or
+            // higher ground, so the pipes run level; p and l darken the cell's ground
+            // (docs/ROADMAP.md, appendix N)
+            const String lifting = file.value("SurfaceLifting").toString();
             const int heightX = heightRef < 0 ? clusterX : refx, heightY = heightRef < 0 ? clusterY : refy;
-            const bool lifts = file.value("SurfaceLifting").toString() == "p" || heightRef < 0;
-            if (lifts)
+            if (lifting == "p" || heightRef < 0)
+            {
                 scenario->surface().setHeight(clusterX, clusterY, heightX, heightY);
-            const int groundX = lifts ? clusterX : heightX, groundY = lifts ? clusterY : heightY;
-            cluster.offset.z = scenario->surface().heightAt((groundX + 0.5f)*scale.x, (groundY + 0.5f)*scale.y);
+                cluster.offset.z = scenario->surface().heightAt((clusterX + 0.5f)*scale.x, (clusterY + 0.5f)*scale.y);
+            }
+            else
+                cluster.offset.z = scenario->surface().height(heightX, heightY)*scale.z;
+            if (lifting == "p" || lifting == "l" || heightRef < 0)
+                scenario->surface().darken(clusterX, clusterY, BuildingShade);
         }
 
         switch (file.value("cardinal").toString().toLatin1()[0]) {
@@ -93,13 +117,12 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle
     for (Cluster &cluster : m_clusters)
     {
         Matrix m(1);
-        m = glm::translate(m, m_position);
-        m = glm::rotate(m, glm::radians(m_angle), Vector3D(0, 0, 1));
         m = glm::translate(m, cluster.offset);
+        m = glm::rotate(m, glm::radians(-m_angle), Vector3D(0, 0, 1));
         m = glm::scale(m, Vector3D(cluster.scale));
         m = glm::rotate(m, glm::radians(cluster.angle), Vector3D(0, 0, 1));
         m_box.add(cluster.module->box().transform(m));
-        
+
         cluster.transform = m;
         cluster.invTransform = glm::inverse(m);
     }
@@ -110,20 +133,13 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, float angle
 
 void Building::draw()
 {
-    gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
-    gfx::Pipeline::rotate(m_angle, Vector3D(0, 0, 1));
-
     for (Cluster &cluster : m_clusters)
     {
         gfx::Pipeline::pushMatrix();
-        gfx::Pipeline::translate(cluster.offset);
-        gfx::Pipeline::scale(cluster.scale);
-        gfx::Pipeline::rotate(cluster.angle, Vector3D(0, 0, 1));
+        gfx::Pipeline::multiply(cluster.transform);
         cluster.module->draw();
         gfx::Pipeline::popMatrix();
     }
-    gfx::Pipeline::popMatrix();
 }
 
 

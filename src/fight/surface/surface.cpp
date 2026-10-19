@@ -19,6 +19,7 @@
 #include "gfx/texture.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
+#include <cmath>
 #include "txt/desfile.h"
 #include "util/bytereader.hpp"
 #include "util/datapath.h"
@@ -62,6 +63,7 @@ void Surface::load(const String &name, int maxheightscale, int mapping)
     txt::DesFile file(String("vfx:surface/%1.des").arg(name));
     file.setSection("height");
     m_heightMap = gfx::Image::loadPCX(String("vfx:surface/%2").arg(file.value("name").toString().replace("\\", "/")));
+    m_lightFactors.assign(256*256, 1.0f);
 
     // three floats, from which the 32 heights of the map are scaled
     auto load = [](const String &name, std::size_t offset) {
@@ -182,6 +184,34 @@ float Surface::heightAt(float x, float y, Vector3D &normal)
 float Surface::height(int x, int y) const
 {
     return gfx::gray(m_heightMap.pixel(x & 0xff, y & 0xff));
+}
+
+
+void Surface::darken(int x, int y, float factor)
+{
+    for (int dy = 0; dy < 2; dy++)
+        for (int dx = 0; dx < 2; dx++)
+            m_lightFactors[((y + dy) & 0xff)*256 + ((x + dx) & 0xff)] = factor;
+}
+
+
+void Surface::invalidate(int x, int y)
+{
+    // the spline reaches two cells beyond its points
+    for (int by = (y - 2) & ~7; by <= ((y + 3) & ~7); by += 8)
+        for (int bx = (x - 2) & ~7; bx <= ((x + 3) & ~7); bx += 8)
+            m_elements.erase((by << 16) + bx);
+}
+
+
+float Surface::lightFactor(float x, float y) const
+{
+    if (m_lightFactors.empty())
+        return 1;
+    const int x0 = int(std::floor(x)), y0 = int(std::floor(y));
+    const float fx = x - x0, fy = y - y0;
+    auto at = [this](int x, int y) { return m_lightFactors[(y & 0xff)*256 + (x & 0xff)]; };
+    return (at(x0, y0)*(1 - fx) + at(x0 + 1, y0)*fx)*(1 - fy) + (at(x0, y0 + 1)*(1 - fx) + at(x0 + 1, y0 + 1)*fx)*fy;
 }
 
 
