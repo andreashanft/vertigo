@@ -319,7 +319,9 @@ void Desktop::showDepot()
 {
     assert(m_room);
     assert(!m_depot);
-    m_depot = new Depot([this]() { hideDepot(); });
+    Chapter *chapter = Chapter::get();
+    m_depot = new Depot(chapter->boat(), { [chapter]() { return chapter->credits(); }, [chapter](int credit) { chapter->addCredit(credit); } },
+                        [this]() { hideDepot(); });
     setRootWidget(m_depot);
     m_depot->setPosition((640 - m_depot->width()) / 2, (480 - m_depot->height()) / 2);
     setClick(false);

@@ -322,6 +322,8 @@ enum StringVertigo
     Touch_Stick_Right,
     Touch_Stick_Normal,
     Touch_Stick_Inverted,
+    OpenMission,
+    OpenMission_Missions,
 };
 
 

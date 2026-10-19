@@ -38,6 +38,11 @@
 namespace fight {
 
 
+// the player whose engine loops in the shared engine sample: a restarted mission's new player
+// starts it before the old one is gone
+static const Player *enginePlayer = nullptr;
+
+
 static ActiveObject::ObjectInfo playerInfo()
 {
     ActiveObject::ObjectInfo info;
@@ -124,6 +129,7 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_magazineCondition = boat->defects()[game::Boat::DefectToMa];
 
     sfx::SampleMap::get(sfx::Sample::Engine).playLoop();
+    enginePlayer = this;
 
     // the player stays in the collision checks, so others' shots can hit it; its own checks ignore it
 }
@@ -131,8 +137,13 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
 
 Player::~Player()
 {
-    // the engine sample is shared and would keep looping after the mission
-    sfx::SampleMap::get(sfx::Sample::Engine).stop();
+    // the engine sample is shared and would keep looping after the mission, unless a new
+    // mission's player has taken it over
+    if (enginePlayer == this)
+    {
+        sfx::SampleMap::get(sfx::Sample::Engine).stop();
+        enginePlayer = nullptr;
+    }
 }
 
 
@@ -354,6 +365,7 @@ bool Player::update(float elapsedTime)
     {
         m_engineState = EngineRunning;
         sfx::SampleMap::get(sfx::Sample::Engine).playLoop();
+        enginePlayer = this;
     }
     if (m_engineState == EngineShutdown && m_engineTime < m_scenario->time())
         m_engineState = EngineOff;

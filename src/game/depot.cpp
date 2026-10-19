@@ -15,7 +15,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
-#include "chapter.h"
 #include "depot.h"
 #include "boat.h"
 #include "items.h"
@@ -29,9 +28,10 @@
 namespace game {
 
 
-Depot::Depot(std::function<void()> &&funcClose) :
+Depot::Depot(Boat *boat, Account account, std::function<void()> &&funcClose) :
     Frame(std::move(funcClose)),
-    m_boat(Chapter::get()->boat()),
+    m_boat(boat),
+    m_account(std::move(account)),
     m_side(1),
     m_state(Flipping),
     m_backgroundLabel(this),
@@ -103,8 +103,8 @@ Depot::Depot(std::function<void()> &&funcClose) :
     m_lblItemText->setAlignCenter(false);
 
 
-    m_videoFlip1.open(String("gfx:mvi/sflip/%011.mvi").arg(Chapter::get()->boat()->moviePrefix()));
-    m_videoFlip2.open(String("gfx:mvi/sflip/%012.mvi").arg(Chapter::get()->boat()->moviePrefix()));
+    m_videoFlip1.open(String("gfx:mvi/sflip/%011.mvi").arg(m_boat->moviePrefix()));
+    m_videoFlip2.open(String("gfx:mvi/sflip/%012.mvi").arg(m_boat->moviePrefix()));
     m_videoFlip1.setFrameRate(25);
     m_videoFlip2.setFrameRate(25);
     m_videoFlip2.play();
@@ -430,7 +430,7 @@ void Depot::updateInfo()
 
 void Depot::updateCredits()
 {
-    m_credits->setText(String("CREDITS: $%1").arg(Chapter::get()->credits()));
+    m_credits->setText(String("CREDITS: $%1").arg(m_account.credits()));
 }
 
 
@@ -485,12 +485,12 @@ void Depot::buy()
     int price = Items::getDepotPrice(item->model);
     if (oldModel > 0)
         price -= Items::getDepotPrice(oldModel);
-    if (price > Chapter::get()->credits())
+    if (price > m_account.credits())
     {
         m_sndError.play();
         return;
     }
-    Chapter::get()->addCredit(-price);
+    m_account.add(-price);
     m_boat->buy(item->model, mounting);
 
     m_list2 = m_boat->getItems(mounting);
@@ -518,7 +518,7 @@ void Depot::sell()
         if (Items::get(m_list2.at(i))->type == item->type)
             index++;
     m_boat->sell(item->model, index, mounting);
-    Chapter::get()->addCredit(price);
+    m_account.add(price);
 
     m_list2 = m_boat->getItems(mounting);
     m_itemList2->clear();
@@ -688,7 +688,7 @@ bool Depot::mousePressEvent(const Point &pos, input::MouseButton button)
 
 void Depot::repairItem(int index)
 {
-    if (Chapter::get()->credits() == 0)
+    if (m_account.credits() == 0)
     {
         m_sndError.play();
         return;
@@ -697,12 +697,12 @@ void Depot::repairItem(int index)
     RepairItem &item = m_repairItems[index];
     float amount = 1.0f;
     int cost = item.cost;
-    if (cost > Chapter::get()->credits())
+    if (cost > m_account.credits())
     {
-        cost = Chapter::get()->credits();
+        cost = m_account.credits();
         amount = static_cast<float>(cost)/item.cost;
     }
-    Chapter::get()->addCredit(-cost);
+    m_account.add(-cost);
     m_boat->repair(item.model, item.mounting, amount);
     item.state = m_boat->repairState(item.model, item.mounting);
     item.cost = m_boat->repairCost(item.model, item.mounting);
@@ -724,12 +724,12 @@ void Depot::repairItem(int index)
 
 void Depot::repairAll()
 {
-    if (Chapter::get()->credits() == 0)
+    if (m_account.credits() == 0)
     {
         m_sndError.play();
         return;
     }
-    for (int i = 0; i < m_repairItems.size() && Chapter::get()->credits() > 0; i++)
+    for (int i = 0; i < m_repairItems.size() && m_account.credits() > 0; i++)
         repairItem(i);
 }
 

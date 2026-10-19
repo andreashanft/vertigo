@@ -53,6 +53,9 @@ public:
     static const std::map<int, Item>& all();
     static std::vector<int> getDepotItems(const String &mounting);
     static int getDepotPrice(int model);
+    // the depot sells every item at its base price instead of what the current station offers
+    // (the main menu's open mission, which has no story)
+    static void setOpenOffer(bool open);
 
 private:
     void addItem(int model, Type type, const String &name, const String &imgname, const String &txtname);
