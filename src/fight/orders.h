@@ -168,6 +168,7 @@ private:
     float m_startTime;
     Vector3D m_point;    // current patrol point
     float m_pointTime;   // when it was picked
+    bool m_arrived = false; // a big ship at its patrol cell
 
     // sensing
     ActiveObject *m_target;      // the unit fought

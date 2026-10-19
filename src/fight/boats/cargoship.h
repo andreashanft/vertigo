@@ -88,6 +88,7 @@ public:
     void draw();
     void arm(int model, txt::DesFile &file) {}
     bool engagesHostiles() const { return false; }
+    bool isBigShip() const { return true; }
     bool isContact() const { return false; }
     String observationImage() const { return m_picture; }
     // the master monitor's picture for a ship file (cship*, bship*)

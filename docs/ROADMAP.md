@@ -195,7 +195,8 @@ order, the first at once and each next one 0.5 to 1.5 s after the one
 before. A block takes 2.7 s: it shakes by up to 5 cm, sinks faster and
 faster (10 to 40 units/s²) and turns slowly (up to 0.07 rad/s about two
 axes), with the boats' bursts and the debris 2, 2, 1 at 0.9 s (36° to
-72°) and 2, 1, 2, 1 at 2.0 s (0° to 36°) plus one of the bodies 14 to 16,
+72°) and 2, 1, 2, 1 at 2.0 s (0° to 36°) plus one body (14 or 15 two
+times in five each, 16 once),
 sample 18 two times in three at the start, and a big blast (entry 2, sized
 0.35 of its radius) on its side towards the player at 2.0 s; half of its
 turrets go up at the start and the rest at 1.6 s. Ship and blocks stay
@@ -203,7 +204,13 @@ sonar contacts and targets until each is gone; the ship counts as destroyed
 when its first block is gone (in a squadron of several ships the original
 counts every block that goes, which Vertigo doesn't), and is gone with its
 last. Vertigo counted it destroyed at once, lost the lock and blew up a
-block every 0.3 to 0.7 s in a random order until then. The master monitor shows a
+block every 0.3 to 0.7 s in a random order until then. A big ship's orders
+differ from a boat's: Patrol and Attack take it to the order's cell
+centre at `mih` over the ground, where it stops once within reach and
+waits out `dur` (so the Big Fat Mama, whose patrol is its own cell, never
+moves); Escort, Ambush, the cardinal orders and GotoWithInfiltrate leave it
+where it is; Wait, Goto, GotoWithArrive and Explode work as for boats.
+Vertigo patrolled them from random point to point until October 2026. The master monitor shows a
 picture chosen by the ship file's comment: `SHPSEACO` (bship0), `SHPTRITO`
 (1, 8), `SHPPOLAR` (2, 9), `SHPINDER` (3, 10), `SHPBIONT` (4, 7), `SHPBFM`
 (5, 6), `SHPCONTF` (cship0–9). Big ships turn at most 0.15 rad/s and climb at

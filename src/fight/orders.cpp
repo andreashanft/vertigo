@@ -166,6 +166,7 @@ void Orders::start(int slot)
     }
     m_startTime = m_scenario->time();
     dropTarget();
+    m_arrived = false;
     m_lying = false;
     m_formation = false;
     m_dockStart = -1;
@@ -1083,6 +1084,29 @@ void Orders::update()
                 updateFight(m_target, speed);
             return;
         }
+    }
+
+    // a big ship takes Patrol and Attack to the order's cell, at mih over the ground, and stays
+    // there once it is within reach of it, until the time is up; Escort, Ambush and
+    // GotoWithInfiltrate leave it where it is (docs/ROADMAP.md, appendix A)
+    if (m_boat->isBigShip() && slot.type != OrderSlot::Goto && slot.type != OrderSlot::GotoWithArrive)
+    {
+        m_unit->setTrigger(false);
+        if (slot.type != OrderSlot::Patrol && slot.type != OrderSlot::Attack)
+        {
+            m_boat->hold();
+            return;
+        }
+        Vector3D target = cellCentre(slot.refx, slot.refy);
+        target.z = m_scenario->surface().heightAt(target.x, target.y) + slot.mih;
+        if (m_arrived || glm::length(Vector2D(target) - Vector2D(m_unit->position())) < arriveRadius(m_boat->maxVelocity()))
+        {
+            m_arrived = true;
+            m_boat->hold();
+            return;
+        }
+        m_boat->steerTo(target, slowSpeed(target, speed));
+        return;
     }
 
     switch (slot.type)

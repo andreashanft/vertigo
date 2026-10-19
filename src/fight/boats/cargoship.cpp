@@ -686,7 +686,8 @@ void CargoShip::updateBlock(int index, float elapsedTime)
                 blockExplosion(block, 2, 0.4f);
                 for (int debris : { 2, 1, 2, 1 })
                     blockDebris(block, debris, 0, fifth);
-                blockDebris(block, 14 + util::random()%3, 0, glm::half_pi<float>());
+                // one body: 14 or 15 two times in five, 16 once
+                blockDebris(block, 14 + util::random()%5%3, 0, glm::half_pi<float>());
                 // and a big one on its side towards the player
                 const Vector3D center = blockCenter(block);
                 const Vector3D way = m_scenario->player() ? m_scenario->player()->position() - center : Vector3D(0);

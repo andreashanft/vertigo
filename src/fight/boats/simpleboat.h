@@ -90,6 +90,8 @@ public:
     float hullRadius() const;
     // whether patrols and escorts fly attack runs at hostiles they detect (cargo ships leave it to their turrets)
     virtual bool engagesHostiles() const { return true; }
+    // a big ship: patrols and attacks go to the order's cell and stay there (Orders)
+    virtual bool isBigShip() const { return false; }
     // where the gun points; units with a turret turn it with aimAt()
     virtual Vector3D gunDirection() const { return dir(); }
 
