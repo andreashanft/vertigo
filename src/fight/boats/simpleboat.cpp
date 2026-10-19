@@ -406,7 +406,7 @@ float SimpleBoat::hullRadius() const
 
 
 // The destruction sequence (docs/ROADMAP.md, appendix R). A boat that keeps its course does so at
-// 70 % of its speed; the others stop, and the player's boat drifts on.
+// 70 % of its speed; the others brake, and the player's boat drifts on.
 bool SimpleBoat::startWreck()
 {
     if (isGroundVehicle())
@@ -420,8 +420,6 @@ bool SimpleBoat::startWreck()
     m_wreckRuns = !player && uniform() < 0.2f;
     if (m_wreckRuns)
         m_velocity *= 0.7f;
-    else if (!player)
-        m_velocity = Vector3D(0);
     m_tumbling = true;
     m_trigger = false;
     if (!player)
@@ -519,7 +517,12 @@ void SimpleBoat::nextWreckStep()
         m_wreckGone = true;
         m_wreckStep = 6;
         if (!player)
+        {
             vanish();
+            // (not after an Explode order, which leaves the armour alone)
+            if (m_kineticShield < 0)
+                countDestroyed();
+        }
         return;
     }
     default:
@@ -533,7 +536,8 @@ void SimpleBoat::nextWreckStep()
 
 
 // between the bursts the hull drifts by its acceleration and spins up, a boat keeping its course
-// spinning wildly (its spin drawn anew every frame)
+// spinning wildly (its spin drawn anew every frame); another boat's engine brakes its way along
+// the nose, as it slows down for a stop (MaxOrientationRetardation), and the water its way across
 void SimpleBoat::updateWreck(float elapsedTime)
 {
     if (m_wreckGone)
@@ -541,7 +545,19 @@ void SimpleBoat::updateWreck(float elapsedTime)
     if (m_wreckRuns)
         m_wreckSpinAcceleration = randomVector(3.0f);
     else
+    {
         m_velocity += m_wreckAcceleration*elapsedTime;
+        if (this != m_scenario->player())
+        {
+            // the water's drag across the hull, and the engine against the way along it
+            Vector3D local = m_orientation*m_velocity;
+            local += local*m_orientationFriction*elapsedTime;
+            m_velocity = m_orientationInverted*local;
+            const float along = glm::dot(m_velocity, dir());
+            const float brake = (along > 0 ? -m_maxOrientationRetardation : m_maxOrientationAcceleration)*elapsedTime;
+            m_velocity -= dir()*glm::clamp(along, -brake, brake);
+        }
+    }
     m_wreckSpin += m_wreckSpinAcceleration*elapsedTime;
     m_orientation *= glm::mat3(glm::rotate(m_wreckSpin.x*elapsedTime, Vector3D(1, 0, 0))) * glm::mat3(glm::rotate(m_wreckSpin.y*elapsedTime, Vector3D(0, 1, 0)))
                    * glm::mat3(glm::rotate(m_wreckSpin.z*elapsedTime, Vector3D(0, 0, 1)));

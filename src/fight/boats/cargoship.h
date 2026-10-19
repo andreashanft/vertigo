@@ -51,6 +51,8 @@ public:
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal) { return false; }
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr) {}
     void destroy() {}
+    // the block is gone: a lock on it ends as on any destroyed unit
+    void remove() { vanish(); }
     void identify();
     String observationImage() const;
 
@@ -64,9 +66,11 @@ private:
 // against a side of an earlier one (ConnectSide: left 1, right 2, front 4, back 8, top 16,
 // bottom 32). Blocks of the big ships carry gun turrets ([TurretN]), which fire at hostile units
 // on their side of the hull. The ship moves like a boat, with its orders. As in the original it
-// takes hits as a whole, on its own shield; when that is used up it counts as destroyed, stops,
-// and its blocks blow up one after another. The master monitor shows a picture of it (SHP*.IMG)
-// rather than its model.
+// takes hits as a whole, on its own shield; a block's own shield only sets off a small explosion
+// now and then. When the ship's shield is used up it brakes to a stop and its blocks blow up one
+// after another, each shaking and sinking, and stay targets until they are gone; the ship counts
+// as destroyed when the first block is gone (docs/ROADMAP.md, appendix A). The master monitor
+// shows a picture of it (SHP*.IMG) rather than its model.
 class CargoShip : public SimpleBoat
 {
 public:
@@ -96,6 +100,7 @@ public:
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();
+    bool isDying() const override { return SimpleBoat::isDying() || m_exploding; }
 
 private:
     struct Block
@@ -106,6 +111,19 @@ private:
         BoundingBox box;    // ship coordinates
         bool destroyed = false;
         CargoSegment *segment = nullptr;
+        int shield = 0;     // its own kinetic shield, for the explosions under fire
+        int shieldMax = 0;
+        bool hitHard = false;
+        // its part of the ship's destruction: the time it started, the next step, and how it
+        // shakes, sinks and turns (ship coordinates)
+        float start = -1;
+        int step = 0;
+        Vector3D shake;
+        float sinkSpeed = 0;
+        float sinkAcceleration = 0;
+        float sink = 0;
+        Vector2D spin;
+        glm::mat3 tilt = glm::mat3(1);
     };
 
     struct ShipTurret
@@ -134,8 +152,14 @@ private:
     void updateTurret(ShipTurret &turret, float elapsedTime);
     ActiveObject* findTarget(const ShipTurret &turret) const;
     bool isTargetValid(const ActiveObject *unit) const;
-    // blows up the next block of the sequence that follows the ship's destruction
-    void explodeNextBlock();
+    // the block's part of the sequence that follows the ship's destruction
+    void updateBlock(int index, float elapsedTime);
+    void blockExplosion(const Block &block, int type, float spread);
+    void blockDebris(const Block &block, int index, float minElevation, float maxElevation);
+    void destroyTurret(ShipTurret &turret);
+    Vector3D blockCenter(const Block &block) const; // world
+    float blockRadius(const Block &block) const;
+    Matrix blockTransform(const Block &block) const; // ship coordinates
     void updateLocalBox();
     void updateSegments();
 
@@ -144,7 +168,7 @@ private:
     std::vector<ShipTurret> m_turrets;
     String m_picture;
     bool m_exploding = false;
-    std::vector<int> m_explosionOrder;  // the blocks still to blow up, the next one last
+    int m_nextBlock = 0;                // the next block to blow up, and when
     float m_nextExplosion = 0;
 };
 

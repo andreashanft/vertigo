@@ -119,14 +119,16 @@ void EffectManager::addDebris(Effects debris, const Vector3D &position, const Ve
 }
 
 
-void EffectManager::addDust(const Vector3D &position, const Vector3D &velocity, float scale)
+void EffectManager::addDust(const Vector3D &position, float size, bool groundOnly)
 {
-    // the large ground dust, upright, or the other large dust, rolled, at random; like the other
-    // explosions 0.7 to 1.3 of the given size, its frames 0.75 to 1.25 of their time
-    const bool ground = util::random()%2;
+    // the large ground dust, upright, or (a tank's, at random) the other large dust, rolled; like
+    // the other explosions 0.7 to 1.3 of the given size (the sprite scale, in metres), its frames
+    // 0.75 to 1.25 of their time
+    const bool ground = groundOnly || util::random()%2;
     const Effects dust = ground ? Effects::Explosion_20 : Effects::Explosion_26;
-    m_particles.add(getBillboard(dust), Particles::Motion::Dust, position, velocity, ground ? 0 : 360*random(),
-                    scale*(0.7f + 0.6f*random()), 0, 1/(0.75f + 0.5f*random()));
+    Billboard *billboard = getBillboard(dust);
+    m_particles.add(billboard, Particles::Motion::Dust, position, Vector3D(0), ground ? 0 : 360*random(),
+                    size/std::max(billboard->sizeScale(), 1e-3f)*(0.7f + 0.6f*random()), 0, 1/(0.75f + 0.5f*random()));
 }
 
 

@@ -30,9 +30,9 @@ missing conditions, the failure path and the mission end (Esc menu, death and
 failure screens, restart, abort, load, the autopilot's choice of station)
 are in. Units move with terrain and object collisions; shots know who fired
 them, the player is hit per side and dies, destroyed units explode with
-debris and bodies. Tanks drive on the ground with turning turrets; cargo
-ships are built from their blocks with turrets on the hull, take hits as a
-whole and blow up block by block. Enemy guns use the object files' muzzles
+debris and bodies. Tanks drive on the ground with tilting guns or a turning
+turret; cargo ships are built from their blocks with turrets on the hull,
+take hits as a whole and blow up block by block. Enemy guns use the object files' muzzles
 and volleys; 22 torpedo types with magazines, lock, homing, decoys and
 torpedo towers; the cluster torpedo bursts into rings of shards. Difficulty from
 the options limits which units appear (`diff`) and how many attack the
@@ -88,7 +88,10 @@ plans, level pipelines and the darkened ground under buildings and towers
 (N); the AI feeling hits only through its energy defence, attack runs that
 turn when the terrain is in the way, escorts placed from hull to hull (J),
 active mines going up on buildings and the buzzer's torch going out like
-other debris (Q); additive explosions and shots, and the tanks' dust (H).
+other debris (Q); additive explosions and shots, and the tanks' and
+crawlers' dust (H); the tanks' fixed guns (J); the ground units' and big
+ships' destruction, boats braking as they blow up, and units counting as
+destroyed once they are gone (R, A); paralysed tanks and towers (J).
 
 ## What is open
 
@@ -182,8 +185,25 @@ as +y (the half-hulls' open seam at +x confirms this); a turret stands at
 it (`Z` −1000), turned by `Alpha` counter-clockwise from the bow, at its own
 `[Size] Scale`/32. The mission position is the middle of the hull. A big ship
 takes hits as a whole on its own `[Defense]` shield (cargo ships
-20,000–60,000, Big Fat Mama 10,000,000); used up, it counts as destroyed,
-stops, and its blocks blow up one after another. The master monitor shows a
+20,000–60,000, Big Fat Mama 10,000,000). The block hit takes them on its
+own shield as well (`BBLOCK*.DES`, e.g. 10,000), which only shows a small
+explosion (entry 1) where it was hit when 60 % and again 80 % of it are
+gone, and then it is whole again; a block never goes on its own. When the
+ship's shield is used up (read off in October 2026) it brakes to a stop at
+its retardation, its turrets keep firing, and its blocks blow up in their
+order, the first at once and each next one 0.5 to 1.5 s after the one
+before. A block takes 2.7 s: it shakes by up to 5 cm, sinks faster and
+faster (10 to 40 units/s²) and turns slowly (up to 0.07 rad/s about two
+axes), with the boats' bursts and the debris 2, 2, 1 at 0.9 s (36° to
+72°) and 2, 1, 2, 1 at 2.0 s (0° to 36°) plus one of the bodies 14 to 16,
+sample 18 two times in three at the start, and a big blast (entry 2, sized
+0.35 of its radius) on its side towards the player at 2.0 s; half of its
+turrets go up at the start and the rest at 1.6 s. Ship and blocks stay
+sonar contacts and targets until each is gone; the ship counts as destroyed
+when its first block is gone (in a squadron of several ships the original
+counts every block that goes, which Vertigo doesn't), and is gone with its
+last. Vertigo counted it destroyed at once, lost the lock and blew up a
+block every 0.3 to 0.7 s in a random order until then. The master monitor shows a
 picture chosen by the ship file's comment: `SHPSEACO` (bship0), `SHPTRITO`
 (1, 8), `SHPPOLAR` (2, 9), `SHPINDER` (3, 10), `SHPBIONT` (4, 7), `SHPBFM`
 (5, 6), `SHPCONTF` (cship0–9). Big ships turn at most 0.15 rad/s and climb at
@@ -432,11 +452,18 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 - Tank dust (read off in October 2026): while a tank drives, one puff every
   0.2 to 0.3 s behind one of its tracks, picked at random, 0.6 to 1.1 of
   its half width out from the middle; explosion 20 (upright) or 26 (rolled)
-  at random, sized by its speed over its top speed times 0.8 to 1.0, then
-  0.7 to 1.3 as every explosion, its frames 0.75 to 1.25 of `DisplayTime`.
-  The ground vehicles (`GVEHICLE.DES`) puff every 0.16 to 0.3 s, always
-  explosion 20. Vertigo had a puff behind both tracks every 0.1 to 0.2 s,
-  playing at 0.4 of its speed, so a tank left a band of dust.
+  at random, sized by its speed over its top speed times its model's height
+  times 0.8 to 1.0, then 0.7 to 1.3 as every explosion, its frames 0.75 to
+  1.25 of `DisplayTime`. The puff stays where it was made. The crawlers
+  (`GVEHICLE.DES`) do the same every 0.16 to 0.3 s, always with explosion
+  20. Vertigo had a puff behind both tracks every 0.1 to 0.2 s, playing at
+  0.4 of its speed and drifting up, so a tank left a band of dust, and the
+  crawlers took the tanks' rule.
+- Explosion sizes: where the original gives an explosion a size of its own
+  (the building's and big ship's last blast, a building's explosions under
+  fire, the dust), that size is the sprite's scale, which comes out in
+  metres as with the mines (appendix Q); Vertigo divides it by the entry's
+  `[Size] Scale`.
 
 ### I. Mission result
 
@@ -488,8 +515,12 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   way and stops turning, and then hangs still where it is, neither sinking
   nor going away (watched for a minute on a pirate bomber in s00601), so it
   can still be boarded, identified or destroyed; destroying it starts the destruction
-  sequence (appendix R). Vertigo does the same for boats; tanks and towers
-  still blow up, their paralysis is not read.
+  sequence (appendix R). Vertigo does the same for boats. A tank or crawler
+  brakes to a stop for 5 s and then stays as it is for good; a gun tower
+  turns its gun to the front and lowers it to −14° for good; a torpedo
+  tower never launches again; buildings have no energy defence to collapse.
+  None of them blows up (read off in October 2026; Vertigo blew them up
+  until then).
 - **Order slots** end in two ways: the break condition is checked every
   frame, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
   CardinalPatrol after `dur`, Goto and GotoWithArrive at their point,
@@ -603,7 +634,11 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   without firing, until it is there or the align time is up; when hit,
   `AlignProbabilityHit` says whether it aligns anew or attacks at once.
   *Attack*: it drives at the target for an attack time (or until it reaches
-  it), its turret firing whenever the gun points within 14° of the target,
+  it), its turret firing whenever the gun points within 14° of the target
+  (a fixed `Gun` module, all tanks but TANK2, points along the hull and only
+  tilts, from 5° down to straight up at the hull's `MaxAngleVelocityB`, and
+  only at a target ahead; TANK2's `GunTurret` turns as well; Vertigo turned
+  every gun all round until October 2026),
   then aligns again. The original draws the attack speed between two of the
   unit's speeds of which the lower is not identified; Vertigo takes 40–100 %
   of the order's speed (O4). GotoWithInfiltrate is not compared (O4).
@@ -871,16 +906,19 @@ direction round and between two elevations, at the piece's own speed.
 At every step up to 1.6 s the hull gets a new random acceleration of up to
 30 units/s² (about 0.94 m/s²) on each axis and a new angular acceleration
 of up to 0.2 rad/s² about each of its own axes, so it drifts and spins up
-more and more. Another boat stops when the sequence starts; the player's
-boat drifts on. One boat in five instead keeps its course at 70 % of its
+more and more. Another boat's engine brakes it to a stop along its nose
+at `MaxOrientationRetardation` (Vertigo stopped it dead until October
+2026); the player's boat drifts on. One boat in five instead keeps its course at 70 % of its
 speed, its angular acceleration drawn anew every frame within 3 rad/s²,
 and after 1.6 s it waits until it hits the ground (or five seconds) before
 the last burst. At 2.0 s the hull is gone and the wreck stays: the player's
 boat leaves one body (DEBRIS.DES 16 half the time, 15 or 14 otherwise),
 another boat none, 16, 15 and 16, or all of 14 to 16, each as likely, flung
 out at 0° to 90° elevation; the player's boat also blows up (entry 2) at
-the front and back of its hull. The unit counts as destroyed from the start
-of the sequence. Explosions of entries 0 to 2 sound as big explosions, the
+the front and back of its hull. The unit counts as destroyed for the
+mission only when its hull is gone (at 2.0 s, later for one that keeps its
+course; Vertigo counted it at the start until October 2026); the player's
+boat at once. Explosions of entries 0 to 2 sound as big explosions, the
 others as small ones.
 
 The player's boat is then watched from outside, the death view, without
@@ -908,11 +946,33 @@ Not compared or not followed:
   not compared; Vertigo always does.
 - Vertigo stops the hull once it is gone; whether the original's hidden
   hull drifts on (the camera would follow it) is not read.
-- One kind of unit leaves no wreck body; which one is not known.
-- Tanks and other ground vehicles have a sequence of their own, not read;
-  Vertigo still blows them up at once.
+- Towers and buildings leave no wreck body.
 - The original's explosions in the sequence come in sizes that Vertigo's
   effects don't take, as with the mines (appendix Q).
+
+**Ground units** (read off in October 2026; Vertigo blew them up at once
+until then). Tanks, crawlers, gun and torpedo towers and buildings (typ
+2062) have the boats' bursts at the same times (the table above) about
+their middle, and their own debris:
+
+| Unit | 0.9 s, at 36° to 72° | 2.0 s, at 0° to 36° | Bodies (0° to 90°) | Gone |
+|---|---|---|---|---|
+| Tank | 2, 1, 3, 3 | 2, 2, 1, 3 | 14, 15 and 16 | 2.0 s |
+| Crawler | 2, 2, 1, 3, 3 | 2, 2, 2, 1, 3, 3 | 14, 15 and 16 | 2.0 s |
+| Tower | 2, 2, 1, 3, 3 | 2, 2, 2, 1, 3, 3 | none | 2.0 s |
+| Building | 2, 2, 1 | 2, 1, 2, 1 | none | 2.7 s |
+
+A tank or crawler brakes to a stop meanwhile and no longer turns. A
+building shakes by up to 5 cm about its place, tilts at up to 0.07 rad/s
+about both level axes, plays sample 18 three times in five at the start,
+and goes up in a big blast (entry 2, sized 0.35 of its radius) at 2.6 s on
+its side towards the player, half way up. Each counts as destroyed when it
+is gone, and the darkened ground under a building or tower turns light
+again (the flattened ground stays). Under fire a building shows 5 to 11
+small explosions (entry 8, 5 or 0, one, two and one in four) on its side
+towards the player within 1.5 s, sized 0.05 to 0.1 of its radius, when
+its armour falls below 40 % and again below 20 %. Of the ground units only
+buildings follow an Explode order. Ground plans can't be destroyed.
 
 ### S. What the original's torpedoes do
 

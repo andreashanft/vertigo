@@ -141,7 +141,7 @@ Torpedo::Torpedo(Scenario *scenario, int type, const Vector3D &position, const V
 bool Torpedo::targetAlive() const
 {
     return m_target == m_scenario->player() ? !m_scenario->playerDestroyed()
-                                            : m_target->isEnabled() && !m_target->eventDestroy()->isCompleted();
+                                            : m_target->isEnabled() && !m_target->isDying();
 }
 
 

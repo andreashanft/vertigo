@@ -84,6 +84,7 @@ public:
     // the destruction sequence (docs/ROADMAP.md, appendix R): bursts of explosions and debris
     // over two seconds while the hull drifts and spins, then the hull is gone
     bool isWrecking() const { return m_wreckStep >= 0; }
+    bool isDying() const override { return ActiveObject::isDying() || isWrecking(); }
     bool wreckGone() const { return m_wreckGone; }
     // the hull's radius (metres), which the death view keeps its distance by
     float hullRadius() const;

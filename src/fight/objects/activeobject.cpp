@@ -19,6 +19,7 @@
 #include "fight/scenario.h"
 #include "sfx/samplemap.h"
 #include "txt/stringtable.h"
+#include "fight/effects/billboard.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/weapons/unitgun.h"
 #include "fight/orders.h"
@@ -26,6 +27,9 @@
 #include "fight/boats/simpleboat.h"
 #include "util/random.h"
 #include <glm/geometric.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtx/transform.hpp>
+#include <cmath>
 #include <algorithm>
 #include <limits>
 
@@ -97,6 +101,9 @@ bool ActiveObject::hitRecently() const
 
 bool ActiveObject::update(float elapsedTime)
 {
+    updateLaterExplosions();
+    if (updateGroundWreck(elapsedTime))
+        return false;
     if (m_orders)
         m_orders->update();
     return false;
@@ -115,12 +122,36 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
     // (docs/ROADMAP.md, appendix J)
     if (shock != 0)
         m_hitTime = m_scenario->time();
-    const bool wasDestroyed = m_eventDestroy.isCompleted();
+    const bool wasDying = isDying();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;
+    // a building under fire: 5 to 11 small explosions on its side towards the player within
+    // 1.5 s, when its armour falls below 40 % and again below 20 % (docs/ROADMAP.md, appendix R)
+    if (m_groundWreck == GroundWreck::Building && !isGroundWrecking() && m_kineticShield >= 0)
+    {
+        bool &flag = m_kineticShield < 0.2f*m_kineticShieldMax ? m_hitHarder : m_hitHard;
+        if (m_kineticShield < 0.4f*m_kineticShieldMax && !flag)
+        {
+            flag = true;
+            m_hitHard = true;
+            const Vector3D dim = m_box.dim();
+            const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+            Vector3D toward = m_scenario->player() ? m_scenario->player()->position() - center() : Vector3D(0, -1, 0);
+            toward.z = 0;
+            toward = glm::length(toward) > 0.1f ? glm::normalize(toward) : Vector3D(0, -1, 0);
+            for (int i = 5 + util::random()%7; i > 0; i--)
+            {
+                const int roll = util::random()%4;
+                const int type = roll == 0 ? 8 : roll == 3 ? 0 : 5;
+                const Vector3D spread(util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f);
+                const float size = (0.05f + 0.05f*util::random()/float(RAND_MAX))*r;
+                addLaterExplosion(1.5f*util::random()/float(RAND_MAX), type, center() + toward*r + spread*r, size);
+            }
+        }
+    }
     if (m_kineticShield < 0)
         destroy();
-    else if (m_shockShield < 0 && !m_eventParalyze.isCompleted())
+    else if (m_shockShield < 0 && !m_eventParalyze.isCompleted() && m_groundWreck != GroundWreck::Building)
     {
         m_eventParalyze.complete();
         m_scenario->logEvent(name(), &m_eventParalyze, txt::Fight8);
@@ -128,7 +159,7 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
     }
 
     if (attacker && attacker != this && attacker == m_scenario->player())
-        m_scenario->playerHit(this, !wasDestroyed && m_eventDestroy.isCompleted());
+        m_scenario->playerHit(this, !wasDying && isDying());
 }
 
 
@@ -154,13 +185,30 @@ void ActiveObject::disengageTorpedo(ActiveObject *attacker)
 
 void ActiveObject::destroy()
 {
-    if (m_eventDestroy.isCompleted())
+    if (m_eventDestroy.isCompleted() || isGroundWrecking())
         return;
+    // a ground unit counts as destroyed once its sequence is over
+    if (m_groundWreck != GroundWreck::None)
+    {
+        startGroundWreck();
+        return;
+    }
     if (!startWreck())
     {
         blowUp(1);
         vanish();
     }
+    // a boat counts once its hull is gone; the player's boat at once
+    else if (this != m_scenario->player())
+        return;
+    countDestroyed();
+}
+
+
+void ActiveObject::countDestroyed()
+{
+    if (m_eventDestroy.isCompleted())
+        return;
     m_eventDestroy.complete();
     m_scenario->logEvent(name(), &m_eventDestroy, txt::Fight5);
 }
@@ -168,9 +216,9 @@ void ActiveObject::destroy()
 
 void ActiveObject::explode()
 {
-    if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling)
+    if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling || isGroundWrecking())
         return;
-    if (!startTumbling())
+    if (!startTumbling() && m_groundWreck == GroundWreck::None)
     {
         blowUp(3);
         vanish();
@@ -180,7 +228,12 @@ void ActiveObject::explode()
 
 void ActiveObject::wreck()
 {
-    if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling)
+    if (!m_enabled || m_eventDestroy.isCompleted() || m_tumbling || isGroundWrecking())
+        return;
+    // of the ground units only buildings follow an Explode order, with their whole sequence
+    if (m_groundWreck == GroundWreck::Building)
+        startGroundWreck();
+    if (m_groundWreck != GroundWreck::None)
         return;
     if (!startWreck())
     {
@@ -228,6 +281,174 @@ void ActiveObject::blowUp(int explosions)
             for (int i = random(1, 3); i > 0; i--)
                 debris(random(14, 16));
     }
+}
+
+
+// The ground units' destruction (docs/ROADMAP.md, appendix R): the boats' bursts at 0, 0.4, 0.9,
+// 1.3, 1.6 and 2.0 s and their kind's debris; tanks and crawlers brake to a stop meanwhile (Tank),
+// a building shakes and tilts and goes up in a big blast at 2.6 s. Tanks, crawlers and towers are
+// gone at 2.0 s, buildings at 2.7 s, and only then count as destroyed.
+void ActiveObject::startGroundWreck()
+{
+    m_groundStep = 0;
+    m_groundStart = m_scenario->time();
+    m_groundAnchor = m_position;
+    m_trigger = false;
+    m_scenario->disengagePlayer(this);
+}
+
+
+void ActiveObject::groundExplosion(int type, float spread)
+{
+    const Vector3D dim = m_box.dim();
+    const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+    auto u = []() { return util::random()/float(RAND_MAX); };
+    const Vector3D at = center() + Vector3D((u() - 0.5f)*r, (u() - 0.5f)*r*spread, u()*r*spread);
+    m_scenario->effectManager().addEffect(Effects(int(Effects::Explosion_0) + type), at);
+    sfx::SampleMap::playAt(type < 3 ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
+    m_scenario->explosionAt(at, type < 3 ? 0.6f : 0.3f);
+}
+
+
+void ActiveObject::groundDebris(int index, float minElevation, float maxElevation)
+{
+    const Vector3D dim = m_box.dim();
+    const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+    auto between = [](float min, float max) { return min + (max - min)*util::random()/float(RAND_MAX); };
+    const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
+    const float elevation = between(minElevation, maxElevation);
+    const Vector3D direction(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation));
+    m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), center() + direction*r*between(0.1f, 0.6f), direction);
+}
+
+
+void ActiveObject::addLaterExplosion(float delay, int type, const Vector3D &position, float scale)
+{
+    m_laterExplosions.push_back({ m_scenario->time() + delay, type, position, scale });
+}
+
+
+// the explosion's size is given as the original's sprite scale, which comes out as metres
+void ActiveObject::updateLaterExplosions()
+{
+    for (size_t i = 0; i < m_laterExplosions.size(); )
+    {
+        const LaterExplosion explosion = m_laterExplosions[i];
+        if (m_scenario->time() < explosion.time)
+        {
+            i++;
+            continue;
+        }
+        m_laterExplosions.erase(m_laterExplosions.begin() + i);
+        const Effects effect = Effects(int(Effects::Explosion_0) + explosion.type);
+        const float sizeScale = std::max(1e-3f, m_scenario->effectManager().getBillboard(effect)->sizeScale());
+        m_scenario->effectManager().addEffect(effect, explosion.position, 0, explosion.scale/sizeScale);
+        const Vector3D &at = explosion.position;
+        sfx::SampleMap::playAt(explosion.type < 3 ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
+        m_scenario->explosionAt(at, explosion.type < 3 ? 1.0f : 0.3f);
+    }
+}
+
+
+bool ActiveObject::updateGroundWreck(float elapsedTime)
+{
+    if (!isGroundWrecking())
+        return false;
+    auto between = [](float min, float max) { return min + (max - min)*util::random()/float(RAND_MAX); };
+    const bool building = m_groundWreck == GroundWreck::Building;
+    const bool tower = m_groundWreck == GroundWreck::Tower;
+    const float fifth = 0.2f*glm::pi<float>();
+    const float t = m_scenario->time() - m_groundStart;
+    if (building && m_groundStep > 0)
+    {
+        // it shakes by up to 5 cm about where it stood and tilts slowly
+        m_position = m_groundAnchor + Vector3D(between(-0.05f, 0.05f), between(-0.05f, 0.05f), 0);
+        m_tilt = glm::mat3(glm::rotate(m_groundSpin.x*elapsedTime, Vector3D(1, 0, 0))*glm::rotate(m_groundSpin.y*elapsedTime, Vector3D(0, 1, 0)))*m_tilt;
+    }
+
+    static const float times[] = { 0, 0.4f, 0.9f, 1.3f, 1.6f, 2.0f, 2.7f };
+    while (m_groundStep >= 0 && m_groundStep < 7 && t >= times[m_groundStep])
+    {
+        switch (m_groundStep++)
+        {
+        case 0:
+            groundExplosion(0, 0.6f);
+            groundExplosion(3, 0.6f);
+            groundExplosion(3, 0.6f);
+            if (building)
+            {
+                m_groundSpin = Vector2D(between(-0.07f, 0.07f), between(-0.07f, 0.07f));
+                if (util::random()%5 < 3)
+                    sfx::SampleMap::playAt(sfx::Sample::Sample18, m_position.x, m_position.y, m_position.z);
+            }
+            break;
+        case 1:
+            groundExplosion(4, 0.5f);
+            break;
+        case 2:
+            groundExplosion(1, 0.4f);
+            groundExplosion(4, 0.4f);
+            groundExplosion(4, 0.7f);
+            if (building)
+                for (int debris : { 2, 2, 1 })
+                    groundDebris(debris, fifth, 2*fifth);
+            else if (m_groundWreck == GroundWreck::Tank)
+                for (int debris : { 2, 1, 3, 3 })
+                    groundDebris(debris, fifth, 2*fifth);
+            else
+                for (int debris : { 2, 2, 1, 3, 3 })
+                    groundDebris(debris, fifth, 2*fifth);
+            break;
+        case 3:
+            groundExplosion(5, 0.3f);
+            break;
+        case 4:
+            groundExplosion(5, 0.6f);
+            groundExplosion(2, 0.6f);
+            break;
+        case 5:
+            groundExplosion(2, 0.1f);
+            groundExplosion(2, 0.4f);
+            if (building)
+            {
+                for (int debris : { 2, 1, 2, 1 })
+                    groundDebris(debris, 0, fifth);
+                // the big blast 0.6 s later on its side towards the player, half way up
+                const Vector3D dim = m_box.dim();
+                const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+                Vector3D toward = m_scenario->player() ? m_scenario->player()->position() - m_position : Vector3D(0, -1, 0);
+                toward.z = 0;
+                toward = glm::length(toward) > 0.1f ? glm::normalize(toward) : Vector3D(0, -1, 0);
+                addLaterExplosion(0.6f, 2, Vector3D(m_position.x, m_position.y, m_box.minPoint().z + 0.5f*dim.z) + toward*r, 0.35f*r);
+                break;
+            }
+            for (int debris : m_groundWreck == GroundWreck::Tank ? std::vector<int>{ 2, 2, 1, 3 } : std::vector<int>{ 2, 2, 2, 1, 3, 3 })
+                groundDebris(debris, 0, fifth);
+            // the crews' bodies; towers leave nothing
+            if (!tower)
+                for (int body : { 14, 15, 16 })
+                    groundDebris(body, 0, glm::half_pi<float>());
+            m_groundStep = 7;
+            break;
+        default:
+            m_groundStep = 7;
+            break;
+        }
+    }
+    if (m_groundStep < 7)
+        return true;
+
+    // gone: the ground under a building or tower is light again
+    m_groundStep = -1;
+    vanish();
+    if (m_groundX >= 0)
+    {
+        m_scenario->surface().darken(m_groundX, m_groundY, 1.0f);
+        m_scenario->surface().invalidate(m_groundX, m_groundY);
+    }
+    if (m_kineticShield < 0)
+        countDestroyed();
+    return true;
 }
 
 

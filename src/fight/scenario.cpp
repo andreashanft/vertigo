@@ -252,7 +252,9 @@ Scenario::Scenario(const String &name) :
 
         case TypeTank:
             {
-                object = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                Tank *tank = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                tank->setGroundWreck(ActiveObject::GroundWreck::Tank);
+                object = tank;
                 object->setPosition(getPosition());
             }
             break;
@@ -260,7 +262,10 @@ Scenario::Scenario(const String &name) :
         case TypeTower:
         case TypeTorpedoTower:
             {
-                object = new TurretBase(this, objectDes, info);
+                TurretBase *tower = new TurretBase(this, objectDes, info);
+                tower->setGroundWreck(ActiveObject::GroundWreck::Tower);
+                tower->setGroundCell(m_file.value("px").toInt(), m_file.value("py").toInt());
+                object = tower;
                 // once it is there, a tower flattens its cell to the height of its corner and
                 // darkens the ground, a gun tower more than a torpedo tower (docs/ROADMAP.md,
                 // appendix N)
@@ -322,7 +327,9 @@ Scenario::Scenario(const String &name) :
             {
                 objectDes.load("vfx:sobjects/gvehicle.des");
                 desName = "gvehicle";
-                object = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                Tank *crawler = new Tank(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                crawler->setGroundWreck(ActiveObject::GroundWreck::Crawler);
+                object = crawler;
                 object->setPosition(getPosition());
             }
             break;
@@ -338,6 +345,8 @@ Scenario::Scenario(const String &name) :
         case TypeActiveBuilding:
             {
                 SimpleObject *building = new SimpleObject(this, objectDes, info, 16);
+                building->setGroundWreck(ActiveObject::GroundWreck::Building);
+                building->setGroundCell(m_file.value("px").toInt(), m_file.value("py").toInt());
                 m_groundMarks.push_back({ building, m_file.value("px").toInt(), m_file.value("py").toInt(), 0.35f });
                 building->setYaw(quarterHeading(m_file.value("card", 0).toInt()));
                 building->setPosition(getPosition());
@@ -696,7 +705,7 @@ void Scenario::update(float elapsedTime)
 
     // attackers that are gone or asleep leave the player's list
     m_playerAttackers.erase(std::remove_if(m_playerAttackers.begin(), m_playerAttackers.end(), [](ActiveObject *unit) {
-        return !unit->isEnabled() || unit->isAsleep() || unit->eventDestroy()->isCompleted();
+        return !unit->isEnabled() || unit->isAsleep() || unit->isDying();
     }), m_playerAttackers.end());
 
     // sleeping units (docs/ROADMAP.md, appendix J): beyond the player's sonar range plus 3 cells a unit

@@ -231,7 +231,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   reaching them.
 - `--collapse 2050` collapses these units' energy defence one second in:
   boats drift helplessly with a slow spin for a few seconds, as after a
-  Flash Shark's hit.
+  Flash Shark's hit; tanks stop, gun towers lower their guns and torpedo
+  towers stop launching.
 - `--trace 2062,2055` prints these units' map cell, height above ground,
   speed, shield and current order every second; the player's id prints the
   player with the water current at its position and the four shield sides.

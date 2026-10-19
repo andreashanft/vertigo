@@ -37,8 +37,6 @@ namespace {
 const float DebrisLiftScale = 9.81f;
 // bubbles disappear this far from the player (squared)
 const float BubbleRange2 = 50.0f*50.0f;
-// dust rises slowly
-const float DustRise = 0.6f;
 const int AmbientCapacity = Particles::Capacity*3/4;
 // a piece of debris takes part in contacts once it is this old (s)
 const float DebrisGrace = 1.0f;
@@ -168,8 +166,6 @@ bool Particles::update(Particle &particle, float elapsedTime)
 
     case Motion::Dust:
         particle.time += elapsedTime*particle.rate;
-        particle.position += (particle.velocity + Vector3D(0, 0, DustRise))*elapsedTime;
-        particle.velocity *= std::max(0.0f, 1.0f - 2.0f*elapsedTime);
         return particle.time < billboard->duration();
     }
     return false;

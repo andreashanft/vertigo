@@ -382,7 +382,7 @@ bool Orders::isAlive(const ActiveObject *unit) const
         return false;
     if (unit == m_scenario->player())
         return !m_scenario->playerDestroyed();
-    return unit->isEnabled() && !const_cast<ActiveObject *>(unit)->eventDestroy()->isCompleted();
+    return unit->isEnabled() && !unit->isDying();
 }
 
 
@@ -1177,7 +1177,7 @@ void Orders::update()
     case OrderSlot::Escort:
         {
             SimpleBoat *escorted = dynamic_cast<SimpleBoat *>(findUnit(slot.esc));
-            if (!escorted || escorted->eventDestroy()->isCompleted())
+            if (!escorted || escorted->isDying())
             {
                 next();
                 return;

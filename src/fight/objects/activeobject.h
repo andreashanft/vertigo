@@ -20,8 +20,10 @@
 
 
 #include "object.h"
+#include <glm/mat3x3.hpp>
 #include <memory>
 #include <algorithm>
+#include <vector>
 #include "util/string.hpp"
 
 
@@ -39,6 +41,10 @@ class Orders;
 class ActiveObject : public Object
 {
 public:
+    // which destruction sequence a ground unit has (docs/ROADMAP.md, appendix R); None for boats,
+    // which have their own, and everything that blows up at once
+    enum class GroundWreck { None, Tank, Crawler, Tower, Building };
+
     struct ObjectInfo
     {
         int iff;
@@ -119,13 +125,20 @@ public:
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     virtual void destroy();
     // an energy defence that has collapsed: a boat drifts helplessly with a slow spin for a few
-    // seconds, without explosions, and stays (anything else blows up and is gone); as its armour was never taken
-    // down, it doesn't count as destroyed for the mission's conditions (docs/ROADMAP.md, appendix J)
+    // seconds, without explosions, and stays; tanks and towers stop for good (startTumbling(),
+    // anything else blows up and is gone); as its armour was never taken down, it doesn't count
+    // as destroyed for the mission's conditions (docs/ROADMAP.md, appendix J)
     void explode();
-    // an Explode order: the destruction sequence (a boat, docs/ROADMAP.md, appendix R; anything
-    // else blows up at once), without counting as destroyed for the mission's conditions
+    // an Explode order: the destruction sequence (a boat's or a building's, docs/ROADMAP.md,
+    // appendix R; tanks and towers ignore it, anything else blows up at once), without counting as
+    // destroyed for the mission's conditions
     void wreck();
     bool isTumbling() const { return m_tumbling; }
+    // destroyed, or on the way to it in a destruction sequence
+    virtual bool isDying() const { return m_eventDestroy.isCompleted() || isGroundWrecking(); }
+    void setGroundWreck(GroundWreck kind) { m_groundWreck = kind; }
+    // the cell whose ground the building or tower darkens, light again once it is gone
+    void setGroundCell(int x, int y) { m_groundX = x; m_groundY = y; }
     virtual void identify();
     // whether the sonar shows it (a cargo ship shows its blocks instead)
     virtual bool isContact() const { return true; }
@@ -162,6 +175,18 @@ protected:
     virtual bool startTumbling() { return false; }
     // starts the destruction sequence; false if the unit has none (then it blows up at once)
     virtual bool startWreck() { return false; }
+    // a unit counts as destroyed for the mission once it is gone, at the end of its sequence
+    void countDestroyed();
+    // a ground unit's destruction sequence: true while it runs, then the unit is gone and counts
+    // as destroyed
+    bool isGroundWrecking() const { return m_groundStep >= 0; }
+    bool updateGroundWreck(float elapsedTime);
+    void startGroundWreck();
+    void groundExplosion(int type, float spread);
+    void groundDebris(int index, float minElevation, float maxElevation);
+    // the explosions due later (a building's)
+    void addLaterExplosion(float delay, int type, const Vector3D &position, float scale);
+    void updateLaterExplosions();
 
 protected:
     ConditionEvent m_eventDestroy;
@@ -195,6 +220,24 @@ protected:
     int m_torpedoCount = 0;
     std::vector<ActiveObject*> m_torpedoAttackers;
     float m_torpedoReady = 0;
+
+    GroundWreck m_groundWreck = GroundWreck::None;
+    int m_groundStep = -1;
+    float m_groundStart = 0;
+    Vector3D m_groundAnchor;       // a building shakes about it and tilts
+    Vector2D m_groundSpin;
+    glm::mat3 m_tilt = glm::mat3(1);
+    int m_groundX = -1, m_groundY = -1;
+    bool m_hitHard = false;        // a building's armour below 40 %, and below 20 %
+    bool m_hitHarder = false;
+    struct LaterExplosion
+    {
+        float time;
+        int type;
+        Vector3D position;
+        float scale;
+    };
+    std::vector<LaterExplosion> m_laterExplosions;
 };
 
 

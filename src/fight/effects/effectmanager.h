@@ -53,7 +53,7 @@ public:
         return m_particles.hitDebris(start, end, radius, speed, kinetic, hit);
     }
     // a puff of ground dust stirred up at the position, scale times its [Size] Scale
-    void addDust(const Vector3D &position, const Vector3D &velocity, float scale);
+    void addDust(const Vector3D &position, float size, bool groundOnly);
     Projectile* addProjectile(Effects projectile, const Vector3D &position, const Vector3D &direction, ActiveObject *owner = nullptr);
 
     const Particles& particles() const { return m_particles; }

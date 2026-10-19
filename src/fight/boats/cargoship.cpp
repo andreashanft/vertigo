@@ -18,10 +18,13 @@
 #include "cargoship.h"
 #include "fight/scenario.h"
 #include "fight/module.h"
+#include "fight/effects/billboard.h"
+#include "fight/effects/effectmanager.h"
 #include "fight/objects/turret.h"
 #include "fight/objects/turretbase.h"
 #include "fight/weapons/unitgun.h"
 #include "sfx/samplemap.h"
+#include "txt/stringtable.h"
 #include "txt/desfile.h"
 #include "util/random.h"
 #include "gfx/pipeline.h"
@@ -29,6 +32,7 @@
 #include <glm/trigonometric.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/transform.hpp>
+#include <algorithm>
 #include <cmath>
 #include <map>
 
@@ -47,6 +51,21 @@ const float ScanInterval = 1.0f;     // turrets look for a new target once a sec
 const float AimTolerance = 0.06f;    // radians
 const float MinPitch = -0.1f;        // turrets can't aim into their own hull
 const float MaxPitch = 1.4f;
+
+// a block's own shield: a small explosion where it is hit when 60 % and 80 % of it are gone,
+// and then it is whole again
+const float HitHard = 0.4f;
+const float HitHarder = 0.2f;
+
+float uniform()
+{
+    return util::random()/float(RAND_MAX);
+}
+
+float between(float min, float max)
+{
+    return min + (max - min)*uniform();
+}
 
 }
 
@@ -73,6 +92,7 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
         blockFile.setSection("size");
         block.scale = blockFile.value("scale").toFloat()/32.0f;
         blockFile.setSection("defense");
+        block.shield = block.shieldMax = std::max(1, blockFile.value("KineticShield0").toInt());
 
         const BoundingBox own = block.module->box().scale(block.scale);
         block.position = Vector3D(0);
@@ -187,18 +207,25 @@ bool CargoShip::update(float elapsedTime)
 {
     if (m_exploding)
     {
+        // it brakes to a stop; the blocks start in their order, the first at once, then one
+        // every 0.5 to 1.5 s
         hold();
-        SimpleBoat::update(elapsedTime);
-        if (m_scenario->time() >= m_nextExplosion)
-            explodeNextBlock();
-        updateSegments();
-        return false;
+        if (m_nextBlock < int(m_blocks.size()) && m_scenario->time() >= m_nextExplosion)
+        {
+            Block &block = m_blocks[m_nextBlock++];
+            block.start = m_scenario->time();
+            m_nextExplosion = m_scenario->time() + between(0.5f, 1.5f);
+        }
     }
     SimpleBoat::update(elapsedTime);
     for (ShipTurret &turret : m_turrets)
         if (!turret.destroyed)
             updateTurret(turret, elapsedTime);
+    for (int i = 0; i < int(m_blocks.size()); i++)
+        updateBlock(i, elapsedTime);
     updateSegments();
+    if (m_exploding && std::all_of(m_blocks.begin(), m_blocks.end(), [](const Block &block) { return block.destroyed; }))
+        disable();
     return false;
 }
 
@@ -239,8 +266,9 @@ void CargoShip::updateSegments()
     {
         if (!block.segment)
             continue;
-        block.segment->setEnabled(isEnabled() && !block.destroyed && !m_eventDestroy.isCompleted());
-        block.segment->place(block.box.transform(glm::translate(m_position)*Matrix(m_orientationInverted)), m_velocity, m_kineticShield, m_kineticShieldMax);
+        block.segment->setEnabled(isEnabled() && !block.destroyed);
+        const Matrix motion = blockTransform(block)*glm::inverse(glm::translate(block.position)*glm::scale(Vector3D(block.scale)));
+        block.segment->place(block.box.transform(glm::translate(m_position)*Matrix(m_orientationInverted)*motion), m_velocity, m_kineticShield, m_kineticShieldMax);
     }
 }
 
@@ -251,8 +279,7 @@ void CargoShip::drawBlock(int index)
     gfx::Pipeline::pushMatrix();
     gfx::Pipeline::translate(m_position);
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
-    gfx::Pipeline::translate(block.position);
-    gfx::Pipeline::scale(block.scale);
+    gfx::Pipeline::multiply(blockTransform(block));
     block.module->draw();
     gfx::Pipeline::popMatrix();
 }
@@ -314,7 +341,7 @@ bool CargoShip::isTargetValid(const ActiveObject *unit) const
         return false;
     if (unit == m_scenario->player())
         return !m_scenario->playerDestroyed() && m_scenario->isHostile(iff(), unit->iff());
-    return unit->isEnabled() && !const_cast<ActiveObject *>(unit)->eventDestroy()->isCompleted() && m_scenario->isHostile(iff(), unit->iff());
+    return unit->isEnabled() && !unit->isDying() && m_scenario->isHostile(iff(), unit->iff());
 }
 
 
@@ -405,8 +432,7 @@ void CargoShip::draw()
         if (block.destroyed)
             continue;
         gfx::Pipeline::pushMatrix();
-        gfx::Pipeline::translate(block.position);
-        gfx::Pipeline::scale(block.scale);
+        gfx::Pipeline::multiply(blockTransform(block));
         block.module->draw();
         gfx::Pipeline::popMatrix();
     }
@@ -414,7 +440,10 @@ void CargoShip::draw()
     {
         if (turret.destroyed)
             continue;
+        // with its block as that shakes and sinks
+        const Block &block = m_blocks[turret.block];
         gfx::Pipeline::pushMatrix();
+        gfx::Pipeline::multiply(blockTransform(block)*glm::inverse(glm::translate(block.position)*glm::scale(Vector3D(block.scale))));
         gfx::Pipeline::translate(turret.position);
         if (turret.below)
             gfx::Pipeline::rotate(180, Vector3D(0, 1, 0));
@@ -444,8 +473,13 @@ bool CargoShip::intersect(const Vector3D &start, const Vector3D &dir, float radi
     float d;
     Vector3D n;
     for (const Block &block : m_blocks)
-        if (!block.destroyed && block.module->intersect((localStart - block.position)/block.scale, localDir, radius/block.scale, d, n))
-            take(d*block.scale, n);
+    {
+        if (block.destroyed)
+            continue;
+        const Matrix inverse = glm::inverse(blockTransform(block));
+        if (block.module->intersect(Vector3D(inverse*Vector4D(localStart, 1)), glm::normalize(Vector3D(inverse*Vector4D(localDir, 0))), radius/block.scale, d, n))
+            take(d*block.scale, glm::normalize(Vector3D(blockTransform(block)*Vector4D(n, 0))));
+    }
     for (const ShipTurret &turret : m_turrets)
     {
         if (turret.destroyed)
@@ -461,65 +495,219 @@ bool CargoShip::intersect(const Vector3D &start, const Vector3D &dir, float radi
 }
 
 
-// hits count for the whole ship (ActiveObject::damage); once it is blowing up they do nothing
+// hits count for the whole ship (ActiveObject::damage); the block hit, the nearest to where the
+// shot struck, takes them on its own shield as well, for its small explosions. Once the ship is
+// blowing up they do nothing
 void CargoShip::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
-    if (!m_exploding)
-        ActiveObject::damage(kinetic, shock, position, attacker);
+    if (m_exploding)
+        return;
+    const Vector3D local = toLocal(position);
+    Block *hit = nullptr;
+    float nearest = 0;
+    for (Block &block : m_blocks)
+    {
+        const float distance = glm::length(local - glm::clamp(local, block.box.minPoint(), block.box.maxPoint()));
+        if (!block.destroyed && (!hit || distance < nearest))
+        {
+            hit = &block;
+            nearest = distance;
+        }
+    }
+    if (hit && kinetic > 0)
+    {
+        hit->shield -= kinetic;
+        auto explosion = [this, &position]() {
+            // a little out of the hull, towards the player
+            const Vector3D way = m_scenario->player() ? m_scenario->player()->position() - position : Vector3D(0);
+            const Vector3D at = position + (glm::length(way) > 1.0f ? glm::normalize(way) : Vector3D(0));
+            m_scenario->effectManager().addEffect(Effects::Explosion_1, at);
+            sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
+        };
+        if (!hit->hitHard && hit->shield < HitHard*hit->shieldMax)
+        {
+            explosion();
+            hit->hitHard = true;
+        }
+        if (hit->shield < HitHarder*hit->shieldMax)
+        {
+            explosion();
+            hit->shield = hit->shieldMax;
+            hit->hitHard = false;
+        }
+    }
+    ActiveObject::damage(kinetic, shock, position, attacker);
 }
 
 
-// destroyed at once for the mission, the blocks then blow up one after another
+// The destruction: the ship keeps its turrets firing and stays a target; it counts as destroyed
+// when its first block is gone
 void CargoShip::destroy()
 {
     if (m_exploding || m_eventDestroy.isCompleted())
         return;
     m_exploding = true;
-    m_eventDestroy.complete();
     setOrders(nullptr);
     m_trigger = false;
-    for (ShipTurret &turret : m_turrets)
-        turret.target = nullptr;
-    for (int i = 0; i < int(m_blocks.size()); i++)
-        m_explosionOrder.push_back(i);
-    for (int i = int(m_explosionOrder.size()) - 1; i > 0; i--)
-        std::swap(m_explosionOrder[i], m_explosionOrder[util::random() % (i + 1)]);
+    m_nextBlock = 0;
     m_nextExplosion = m_scenario->time();
 }
 
 
-void CargoShip::explodeNextBlock()
+Vector3D CargoShip::blockCenter(const Block &block) const
 {
-    if (m_explosionOrder.empty())
-    {
-        disable();
-        return;
-    }
-    Block &block = m_blocks[m_explosionOrder.back()];
-    const int index = m_explosionOrder.back();
-    m_explosionOrder.pop_back();
-    m_nextExplosion = m_scenario->time() + 0.3f + 0.4f*util::random()/float(RAND_MAX);
+    return toWorld(0.5f*(block.box.minPoint() + block.box.maxPoint()) + block.shake + Vector3D(0, 0, -block.sink));
+}
 
-    block.destroyed = true;
-    if (block.segment)
-        block.segment->disable();
-    const Vector3D center = toWorld((block.box.minPoint() + block.box.maxPoint())*0.5f);
-    m_scenario->effectManager().addEffect(Effects::Explosion_2, center);
-    sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, center.x, center.y, center.z);
-    m_scenario->explosionAt(center, 0.6f);
-    for (int i = 0; i < 4; i++)
+
+float CargoShip::blockRadius(const Block &block) const
+{
+    const Vector3D dim = block.box.dim();
+    return 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+}
+
+
+Matrix CargoShip::blockTransform(const Block &block) const
+{
+    const Vector3D middle = 0.5f*(block.box.minPoint() + block.box.maxPoint());
+    return glm::translate(middle + block.shake + Vector3D(0, 0, -block.sink))*Matrix(block.tilt)*glm::translate(block.position - middle)*glm::scale(Vector3D(block.scale));
+}
+
+
+// the bursts as a boat's (appendix R) about the block's middle and within its size
+void CargoShip::blockExplosion(const Block &block, int type, float spread)
+{
+    const float r = blockRadius(block);
+    const Vector3D at = blockCenter(block) + Vector3D((uniform() - 0.5f)*r, (uniform() - 0.5f)*r*spread, uniform()*r*spread);
+    m_scenario->effectManager().addEffect(Effects(int(Effects::Explosion_0) + type), at);
+    sfx::SampleMap::playAt(type < 3 ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
+    m_scenario->explosionAt(at, type < 3 ? 0.6f : 0.3f);
+}
+
+
+void CargoShip::blockDebris(const Block &block, int index, float minElevation, float maxElevation)
+{
+    const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
+    const float elevation = between(minElevation, maxElevation);
+    const Vector3D direction(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation));
+    m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), blockCenter(block) + direction*blockRadius(block)*between(0.1f, 0.6f), direction);
+}
+
+
+void CargoShip::destroyTurret(ShipTurret &turret)
+{
+    if (turret.destroyed)
+        return;
+    turret.destroyed = true;
+    turret.target = nullptr;
+    const Block &block = m_blocks[turret.block];
+    const Vector3D at = toWorld(Vector3D(blockTransform(block)*glm::inverse(glm::translate(block.position)*glm::scale(Vector3D(block.scale)))*Vector4D(turret.position, 1)));
+    m_scenario->effectManager().addEffect(Effects::Explosion_0, at, 0, 0.6f);
+    m_scenario->effectManager().addEffect(Effects::Explosion_3, at, 0, 0.6f);
+    sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
+    for (int index : { 17, 2, 1 })
     {
-        const Vector3D d(util::random()/float(RAND_MAX) - 0.5f, util::random()/float(RAND_MAX) - 0.5f, 0.5f*util::random()/float(RAND_MAX));
-        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_9) + util::random()%5), center, glm::length(d) > 0.01f ? glm::normalize(d) : Vector3D(0, 0, 1));
+        const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
+        const float elevation = between(0.0f, glm::half_pi<float>());
+        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), at, Vector3D(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation)));
     }
-    // the turrets on it go with it
+}
+
+
+// A block's 2.7 s, from its start (docs/ROADMAP.md, appendix A): it shakes by up to 5 cm, sinks
+// faster and faster and turns slowly, with a boat's bursts and debris; its turrets go, half at
+// the start and half at 1.6 s, and at the end so does the block
+void CargoShip::updateBlock(int index, float elapsedTime)
+{
+    Block &block = m_blocks[index];
+    if (block.start < 0 || block.destroyed)
+        return;
+    const float t = m_scenario->time() - block.start;
+    if (block.step == 0)
+    {
+        block.sinkAcceleration = between(10.0f, 40.0f)/32.0f;
+        block.spin = Vector2D(between(-0.07f, 0.07f), between(-0.07f, 0.07f));
+    }
+    else
+    {
+        if (t < 2.7f)
+            block.sinkSpeed += block.sinkAcceleration*elapsedTime;
+        block.sink += block.sinkSpeed*elapsedTime;
+        block.shake = Vector3D(between(-0.05f, 0.05f), between(-0.05f, 0.05f), 0);
+        block.tilt = glm::mat3(glm::rotate(block.spin.x*elapsedTime, Vector3D(1, 0, 0))*glm::rotate(block.spin.y*elapsedTime, Vector3D(0, 1, 0)))*block.tilt;
+    }
+
+    std::vector<ShipTurret *> turrets;
     for (ShipTurret &turret : m_turrets)
         if (turret.block == index)
-            turret.destroyed = true;
-    updateLocalBox();
-    updateBox();
-    if (m_explosionOrder.empty())
-        m_nextExplosion = m_scenario->time() + 0.5f;
+            turrets.push_back(&turret);
+    const int half = int(turrets.size() + 1)/2;
+    const float fifth = 0.2f*glm::pi<float>();
+
+    static const float times[] = { 0, 0.4f, 0.9f, 1.3f, 1.6f, 2.0f, 2.7f };
+    while (block.step < 7 && t >= times[block.step])
+    {
+        switch (block.step++)
+        {
+        case 0:
+            blockExplosion(block, 0, 0.6f);
+            blockExplosion(block, 3, 0.6f);
+            blockExplosion(block, 3, 0.6f);
+            if (util::random()%3 != 0)
+            {
+                const Vector3D at = blockCenter(block);
+                sfx::SampleMap::playAt(sfx::Sample::Sample18, at.x, at.y, at.z);
+            }
+            for (int i = 0; i < half; i++)
+                destroyTurret(*turrets[i]);
+            break;
+        case 1:
+            blockExplosion(block, 4, 0.5f);
+            break;
+        case 2:
+            blockExplosion(block, 1, 0.4f);
+            blockExplosion(block, 4, 0.4f);
+            blockExplosion(block, 4, 0.7f);
+            for (int debris : { 2, 2, 1 })
+                blockDebris(block, debris, fifth, 2*fifth);
+            break;
+        case 3:
+            blockExplosion(block, 5, 0.3f);
+            break;
+        case 4:
+            blockExplosion(block, 5, 0.6f);
+            blockExplosion(block, 2, 0.6f);
+            for (int i = half; i < int(turrets.size()); i++)
+                destroyTurret(*turrets[i]);
+            break;
+        case 5:
+            {
+                blockExplosion(block, 2, 0.1f);
+                blockExplosion(block, 2, 0.4f);
+                for (int debris : { 2, 1, 2, 1 })
+                    blockDebris(block, debris, 0, fifth);
+                blockDebris(block, 14 + util::random()%3, 0, glm::half_pi<float>());
+                // and a big one on its side towards the player
+                const Vector3D center = blockCenter(block);
+                const Vector3D way = m_scenario->player() ? m_scenario->player()->position() - center : Vector3D(0);
+                const float r = blockRadius(block);
+                const Vector3D at = center + (glm::length(way) > 1.0f ? glm::normalize(way)*r : Vector3D(0));
+                Billboard *billboard = m_scenario->effectManager().getBillboard(Effects::Explosion_2);
+                m_scenario->effectManager().addEffect(Effects::Explosion_2, at, 0, 0.35f*r/std::max(billboard->sizeScale(), 1e-3f));
+                sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
+                m_scenario->explosionAt(at, 1.0f);
+            }
+            break;
+        case 6:
+            block.destroyed = true;
+            if (block.segment)
+                block.segment->remove();
+            updateLocalBox();
+            updateBox();
+            countDestroyed();
+            break;
+        }
+    }
 }
 
 
