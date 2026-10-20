@@ -183,8 +183,14 @@ protected:
     bool isGroundWrecking() const { return m_groundStep >= 0; }
     bool updateGroundWreck(float elapsedTime);
     void startGroundWreck();
-    void groundExplosion(int type, float spread);
-    void groundDebris(int index, float minElevation, float maxElevation);
+    // the destruction sequence's steps (docs/ROADMAP.md, appendix R), the same for boats, ground
+    // units and the big ships' blocks: when each starts, and its explosions (EXPLOSIO.DES) at
+    // random spots about a centre, scattered over spread radii lengthwise and upwards; a piece of
+    // debris (DEBRIS.DES) flung out of it at an elevation between the two angles
+    static const float WreckTimes[7];
+    void wreckBursts(int step, const Vector3D &centre, float radius);
+    void wreckBurst(int type, float spread, const Vector3D &centre, float radius);
+    void wreckDebris(int index, float minElevation, float maxElevation, const Vector3D &centre, float radius);
     // the explosions due later (a building's)
     void addLaterExplosion(float delay, int type, const Vector3D &position, float scale);
     void updateLaterExplosions();

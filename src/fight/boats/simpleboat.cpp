@@ -429,71 +429,37 @@ bool SimpleBoat::startWreck()
 }
 
 
-void SimpleBoat::wreckExplosion(int type, float spread)
-{
-    const float r = hullRadius();
-    const Vector3D at = m_position + Vector3D((uniform() - 0.5f)*r, (uniform() - 0.5f)*r*spread, uniform()*r*spread);
-    m_scenario->effectManager().addEffect(Effects(int(Effects::Explosion_0) + type), at);
-    sfx::SampleMap::playAt(type < 3 ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
-    m_scenario->explosionAt(at, type < 3 ? 0.6f : 0.3f);
-}
-
-
-void SimpleBoat::wreckDebris(int index, float minElevation, float maxElevation)
-{
-    const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
-    const float elevation = between(minElevation, maxElevation);
-    const Vector3D direction(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation));
-    // 0.1 to 0.6 hull radii out, at the piece's own speed
-    m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), m_position + direction*hullRadius()*between(0.1f, 0.6f), direction);
-}
-
-
 void SimpleBoat::nextWreckStep()
 {
     const bool player = this == m_scenario->player();
     const float fifth = glm::pi<float>()/5;
-    float delay = 0;
+    wreckBursts(m_wreckStep, m_position, hullRadius());
+    // the next step after the times' gap, but see step 4
+    float delay = m_wreckStep >= 0 && m_wreckStep < 6 ? WreckTimes[m_wreckStep + 1] - WreckTimes[m_wreckStep] : 0;
     switch (m_wreckStep)
     {
     case 0:
-        wreckExplosion(0, 0.6f);
-        wreckExplosion(3, 0.6f);
-        wreckExplosion(3, 0.6f);
         if (player)
             for (int index : { 17, 17, 17, 1, 3, 3 })
                 wreckDebris(index, -fifth, fifth);
-        delay = 0.4f;
         break;
     case 1:
-        wreckExplosion(4, 0.5f);
-        delay = 0.5f;
+    case 3:
         break;
     case 2:
-        wreckExplosion(1, 0.4f);
-        wreckExplosion(4, 0.4f);
-        wreckExplosion(4, 0.7f);
         for (int index : { 2, 2, 1, 3, 3 })
             wreckDebris(index, fifth, 2*fifth);
-        delay = 0.4f;
-        break;
-    case 3:
-        wreckExplosion(5, 0.3f);
-        delay = 0.3f;
         break;
     case 4:
-        wreckExplosion(5, 0.6f);
-        wreckExplosion(2, 0.6f);
         if (player)
             for (int index : { 17, 17, 17, 0, 1, 2 })
                 wreckDebris(index, fifth, 2*fifth);
         // a boat that keeps its course goes up when it hits the ground, after five seconds at most
-        delay = m_wreckRuns ? 5.0f : 0.4f;
+        if (m_wreckRuns)
+            delay = 5.0f;
         break;
     case 5:
     {
-        wreckExplosion(2, 0.1f);
-        wreckExplosion(2, 0.4f);
         for (int index : { 2, 2, 2, 1, 3, 3 })
             wreckDebris(index, -fifth, fifth);
         // the wreck: the player's boat leaves one body, another boat none to three

@@ -122,11 +122,8 @@ protected:
     // big ships push through; the others steer round them
     virtual bool collidesWithObjects() const { return true; }
     bool startWreck() override;
-    // the sequence's bursts: explosion type (EXPLOSIO.DES) at a random spot of the hull, scattered
-    // over spread hull radii lengthwise and upwards; a piece of debris (DEBRIS.DES) flung out at an
-    // elevation between the two angles
-    void wreckExplosion(int type, float spread);
-    void wreckDebris(int index, float minElevation, float maxElevation);
+    // a piece of debris flung out of the hull (ActiveObject::wreckDebris)
+    void wreckDebris(int index, float minElevation, float maxElevation) { ActiveObject::wreckDebris(index, minElevation, maxElevation, m_position, hullRadius()); }
     void nextWreckStep();
 
 protected:
