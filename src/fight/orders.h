@@ -143,6 +143,7 @@ private:
     void dropTarget();
     bool freshHit();
     void switchTarget(ActiveObject *target);
+    Vector3D escortStation(const SimpleBoat *escorted, const OrderSlot &slot) const;
 
     // --- fighting
     Vector3D lead(const ActiveObject *target) const;

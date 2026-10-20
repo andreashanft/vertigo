@@ -571,6 +571,36 @@ ActiveObject* Orders::engage(ActiveObject *target)
 }
 
 
+// the escort's place: the offsets in the escorted unit's frame (nothing behind it), measured from
+// hull to hull
+Vector3D Orders::escortStation(const SimpleBoat *escorted, const OrderSlot &slot) const
+{
+    Vector3D offset = slot.offset;
+    if (offset.y < 0)
+        offset.y = -1;
+    const float gap = glm::length(offset);
+    if (gap > 0)
+    {
+        // along the offset, out of the escorted hull's box, then the escort's own box
+        const Vector3D way = offset/gap;
+        auto extent = [&way](const BoundingBox &box, float sign) {
+            float reach = std::numeric_limits<float>::max();
+            for (int axis = 0; axis < 3; axis++)
+            {
+                const float along = sign*way[axis];
+                if (along > 1e-4f)
+                    reach = std::min(reach, box.maxPoint()[axis]/along);
+                else if (along < -1e-4f)
+                    reach = std::min(reach, box.minPoint()[axis]/along);
+            }
+            return std::max(reach, 0.0f);
+        };
+        offset = way*(extent(escorted->localBox(), 1) + gap + extent(m_boat->localBox(), -1));
+    }
+    return toWorld(escorted, offset);
+}
+
+
 // a new target starts a new fight, and the torpedo run against the old one ends
 void Orders::switchTarget(ActiveObject *target)
 {
@@ -1102,10 +1132,7 @@ void Orders::update()
             // an escort fights only near its place
             if (SimpleBoat *escorted = dynamic_cast<SimpleBoat *>(findUnit(slot.esc)))
             {
-                Vector3D offset = slot.offset;
-                if (offset.y < 0)
-                    offset.y = -1;
-                if (glm::length(toWorld(escorted, offset) - m_unit->position()) > slot.ran)
+                if (glm::length(escortStation(escorted, slot) - m_unit->position()) > slot.ran)
                     dropTarget();
             }
         }
@@ -1260,31 +1287,7 @@ void Orders::update()
                 return;
             }
 
-            // the place: the offsets in the escorted unit's frame (nothing behind it), measured from
-            // hull to hull, within the band
-            Vector3D offset = slot.offset;
-            if (offset.y < 0)
-                offset.y = -1;
-            const float gap = glm::length(offset);
-            if (gap > 0)
-            {
-                // along the offset, out of the escorted hull's box, then the escort's own box
-                const Vector3D way = offset/gap;
-                auto extent = [&way](const BoundingBox &box, float sign) {
-                    float reach = std::numeric_limits<float>::max();
-                    for (int axis = 0; axis < 3; axis++)
-                    {
-                        const float along = sign*way[axis];
-                        if (along > 1e-4f)
-                            reach = std::min(reach, box.maxPoint()[axis]/along);
-                        else if (along < -1e-4f)
-                            reach = std::min(reach, box.minPoint()[axis]/along);
-                    }
-                    return std::max(reach, 0.0f);
-                };
-                offset = way*(extent(escorted->localBox(), 1) + gap + extent(m_boat->localBox(), -1));
-            }
-            const Vector3D target = inBand(toWorld(escorted, offset), slot.mih, slot.mah);
+            const Vector3D target = inBand(escortStation(escorted, slot), slot.mih, slot.mah);
             const float distance = glm::length(target - m_unit->position());
             const float escortedSpeed = glm::length(escorted->velocity());
             if (m_formation && distance > arriveRadius(1.3f*m_boat->maxVelocity()))
