@@ -46,6 +46,13 @@ void Projectile::setDirection(const Vector3D &direction)
 }
 
 
+void Projectile::setOwner(ActiveObject *owner)
+{
+    m_owner = owner;
+    m_faction = owner ? owner->contactFaction() : -1;
+}
+
+
 bool Projectile::update(float elapsedTime)
 {
     m_time += elapsedTime;
@@ -66,7 +73,9 @@ bool Projectile::update(float elapsedTime)
         disable();
         return true;
     }
-    Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache, m_owner);
+    const int faction = m_faction;
+    Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache, m_owner,
+                                                                     [faction](const Object *object) { return ActiveObject::touches(object, faction); });
     // a piece of debris before that stops the shot (docs/ROADMAP.md, appendix Q)
     Particles::DebrisHit debris;
     if (m_scenario->effectManager().hitDebris(m_position, collision ? pos : newPos, m_billboard->collisionRadius(), m_billboard->velocity(), m_kineticStrength, debris))

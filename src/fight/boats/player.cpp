@@ -47,6 +47,7 @@ static ActiveObject::ObjectInfo playerInfo()
 {
     ActiveObject::ObjectInfo info;
     info.iff = Scenario::PlayerFaction;
+    info.faction = true;
     return info;
 }
 

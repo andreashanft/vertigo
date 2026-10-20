@@ -122,6 +122,7 @@ Torpedo::Torpedo(Scenario *scenario, int type, const Vector3D &position, const V
     m_type(*TorpedoType::get(type)),
     m_model(scenario->moduleManager().get(m_type.model)),
     m_owner(owner),
+    m_faction(owner ? owner->contactFaction() : -1),
     m_target(m_type.lockType != 0 ? target : nullptr),
     m_dir(glm::normalize(direction)),
     m_speed(speed + LaunchSpeed),
@@ -309,7 +310,9 @@ bool Torpedo::update(float elapsedTime)
         detonate(position + normal*0.5f, nullptr, true);
         return false;
     }
-    Object *hit = m_scenario->collisionManager().testCollision(m_position, next, 0.5f, position, normal, nullptr, m_owner);
+    const int faction = m_faction;
+    Object *hit = m_scenario->collisionManager().testCollision(m_position, next, 0.5f, position, normal, nullptr, m_owner,
+                                                               [faction](const Object *object) { return ActiveObject::touches(object, faction); });
     // a piece of debris before that: with its armour of 1 the torpedo goes up there
     // (docs/ROADMAP.md, appendix Q)
     Particles::DebrisHit debris;

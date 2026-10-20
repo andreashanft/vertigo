@@ -216,7 +216,10 @@ Scenario::Scenario(const String &name) :
 
         ActiveObject::ObjectInfo info;
         if (m_file.contains("iff"))
+        {
             info.iff = m_file.value("iff").toInt();
+            info.faction = true;
+        }
         if (m_file.contains("inf"))
             info.name = m_file.valueText("inf");
         if (m_file.contains("carg"))

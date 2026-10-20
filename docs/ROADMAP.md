@@ -907,6 +907,15 @@ their own size, which comes within about 10 % of that. Running into a
 mine hits from below the window, so its explosion is mostly hidden by the
 cockpit.
 
+Vertigo applies the faction rule to shots and torpedoes too, each with the
+faction of whoever fired it: they pass through the units, mines and ship
+segments of their own side. Objects without an `iff` in the mission (the
+plain buildings) have no faction, so every shot touches them; the player
+is faction 8, which no unit in the missions shares, so the player's shots
+hit friends (friendly fire, F). Until October 2026 shots and torpedoes hit
+whatever they met, so a unit's shots wore down its own side's buildings and
+escorts.
+
 The same contact table covers debris and trash. In a pair of objects the
 faster one does the testing and must have contacts of its own, so a pair
 only touches when the faster of the two pairs with the other.

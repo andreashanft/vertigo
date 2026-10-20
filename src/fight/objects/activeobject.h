@@ -48,13 +48,14 @@ public:
     struct ObjectInfo
     {
         int iff;
+        bool faction;    // the mission gives the iff (buildings and trash have none)
         String name;
         String cargo;
         int sensor;
         int sensorRange;
         bool sleeps;     // may sleep out of the player's sonar range (sle)
 
-        ObjectInfo() : iff(0), name(""), cargo(""), sensor(-1), sensorRange(0), sleeps(true) { }
+        ObjectInfo() : iff(0), faction(false), name(""), cargo(""), sensor(-1), sensorRange(0), sleeps(true) { }
     };
 
 public:
@@ -71,8 +72,12 @@ public:
     ConditionEvent* eventBoard() { return &m_eventBoard; }
 
     int iff() const { return m_info.iff; }
-    // the faction that decides contacts (docs/ROADMAP.md, appendix Q): only different ones touch
-    virtual int contactFaction() const { return iff(); }
+    // the faction that decides contacts (docs/ROADMAP.md, appendix Q): only different ones touch;
+    // -1 for an object the mission gives none, which everything touches
+    virtual int contactFaction() const { return m_info.faction ? iff() : -1; }
+    // whether a shot or torpedo of the faction (its owner's) touches the object; anything that
+    // isn't a unit always does
+    static bool touches(const Object *object, int faction);
     const String& name() const { return m_info.name; }
     const String& cargo() const { return m_info.cargo; }
     // the unit's sensor (sen, -1 if the mission gives none) and its range (senr, metres, 0 if none);

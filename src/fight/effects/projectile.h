@@ -37,7 +37,7 @@ public:
 public:
     void setPosition(const Vector3D &pos);
     void setDirection(const Vector3D &direction);
-    void setOwner(ActiveObject *owner) { m_owner = owner; }
+    void setOwner(ActiveObject *owner);
     // the light an energy shot gives off; black for a shell
     void setLightColor(const Vector3D &color) { m_lightColor = color; }
     const Vector3D& lightColor() const { return m_lightColor; }
@@ -49,6 +49,7 @@ private:
     Vector3D m_lightColor = Vector3D(0);
     CollisionCache m_collisionCache;
     ActiveObject *m_owner = nullptr; // never hit by its own shots
+    int m_faction = -1;              // the owner's: it passes through that faction's units
 };
 
 

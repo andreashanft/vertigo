@@ -162,6 +162,13 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
 }
 
 
+bool ActiveObject::touches(const Object *object, int faction)
+{
+    const ActiveObject *unit = dynamic_cast<const ActiveObject *>(object);
+    return !unit || faction < 0 || unit->contactFaction() != faction;
+}
+
+
 bool ActiveObject::engageTorpedo(ActiveObject *attacker)
 {
     m_torpedoAttackers.erase(std::remove_if(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), [](ActiveObject *unit) {
