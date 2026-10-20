@@ -135,6 +135,7 @@ private:
 
     // test mode, and the main menu's --keys, --click and --screenshot
     std::unique_ptr<game::Boat> m_boat;
+    std::unique_ptr<game::Boat> m_loadout;   // the boat as fitted out, for each start
     std::unique_ptr<hud::HUD> m_hud;
     std::unique_ptr<fight::Scenario> m_scenario;
     int m_result = ExitSuccess;

@@ -146,6 +146,7 @@ int Vertigo::start()
             }
             m_boat->buy(item.second, item.first);
         }
+        m_loadout.reset(new game::Boat(*m_boat));
 
         m_hud.reset(new hud::HUD());
         m_hud->eventSuccess() += [this]() { finish(ExitSuccess); };
@@ -206,6 +207,9 @@ int Vertigo::start()
 
 void Vertigo::startScenario()
 {
+    // the boat as fitted out again, in place, as the HUD keeps it
+    m_scenario.reset();
+    *m_boat = *m_loadout;
     m_scenario.reset(new fight::Scenario(m_options.scenario));
     // the briefing of the mission that plays the scenario (s00101 of m00101, strai3 of mtrai3)
     const String mission = "m" + m_options.scenario.toLower().mid(1);
