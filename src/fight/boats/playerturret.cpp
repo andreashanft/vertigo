@@ -164,7 +164,7 @@ bool PlayerTurret::isValid(ActiveObject *target) const
         return false;
     for (const auto &torpedo : m_scenario->torpedoes())
         if (torpedo.get() == target)
-            return !torpedo->isDone() && torpedo->owner() != m_player;
+            return !torpedo->isDone() && !torpedo->isBursting() && torpedo->owner() != m_player;
     // not a torpedo in the water: a unit (units are never deleted during a mission), or a torpedo that is gone
     if (m_targetIsTorpedo && target == m_target)
         return false;
@@ -198,14 +198,14 @@ bool PlayerTurret::torpedoAfterPlayer() const
 
 // the nearest torpedo after the player (Claw, Eraser first), else the nearest unit attacking the
 // player (Punisher, Eraser), else the target of an attack order; each on the turret's side, in
-// sight and a contact of the sonar
+// sight and, a vessel, a contact of the sonar (Vertigo's sonar lists no torpedoes)
 ActiveObject* PlayerTurret::search() const
 {
     auto contact = [this](const ActiveObject *object) {
         return std::any_of(m_scenario->sonar().begin(), m_scenario->sonar().end(), [object](const Sonar::SonarEntry &entry) { return entry.object == object; });
     };
     auto usable = [&](ActiveObject *object) {
-        return isValid(object) && onSide(object) && inSight(object) && contact(object);
+        return isValid(object) && onSide(object) && inSight(object) && (isTorpedo(object) || contact(object));
     };
     auto nearer = [this](ActiveObject *a, ActiveObject *b) {
         return !b || glm::length(a->center() - m_player->position()) < glm::length(b->center() - m_player->position());

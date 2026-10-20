@@ -270,6 +270,7 @@ void Player::destroy()
     if (m_scenario->playerDestroyed())
         return;
     m_firing = false;
+    sfx::SampleMap::get(sfx::Sample::Engine).stop();
     m_scenario->destroyPlayer();
     startWreck();
 }
@@ -337,25 +338,15 @@ bool Player::update(float elapsedTime)
     else if (m_surfaceHold && depth > SurfaceReleaseDepth)
         m_surfaceHold = false;
     if (m_surfaceHold)
-    {
         m_scenario->holdThrottle(1.0f);
-        m_speedBoost = m_accelerationBoost = 1.0f;
-    }
-
-    updateVelocity(elapsedTime);
-    if (m_surfaceHold)
-        m_velocity.z -= 9.81f*elapsedTime;
-    rechargeEnergy(elapsedTime);
-    if (m_fixer)
-        updateFixer();
 
     // the booster (docs/ROADMAP.md, appendix K) draws from the same pool: held, it starts (again)
     // once the pool is at 0.8, costing 0.15 at once and 1.2 per second while the engine keeps
     // recharging, doubles the top speed and raises the acceleration 2.5-fold, and stops when the
-    // pool is below 0.05
-    if (m_boosting && (!m_boostKey || m_energy < 0.05f))
+    // pool is below 0.05; in the surface hold it does nothing
+    if (m_boosting && (!m_boostKey || m_energy < 0.05f || m_surfaceHold))
         m_boosting = false;
-    if (!m_boosting && m_boostKey && m_hasBooster && m_energy >= 0.8f)
+    if (!m_boosting && m_boostKey && m_hasBooster && m_energy >= 0.8f && !m_surfaceHold)
     {
         m_boosting = true;
         drawEnergy(0.15f);
@@ -365,6 +356,13 @@ bool Player::update(float elapsedTime)
         drawEnergy(1.2f*elapsedTime);
     m_speedBoost = m_boosting ? 2.0f : 1.0f;
     m_accelerationBoost = m_boosting ? 2.5f : 1.0f;
+
+    updateVelocity(elapsedTime);
+    if (m_surfaceHold)
+        m_velocity.z -= 9.81f*elapsedTime;
+    rechargeEnergy(elapsedTime);
+    if (m_fixer)
+        updateFixer();
 
     if (m_engineState == EngineStartup && m_engineTime < m_scenario->time())
     {
@@ -581,7 +579,7 @@ void Player::cycleFixer()
     // automatic, armour, gun, torpedo, turret 1, turret 2 (the turrets only if the boat has them)
     int next = m_fixerForced + 1;
     if (next == 4 && !m_turrets[0])
-        next = 0;
+        next = 5;
     if (next == 5 && !m_turrets[1])
         next = 0;
     if (next > 5)
@@ -592,7 +590,7 @@ void Player::cycleFixer()
 }
 
 
-// the first system below the threshold in the order armour (the side under repair, or none),
+// the first system below the threshold in the order armour (the side under repair; intact while none is),
 // gun, torpedo, turrets; 0 if none is
 int Player::fixerChoice(float threshold) const
 {
