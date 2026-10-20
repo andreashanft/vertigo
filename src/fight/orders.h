@@ -128,6 +128,9 @@ private:
     bool detects(const ActiveObject *unit, float rangeFactor) const;
     bool hears(const ActiveObject *unit, float distance2) const;
     bool sees(const ActiveObject *unit) const;
+    // nothing of the terrain between the unit's centre and the target's: a unit holds its fire
+    // otherwise
+    bool clearShot(const ActiveObject *target) const;
     static bool isBuzzer(const ActiveObject *unit);
     // what the sensor finds, looked for every 1.5 s (0.7 s with sen 3 and 4)
     ActiveObject* scan();

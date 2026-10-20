@@ -65,6 +65,8 @@ public:
     void invalidate(int x, int y);
     // that share at a point of the map (in cells), between the corners
     float lightFactor(float x, float y) const;
+    // where the way from start to end, swept by the radius, first meets the ground; the way may be
+    // long (a line of sight), it is followed in steps of half a cell
     bool testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal);
 
 private:
