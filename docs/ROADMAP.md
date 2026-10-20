@@ -486,8 +486,10 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   plasma shot 1 m, and the sparks of a hit 0.8 to 2.4 m. Vertigo had the
   sprites at the `[Anim] Scale` times 4/255 of the frame, about two thirds
   of that for the explosions and half for the shots.
-- Sprite blending (read off in October 2026): with `Transparency = 1` in
-  `CONFIG.DES` (the default) the explosions, the shots and the torpedo
+- Sprite blending (read off in October 2026): `Transparency` is a toggle
+  in the desktop's options, read from `CONFIG.DES` (1 there) and handed to
+  the fight in `FIGHTIN.DES`; the GOG installation's last `FIGHTIN.DES`
+  has 0, and Vertigo always blends as with 1. With 1 the explosions, the shots and the torpedo
   trails' bubbles (entries 21–23) are additive: each
   channel becomes about what was behind plus the sprite's colour, clipped at
   full, so overlapping sprites get brighter up to white. Exactly, in RGB565,
