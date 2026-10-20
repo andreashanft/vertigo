@@ -1180,7 +1180,11 @@ Read off in October 2026. All 22 types share one behaviour, with their
   60° apart and then twelve (`SHOOT.DES` 8) 30° apart starting 15° on, each
   from a metre out round the burst, level and a little upwards (a fifth of
   their way); a second later the same again from 6.25 m out, turned by 30°.
-  The shards fly 31 m at 9.4 m/s with a strength of 7600 each. Every
+  The shards fly 31 m at 9.4 m/s with a strength of 7600 each, following
+  the terrain: their way over the ground stays as launched, while their
+  speed up or down is 10 m/s towards one of their radii over the ground,
+  never lower than half a radius (Vertigo let them fly level from the
+  burst's height until October 2026). Every
   0.35 s each shard of the first ring leaves a large puff (`EXPLOSIO.DES`
   5) behind it, 5 m from centre to edge times the share of its way it has
   flown, at least 0.6, which makes the burst a cloud of fire.

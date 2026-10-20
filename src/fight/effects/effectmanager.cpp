@@ -161,6 +161,7 @@ Projectile* EffectManager::addProjectile(Effects projectile, const Vector3D &pos
     if (glows(projectile))
         object->setLightColor(billboard->lightColor());
     object->setPuffs(projectile == Effects::Shoot_7);
+    object->setHugsGround(projectile == Effects::Shoot_7 || projectile == Effects::Shoot_8);
     return object;
 }
 

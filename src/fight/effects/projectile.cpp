@@ -20,6 +20,7 @@
 #include "fight/scenario.h"
 #include "sfx/samplemap.h"
 #include "util/random.h"
+#include <algorithm>
 
 
 namespace fight {
@@ -65,9 +66,19 @@ bool Projectile::update(float elapsedTime)
     }
 
     Vector3D newPos = m_originPos + m_direction*(m_time*m_billboard->velocity());
+    // a shard keeps its way over the ground, but makes at 10 m/s for one of its radii over the
+    // ground, never coming lower than half a radius (docs/ROADMAP.md, appendix S)
+    if (m_hugsGround)
+    {
+        const float radius = m_billboard->box().maxPoint().x;
+        newPos.z = m_position.z;
+        const float ground = m_scenario->surface().heightAt(newPos.x, newPos.y);
+        newPos.z += (newPos.z < ground + radius ? HugSpeed : -HugSpeed)*elapsedTime;
+        newPos.z = std::max(newPos.z, ground + 0.5f*radius);
+    }
 
     Vector3D pos, normal;
-    if (m_scenario->surface().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal))
+    if (!m_hugsGround && m_scenario->surface().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal))
     {
         m_scenario->effectManager().addEffect(Effects::Explosion_12, pos);
         disable();
