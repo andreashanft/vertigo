@@ -19,6 +19,7 @@
 #include "billboard.h"
 #include "fight/scenario.h"
 #include "util/random.h"
+#include "sfx/samplemap.h"
 
 #include <glm/gtx/norm.hpp>
 
@@ -61,10 +62,15 @@ bool Trash::intersect(const Vector3D &start, const Vector3D &dir, float radius, 
 }
 
 
+// trash goes out in a puff and leaves no debris (docs/ROADMAP.md, appendix Q)
 void Trash::destroy()
 {
+    if (m_eventDestroy.isCompleted())
+        return;
     m_scenario->effectManager().addEffect(Effects::Explosion_5, m_position, 0, glm::length2(m_box.dim()) > 15 ? 2 : 1);
-    ActiveObject::destroy();
+    sfx::SampleMap::playAt(sfx::Sample::Explosion_Small, m_position.x, m_position.y, m_position.z);
+    vanish();
+    countDestroyed();
 }
 
 

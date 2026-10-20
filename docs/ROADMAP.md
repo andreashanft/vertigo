@@ -923,6 +923,7 @@ only touches when the faster of the two pairs with the other.
   faction in the scenarios, which makes it faction 10. It pairs only with
   shots, debris, torpedoes and mines, so the player and the other boats
   pass through it, and an active mine that runs into it goes up with it.
+  Destroyed, it goes out in a large puff (entry 5) and leaves no debris.
 
 Vertigo does the same. Buzzers and the Torch's torch are debris like the
 rest: they draw torpedoes while they last (appendix S) and go out on the
