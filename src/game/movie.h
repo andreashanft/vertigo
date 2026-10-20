@@ -26,6 +26,7 @@
 #include "gfx/font.h"
 
 #include <functional>
+#include <set>
 #include "util/string.hpp"
 
 namespace game {
@@ -54,6 +55,8 @@ private:
     void draw();
     void keyPressEvent(input::KeyEvent *);
     void mousePressEvent(input::MouseEvent *);
+    void touchPressEvent(input::TouchEvent *);
+    void touchReleaseEvent(input::TouchEvent *);
 
 private:
     String m_filename;
@@ -69,6 +72,7 @@ private:
     gfx::Texture m_texture;
     sfx::Stream m_stream;
     bool m_pause;
+    std::set<long long> m_touches; // fingers put down on the movie
     std::function<void()> m_funcFinished;
 };
 
