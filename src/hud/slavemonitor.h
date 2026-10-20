@@ -55,7 +55,6 @@ public:
 public:
     Page page() const { return m_page; }
     void setPage(Page page) { m_page = page; }
-    void showWeapon(Weapon weapon) { m_weapon = weapon; }
     // F1-F4: the weapon's page, or the overview if that page is showing, or back
     void pressWeaponKey(Weapon weapon);
 

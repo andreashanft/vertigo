@@ -653,8 +653,6 @@ Scenario::~Scenario()
 
 void Scenario::setBoat(game::Boat *boat)
 {
-    //if (boat->gun() == 3081)
-    //    boat->buy(3083, "GUN"); // TODO: remove
     m_player.reset(new Player(this, boat, m_yaw));
     m_player->setPosition(m_position);
 

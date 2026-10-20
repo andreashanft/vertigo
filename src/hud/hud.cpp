@@ -413,6 +413,7 @@ void HUD::start(fight::Scenario *scenario)
     m_deathTime = -1;
     m_menu->setOverView(false);
     m_menu->open(MissionMenu::Page::None);
+    m_pages->close();
     m_scenario->headMotion().setStrength(headMotion());
     // the CD's audio tracks, as the game data import copies them out of the CD image, at half
     // the volume (CD audio is mastered louder than the game's sounds)

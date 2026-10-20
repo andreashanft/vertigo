@@ -26,6 +26,7 @@
 #include "gfx/image.h"
 
 #include <algorithm>
+#include <map>
 #include <cmath>
 
 
@@ -120,9 +121,15 @@ namespace {
 // GLOBWEAP [TorpedoMagazineN] shortname for the magazine items 1025-1032
 String magazineShortName(int item)
 {
-    txt::DesFile file("vfx:sobjects/globweap.des");
-    file.setSection(String("torpedomagazine%1").arg(item - 1025));
-    return file.value("shortname").toString();
+    static std::map<int, String> names;
+    auto it = names.find(item);
+    if (it == names.end())
+    {
+        txt::DesFile file("vfx:sobjects/globweap.des");
+        file.setSection(String("torpedomagazine%1").arg(item - 1025));
+        it = names.emplace(item, file.value("shortname").toString()).first;
+    }
+    return it->second;
 }
 
 // a gun's rounds as the overview shows them: "ENER" for an energy gun, the count in green above
@@ -319,9 +326,8 @@ void SlaveMonitor::drawSystems(const Rect &rect)
     const int nameWidth = green.width("xxx: ");
     const int x = rect.x + (rect.width - nameWidth - BarWidth)/2;
     int y = rect.y + 14;
-    int system = 0;
-    auto row = [&](const String &name, float condition) {
-        system++;
+    // system: the Fixer's number for it, 1 armour, 2 gun, 3 torpedo, 4 and 5 the turrets
+    auto row = [&](const String &name, float condition, int system) {
         // green above a half, yellow above a quarter, red below
         const int band = condition > 0.5f ? 0 : condition > 0.25f ? 1 : 2;
         gfx::Font &font = band == 0 ? green : band == 1 ? m_hud->fontYellow() : m_hud->fontRed();
@@ -342,12 +348,12 @@ void SlaveMonitor::drawSystems(const Rect &rect)
     for (int side = 0; side < 4; side++)
         if (player->shieldMax(side) > 0)
             armor = std::min(armor, float(player->shield(side))/player->shieldMax(side));
-    row("ARMO", armor);
-    row("GUN", player->playerGun().defect());
-    row("TORP", player->magazineCondition());
+    row("ARMO", armor, 1);
+    row("GUN", player->playerGun().defect(), 2);
+    row("TORP", player->magazineCondition(), 3);
     for (int i = 0; i < 2; i++)
         if (const fight::PlayerTurret *turret = player->turret(i))
-            row(String("TUR%1").arg(i + 1), turret->gun().defect());
+            row(String("TUR%1").arg(i + 1), turret->gun().defect(), 4 + i);
     if (player->hasFixer())
     {
         y += 2;
