@@ -89,7 +89,7 @@ plans, level pipelines and the darkened ground under buildings and towers
 (N); the AI feeling hits only through its energy defence, attack runs that
 turn when the terrain is in the way, escorts placed from hull to hull (J),
 active mines going up on buildings and decoys going out like other
-debris (Q); additive explosions and shots, and the tanks' and
+debris (Q); additive explosions, shots and torpedo bubbles, and the tanks' and
 crawlers' dust (H); the tanks' fixed guns (J); the ground units' and big
 ships' destruction, boats braking as they blow up, and units counting as
 destroyed once they are gone (R, A); paralysed tanks and towers (J); the
@@ -476,15 +476,16 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   sprites at the `[Anim] Scale` times 4/255 of the frame, about two thirds
   of that for the explosions and half for the shots.
 - Sprite blending (read off in October 2026): with `Transparency = 1` in
-  `CONFIG.DES` (the default) the explosions and the shots are additive: each
+  `CONFIG.DES` (the default) the explosions, the shots and the torpedo
+  trails' bubbles (entries 21–23) are additive: each
   channel becomes about what was behind plus the sprite's colour, clipped at
   full, so overlapping sprites get brighter up to white. Exactly, in RGB565,
   twice (half the colour behind + 0.5125 of the sprite's colour from its
   `MOD_nnn.S16` table, as the models take theirs). Palette entry 0 is left
-  out. The ground dust (18–20 and 24–26), the bubbles, the debris and the
-  trash cover what is behind them at their full colour (the original's
-  pictures: dark blue bubbles over bright ground, brown dust over the
-  water), as all sprites do with `Transparency = 0`. Vertigo had only the
+  out. The ground dust (18–20 and 24–26), the ambient bubbles
+  (`BUBBLE.DES`), the debris and the trash cover what is behind them at
+  their full colour (the original's pictures: dark blue ambient bubbles
+  over bright ground, brown dust over the water), as all sprites do with `Transparency = 0`. Vertigo had only the
   explosions 0–11 and the shots blending, darker than additive.
 - Tank dust (read off in October 2026): while a tank drives, one puff every
   0.2 to 0.3 s behind one of its tracks, picked at random, 0.6 to 1.1 of
