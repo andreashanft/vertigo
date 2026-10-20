@@ -132,6 +132,21 @@ String magazineShortName(int item)
     return it->second;
 }
 
+// the magazine's state as GLOBWEAP [TorpedoMagazineStateN] names it, short or verbose
+String magazineState(const fight::Player *player, bool shortName)
+{
+    static std::map<int, std::pair<String, String>> names;
+    const int state = int(player->magazineState());
+    auto it = names.find(state);
+    if (it == names.end())
+    {
+        txt::DesFile file("vfx:sobjects/globweap.des");
+        file.setSection(String("torpedomagazinestate%1").arg(state));
+        it = names.emplace(state, std::make_pair(file.value("short").toString(), file.value("verbose").toString())).first;
+    }
+    return shortName ? it->second.first : it->second.second;
+}
+
 // a gun's rounds as the overview shows them: "ENER" for an energy gun, the count in green above
 // 50 and in red up to 50, "----" in red once they are gone
 std::pair<String, bool> roundsCell(const fight::Gun &gun)
@@ -170,7 +185,7 @@ void SlaveMonitor::drawOverview(const Rect &rect)
     const int selected = player->selectedTorpedo();
     const fight::TorpedoType *torpedo = selected >= 0 ? fight::TorpedoType::get(player->torpedoes()[selected] - 1) : nullptr;
     const bool ready = torpedo && player->torpedoReady();
-    row(2, magazineShortName(boat->magazine()), torpedo ? torpedo->shortName : String("----"), !torpedo, !torpedo ? "EMP" : ready ? "RDY" : "ARM", !ready);
+    row(2, magazineShortName(boat->magazine()), torpedo ? torpedo->shortName : String("----"), !torpedo, magazineState(player, true), !ready);
 
     for (int i = 0; i < 2; i++)
         if (const fight::PlayerTurret *turret = player->turret(i))
@@ -220,10 +235,9 @@ void SlaveMonitor::drawWeapon(const Rect &rect)
         {
             const int selected = player->selectedTorpedo();
             const fight::TorpedoType *torpedo = selected >= 0 ? fight::TorpedoType::get(player->torpedoes()[selected] - 1) : nullptr;
-            // GLOBWEAP [TorpedoMagazineStateN]: Ready, Rearming, Empty
             const bool ready = torpedo && player->torpedoReady();
             lines.emplace_back(itemName(boat->magazine()), &green);
-            lines.emplace_back(!torpedo ? "EMPTY" : ready ? "READY" : "REARMING", ready ? &green : &red);
+            lines.emplace_back(magazineState(player, false), ready ? &green : &red);
             if (torpedo)
             {
                 lines.emplace_back(torpedo->name, &green);

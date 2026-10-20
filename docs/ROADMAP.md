@@ -439,6 +439,7 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 | # | Use |
 |---|---|
 | 6 / 7 / 9 / 10 | threat / lock-on / torpedo lock-on / alert beeps |
+| 5 / 20 | keyboard click (Tab and Enter among others) / the magazine loading a torpedo ("revolver reload") |
 | 29 | booster |
 | 67 / 72 / 77 / 81 / 82 | voices: target locked / system collapse / torpedo ready / lock-on located / torpedo threat |
 | 4 / 21 / 23 / 24 / 34 / 35 | engines: torpedo / turret / enemy 1 / enemy 2 / biont / big ship |
@@ -1086,6 +1087,25 @@ Read off in October 2026. All 22 types share one behaviour, with their
   squared, so a hostile torch draws them when it is louder than their
   target; all others (99) are never drawn away. A drawn torpedo makes for
   the decoy and is spent (as below) once the decoy is gone.
+- **The player's magazine** holds its torpedoes in a ring, one loaded in
+  the tube and one selected. Its states are GLOBWEAP's
+  `[TorpedoMagazineStateN]`: ready, rearming, jammed, empty and waiting.
+  Tab (with a click, sample 5, whether or not anything leaves) fires the
+  loaded torpedo while the magazine is ready or waiting; it may jam first
+  as a gun does (the condition, at least 0.2, against a random share of
+  the magazine's `defectdamping`; jammed for `defectdelay` times 0.5 to
+  1.5, then ready). Enter (also a click) selects the next torpedo: one of
+  the loaded type is simply ready unless the magazine is waiting or
+  rearming, any other makes it wait. After a launch the selection moves on
+  past itself and the magazine waits as well. Waiting lasts 2 s; then the
+  selected torpedo is loaded with the revolver's sound (sample 20) for the
+  magazine's `rearmingtime`, and once it is in, the voice says "torpedo
+  ready" (77). A lock's completion plays the torpedo lock beep (9) and the
+  "target locked" voice (67). The weapons' own voice files (`sfvname`:
+  `cockpit\gunNN`, `tomaNN`, `torNN`) are on neither the installation nor
+  the CD, so they never play. Vertigo does the same; it used to load at
+  once, without the 2 s or the sound, said "torpedo ready" at the lock and
+  sounded an error on Tab while loading.
 - **THREAT** (appendix D) blinks while homing torpedoes are after the
   player; the nearest of them decides its colour: yellow (`HUDTHREY`) for
   one a buzzer can draw away (`sen` 3 or 4: the Thresher, Bull, Tiger and

@@ -44,14 +44,19 @@ public:
     int shield(int index) const { return m_shield[index]; };
     const Gun& playerGun() const { return m_gun; }
 
-    // torpedoes: Tab fires the selected one, Enter selects the next; homing ones need the target
+    // torpedoes: Tab fires the loaded one, Enter selects the next; homing ones need the target
     // locked (and in front) for their lock time; Backspace/D drops a buzzer (a decoy)
     void fireTorpedo();
     void selectNextTorpedo();
     void dropBuzzer();
     const std::vector<int>& torpedoes() const { return m_torpedoItems; } // item numbers 1-22
     int selectedTorpedo() const { return m_selectedTorpedo; }            // index, -1 if none
-    bool torpedoReady() const;
+    // the magazine (docs/ROADMAP.md, appendix S), its states numbered as GLOBWEAP's
+    // [TorpedoMagazineStateN]: ready, rearming (loading the selected torpedo), jammed, empty, and
+    // waiting the 2 s before a different torpedo is loaded, during which the loaded one still fires
+    enum class MagazineState { Ready = 0, Rearming = 1, Jammed = 3, Empty = 4, Waiting = 5 };
+    MagazineState magazineState() const { return m_magazineState; }
+    bool torpedoReady() const { return m_magazineState == MagazineState::Ready; }
     ActiveObject* lockTarget() const { return m_lockTarget; }
     float lockProgress() const; // 0-1, 1 when a homing torpedo would follow the target
     float lockRemaining() const; // seconds until the lock is complete
@@ -96,8 +101,14 @@ private:
     game::Boat *m_boat;
     std::vector<int> m_torpedoItems;
     int m_selectedTorpedo;
-    float m_torpedoReady;
+    int m_loadedTorpedo;        // index, -1 while none is in the tube
+    MagazineState m_magazineState;
+    float m_magazineTime = 0;   // when the waiting, rearming or jam ends
     float m_rearmingTime;
+    float m_magazineDamping = 0;
+    float m_magazineDelay = 0;
+    static constexpr float MagazineWait = 2.0f;   // s before a different torpedo is loaded
+    void updateMagazine();
     ActiveObject *m_lockTarget;
     float m_lockTime;
     bool m_lockAnnounced;
