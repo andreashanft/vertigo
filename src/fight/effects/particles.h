@@ -84,12 +84,11 @@ public:
         int faction;
         float noise;
         Vector3D position;
+        Vector3D velocity;
     };
     // adds a piece of debris as a decoy; false if it wasn't added
     bool addDecoy(Billboard *billboard, Decoy kind, int faction, const Vector3D &position, const Vector3D &velocity, float angle);
     void decoys(std::vector<DecoyInfo> &decoys) const;
-    // where that decoy is and how it moves, false once it is gone
-    bool decoy(int id, Vector3D &position, Vector3D &velocity) const;
 
     void update(float elapsedTime);
     void draw();

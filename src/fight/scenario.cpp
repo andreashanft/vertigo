@@ -1114,18 +1114,31 @@ int Scenario::threatsTo(const ActiveObject *unit) const
 // a buzzer or torch put out since the last frame becomes a contact; the others follow their decoys
 void Scenario::updateDecoyContacts()
 {
+    m_decoys.clear();
+    m_effectManager.particles().decoys(m_decoys);
     for (const auto &contact : m_decoyContacts)
         contact->follow();
-    std::vector<Particles::DecoyInfo> decoys;
-    m_effectManager.particles().decoys(decoys);
     int last = m_lastDecoyContact;
-    for (const Particles::DecoyInfo &decoy : decoys)
+    for (const Particles::DecoyInfo &decoy : m_decoys)
         if (decoy.id > m_lastDecoyContact)
         {
             m_decoyContacts.push_back(std::make_unique<DecoyContact>(this, decoy));
             last = std::max(last, decoy.id);
         }
     m_lastDecoyContact = last;
+}
+
+
+bool Scenario::decoy(int id, Vector3D &position, Vector3D &velocity) const
+{
+    for (const Particles::DecoyInfo &decoy : m_decoys)
+        if (decoy.id == id)
+        {
+            position = decoy.position;
+            velocity = decoy.velocity;
+            return true;
+        }
+    return false;
 }
 
 
@@ -1141,8 +1154,7 @@ int Scenario::lure(const Torpedo *torpedo) const
         return 0;
     const float range2 = torpedo->type().sensorRange*torpedo->type().sensorRange;
     const Vector3D &position = torpedo->position();
-    std::vector<Particles::DecoyInfo> decoys;
-    m_effectManager.particles().decoys(decoys);
+    const std::vector<Particles::DecoyInfo> &decoys = m_decoys;
 
     int buzzer = 0;
     float nearest = range2;

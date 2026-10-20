@@ -97,20 +97,7 @@ void Particles::decoys(std::vector<DecoyInfo> &decoys) const
 {
     for (const Particle &particle : m_particles)
         if (particle.decoy != Decoy::None)
-            decoys.push_back(DecoyInfo{ particle.id, particle.decoy, particle.faction, particle.billboard->noiseLevel(), particle.position });
-}
-
-
-bool Particles::decoy(int id, Vector3D &position, Vector3D &velocity) const
-{
-    for (const Particle &particle : m_particles)
-        if (particle.decoy != Decoy::None && particle.id == id)
-        {
-            position = particle.position;
-            velocity = particle.velocity;
-            return true;
-        }
-    return false;
+            decoys.push_back(DecoyInfo{ particle.id, particle.decoy, particle.faction, particle.billboard->noiseLevel(), particle.position, particle.velocity });
 }
 
 
