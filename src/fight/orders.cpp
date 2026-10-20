@@ -1126,12 +1126,20 @@ void Orders::update()
 
     // a big ship takes Patrol and Attack to the order's cell, at mih over the ground, and stays
     // there once it is within reach of it, until the time is up; Escort, Ambush and
-    // GotoWithInfiltrate leave it where it is (docs/ROADMAP.md, appendix A)
+    // GotoWithInfiltrate leave it where it is, Escort and GotoWithInfiltrate ending as a boat's do
+    // once the escorted unit or the target is gone (docs/ROADMAP.md, appendix A)
     if (m_boat->isBigShip() && slot.type != OrderSlot::Goto && slot.type != OrderSlot::GotoWithArrive)
     {
         m_unit->setTrigger(false);
         if (slot.type != OrderSlot::Patrol && slot.type != OrderSlot::Attack)
         {
+            ActiveObject *escorted = slot.type == OrderSlot::Escort ? findUnit(slot.esc) : nullptr;
+            if ((slot.type == OrderSlot::Escort && (!escorted || escorted->isDying())) ||
+                (slot.type == OrderSlot::GotoWithInfiltrate && !isAlive(findUnit(slot.ene))))
+            {
+                next();
+                return;
+            }
             m_boat->hold();
             return;
         }

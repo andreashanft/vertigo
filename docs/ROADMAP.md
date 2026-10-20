@@ -237,7 +237,9 @@ differ from a boat's: Patrol and Attack take it to the order's cell
 centre at `mih` over the ground, where it stops once within reach and
 waits out `dur` (so the Big Fat Mama, whose patrol is its own cell, never
 moves); Escort, Ambush, the cardinal orders and GotoWithInfiltrate leave it
-where it is; Wait, Goto, GotoWithArrive and Explode work as for boats.
+where it is (no scenario gives a big ship an Escort or GotoWithInfiltrate;
+Vertigo ends them as a boat's once the escorted unit or the target is
+gone); Wait, Goto, GotoWithArrive and Explode work as for boats.
 Vertigo patrolled them from random point to point until October 2026. The master monitor shows a
 picture chosen by the ship file's comment: `SHPSEACO` (bship0), `SHPTRITO`
 (1, 8), `SHPPOLAR` (2, 9), `SHPINDER` (3, 10), `SHPBIONT` (4, 7), `SHPBFM`
