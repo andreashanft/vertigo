@@ -142,6 +142,12 @@ bool Mine::collidesWith(const ActiveObject *unit) const
 
 void Mine::collide(Object *object, const Vector3D &contact)
 {
+    // a ground plan in the way: the mine goes up on it, whatever the plan's strength
+    if (dynamic_cast<Building *>(object))
+    {
+        destroy();
+        return;
+    }
     const int kinetic = object->kineticStrength(), shock = object->shockStrength();
     if (ActiveObject *unit = dynamic_cast<ActiveObject *>(object))
         unit->damage(m_kineticStrength, m_shockStrength, contact);
