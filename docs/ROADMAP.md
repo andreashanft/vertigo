@@ -1126,6 +1126,15 @@ Read off in October 2026. All 22 types share one behaviour, with their
   colours (hostile `A060`, friendly or without IFF `4407`, the locked target
   `8C71`). Vertigo draws the torpedoes in the voxel radar; its other radars
   still leave them out.
+- **The units' buzzers**: a boat's `[BuzzerMagazine]` looks every
+  `EjectDelay` (at most every second before its first buzzer) whether a
+  torpedo after it is within `EjectRange` (80 m); if so, with
+  `EjectProbability` it ejects one from `Relative*` (the tail if none is
+  given) at normalize(2 × up − nose) × `EjectVelocity` on top of its own
+  velocity, of its faction. `Type` 0 throws one that works four times in
+  ten (`DEBRIS.DES` 19, else the dummy 21), 1 nine times in ten (18, else
+  20), 2 none (the tanks, the bionts, some scouts). Vertigo did not let the
+  units throw buzzers until October 2026.
 - **Buzzers**: the player's buzzer leaves the tail upwards and backwards
   (twice the boat's up less its nose) at 12.5 m/s on top of the boat's own
   velocity; nine in ten are buzzers (`DEBRIS.DES` 18), one in ten a dummy
