@@ -337,18 +337,17 @@ void ActiveObject::wreckBurst(int type, float spread, const Vector3D &centre, fl
 
 void ActiveObject::wreckDebris(int index, float minElevation, float maxElevation, const Vector3D &centre, float radius)
 {
-    // the bodies stay where the hull was (docs/ROADMAP.md, appendix R)
-    if (index >= 14 && index <= 16)
-    {
-        m_scenario->effectManager().addBody(Effects(int(Effects::Debris_0) + index), centre);
-        return;
-    }
     auto between = [](float min, float max) { return min + (max - min)*util::random()/float(RAND_MAX); };
     const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
     const float elevation = between(minElevation, maxElevation);
     const Vector3D direction(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation));
-    // 0.1 to 0.6 radii out, at the piece's own speed
-    m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), centre + direction*radius*between(0.1f, 0.6f), direction);
+    // 0.1 to 0.6 radii out, at the piece's own speed; the bodies stay there (docs/ROADMAP.md,
+    // appendix R)
+    const Vector3D position = centre + direction*radius*between(0.1f, 0.6f);
+    if (index >= 14 && index <= 16)
+        m_scenario->effectManager().addBody(Effects(int(Effects::Debris_0) + index), position);
+    else
+        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), position, direction);
 }
 
 
