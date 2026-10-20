@@ -148,6 +148,7 @@ Projectile* EffectManager::addProjectile(Effects projectile, const Vector3D &pos
     object->setOwner(owner);
     if (glows(projectile))
         object->setLightColor(billboard->lightColor());
+    object->setPuffs(projectile == Effects::Shoot_7);
     return object;
 }
 

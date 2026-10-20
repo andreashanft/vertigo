@@ -98,6 +98,16 @@ bool Projectile::update(float elapsedTime)
     }
 
     m_position = newPos;
+    // each puff 5 m from its centre to its edge, times the share of its way the shard has flown,
+    // at least 0.6
+    if (m_puffs && m_time >= m_nextPuff)
+    {
+        Billboard *puff = m_scenario->effectManager().getBillboard(Effects::Explosion_5);
+        const float share = glm::clamp(m_time*m_billboard->velocity()/std::max(m_billboard->range(), 0.01f), 0.6f, 1.0f);
+        const float sprite = puff ? puff->box().maxPoint().x : 1.0f;
+        m_scenario->effectManager().addEffect(Effects::Explosion_5, m_position, 0, PuffSize*share/std::max(sprite, 0.01f));
+        m_nextPuff += PuffInterval;
+    }
     return false;
 }
 

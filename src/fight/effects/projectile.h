@@ -41,6 +41,8 @@ public:
     // the light an energy shot gives off; black for a shell
     void setLightColor(const Vector3D &color) { m_lightColor = color; }
     const Vector3D& lightColor() const { return m_lightColor; }
+    // the Cluster Bomb's first shards leave a large puff every 0.35 s (docs/ROADMAP.md, appendix S)
+    void setPuffs(bool puffs) { m_puffs = puffs; }
     bool update(float elapsedTime);
 
 private:
@@ -50,6 +52,10 @@ private:
     CollisionCache m_collisionCache;
     ActiveObject *m_owner = nullptr; // never hit by its own shots
     int m_faction = -1;              // the owner's: it passes through that faction's units
+    bool m_puffs = false;
+    float m_nextPuff = PuffInterval;
+    static constexpr float PuffInterval = 0.35f;
+    static constexpr float PuffSize = 5.0f;   // m
 };
 
 
