@@ -723,7 +723,8 @@ void Scenario::update(float elapsedTime)
                 const float radius = m_sonar.passiveRange() + sleepMargin;
                 if (unit->isAsleep())
                 {
-                    if (distance > radius)
+                    // one destroyed while asleep wakes for its destruction sequence
+                    if (distance > radius && !unit->isDying())
                         continue;
                     unit->wake();
                 }

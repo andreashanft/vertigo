@@ -471,7 +471,8 @@ void ActiveObject::leaveMission()
 
 bool ActiveObject::canSleep() const
 {
-    return !m_tumbling && (!m_orders || m_orders->mayPause());
+    // a unit in its destruction sequence runs it to the end, so that it counts as destroyed
+    return !m_tumbling && !isDying() && (!m_orders || m_orders->mayPause());
 }
 
 
