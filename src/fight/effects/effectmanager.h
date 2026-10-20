@@ -78,6 +78,7 @@ private:
     std::map<Effects, Billboard> m_billboards;
     std::list<std::unique_ptr<Effect>> m_effects;  // projectiles
     Particles m_particles;
+    std::vector<Particles::DecoyInfo> m_decoys;   // pointLights()' list, kept for its memory
 };
 
 enum class Effects

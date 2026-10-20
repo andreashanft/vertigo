@@ -1142,9 +1142,13 @@ Read off in October 2026. All 22 types share one behaviour, with their
 - **The Torch's torch** (`DEBRIS.DES` 22) rises from the burst and sinks as
   other debris does until it comes down to three of its radii over the
   ground; there it hovers, bobbing and no longer drifting, flickering
-  between 0.9 and 1.1 of its size. It never goes out on the ground or when
-  hit; once its time is up it shrinks away within a second. Vertigo let it
-  sink to the ground until October 2026.
+  between 0.9 and 1.1 of its size, and it carries a light of 700 units'
+  reach (the shots' 701) whose brightness flickers every frame between 0.5
+  and 1.5 times 2.11 (the shots have 5). It never goes out on the ground or
+  when hit; once its time is up it shrinks away within a second. Vertigo let
+  it sink to the ground without a light until October 2026; its light is
+  four times as strong there, as Vertigo's lights fall off with the square
+  of the distance and the original's linearly.
 - **Buzzers**: the player's buzzer leaves the tail upwards and backwards
   (twice the boat's up less its nose) at 12.5 m/s on top of the boat's own
   velocity; nine in ten are buzzers (`DEBRIS.DES` 18), one in ten a dummy
