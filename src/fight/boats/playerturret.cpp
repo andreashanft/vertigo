@@ -41,6 +41,10 @@ float spread()
     return 2.0f*util::random()/float(RAND_MAX) - 1.0f;
 }
 
+// how far to either side of a shot's way a friend keeps the turret from firing: the shot's width
+// and its barrels' spread (m)
+const float FriendMargin = 2.0f;
+
 }
 
 
@@ -245,8 +249,32 @@ bool PlayerTurret::keeps(ActiveObject *target) const
 }
 
 
+bool PlayerTurret::friendInLine(const Vector3D &from, const Vector3D &dir, float distance, const ActiveObject *target) const
+{
+    for (const Scenario::ObjectRecord &record : m_scenario->objectRecords())
+    {
+        ActiveObject *unit = dynamic_cast<ActiveObject *>(record.object);
+        if (!unit || unit == target || !unit->isEnabled() || unit->isDying() || !ActiveObject::touches(unit, m_player->contactFaction()) ||
+            !m_scenario->isFriendlyFire(record.id, unit))
+            continue;
+        // only what comes near the way is tested closely
+        const Vector3D centre = unit->center();
+        const float along = std::clamp(glm::dot(centre - from, dir), 0.0f, distance);
+        const float reach = 0.5f*glm::length(unit->box().dim()) + FriendMargin;
+        if (glm::length(from + dir*along - centre) > reach)
+            continue;
+        float d;
+        Vector3D normal;
+        if (unit->intersect(from, dir, FriendMargin, d, normal) && d < distance)
+            return true;
+    }
+    return false;
+}
+
+
 // a shot at a point scattered round the target by the software's accuracy, led for the target's
-// motion; nothing leaves when the shot can't catch up
+// motion; nothing leaves when the shot can't catch up, or when a friend is in its way within its
+// range, behind the target too, as a shot may miss
 void PlayerTurret::fireAt(ActiveObject *target)
 {
     const Vector3D dim = target->box().dim();
@@ -278,6 +306,8 @@ void PlayerTurret::fireAt(ActiveObject *target)
     if (t <= 0)
         return;
     const Vector3D dir = glm::normalize(offset + velocity*t);
+    if (friendInLine(mount, dir, std::max(m_gun.range(), speed*t), target))
+        return;
     Vector3D right = glm::cross(dir, m_player->up());
     right = glm::length(right) > 1e-3f ? glm::normalize(right) : m_player->right();
     m_gun.fire(mount, dir, glm::cross(right, dir), right);

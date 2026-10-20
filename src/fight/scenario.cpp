@@ -1068,7 +1068,7 @@ void Scenario::playerHit(ActiveObject *unit, bool destroyed)
     for (const auto &record : m_records)
         if (record.object == unit)
             id = record.id;
-    if (id < 0 || m_conditionManager.iff(id) < 0 || isHostile(PlayerFaction, m_conditionManager.iff(id)) || m_conditionManager.isDestroyTarget(id) || dynamic_cast<Mine *>(unit))
+    if (!isFriendlyFire(id, unit))
         return;
 
     auto say = [this, unit](int text) {
@@ -1090,6 +1090,13 @@ void Scenario::playerHit(ActiveObject *unit, bool destroyed)
         m_friendlyWarnings++;
         m_lastFriendlyWarning = m_time;
     }
+}
+
+
+bool Scenario::isFriendlyFire(int id, const ActiveObject *unit) const
+{
+    return id >= 0 && m_conditionManager.iff(id) >= 0 && !isHostile(PlayerFaction, m_conditionManager.iff(id)) && !m_conditionManager.isDestroyTarget(id) &&
+           !dynamic_cast<const Mine *>(unit);
 }
 
 

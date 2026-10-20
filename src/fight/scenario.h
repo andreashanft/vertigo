@@ -121,6 +121,8 @@ public:
     int playerId() const { return m_playerId; }
     // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
     void playerHit(ActiveObject *unit, bool destroyed);
+    // whether the player's hits on the unit (the mission's object id) are friendly fire
+    bool isFriendlyFire(int id, const ActiveObject *unit) const;
     // the player's boat is destroyed: the death view watches its destruction sequence from
     // outside (docs/ROADMAP.md, appendix R)
     void destroyPlayer();

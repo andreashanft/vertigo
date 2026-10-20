@@ -126,7 +126,7 @@ turret cross for a target behind the boat (T).
 |---|---|---|---|
 | O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the original's units hold their fire while the terrain is between them and their target, and whether its turrets fire through friends (Vertigo's do neither, appendices J and T); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -427,7 +427,11 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 - 38–48: turret order menu. 49–56: Esc menu. 57/58, 61–66: death and
   game-over menu. The autopilot menu follows.
 - 67–70: escalating friendly-fire warnings; 71: friendly object destroyed;
-  89: mission failed after three friendly kills. Texts starting with `~` or
+  89: mission failed after three friendly kills. Vertigo counts the
+  player's hits (gun, turrets, torpedoes) on units whose faction isn't
+  hostile to the player, leaving out destroy objectives and mines: a
+  warning at most every 3 s, 71 for each friend destroyed, 89 and the
+  mission failed at the third. Texts starting with `~` or
   `#` are red.
 
 ### G. Sounds (`SFX/SND/SMPMAP.DES`, `NumOfVoices = 8`)
@@ -1148,7 +1152,15 @@ Read off in October 2026.
   0 above the boat, 1 below), in sight from the boat's centre and contacts
   of the sonar (Vertigo's sonar lists no torpedoes, so there it asks this
   of the units alone); the nearest is taken, and if there is none, the target the
-  player had locked when the attack order was given. `scan` is the pause
+  player had locked when the attack order was given. In sight means nothing
+  of the terrain on the line between the two centres (until October 2026
+  Vertigo's terrain test looked only at the line's end, so every sight
+  check passed over hills; the boats' sight sensors, the attack run's
+  turn and the torpedoes' detours use the same test). Vertigo's turrets
+  also hold a shot while a unit or building whose hits would count as
+  friendly fire (F) lies within 2 m of the shot's way, up to the gun's
+  range and so behind the target too, as shots miss; whether the
+  original's turrets fire through friends is open (O4). `scan` is the pause
   before the next search when one finds nothing, `lock` the seconds a turret
   shows LOC on its new target before it fires, `vollsho` + 1 the shots of a
   volley (each when the gun is ready again, ARM between them) and `volldel`
