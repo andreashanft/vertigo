@@ -365,7 +365,8 @@ if(GIT_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.git)
         endif()
     endif()
 endif()
-target_compile_definitions(vertigo PRIVATE VERTIGO_COMMIT="${VERTIGO_COMMIT}")
+# on the help page alone, so a commit doesn't rebuild everything
+set_source_files_properties(hud/pages.cpp PROPERTIES COMPILE_DEFINITIONS VERTIGO_COMMIT="${VERTIGO_COMMIT}")
 if(APPLE)
     # Apple deprecated its OpenAL, but it is in the SDKs
     set_source_files_properties(sfx/music.cpp sfx/sound.cpp sfx/soundsystem.cpp sfx/stream.cpp PROPERTIES COMPILE_OPTIONS -Wno-deprecated-declarations)
