@@ -2,18 +2,21 @@
 [![Build](https://github.com/andreashanft/vertigo/actions/workflows/build.yml/badge.svg)](https://github.com/andreashanft/vertigo/actions/workflows/build.yml)
 
 In November 1996, „[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)“ - or better known under its original German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)" - was released by *Massive Development*.
+
 This repository contains an open-source clone with the goal to faithfully recreate this 30 year old classic. It is based on the original work from [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had already been reimplemented years ago but then abandoned mid-finished.
+
 With the help of Claude Code, most open TODOs and missing features could finally be implemented, bringing the codebase closer to its original. In addition, an iPad version was created as well as a feasibility study to enable real 3D cockpits for an eventual VR port. 
 The game is now portable and playable on current hard and software in modern resolutions, improving the look (eg. by upscaling) but keeping its style and oldschool graphics.  For copyright reasons, the repository does not contain any old game data or binaries, the game assets from an original version of the game (either English or German), from an old CD or GOG installation, are required.
-This implementation in its current form can be considered **94% done**:
-* Modern codebase and renderer that support compiling for multiple platforms (macOS, iOS (iPad), Linux, Windows - Linux is built by CI but not playtested, Windows untested)
+This implementation in its current form can be considered **96% done**:
+
+* Modern codebase and renderer that support compiling for multiple platforms (macOS, iOS (iPad), Linux, Windows - untested)
 * Import of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data 
 * Menus, stations and interactions (dialogs, dock, upgrades), notebook, movies, music all work
 * Missions are playable and story can be progressed
 * For input, Keyboard and Controllers are supported (as well as touch on the iPad)
 * Experimental: 3D cockpits, also making true support for widescreen aspect ratios possible
 
-What's still missing are the details, find the open points in [docs/ROADMAP.md](docs/ROADMAP.md).
+What's still missing are the details and playtesting, find the open points in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 # Compiling
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
