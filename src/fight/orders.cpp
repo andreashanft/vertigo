@@ -1039,8 +1039,8 @@ void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
     turret->aimAt(point);
     const float gunRange = m_unit->gun() ? std::min(range, m_unit->gun()->range()) : 0;
     m_unit->setTrigger(m_unit->gun() && aligned(turret->aim(), point, gunRange) && clearShot(target));
-    // torpedo towers: a torpedo whenever reloaded and pointing at the target
-    if (m_unit->hasTorpedoes() && aligned(turret->aim(), target->center(), range))
+    // torpedo towers: a torpedo whenever reloaded, pointing at the target and the terrain is clear
+    if (m_unit->hasTorpedoes() && aligned(turret->aim(), target->center(), range) && clearShot(target))
         m_unit->fireTorpedo(target, turret->aim()*4.0f + m_unit->position() + Vector3D(0, 0, 4), turret->aim());
 }
 

@@ -652,8 +652,10 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   error, which they leave alone within 1° (read, but Vertigo turns on
   until the error is gone, O4). A boat that has turned towards a standing
   player keeps hitting it. Vertigo's boats, tanks and towers hold their
-  fire while the terrain lies between their centre and the target's, which
-  the original's rule doesn't say (O4). A tank's muzzles (`[StaticGun]
+  fire while the terrain lies between their centre and the target's, and
+  torpedo towers their torpedoes, which the original's rule doesn't say
+  (O4); a torpedo tower's active sonar hears through hills, so it used to
+  launch at targets behind them, and the torpedoes ran into the ground. A tank's muzzles (`[StaticGun]
   Relative*`) sit on its gun module (`GunOffset*` or the `[GunTurret]`
   position) and turn with it; measured
   from the hull's origin they would lie under the hull (TANK0's at −13 units).
