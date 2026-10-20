@@ -170,6 +170,7 @@ void Orders::start(int slot)
     m_lying = false;
     m_formation = false;
     m_dockStart = -1;
+    m_turretBusy = false;
     m_unit->setTrigger(false);
     m_unit->setSilent(false);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
@@ -545,11 +546,11 @@ bool Orders::keepTarget(ActiveObject *enemy)
         glm::length2(player->position() - m_unit->position()) < glm::length2(m_target->position() - m_unit->position()))
     {
         if (ActiveObject *taken = engage(player))
-            m_target = taken;
+            switchTarget(taken);
     }
     // the ordered enemy comes first once in range
     if (enemy && m_target != enemy && isHostile(enemy) && detects(enemy, 1))
-        m_target = engage(enemy);
+        switchTarget(engage(enemy));
     if (!m_target || !isHostile(m_target) || !detects(m_target, 2))
     {
         dropTarget();
@@ -567,6 +568,57 @@ ActiveObject* Orders::engage(ActiveObject *target)
         return m_scenario->engagePlayer(m_unit) ? target : nullptr;
     m_scenario->disengagePlayer(m_unit);
     return target;
+}
+
+
+// the escort's place: the offsets in the escorted unit's frame (nothing behind it), measured from
+// hull to hull
+Vector3D Orders::escortStation(const SimpleBoat *escorted, const OrderSlot &slot) const
+{
+    Vector3D offset = slot.offset;
+    if (offset.y < 0)
+        offset.y = -1;
+    const float gap = glm::length(offset);
+    if (gap > 0)
+    {
+        // along the offset, out of the escorted hull's box, then the escort's own box
+        const Vector3D way = offset/gap;
+        auto extent = [&way](const BoundingBox &box, float sign) {
+            float reach = std::numeric_limits<float>::max();
+            for (int axis = 0; axis < 3; axis++)
+            {
+                const float along = sign*way[axis];
+                if (along > 1e-4f)
+                    reach = std::min(reach, box.maxPoint()[axis]/along);
+                else if (along < -1e-4f)
+                    reach = std::min(reach, box.minPoint()[axis]/along);
+            }
+            return std::max(reach, 0.0f);
+        };
+        offset = way*(extent(escorted->localBox(), 1) + gap + extent(m_boat->localBox(), -1));
+    }
+    return toWorld(escorted, offset);
+}
+
+
+// a new target starts a new fight, and the torpedo run against the old one ends
+void Orders::switchTarget(ActiveObject *target)
+{
+    if (target == m_target)
+        return;
+    endTorpedoRun();
+    m_fight = Fight::None;
+    m_target = target;
+}
+
+
+// a hit not yet answered; hitRecently() holds for a while, but the dice for it are rolled once
+bool Orders::freshHit()
+{
+    if (!m_unit->hitRecently() || m_unit->hitTime() == m_hitAnswered)
+        return false;
+    m_hitAnswered = m_unit->hitTime();
+    return true;
 }
 
 
@@ -796,7 +848,7 @@ void Orders::updateFight(ActiveObject *target, float speed)
                 startFight(Fight::Turn, target);
             else if (now > m_alignEnd)
                 startFight(Fight::Align, target);
-            else if (m_unit->hitRecently())
+            else if (freshHit())
                 startFight(random() < s.hitProbability ? Fight::Turn : Fight::Align, target);
             else if (m_torpedo && tryTorpedo(target))
                 m_torpedo = false;
@@ -939,7 +991,7 @@ void Orders::updateTankFight(ActiveObject *target, float speed)
         m_unit->setTrigger(false);
         if (distance < arriveRadius(m_boat->maxVelocity()) || now > m_alignEnd)
             startTankFight(Fight::Run, target, speed);
-        else if (m_unit->hitRecently())
+        else if (freshHit())
             startTankFight(random() < s.alignHit ? Fight::Align : Fight::Run, target, speed);
         return;
     }
@@ -1030,6 +1082,8 @@ void Orders::update()
     {
     case OrderSlot::Explode:
         {
+            if (m_boat)
+                m_boat->hold();
             // con says what sets it off (docs/ROADMAP.md, appendix J): 0 when dur is over unless the unit has
             // been boarded by then, 1 dur seconds after it has been boarded (S00202's control unit), 2 when dur
             // is over no matter what
@@ -1078,10 +1132,7 @@ void Orders::update()
             // an escort fights only near its place
             if (SimpleBoat *escorted = dynamic_cast<SimpleBoat *>(findUnit(slot.esc)))
             {
-                Vector3D offset = slot.offset;
-                if (offset.y < 0)
-                    offset.y = -1;
-                if (glm::length(toWorld(escorted, offset) - m_unit->position()) > slot.ran)
+                if (glm::length(escortStation(escorted, slot) - m_unit->position()) > slot.ran)
                     dropTarget();
             }
         }
@@ -1102,12 +1153,20 @@ void Orders::update()
 
     // a big ship takes Patrol and Attack to the order's cell, at mih over the ground, and stays
     // there once it is within reach of it, until the time is up; Escort, Ambush and
-    // GotoWithInfiltrate leave it where it is (docs/ROADMAP.md, appendix A)
+    // GotoWithInfiltrate leave it where it is, Escort and GotoWithInfiltrate ending as a boat's do
+    // once the escorted unit or the target is gone (docs/ROADMAP.md, appendix A)
     if (m_boat->isBigShip() && slot.type != OrderSlot::Goto && slot.type != OrderSlot::GotoWithArrive)
     {
         m_unit->setTrigger(false);
         if (slot.type != OrderSlot::Patrol && slot.type != OrderSlot::Attack)
         {
+            ActiveObject *escorted = slot.type == OrderSlot::Escort ? findUnit(slot.esc) : nullptr;
+            if ((slot.type == OrderSlot::Escort && (!escorted || escorted->isDying())) ||
+                (slot.type == OrderSlot::GotoWithInfiltrate && !isAlive(findUnit(slot.ene))))
+            {
+                next();
+                return;
+            }
             m_boat->hold();
             return;
         }
@@ -1133,8 +1192,10 @@ void Orders::update()
             if (glm::length(target - m_unit->position()) < arriveRadius(m_boat->maxVelocity()))
             {
                 if (slot.type == OrderSlot::GotoWithArrive)
+                {
                     m_unit->eventFinish()->complete();
                     m_scenario->logEvent(m_unit->name(), m_unit->eventFinish(), txt::Fight9);
+                }
                 next();
                 m_boat->hold();
                 return;
@@ -1226,31 +1287,7 @@ void Orders::update()
                 return;
             }
 
-            // the place: the offsets in the escorted unit's frame (nothing behind it), measured from
-            // hull to hull, within the band
-            Vector3D offset = slot.offset;
-            if (offset.y < 0)
-                offset.y = -1;
-            const float gap = glm::length(offset);
-            if (gap > 0)
-            {
-                // along the offset, out of the escorted hull's box, then the escort's own box
-                const Vector3D way = offset/gap;
-                auto extent = [&way](const BoundingBox &box, float sign) {
-                    float reach = std::numeric_limits<float>::max();
-                    for (int axis = 0; axis < 3; axis++)
-                    {
-                        const float along = sign*way[axis];
-                        if (along > 1e-4f)
-                            reach = std::min(reach, box.maxPoint()[axis]/along);
-                        else if (along < -1e-4f)
-                            reach = std::min(reach, box.minPoint()[axis]/along);
-                    }
-                    return std::max(reach, 0.0f);
-                };
-                offset = way*(extent(escorted->localBox(), 1) + gap + extent(m_boat->localBox(), -1));
-            }
-            const Vector3D target = inBand(toWorld(escorted, offset), slot.mih, slot.mah);
+            const Vector3D target = inBand(escortStation(escorted, slot), slot.mih, slot.mah);
             const float distance = glm::length(target - m_unit->position());
             const float escortedSpeed = glm::length(escorted->velocity());
             if (m_formation && distance > arriveRadius(1.3f*m_boat->maxVelocity()))

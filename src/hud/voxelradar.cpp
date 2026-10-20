@@ -311,26 +311,6 @@ void VoxelRadar::render(fight::Scenario *scenario)
         fillPolygon(cell.corners, shade(fog, level));
     }
 
-    // a block on the patch (a box in the patch's frame, cut off at its edges)
-    auto fillBlock = [&](const Vector3D &a, const Vector3D &b, gfx::Rgb colour) {
-        Vector2D lo(1e9f), hi(-1e9f);
-        for (const Vector3D &corner : { a, Vector3D(a.x, b.y, 0), Vector3D(b.x, a.y, 0), b })
-        {
-            lo = glm::min(lo, toPatch(corner));
-            hi = glm::max(hi, toPatch(corner));
-        }
-        lo = glm::max(lo, Vector2D(-extent));
-        hi = glm::min(hi, Vector2D(extent));
-        if (lo.x >= hi.x || lo.y >= hi.y)
-            return;
-        const float z0 = a.z, z1 = b.z;
-        fillPolygon({ fromPatch(lo.x, lo.y, z1), fromPatch(hi.x, lo.y, z1), fromPatch(hi.x, hi.y, z1), fromPatch(lo.x, hi.y, z1) }, gfx::lighter(colour, 130));
-        fillPolygon({ fromPatch(lo.x, lo.y, z0), fromPatch(hi.x, lo.y, z0), fromPatch(hi.x, lo.y, z1), fromPatch(lo.x, lo.y, z1) }, colour);
-        fillPolygon({ fromPatch(lo.x, hi.y, z0), fromPatch(hi.x, hi.y, z0), fromPatch(hi.x, hi.y, z1), fromPatch(lo.x, hi.y, z1) }, colour);
-        fillPolygon({ fromPatch(lo.x, lo.y, z0), fromPatch(lo.x, hi.y, z0), fromPatch(lo.x, hi.y, z1), fromPatch(lo.x, lo.y, z1) }, gfx::darker(colour, 130));
-        fillPolygon({ fromPatch(hi.x, lo.y, z0), fromPatch(hi.x, hi.y, z0), fromPatch(hi.x, hi.y, z1), fromPatch(hi.x, lo.y, z1) }, gfx::darker(colour, 130));
-    };
-
     // buildings as their models in orange, the faces lit from above and behind, in a few shades
     // (opaque, so before anything translucent)
     const gfx::Rgb orange = shade(FogRows - 1, Orange);

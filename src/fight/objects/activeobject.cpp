@@ -46,8 +46,7 @@ ActiveObject::ActiveObject(Scenario *scenario) :
 
 ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info) :
     Object(scenario, file),
-    m_info(info),
-    m_identified(false)
+    m_info(info)
 {
     file.setSection("noise");
     m_noise = file.value("level").toFloat();
@@ -298,27 +297,45 @@ void ActiveObject::startGroundWreck()
 }
 
 
-void ActiveObject::groundExplosion(int type, float spread)
+const float ActiveObject::WreckTimes[7] = { 0, 0.4f, 0.9f, 1.3f, 1.6f, 2.0f, 2.7f };
+
+
+void ActiveObject::wreckBursts(int step, const Vector3D &centre, float radius)
 {
-    const Vector3D dim = m_box.dim();
-    const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+    // each step's explosion types and their spreads
+    static const std::vector<std::pair<int, float>> bursts[6] = {
+        { { 0, 0.6f }, { 3, 0.6f }, { 3, 0.6f } },
+        { { 4, 0.5f } },
+        { { 1, 0.4f }, { 4, 0.4f }, { 4, 0.7f } },
+        { { 5, 0.3f } },
+        { { 5, 0.6f }, { 2, 0.6f } },
+        { { 2, 0.1f }, { 2, 0.4f } },
+    };
+    if (step < 0 || step >= 6)
+        return;
+    for (const auto &burst : bursts[step])
+        wreckBurst(burst.first, burst.second, centre, radius);
+}
+
+
+void ActiveObject::wreckBurst(int type, float spread, const Vector3D &centre, float radius)
+{
     auto u = []() { return util::random()/float(RAND_MAX); };
-    const Vector3D at = center() + Vector3D((u() - 0.5f)*r, (u() - 0.5f)*r*spread, u()*r*spread);
+    const Vector3D at = centre + Vector3D((u() - 0.5f)*radius, (u() - 0.5f)*radius*spread, u()*radius*spread);
     m_scenario->effectManager().addEffect(Effects(int(Effects::Explosion_0) + type), at);
     sfx::SampleMap::playAt(type < 3 ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
     m_scenario->explosionAt(at, type < 3 ? 0.6f : 0.3f);
 }
 
 
-void ActiveObject::groundDebris(int index, float minElevation, float maxElevation)
+void ActiveObject::wreckDebris(int index, float minElevation, float maxElevation, const Vector3D &centre, float radius)
 {
-    const Vector3D dim = m_box.dim();
-    const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
     auto between = [](float min, float max) { return min + (max - min)*util::random()/float(RAND_MAX); };
     const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
     const float elevation = between(minElevation, maxElevation);
     const Vector3D direction(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation));
-    m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), center() + direction*r*between(0.1f, 0.6f), direction);
+    // 0.1 to 0.6 radii out, at the piece's own speed
+    m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), centre + direction*radius*between(0.1f, 0.6f), direction);
 }
 
 
@@ -366,15 +383,17 @@ bool ActiveObject::updateGroundWreck(float elapsedTime)
         m_tilt = glm::mat3(glm::rotate(m_groundSpin.x*elapsedTime, Vector3D(1, 0, 0))*glm::rotate(m_groundSpin.y*elapsedTime, Vector3D(0, 1, 0)))*m_tilt;
     }
 
-    static const float times[] = { 0, 0.4f, 0.9f, 1.3f, 1.6f, 2.0f, 2.7f };
-    while (m_groundStep >= 0 && m_groundStep < 7 && t >= times[m_groundStep])
+    const Vector3D dim = m_box.dim();
+    const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
+    const Vector3D centre = center();
+    auto debris = [&](int index, float minElevation, float maxElevation) { wreckDebris(index, minElevation, maxElevation, centre, r); };
+    while (m_groundStep >= 0 && m_groundStep < 7 && t >= WreckTimes[m_groundStep])
     {
-        switch (m_groundStep++)
+        const int step = m_groundStep++;
+        wreckBursts(step, centre, r);
+        switch (step)
         {
         case 0:
-            groundExplosion(0, 0.6f);
-            groundExplosion(3, 0.6f);
-            groundExplosion(3, 0.6f);
             if (building)
             {
                 m_groundSpin = Vector2D(between(-0.07f, 0.07f), between(-0.07f, 0.07f));
@@ -382,55 +401,38 @@ bool ActiveObject::updateGroundWreck(float elapsedTime)
                     sfx::SampleMap::playAt(sfx::Sample::Sample18, m_position.x, m_position.y, m_position.z);
             }
             break;
-        case 1:
-            groundExplosion(4, 0.5f);
-            break;
         case 2:
-            groundExplosion(1, 0.4f);
-            groundExplosion(4, 0.4f);
-            groundExplosion(4, 0.7f);
             if (building)
-                for (int debris : { 2, 2, 1 })
-                    groundDebris(debris, fifth, 2*fifth);
+                for (int index : { 2, 2, 1 })
+                    debris(index, fifth, 2*fifth);
             else if (m_groundWreck == GroundWreck::Tank)
-                for (int debris : { 2, 1, 3, 3 })
-                    groundDebris(debris, fifth, 2*fifth);
+                for (int index : { 2, 1, 3, 3 })
+                    debris(index, fifth, 2*fifth);
             else
-                for (int debris : { 2, 2, 1, 3, 3 })
-                    groundDebris(debris, fifth, 2*fifth);
-            break;
-        case 3:
-            groundExplosion(5, 0.3f);
-            break;
-        case 4:
-            groundExplosion(5, 0.6f);
-            groundExplosion(2, 0.6f);
+                for (int index : { 2, 2, 1, 3, 3 })
+                    debris(index, fifth, 2*fifth);
             break;
         case 5:
-            groundExplosion(2, 0.1f);
-            groundExplosion(2, 0.4f);
             if (building)
             {
-                for (int debris : { 2, 1, 2, 1 })
-                    groundDebris(debris, 0, fifth);
+                for (int index : { 2, 1, 2, 1 })
+                    debris(index, 0, fifth);
                 // the big blast 0.6 s later on its side towards the player, half way up
-                const Vector3D dim = m_box.dim();
-                const float r = 0.5f*std::max(dim.x, std::max(dim.y, dim.z));
                 Vector3D toward = m_scenario->player() ? m_scenario->player()->position() - m_position : Vector3D(0, -1, 0);
                 toward.z = 0;
                 toward = glm::length(toward) > 0.1f ? glm::normalize(toward) : Vector3D(0, -1, 0);
                 addLaterExplosion(0.6f, 2, Vector3D(m_position.x, m_position.y, m_box.minPoint().z + 0.5f*dim.z) + toward*r, 0.35f*r);
                 break;
             }
-            for (int debris : m_groundWreck == GroundWreck::Tank ? std::vector<int>{ 2, 2, 1, 3 } : std::vector<int>{ 2, 2, 2, 1, 3, 3 })
-                groundDebris(debris, 0, fifth);
+            for (int index : m_groundWreck == GroundWreck::Tank ? std::vector<int>{ 2, 2, 1, 3 } : std::vector<int>{ 2, 2, 2, 1, 3, 3 })
+                debris(index, 0, fifth);
             // the crews' bodies; towers leave nothing
             if (!tower)
                 for (int body : { 14, 15, 16 })
-                    groundDebris(body, 0, glm::half_pi<float>());
+                    debris(body, 0, glm::half_pi<float>());
             m_groundStep = 7;
             break;
-        default:
+        case 6:
             m_groundStep = 7;
             break;
         }
@@ -472,7 +474,8 @@ void ActiveObject::leaveMission()
 
 bool ActiveObject::canSleep() const
 {
-    return !m_tumbling && (!m_orders || m_orders->mayPause());
+    // a unit in its destruction sequence runs it to the end, so that it counts as destroyed
+    return !m_tumbling && !isDying() && (!m_orders || m_orders->mayPause());
 }
 
 

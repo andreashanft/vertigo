@@ -33,8 +33,8 @@ class HUD;
 
 
 // The indicator lamp beside a cockpit monitor (Lamp* keys of its section): its file (*.D16)
-// holds two frames of RGB565 pixels, the first lighting the lower slot and the second the
-// upper one, so it shows which of two modes the monitor is in.
+// holds a picture of RGB565 pixels twice the lamp's width, the lamp dark on the left and lit on
+// the right, so it shows which of two modes the monitor is in.
 class Lamp
 {
 public:
@@ -42,7 +42,7 @@ public:
 
 public:
     bool isValid() const { return m_valid; }
-    void draw(bool upper);
+    void draw(bool lit);
 
 private:
     HUD *m_hud;

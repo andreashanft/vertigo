@@ -147,7 +147,8 @@ public:
     // none does (docs/ROADMAP.md, appendix S)
     int lure(const Torpedo *torpedo) const;
     // where that decoy is and how it moves, false once it is gone
-    bool decoy(int id, Vector3D &position, Vector3D &velocity) const { return m_effectManager.particles().decoy(id, position, velocity); }
+    // where that decoy is and how it moves, false once it is gone
+    bool decoy(int id, Vector3D &position, Vector3D &velocity) const;
     // the buzzers and the Torches' torches as contacts for the units' sensors; those gone stay, disabled
     const std::vector<std::unique_ptr<DecoyContact>>& decoyContacts() const { return m_decoyContacts; }
 
@@ -267,6 +268,7 @@ private:
     std::vector<NavPoint*> m_navPoints;
     std::vector<ActiveObject*> m_playerAttackers;
     std::vector<std::unique_ptr<DecoyContact>> m_decoyContacts;
+    std::vector<Particles::DecoyInfo> m_decoys; // this frame's, after the effects' update
     int m_lastDecoyContact = 0;     // the decoy of the latest one
 
     char m_attitudeMatrix[9][9];

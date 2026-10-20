@@ -142,4 +142,21 @@ void Movie::mousePressEvent(input::MouseEvent *event)
 }
 
 
+// a tap skips the movie, as Escape does; on lifting the finger, so the next screen gets no press,
+// and only a finger put down on the movie, not one still down from what started it
+void Movie::touchPressEvent(input::TouchEvent *event)
+{
+    m_touches.insert(event->id());
+}
+
+
+void Movie::touchReleaseEvent(input::TouchEvent *event)
+{
+    if (m_touches.erase(event->id()) > 0) {
+        m_touches.clear();
+        m_funcFinished();
+    }
+}
+
+
 } // namespace game

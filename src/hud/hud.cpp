@@ -279,10 +279,6 @@ void HUD::load(game::Boat *boat)
     Autopilot *autopilot = new Autopilot(this, readRect(file));
     m_children.emplace_back(autopilot);
 
-    file.setSection("radiomessage");
-    RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
-    m_children.emplace_back(radioMessage);
-
     // status monitors: with two, the first shows a weapon and the second the armor; I switches
     // between the armor and the system state (a single one starts on a weapon; F1-F4 bring it back)
     m_slaveMonitors.clear();
@@ -357,6 +353,12 @@ void HUD::load(game::Boat *boat)
     m_sonar2 = new SonarMonitor(this, file, 180, fight::Scenario::Monitor::Round1);
     m_children.emplace_back(m_sonar2);
 
+    // the radio message over the monitors and their lamps (in Zorn's cockpit its line crosses
+    // the master monitor's lamp)
+    file.setSection("radiomessage");
+    RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
+    m_children.emplace_back(radioMessage);
+
     m_integerScale = false;
 
     file.setSection("masterhud");
@@ -411,6 +413,7 @@ void HUD::start(fight::Scenario *scenario)
     m_deathTime = -1;
     m_menu->setOverView(false);
     m_menu->open(MissionMenu::Page::None);
+    m_pages->close();
     m_scenario->headMotion().setStrength(headMotion());
     // the CD's audio tracks, as the game data import copies them out of the CD image, at half
     // the volume (CD audio is mastered louder than the game's sounds)
@@ -426,8 +429,16 @@ void HUD::start(fight::Scenario *scenario)
 #endif
     g_touchControlsChecked = true;
     // a finger on the screen comes back to the controls of the new mission when it is lifted
+    releaseTouch();
+}
+
+
+// lets go of the touch controls' stick, buttons and head turning
+void HUD::releaseTouch()
+{
     m_touch->reset();
     m_touchStick = Vector2D(0);
+    m_looking = false;
     for (auto it = m_heldKeys.begin(); it != m_heldKeys.end(); )
         it = it->first >= TouchButtons ? m_heldKeys.erase(it) : std::next(it);
     if (m_repeat >= TouchButtons)
@@ -508,6 +519,8 @@ void HUD::updateMissionState()
         if (m_deathTime < 0)
         {
             m_deathTime = m_scenario->time();
+            // the touch controls are gone in the death view; only the menu takes taps
+            releaseTouch();
             m_menu->setOverView(true);
             m_menu->notice({ text(13) }, 3.0f);
         }
@@ -777,7 +790,6 @@ void HUD::drawDeathView(double pixelRatio)
     m_integerScale = false;
 
     glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
-    drawTouchControls(pixelRatio);
 }
 
 
@@ -1224,6 +1236,8 @@ void HUD::touchPressEvent(input::TouchEvent *e)
             return;
         }
     }
+    if (m_scenario->playerDestroyed())
+        return;
     m_touch->press(e->id(), e->position());
 }
 

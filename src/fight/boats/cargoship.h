@@ -155,12 +155,11 @@ private:
     bool isTargetValid(const ActiveObject *unit) const;
     // the block's part of the sequence that follows the ship's destruction
     void updateBlock(int index, float elapsedTime);
-    void blockExplosion(const Block &block, int type, float spread);
-    void blockDebris(const Block &block, int index, float minElevation, float maxElevation);
     void destroyTurret(ShipTurret &turret);
     Vector3D blockCenter(const Block &block) const; // world
     float blockRadius(const Block &block) const;
     Matrix blockTransform(const Block &block) const; // ship coordinates
+    Matrix blockMotion(const Block &block) const;
     void updateLocalBox();
     void updateSegments();
 

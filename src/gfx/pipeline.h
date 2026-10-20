@@ -61,7 +61,7 @@ public:
         Vector3D color;
         float radius;
     };
-    static const int MaxPointLights = 4;
+    static constexpr int MaxPointLights = 4;
 
     // linear in the distance along the view direction: the colour, multiplied with the gain,
     // blends into the fog's colour from start to end and the result is clamped. So a colour

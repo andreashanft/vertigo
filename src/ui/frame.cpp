@@ -155,7 +155,7 @@ void Frame::mouseMoveEvent(const Point &pos)
     // all of the window stays on the screen
     const Point origin = mapToGlobal(Rect(Point(0), size())).pos() - rect().pos();
     const Point to = pos - m_dragOffset;
-    setPosition(std::clamp(to.x, 0, 640 - int(width())) - origin.x, std::clamp(to.y, 0, 480 - int(height())) - origin.y);
+    setPosition(std::clamp(to.x, 0, std::max(0, 640 - int(width()))) - origin.x, std::clamp(to.y, 0, std::max(0, 480 - int(height()))) - origin.y);
 }
 
 gfx::Image Frame::getBorder(const gfx::ColorTable &colorTable, int id)

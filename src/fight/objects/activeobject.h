@@ -86,6 +86,7 @@ public:
     // the unit's energy defence changed within the last tenth of a second: the moment the AI
     // reacts to being fired at
     bool hitRecently() const;
+    float hitTime() const { return m_hitTime; }
     bool isIdentified() const { return m_eventIdentify.isCompleted(); }
 
     int kineticShield() const { return m_kineticShield; };
@@ -182,8 +183,14 @@ protected:
     bool isGroundWrecking() const { return m_groundStep >= 0; }
     bool updateGroundWreck(float elapsedTime);
     void startGroundWreck();
-    void groundExplosion(int type, float spread);
-    void groundDebris(int index, float minElevation, float maxElevation);
+    // the destruction sequence's steps (docs/ROADMAP.md, appendix R), the same for boats, ground
+    // units and the big ships' blocks: when each starts, and its explosions (EXPLOSIO.DES) at
+    // random spots about a centre, scattered over spread radii lengthwise and upwards; a piece of
+    // debris (DEBRIS.DES) flung out of it at an elevation between the two angles
+    static const float WreckTimes[7];
+    void wreckBursts(int step, const Vector3D &centre, float radius);
+    void wreckBurst(int type, float spread, const Vector3D &centre, float radius);
+    void wreckDebris(int index, float minElevation, float maxElevation, const Vector3D &centre, float radius);
     // the explosions due later (a building's)
     void addLaterExplosion(float delay, int type, const Vector3D &position, float scale);
     void updateLaterExplosions();
@@ -197,8 +204,7 @@ protected:
     ConditionEvent m_eventBoard;
 
     ObjectInfo m_info;
-    float m_noise;
-    bool m_identified;
+    float m_noise = 0;
     bool m_asleep = false;
     bool m_tumbling = false;
     bool m_silent = false;
@@ -206,10 +212,10 @@ protected:
     int m_engine = 0;
     float m_energy = 1.0f;
 
-    int m_kineticShield;
-    int m_shockShield;
-    int m_kineticShieldMax;
-    int m_shockShieldMax;
+    int m_kineticShield = 0;
+    int m_shockShield = 0;
+    int m_kineticShieldMax = 0;
+    int m_shockShieldMax = 0;
 
     Vector3D m_velocity;
 

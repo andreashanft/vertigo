@@ -141,6 +141,9 @@ private:
     ActiveObject* engage(ActiveObject *target);
     ActiveObject* nearestHostile(float range, int sector) const;
     void dropTarget();
+    bool freshHit();
+    void switchTarget(ActiveObject *target);
+    Vector3D escortStation(const SimpleBoat *escorted, const OrderSlot &slot) const;
 
     // --- fighting
     Vector3D lead(const ActiveObject *target) const;
@@ -196,6 +199,7 @@ private:
     bool m_torpedo;              // this phase may fire a torpedo
     bool m_torpedoRun;
     ActiveObject *m_torpedoTarget;   // whose torpedo attackers the unit is among
+    float m_hitAnswered = -1;        // the hit the fight last answered
 
     bool m_lying;        // Ambush: in position, lying silent
     bool m_formation;    // Escort: in place beside the escorted unit

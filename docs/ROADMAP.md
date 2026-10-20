@@ -6,7 +6,8 @@ the reference data gathered from the data files and from the original
 (October 2026). The plan grew out of the former `todo.txt` (currents, the 11
 AI orders, the HUD items, effects, engine sounds) and a review of the
 repository: every mission loads, is fought and can be won or lost now, on the
-desktop and on the iPad. What remains is collected under
+desktop and on the iPad. What remains for a beta of the story is under
+[towards the beta](#towards-the-beta), the comparisons still to be made under
 [what is open](#what-is-open).
 
 Effort marks: S is up to a day, M a few days, L one to three weeks, for one
@@ -88,12 +89,36 @@ plans, level pipelines and the darkened ground under buildings and towers
 (N); the AI feeling hits only through its energy defence, attack runs that
 turn when the terrain is in the way, escorts placed from hull to hull (J),
 active mines going up on buildings and decoys going out like other
-debris (Q); additive explosions and shots, and the tanks' and
+debris (Q); additive explosions, shots and torpedo bubbles, and the tanks' and
 crawlers' dust (H); the tanks' fixed guns (J); the ground units' and big
 ships' destruction, boats braking as they blow up, and units counting as
 destroyed once they are gone (R, A); paralysed tanks and towers (J); the
 torpedoes' launch speed and braking, the Subsonics passing through units,
 the Torch's torch, buzzers and which decoys draw which torpedoes (S).
+
+## Towards the beta
+
+The beta's aim: the story can be played from a new game to the ending as in
+the original. The mechanics and the look are close to the original's now;
+what is left is mostly the campaign as a whole and how its missions feel,
+which takes playing them. Most important first:
+
+| # | Item | Effort | Notes |
+|---|---|---|---|
+| B1 | Damage stays with the boat | M | A mission starts with the full armour, and nothing a mission does to the armour, the gun, the turrets or the magazine reaches the boat afterwards: `Player` takes the gun's, the turrets' and the magazine's condition from `game::Boat` but not the armour sides (`DefectFArm` to `DefectBArm`), and nothing is written back. The save file and the depot's repair prices handle the defects already, so repairs and their cost never come up in the campaign. Read off in the original how a mission's damage ends up on the boat (each armour side as its share of the full armour?) and whether the next mission starts with it |
+| B2 | Mission end types | S | `[End] Type` (appendix I): 1 AutoEnd in 26 missions, 2 InstantEnd in the four training missions, 3 the freighter st1703 after S00704, 4 st9901 after S02205. Vertigo uses it only to leave out the "accomplished" voice; every mission waits for Alt+A and the autopilot menu, which lists the area's open stations. The freighter, station 3 of chapter 7, is closed at the chapter's start and opened by dialogue 007008; whether the story gets there without type 3 is for B3. Watch what AutoEnd and InstantEnd look like in the original |
+| B3 | Campaign playthrough | L | The story from a new game to the ending on the desktop, saving after each mission. Per mission: won at the first try or not, the time it took, damage and money afterwards, and anything off (triggers, radio messages, stuck units, the station afterwards). Besides: the chapter changes, dialogues and tasks, the depot, loading a save, the death and failure menus, the ending's movie. The open mission (training) starts any single mission again with a fully fitted boat |
+| B4 | Difficulty and feel | M | From B3's notes and side by side with the original on a few missions; S00101, S00201, S00402, S00903, S01202 and S02001 have escorts, ambushes, towers, bombers and big fights between them. A measure both games give without any tooling: how long a boat that does nothing lasts at a mission's start, on each difficulty, and how many units attack it at once. In Vertigo's seeded idle runs (normal, 60 s) the idle boat is destroyed in 15 of the 71 missions, in 12 of them with every seed: in S02001 after 15–23 s, in S00201, S00402, S00903, S01202 and S01302 after 19–28 s. The levers, each recorded in appendix J or H: the attacker lists per difficulty, the sensor ranges, the attack settings, the hit spheres, the guns' damage and the player's armour |
+| B5 | Music with a GOG installation | S | The mission music is the CD's audio tracks, copied out only when the game data is built from a CD image (G1). Check what a GOG installation has instead (the tracks as files?) and use it |
+| B6 | Outside views | M | The original's views from outside the boat during a mission (FIGHTEXT 14–19, appendix R) are missing; Vertigo has only the death view |
+| B7 | Platforms | M | macOS and the iPad are played; Linux is built and tested by CI but not played; Windows is neither. A Windows build in CI (SDL 3 and OpenAL Soft) and a few missions played on Linux and Windows |
+| B8 | S00705 | S | Schwartz's infiltration (O3) |
+
+Approximations the appendices record and a player may notice: the
+magazine's condition never wears down (O); the currents push steadily (D);
+some explosions' sizes (H, R, S); the turn ticks (L); the escort's distance
+from the hull's box (J); the death menu always offers to load (R); the
+turret cross for a target behind the boat (T).
 
 ## What is open
 
@@ -147,7 +172,8 @@ master monitor's target picture, D/H/V/N and R.
 
 ## Open questions and how to settle them
 
-What is still unknown is in [what is open](#what-is-open) (O1–O4). Each
+What is still unknown is in [what is open](#what-is-open) (O1–O4) and B1–B2
+of [towards the beta](#towards-the-beta). Each
 question is settled by watching the original and reading its data, then
 implementing the behaviour independently.
 Settled this way so far: the currents (appendix D), the radiation (D), `sle`,
@@ -211,7 +237,9 @@ differ from a boat's: Patrol and Attack take it to the order's cell
 centre at `mih` over the ground, where it stops once within reach and
 waits out `dur` (so the Big Fat Mama, whose patrol is its own cell, never
 moves); Escort, Ambush, the cardinal orders and GotoWithInfiltrate leave it
-where it is; Wait, Goto, GotoWithArrive and Explode work as for boats.
+where it is (no scenario gives a big ship an Escort or GotoWithInfiltrate;
+Vertigo ends them as a boat's once the escorted unit or the target is
+gone); Wait, Goto, GotoWithArrive and Explode work as for boats.
 Vertigo patrolled them from random point to point until October 2026. The master monitor shows a
 picture chosen by the ship file's comment: `SHPSEACO` (bship0), `SHPTRITO`
 (1, 8), `SHPPOLAR` (2, 9), `SHPINDER` (3, 10), `SHPBIONT` (4, 7), `SHPBFM`
@@ -317,7 +345,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   0.23 s), and a refresh draws it with a chance of 1 − 0.7 × the strength
   (0.3 at the surface) and leaves it blank otherwise until the next one, so
   the slower monitors stay dark longer. No damage. Less than 40 m below, the
-  throttle is held at 1 m/s (the booster does nothing) and the boat is
+  throttle is held at 1 m/s (the booster does nothing; Vertigo doesn't run
+  it there) and the boat is
   pushed down at 1 g until it is more than 70 m below again; the throttle
   stays at 1 m/s after that. The boat never comes closer than 10 m to the
   surface. So a boat at full speed straight up coasts from 40 m to about
@@ -338,8 +367,8 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   `WorldMinY` −5, `WorldMaxY` 20, `Projection` 30, `FlightY` 16, `ShadingTable`
   `VOX_000`), `[HUDAlertBlock]`, `[HUDThreatBlock]`, `[HUDPauseBlock]`,
   `[HUDSymbolBlock1]`, `[SlaveMonitor0/1]` (none in 000/Hiob), the monitors'
-  `Type` and `Lamp*` keys (`*.D16`, an off and an on frame). `[Flake]` is
-  unread.
+  `Type` and `Lamp*` keys (`*.D16`, RGB565 rows twice the lamp's width,
+  the lamp off on the left and on on the right). `[Flake]` is unread.
 - Images in `GFX/IMG/COCKPIT`: `HUDALERT`, `HUDPAUSE`, `HUDTHREA`/`HUDTHREY`,
   `HUDSYM1` (under fire), `HUDSYM2` (radiation), `HUDSYM3` (current), `HUDTURR` (a turret's
   aim cross, appendix T), `HUDTURGR/RE/YE` (never shown), `HUDLOCAA`/`HUDLOCPA` (lock rings),
@@ -449,15 +478,16 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   sprites at the `[Anim] Scale` times 4/255 of the frame, about two thirds
   of that for the explosions and half for the shots.
 - Sprite blending (read off in October 2026): with `Transparency = 1` in
-  `CONFIG.DES` (the default) the explosions and the shots are additive: each
+  `CONFIG.DES` (the default) the explosions, the shots and the torpedo
+  trails' bubbles (entries 21–23) are additive: each
   channel becomes about what was behind plus the sprite's colour, clipped at
   full, so overlapping sprites get brighter up to white. Exactly, in RGB565,
   twice (half the colour behind + 0.5125 of the sprite's colour from its
   `MOD_nnn.S16` table, as the models take theirs). Palette entry 0 is left
-  out. The ground dust (18–20 and 24–26), the bubbles, the debris and the
-  trash cover what is behind them at their full colour (the original's
-  pictures: dark blue bubbles over bright ground, brown dust over the
-  water), as all sprites do with `Transparency = 0`. Vertigo had only the
+  out. The ground dust (18–20 and 24–26), the ambient bubbles
+  (`BUBBLE.DES`), the debris and the trash cover what is behind them at
+  their full colour (the original's pictures: dark blue ambient bubbles
+  over bright ground, brown dust over the water), as all sprites do with `Transparency = 0`. Vertigo had only the
   explosions 0–11 and the shots blending, darker than additive.
 - Tank dust (read off in October 2026): while a tank drives, one puff every
   0.2 to 0.3 s behind one of its tracks, picked at random, 0.6 to 1.1 of
@@ -480,10 +510,12 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 The original writes `dat\save\fightout.des` with `[Global]` completed / failed
 / primary / user / secondary, and `Destination` = AutoEnd | InstantEnd |
 <station> | RestoreAutoSave | RestartScenario | AbortGame. The scenario's
-`[End] type` (0 in most, 1–4 in a few) picks the destination of an
+`[End] type` (0 in most) picks the destination of an
 accomplished mission: 1 AutoEnd, 2 InstantEnd, 3 the station st1703, 4 the
 station st9901; otherwise the destination is what the player chose in the
-mission menu or the autopilot menu.
+mission menu or the autopilot menu. Type 1 is in 26 scenarios, 2 in
+the training missions, 3 in S00704 and 4 in S02205. Vertigo doesn't follow
+the types yet (B2).
 
 ### J. What the original does with `sle`, `diff`, `car`, `con`, the attackers, the order slots, the sensors and the fighting
 
@@ -502,7 +534,7 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
 - **Attackers.** A unit that takes the player as its target joins the
   player's list of attackers, 4 units on easy, 6 on normal, 8 on hard; when
   the list is full the unit gets no target. Ground plans take at most 4 at
-  any difficulty (Vertigo's buildings can't be attacked, so this has no
+  any difficulty (Vertigo's ground plans can't be attacked, so this has no
   effect); units on a torpedo run against a target have a list of their own,
   8 for every target.
 - **`car`** (CardinalPatrol, CardinalAttack, Ambush) is a quarter turn: 2 is
@@ -535,7 +567,8 @@ Read off in October 2026; Vertigo does all of it unless a point says otherwise.
   frame, and the orders finish on their own (Wait, Patrol, Ambush, Escort and
   CardinalPatrol after `dur`, Goto and GotoWithArrive at their point,
   GotoWithInfiltrate once the boat has sat at its target for `dur` seconds,
-  when the target counts as boarded). A unit's 8 slots are taken in turn,
+  when the target counts as boarded; Vertigo ends Attack and CardinalAttack
+  after `dur` too, not compared). A unit's 8 slots are taken in turn,
   skipping empty ones, round and round. The squadron events: "attacked" on
   the first hit on any of its units, "arrived" and "boarded" once every unit
   has, "destroyed" once every one is destroyed.
@@ -801,7 +834,7 @@ one system at a time: the armour, the gun, the torpedo magazine, turret 1 or
 turret 2, in that order. It starts on the armour. Left to itself it takes
 the first system below a quarter of its full state, else the first below a
 half, else the first below three quarters (the armour counting by the side
-it is mending, or as whole while it mends none); Alt+I forces one (the
+it is mending, or as intact while it mends none); Alt+I forces one (the
 cycle automatic, armour, gun, torpedo, the turrets the boat has) and the
 system state page marks the mended and the forced system. Each step adds a 160th
 of the full state: to the weakest armour side (a 160th of that side's
@@ -893,6 +926,7 @@ only touches when the faster of the two pairs with the other.
   faction in the scenarios, which makes it faction 10. It pairs only with
   shots, debris, torpedoes and mines, so the player and the other boats
   pass through it, and an active mine that runs into it goes up with it.
+  Destroyed, it goes out in a large puff (entry 5) and leaves no debris.
 
 Vertigo does the same. Buzzers and the Torch's torch are debris like the
 rest: they draw torpedoes while they last (appendix S) and go out on the
@@ -1100,7 +1134,8 @@ Read off in October 2026.
   are the torpedoes after the player and the units attacking the player
   (appendix J), on the turret's half round the boat (the mounting's `side`:
   0 above the boat, 1 below), in sight from the boat's centre and contacts
-  of the sonar; the nearest is taken, and if there is none, the target the
+  of the sonar (Vertigo's sonar lists no torpedoes, so there it asks this
+  of the units alone); the nearest is taken, and if there is none, the target the
   player had locked when the attack order was given. `scan` is the pause
   before the next search when one finds nothing, `lock` the seconds a turret
   shows LOC on its new target before it fires, `vollsho` + 1 the shots of a

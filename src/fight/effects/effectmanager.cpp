@@ -51,8 +51,8 @@ EffectManager::EffectManager(Scenario *scenario) :
 {
     txt::DesFile file;
 
-    // the explosions and shots are additive; the ground dust (18-20, 24-26), the debris, the trash
-    // and the bubbles cover what is behind them
+    // the explosions, the shots and the torpedo bubbles (21-23) are additive; the ground dust (18-20,
+    // 24-26), the debris, the trash and the ambient bubbles (BUBBLE.DES) cover what is behind them
     file.load("vfx:sobjects/explosio.des");
     for (int i = 0; i < 27; i++)
         m_billboards.emplace(std::piecewise_construct,

@@ -72,7 +72,8 @@ void Symbols::Symbol::draw(bool on, float time, const Rect &block)
         shownAt = -1;
         return;
     }
-    if (shownAt < 0)
+    // (a new mission's clock starts again at 0)
+    if (shownAt < 0 || time < shownAt)
         shownAt = time;
     if (std::fmod(time - shownAt, 2*BlinkPhase) < BlinkPhase)
         texture.draw(block.x + x, block.y);

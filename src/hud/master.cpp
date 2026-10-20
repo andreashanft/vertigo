@@ -109,7 +109,7 @@ void Master::draw()
         const Vector4D point4 = m * Vector4D(turret->target()->center(), 1);
         const Vector2D centre(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
         const Vector2D half(rect.width/2.0f, rect.height/2.0f);
-        Vector2D offset = Vector2D(point4)/std::abs(point4.w) - centre;
+        Vector2D offset = Vector2D(point4)/std::max(std::abs(point4.w), 1e-4f) - centre;
         if (point4.z > 0)
             offset = -offset*1000.0f;
         const float reach = std::max(std::abs(offset.x)/half.x, std::abs(offset.y)/half.y);

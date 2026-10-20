@@ -38,7 +38,7 @@ class HUD;
 class SonarMonitor : public ui::Widget
 {
 public:
-    // the lamp beside it (from the monitor's section) lights its upper slot while the active sonar is on
+    // the lamp beside it (from the monitor's section) is lit while the active sonar is on
     SonarMonitor(HUD *hud, const txt::DesFile &file, int scale, fight::Scenario::Monitor monitor);
 
 public:
