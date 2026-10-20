@@ -22,6 +22,7 @@
 #include "util/string.hpp"
 #include <vector>
 #include <set>
+#include <algorithm>
 #include "txt/desfile.h"
 #include "util/geometry2d.h"
 #include "util/geometry3d.h"
@@ -98,7 +99,11 @@ public:
     const std::vector<int>& buzzers() const { return m_buzzers; }
     int fixer() const { return m_fixer; }
 
+    // each system's condition, 0 to 1: the gun, the torpedo magazine, the four armour sides (each
+    // as its share of the side's full armour) and the turrets' guns; a mission's damage and the
+    // Fixer's mending stay with the boat (docs/ROADMAP.md, appendix O)
     const float* defects() const { return m_defects; }
+    void setDefect(Defect defect, float condition) { m_defects[defect] = std::clamp(condition, 0.0f, 1.0f); }
 
 private:
     void load();

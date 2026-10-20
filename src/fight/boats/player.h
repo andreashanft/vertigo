@@ -145,6 +145,8 @@ private:
     // the Fixer
     void updateFixer();
     int fixerChoice(float threshold) const;
+    // the armour sides' and the systems' conditions, kept on the boat for after the mission
+    void storeCondition();
     bool m_fixer = false;
     int m_fixerSystem = 1;      // the Fixer starts on the armour
     int m_fixerForced = 0;

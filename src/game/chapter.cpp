@@ -386,6 +386,7 @@ void Chapter::startMission(const String &name)
                          String("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Leaving)).arg(m_stations[m_currentStation].name()));
 
     m_currentStation = -1;
+    m_boatAtStart.reset(new Boat(*m_boat));
 
     playMovies();
 }
@@ -470,6 +471,10 @@ void Chapter::restartMission()
     assert(m_scenario);
     m_scenario->deleteLater();
     m_scenario = NULL;
+    // its damage and torpedoes undone; in place, as the scenario before still has the boat until
+    // it is deleted
+    if (m_boatAtStart)
+        *m_boat = *m_boatAtStart;
 
     startMission();
 }

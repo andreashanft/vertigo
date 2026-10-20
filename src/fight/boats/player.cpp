@@ -105,8 +105,9 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     for (i = 0; i < 4; i++)
         m_shieldMax[i] += armor;
 
+    // each side as the boat left its last mission: front, left, right and back
     for (i = 0; i < 4; i++)
-        m_shield[i] = m_shieldMax[i];
+        m_shield[i] = int(std::lround(boat->defects()[game::Boat::DefectFArm + i]*m_shieldMax[i]));
 
     if (boat->silator() == 4101)
         m_noise -= 1;
@@ -180,6 +181,7 @@ void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObje
     // a shot rattles the cockpit a little, a torpedo fully
     if (kinetic > 0)
         m_scenario->headMotion().shake(std::min(1.0f, std::sqrt(kinetic/2000.0f)));
+    storeCondition();
     if (m_shield[side] < 0)
         destroy();
 }
@@ -692,6 +694,20 @@ void Player::updateFixer()
     default:
         break;
     }
+    storeCondition();
+}
+
+
+void Player::storeCondition()
+{
+    for (int side = 0; side < 4; side++)
+        m_boat->setDefect(game::Boat::Defect(game::Boat::DefectFArm + side), m_shieldMax[side] > 0 ? float(m_shield[side])/m_shieldMax[side] : 1.0f);
+    m_boat->setDefect(game::Boat::DefectGun, m_gun.defect());
+    m_boat->setDefect(game::Boat::DefectToMa, m_magazineCondition);
+    if (m_turrets[0])
+        m_boat->setDefect(game::Boat::DefectTur1, m_turrets[0]->gun().defect());
+    if (m_turrets[1])
+        m_boat->setDefect(game::Boat::DefectTur2, m_turrets[1]->gun().defect());
 }
 
 

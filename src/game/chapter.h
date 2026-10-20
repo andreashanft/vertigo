@@ -161,6 +161,8 @@ private:
     txt::DesFile m_tasksFile;
     bool m_save;
     Boat *m_boat;
+    // the boat as it left for the mission, for starting it again
+    std::unique_ptr<Boat> m_boatAtStart;
     bool m_end;
     String m_name;
     std::function<void(Renderer*)> m_funcSetRenderer;
