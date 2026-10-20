@@ -152,7 +152,6 @@ protected:
     int m_wreckStep = -1;              // the destruction sequence's next burst, -1 if none
     float m_wreckNext = 0;             // when it is due
     bool m_wreckRuns = false;          // a boat that keeps its course until it hits the ground
-    float m_wreckRunEnd = 0;
     bool m_wreckGone = false;          // the hull is gone (the player's death view goes on)
     Vector3D m_wreckAcceleration;      // m/s², drawn anew at every burst
     Vector3D m_wreckSpinAcceleration;  // rad/s² about the hull's own axes

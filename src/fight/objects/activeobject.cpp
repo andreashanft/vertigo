@@ -46,8 +46,7 @@ ActiveObject::ActiveObject(Scenario *scenario) :
 
 ActiveObject::ActiveObject(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info) :
     Object(scenario, file),
-    m_info(info),
-    m_identified(false)
+    m_info(info)
 {
     file.setSection("noise");
     m_noise = file.value("level").toFloat();

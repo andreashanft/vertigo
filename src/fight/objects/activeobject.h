@@ -86,6 +86,7 @@ public:
     // the unit's energy defence changed within the last tenth of a second: the moment the AI
     // reacts to being fired at
     bool hitRecently() const;
+    float hitTime() const { return m_hitTime; }
     bool isIdentified() const { return m_eventIdentify.isCompleted(); }
 
     int kineticShield() const { return m_kineticShield; };
@@ -197,8 +198,7 @@ protected:
     ConditionEvent m_eventBoard;
 
     ObjectInfo m_info;
-    float m_noise;
-    bool m_identified;
+    float m_noise = 0;
     bool m_asleep = false;
     bool m_tumbling = false;
     bool m_silent = false;
@@ -206,10 +206,10 @@ protected:
     int m_engine = 0;
     float m_energy = 1.0f;
 
-    int m_kineticShield;
-    int m_shockShield;
-    int m_kineticShieldMax;
-    int m_shockShieldMax;
+    int m_kineticShield = 0;
+    int m_shockShield = 0;
+    int m_kineticShieldMax = 0;
+    int m_shockShieldMax = 0;
 
     Vector3D m_velocity;
 

@@ -292,7 +292,6 @@ CargoSegment::CargoSegment(Scenario *scenario, CargoShip *ship, int block, const
 {
     m_info = info;
     m_noise = 0;
-    m_identified = false;
     m_kineticShield = m_kineticShieldMax = 1;
 }
 
@@ -381,7 +380,7 @@ Vector3D CargoShip::turretAim(const ShipTurret &turret) const
 
 void CargoShip::updateTurret(ShipTurret &turret, float elapsedTime)
 {
-    if (m_scenario->time() >= turret.nextScan || !isTargetValid(turret.target))
+    if (m_scenario->time() >= turret.nextScan || (turret.target && !isTargetValid(turret.target)))
     {
         turret.target = findTarget(turret);
         turret.nextScan = m_scenario->time() + ScanInterval;

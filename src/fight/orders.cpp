@@ -170,6 +170,7 @@ void Orders::start(int slot)
     m_lying = false;
     m_formation = false;
     m_dockStart = -1;
+    m_turretBusy = false;
     m_unit->setTrigger(false);
     m_unit->setSilent(false);
     if (m_current >= 0 && (m_slots[m_current].type == OrderSlot::Patrol || m_slots[m_current].type == OrderSlot::Attack))
@@ -545,11 +546,11 @@ bool Orders::keepTarget(ActiveObject *enemy)
         glm::length2(player->position() - m_unit->position()) < glm::length2(m_target->position() - m_unit->position()))
     {
         if (ActiveObject *taken = engage(player))
-            m_target = taken;
+            switchTarget(taken);
     }
     // the ordered enemy comes first once in range
     if (enemy && m_target != enemy && isHostile(enemy) && detects(enemy, 1))
-        m_target = engage(enemy);
+        switchTarget(engage(enemy));
     if (!m_target || !isHostile(m_target) || !detects(m_target, 2))
     {
         dropTarget();
@@ -567,6 +568,27 @@ ActiveObject* Orders::engage(ActiveObject *target)
         return m_scenario->engagePlayer(m_unit) ? target : nullptr;
     m_scenario->disengagePlayer(m_unit);
     return target;
+}
+
+
+// a new target starts a new fight, and the torpedo run against the old one ends
+void Orders::switchTarget(ActiveObject *target)
+{
+    if (target == m_target)
+        return;
+    endTorpedoRun();
+    m_fight = Fight::None;
+    m_target = target;
+}
+
+
+// a hit not yet answered; hitRecently() holds for a while, but the dice for it are rolled once
+bool Orders::freshHit()
+{
+    if (!m_unit->hitRecently() || m_unit->hitTime() == m_hitAnswered)
+        return false;
+    m_hitAnswered = m_unit->hitTime();
+    return true;
 }
 
 
@@ -796,7 +818,7 @@ void Orders::updateFight(ActiveObject *target, float speed)
                 startFight(Fight::Turn, target);
             else if (now > m_alignEnd)
                 startFight(Fight::Align, target);
-            else if (m_unit->hitRecently())
+            else if (freshHit())
                 startFight(random() < s.hitProbability ? Fight::Turn : Fight::Align, target);
             else if (m_torpedo && tryTorpedo(target))
                 m_torpedo = false;
@@ -939,7 +961,7 @@ void Orders::updateTankFight(ActiveObject *target, float speed)
         m_unit->setTrigger(false);
         if (distance < arriveRadius(m_boat->maxVelocity()) || now > m_alignEnd)
             startTankFight(Fight::Run, target, speed);
-        else if (m_unit->hitRecently())
+        else if (freshHit())
             startTankFight(random() < s.alignHit ? Fight::Align : Fight::Run, target, speed);
         return;
     }
@@ -1030,6 +1052,8 @@ void Orders::update()
     {
     case OrderSlot::Explode:
         {
+            if (m_boat)
+                m_boat->hold();
             // con says what sets it off (docs/ROADMAP.md, appendix J): 0 when dur is over unless the unit has
             // been boarded by then, 1 dur seconds after it has been boarded (S00202's control unit), 2 when dur
             // is over no matter what
@@ -1133,8 +1157,10 @@ void Orders::update()
             if (glm::length(target - m_unit->position()) < arriveRadius(m_boat->maxVelocity()))
             {
                 if (slot.type == OrderSlot::GotoWithArrive)
+                {
                     m_unit->eventFinish()->complete();
                     m_scenario->logEvent(m_unit->name(), m_unit->eventFinish(), txt::Fight9);
+                }
                 next();
                 m_boat->hold();
                 return;
