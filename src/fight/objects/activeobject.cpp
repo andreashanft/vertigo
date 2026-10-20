@@ -337,6 +337,12 @@ void ActiveObject::wreckBurst(int type, float spread, const Vector3D &centre, fl
 
 void ActiveObject::wreckDebris(int index, float minElevation, float maxElevation, const Vector3D &centre, float radius)
 {
+    // the bodies stay where the hull was (docs/ROADMAP.md, appendix R)
+    if (index >= 14 && index <= 16)
+    {
+        m_scenario->effectManager().addBody(Effects(int(Effects::Debris_0) + index), centre);
+        return;
+    }
     auto between = [](float min, float max) { return min + (max - min)*util::random()/float(RAND_MAX); };
     const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
     const float elevation = between(minElevation, maxElevation);

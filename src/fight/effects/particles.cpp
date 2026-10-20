@@ -73,7 +73,7 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
         return false;
     if (glm::distance2(position, m_scenario->position()) > Range*Range)
         return false;
-    const float life = motion == Motion::Debris ? billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX)) : 0;
+    const float life = motion == Motion::Debris || motion == Motion::Body ? billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX)) : 0;
     m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate, billboard->kineticShield(), life });
     return true;
 }
@@ -109,7 +109,8 @@ bool Particles::hitDebris(const Vector3D &start, const Vector3D &end, float radi
     float nearestAlong = 2;
     for (Particle &particle : m_particles)
     {
-        if (particle.motion != Motion::Debris || particle.time < DebrisGrace || particle.shield <= 0 || glm::length(particle.velocity) >= speed)
+        if ((particle.motion != Motion::Debris && particle.motion != Motion::Body) || particle.time < DebrisGrace || particle.shield <= 0 ||
+            glm::length(particle.velocity) >= speed)
             continue;
         const float along = length2 > 0 ? glm::clamp(glm::dot(particle.position - start, way)/length2, 0.0f, 1.0f) : 0.0f;
         const float reach = radius + debrisRadius(particle.billboard, particle.scale);
@@ -171,6 +172,25 @@ bool Particles::update(Particle &particle, float elapsedTime)
                 return false;
             }
             return true;
+        }
+
+    case Motion::Body:
+        {
+            if (particle.shield <= 0)
+            {
+                endDebris(particle, int(Effects::Explosion_4), int(sfx::Sample::Explosion_Small));
+                return false;
+            }
+            const float height = m_scenario->surface().heightAt(particle.position.x, particle.position.y);
+            if (particle.position.z - 0.5f*debrisRadius(billboard, particle.scale) < height)
+            {
+                endDebris(particle, int(Effects::Explosion_12), int(sfx::Sample::Explosion_Ground));
+                return false;
+            }
+            particle.time += elapsedTime;
+            const float fading = particle.time - particle.life;
+            particle.scale = fading > 0 ? 1 - fading : 1;
+            return fading < 1;
         }
 
     case Motion::Bubble:

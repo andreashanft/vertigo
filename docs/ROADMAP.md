@@ -985,8 +985,11 @@ speed, its angular acceleration drawn anew every frame within 3 rad/s²,
 and after 1.6 s it waits until it hits the ground (or five seconds) before
 the last burst. At 2.0 s the hull is gone and the wreck stays: the player's
 boat leaves one body (DEBRIS.DES 16 half the time, 15 or 14 otherwise),
-another boat none, 16, 15 and 16, or all of 14 to 16, each as likely, flung
-out at 0° to 90° elevation; the player's boat also blows up (entry 2) at
+another boat none, 16, 15 and 16, or all of 14 to 16, each as likely. The
+bodies stay where the hull was, do not drift as debris does, and after
+their `LifeTime` (16 s, up to 1.6 times that) shrink away within a second;
+a hit makes one go out in a medium puff (4), the ground in a ground impact
+(Vertigo flung them out as debris until October 2026); the player's boat also blows up (entry 2) at
 the front and back of its hull. The unit counts as destroyed for the
 mission only when its hull is gone (at 2.0 s, later for one that keeps its
 course; Vertigo counted it at the start until October 2026); the player's
