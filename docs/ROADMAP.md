@@ -952,9 +952,9 @@ only touches when the faster of the two pairs with the other.
   pass through it, and an active mine that runs into it goes up with it.
   Destroyed, it goes out in a large puff (entry 5) and leaves no debris.
 
-Vertigo does the same. Buzzers and the Torch's torch are debris like the
-rest: they draw torpedoes while they last (appendix S) and go out on the
-ground.
+Vertigo does the same. Buzzers are debris like the rest: they draw
+torpedoes while they last (appendix S) and go out on the ground; the
+Torch's torch hovers instead (appendix S).
 
 ### R. What the original does when a boat is destroyed
 
@@ -1135,6 +1135,12 @@ Read off in October 2026. All 22 types share one behaviour, with their
   ten (`DEBRIS.DES` 19, else the dummy 21), 1 nine times in ten (18, else
   20), 2 none (the tanks, the bionts, some scouts). Vertigo did not let the
   units throw buzzers until October 2026.
+- **The Torch's torch** (`DEBRIS.DES` 22) rises from the burst and sinks as
+  other debris does until it comes down to three of its radii over the
+  ground; there it hovers, bobbing and no longer drifting, flickering
+  between 0.9 and 1.1 of its size. It never goes out on the ground or when
+  hit; once its time is up it shrinks away within a second. Vertigo let it
+  sink to the ground until October 2026.
 - **Buzzers**: the player's buzzer leaves the tail upwards and backwards
   (twice the boat's up less its nose) at 12.5 m/s on top of the boat's own
   velocity; nine in ten are buzzers (`DEBRIS.DES` 18), one in ten a dummy

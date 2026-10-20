@@ -109,6 +109,7 @@ private:
         Decoy decoy = Decoy::None;
         int faction = -1;
         int id = 0;     // decoys: known by this
+        bool hovering = false;  // the Torch's torch, once it has levelled off
     };
 
     struct Batch
@@ -120,6 +121,7 @@ private:
 
     // advances the particle, false when it is done
     bool update(Particle &particle, float elapsedTime);
+    bool updateTorch(Particle &particle, float elapsedTime);
     // a piece of debris goes out in an explosion of its own, with its sound
     void endDebris(const Particle &particle, int explosion, int sample);
 
