@@ -159,6 +159,7 @@ private:
     Vector3D blockCenter(const Block &block) const; // world
     float blockRadius(const Block &block) const;
     Matrix blockTransform(const Block &block) const; // ship coordinates
+    Matrix blockMotion(const Block &block) const;
     void updateLocalBox();
     void updateSegments();
 

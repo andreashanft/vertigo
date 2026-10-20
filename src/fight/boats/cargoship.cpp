@@ -267,7 +267,7 @@ void CargoShip::updateSegments()
         if (!block.segment)
             continue;
         block.segment->setEnabled(isEnabled() && !block.destroyed);
-        const Matrix motion = blockTransform(block)*glm::inverse(glm::translate(block.position)*glm::scale(Vector3D(block.scale)));
+        const Matrix motion = blockMotion(block);
         block.segment->place(block.box.transform(glm::translate(m_position)*Matrix(m_orientationInverted)*motion), m_velocity, m_kineticShield, m_kineticShieldMax);
     }
 }
@@ -442,7 +442,7 @@ void CargoShip::draw()
         // with its block as that shakes and sinks
         const Block &block = m_blocks[turret.block];
         gfx::Pipeline::pushMatrix();
-        gfx::Pipeline::multiply(blockTransform(block)*glm::inverse(glm::translate(block.position)*glm::scale(Vector3D(block.scale))));
+        gfx::Pipeline::multiply(blockMotion(block));
         gfx::Pipeline::translate(turret.position);
         if (turret.below)
             gfx::Pipeline::rotate(180, Vector3D(0, 1, 0));
@@ -475,9 +475,10 @@ bool CargoShip::intersect(const Vector3D &start, const Vector3D &dir, float radi
     {
         if (block.destroyed)
             continue;
-        const Matrix inverse = glm::inverse(blockTransform(block));
+        const Matrix transform = blockTransform(block);
+        const Matrix inverse = glm::inverse(transform);
         if (block.module->intersect(Vector3D(inverse*Vector4D(localStart, 1)), glm::normalize(Vector3D(inverse*Vector4D(localDir, 0))), radius/block.scale, d, n))
-            take(d*block.scale, glm::normalize(Vector3D(blockTransform(block)*Vector4D(n, 0))));
+            take(d*block.scale, glm::normalize(Vector3D(transform*Vector4D(n, 0))));
     }
     for (const ShipTurret &turret : m_turrets)
     {
@@ -568,8 +569,15 @@ float CargoShip::blockRadius(const Block &block) const
 
 Matrix CargoShip::blockTransform(const Block &block) const
 {
+    return blockMotion(block)*glm::translate(block.position)*glm::scale(Vector3D(block.scale));
+}
+
+
+// how the block has moved from its place: shaken, sunk and tilted about its middle
+Matrix CargoShip::blockMotion(const Block &block) const
+{
     const Vector3D middle = 0.5f*(block.box.minPoint() + block.box.maxPoint());
-    return glm::translate(middle + block.shake + Vector3D(0, 0, -block.sink))*Matrix(block.tilt)*glm::translate(block.position - middle)*glm::scale(Vector3D(block.scale));
+    return glm::translate(middle + block.shake + Vector3D(0, 0, -block.sink))*Matrix(block.tilt)*glm::translate(-middle);
 }
 
 
@@ -580,7 +588,7 @@ void CargoShip::destroyTurret(ShipTurret &turret)
     turret.destroyed = true;
     turret.target = nullptr;
     const Block &block = m_blocks[turret.block];
-    const Vector3D at = toWorld(Vector3D(blockTransform(block)*glm::inverse(glm::translate(block.position)*glm::scale(Vector3D(block.scale)))*Vector4D(turret.position, 1)));
+    const Vector3D at = toWorld(Vector3D(blockMotion(block)*Vector4D(turret.position, 1)));
     m_scenario->effectManager().addEffect(Effects::Explosion_0, at, 0, 0.6f);
     m_scenario->effectManager().addEffect(Effects::Explosion_3, at, 0, 0.6f);
     sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
