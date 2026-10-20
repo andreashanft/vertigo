@@ -17,7 +17,6 @@
 
 #include "pause.h"
 #include "hud.h"
-#include "util/ticks.h"
 
 
 namespace hud {
@@ -34,8 +33,8 @@ Pause::Pause(HUD *hud, Rect rect) :
 
 void Pause::draw()
 {
-    // mission time stands still, so blink with the wall clock
-    if (m_hud->isPaused() && (util::ticks()/500) % 2 == 0)
+    // steady while paused, as in the original
+    if (m_hud->isPaused())
     {
         const Rect rect = m_hud->projectCenter(m_rect);
         m_pause.draw(rect.x, rect.y);

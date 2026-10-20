@@ -369,6 +369,10 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   `[HUDSymbolBlock1]`, `[SlaveMonitor0/1]` (none in 000/Hiob), the monitors'
   `Type` and `Lamp*` keys (`*.D16`, RGB565 rows twice the lamp's width,
   the lamp off on the left and on on the right). `[Flake]` is unread.
+- PAUSE (`HUDPAUSE`, 119×32) stands still while the game is paused,
+  centred in `[HUDPauseBlock]` (read off in October 2026: in the Gator's
+  cockpit 001 at y 188, 35 pixels above the view's centre; in the Hiob's
+  000 at y 237, right over the crosshair). Vertigo used to blink it.
 - Images in `GFX/IMG/COCKPIT`: `HUDALERT`, `HUDPAUSE`, `HUDTHREA`/`HUDTHREY`,
   `HUDSYM1` (under fire), `HUDSYM2` (radiation), `HUDSYM3` (current), `HUDTURR` (a turret's
   aim cross, appendix T), `HUDTURGR/RE/YE` (never shown), `HUDLOCAA`/`HUDLOCPA` (lock rings),
