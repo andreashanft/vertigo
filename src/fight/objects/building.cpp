@@ -92,7 +92,7 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, int card, i
             }
             else
                 cluster.offset.z = scenario->surface().height(heightX, heightY)*scale.z;
-            if (lifting == "p" || lifting == "l" || heightRef < 0)
+            if (lifting == "p" || lifting == "l")
                 scenario->surface().darken(clusterX, clusterY, BuildingShade);
         }
 
