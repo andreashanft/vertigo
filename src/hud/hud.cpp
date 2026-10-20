@@ -1010,7 +1010,7 @@ void HUD::press(input::KeyEvent *e)
     if (e->key() >= input::Key_F1 && e->key() <= input::Key_F4 && !(e->modifiers() & input::AltModifier) && !m_slaveMonitors.empty())
     {
         m_slaveMonitors.front()->pressWeaponKey(SlaveMonitor::Weapon(e->key() - input::Key_F1));
-        sfx::SampleMap::get(sfx::Sample::Sample5).play();
+        sfx::SampleMap::get(sfx::Sample::Click).play();
     }
     if (e->key() == input::Key_A)
     {

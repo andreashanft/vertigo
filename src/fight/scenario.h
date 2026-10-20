@@ -121,6 +121,8 @@ public:
     int playerId() const { return m_playerId; }
     // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
     void playerHit(ActiveObject *unit, bool destroyed);
+    // whether the player's hits on the unit (the mission's object id) are friendly fire
+    bool isFriendlyFire(int id, const ActiveObject *unit) const;
     // the player's boat is destroyed: the death view watches its destruction sequence from
     // outside (docs/ROADMAP.md, appendix R)
     void destroyPlayer();
@@ -141,8 +143,9 @@ public:
     Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
     const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
     int torpedoesLaunched() const { return m_torpedoesLaunched; }
-    // homing torpedoes on their way to the unit
+    // homing torpedoes on their way to the unit, and the nearest of them (nullptr if none)
     int threatsTo(const ActiveObject *unit) const;
+    const Torpedo* nearestThreatTo(const ActiveObject *unit) const;
     // the decoy that draws this homing torpedo away from its target, by its type's sensor; 0 if
     // none does (docs/ROADMAP.md, appendix S)
     int lure(const Torpedo *torpedo) const;

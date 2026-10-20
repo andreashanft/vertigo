@@ -20,6 +20,7 @@
 #include "fight/scenario.h"
 #include "sfx/samplemap.h"
 #include "util/random.h"
+#include <algorithm>
 
 
 namespace fight {
@@ -46,6 +47,13 @@ void Projectile::setDirection(const Vector3D &direction)
 }
 
 
+void Projectile::setOwner(ActiveObject *owner)
+{
+    m_owner = owner;
+    m_faction = owner ? owner->contactFaction() : -1;
+}
+
+
 bool Projectile::update(float elapsedTime)
 {
     m_time += elapsedTime;
@@ -58,15 +66,27 @@ bool Projectile::update(float elapsedTime)
     }
 
     Vector3D newPos = m_originPos + m_direction*(m_time*m_billboard->velocity());
+    // a shard keeps its way over the ground, but makes at 10 m/s for one of its radii over the
+    // ground, never coming lower than half a radius (docs/ROADMAP.md, appendix S)
+    if (m_hugsGround)
+    {
+        const float radius = m_billboard->box().maxPoint().x;
+        newPos.z = m_position.z;
+        const float ground = m_scenario->surface().heightAt(newPos.x, newPos.y);
+        newPos.z += (newPos.z < ground + radius ? HugSpeed : -HugSpeed)*elapsedTime;
+        newPos.z = std::max(newPos.z, ground + 0.5f*radius);
+    }
 
     Vector3D pos, normal;
-    if (m_scenario->surface().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal))
+    if (!m_hugsGround && m_scenario->surface().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal))
     {
         m_scenario->effectManager().addEffect(Effects::Explosion_12, pos);
         disable();
         return true;
     }
-    Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache, m_owner);
+    const int faction = m_faction;
+    Object *collision = m_scenario->collisionManager().testCollision(m_position, newPos, m_billboard->collisionRadius(), pos, normal, &m_collisionCache, m_owner,
+                                                                     [faction](const Object *object) { return ActiveObject::touches(object, faction); });
     // a piece of debris before that stops the shot (docs/ROADMAP.md, appendix Q)
     Particles::DebrisHit debris;
     if (m_scenario->effectManager().hitDebris(m_position, collision ? pos : newPos, m_billboard->collisionRadius(), m_billboard->velocity(), m_kineticStrength, debris))
@@ -89,6 +109,16 @@ bool Projectile::update(float elapsedTime)
     }
 
     m_position = newPos;
+    // each puff 5 m from its centre to its edge, times the share of its way the shard has flown,
+    // at least 0.6
+    if (m_puffs && m_time >= m_nextPuff)
+    {
+        Billboard *puff = m_scenario->effectManager().getBillboard(Effects::Explosion_5);
+        const float share = glm::clamp(m_time*m_billboard->velocity()/std::max(m_billboard->range(), 0.01f), 0.6f, 1.0f);
+        const float sprite = puff ? puff->box().maxPoint().x : 1.0f;
+        m_scenario->effectManager().addEffect(Effects::Explosion_5, m_position, 0, PuffSize*share/std::max(sprite, 0.01f));
+        m_nextPuff += PuffInterval;
+    }
     return false;
 }
 

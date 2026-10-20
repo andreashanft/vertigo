@@ -47,6 +47,7 @@ static ActiveObject::ObjectInfo playerInfo()
 {
     ActiveObject::ObjectInfo info;
     info.iff = Scenario::PlayerFaction;
+    info.faction = true;
     return info;
 }
 
@@ -65,7 +66,8 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     m_boat(boat),
     m_torpedoItems(boat->torpedoes()),
     m_selectedTorpedo(boat->torpedoes().empty() ? -1 : 0),
-    m_torpedoReady(0),
+    m_loadedTorpedo(m_selectedTorpedo),
+    m_magazineState(boat->torpedoes().empty() ? MagazineState::Empty : MagazineState::Ready),
     m_rearmingTime(5),
     m_lockTarget(nullptr),
     m_lockTime(0),
@@ -78,6 +80,8 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
         txt::DesFile weapons("vfx:sobjects/globweap.des");
         weapons.setSection(String("torpedomagazine%1").arg(boat->magazine() - 1025));
         m_rearmingTime = weapons.value("rearmingtime", 5).toFloat();
+        m_magazineDamping = weapons.value("defectdamping", 0).toFloat();
+        m_magazineDelay = weapons.value("defectdelay", 0).toFloat();
     }
 
     int i;
@@ -196,15 +200,9 @@ bool Player::isCritical() const
 }
 
 
-bool Player::torpedoReady() const
-{
-    return m_selectedTorpedo >= 0 && m_scenario->time() >= m_torpedoReady;
-}
-
-
 float Player::lockProgress() const
 {
-    const TorpedoType *type = m_selectedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_selectedTorpedo] - 1) : nullptr;
+    const TorpedoType *type = m_loadedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_loadedTorpedo] - 1) : nullptr;
     if (!type || type->lockType == 0 || !m_lockTarget)
         return 0;
     return type->lockDelay > 0 ? std::min(1.0f, m_lockTime/type->lockDelay) : 1.0f;
@@ -213,37 +211,96 @@ float Player::lockProgress() const
 
 float Player::lockRemaining() const
 {
-    const TorpedoType *type = m_selectedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_selectedTorpedo] - 1) : nullptr;
+    const TorpedoType *type = m_loadedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_loadedTorpedo] - 1) : nullptr;
     return type ? std::max(0.0f, type->lockDelay - m_lockTime) : 0;
 }
 
 
+// Tab clicks whether or not a torpedo leaves: the loaded one, while the magazine is ready or
+// waiting, unless it jams as a gun does (its condition, at least 0.2, against a random share of
+// its defectdamping; then jammed for defectdelay times 0.5 to 1.5). The selection then moves on to
+// the next torpedo, which is loaded after the wait
 void Player::fireTorpedo()
 {
-    if (!torpedoReady())
+    sfx::SampleMap::get(sfx::Sample::Click).play();
+    if (m_loadedTorpedo < 0 || (m_magazineState != MagazineState::Ready && m_magazineState != MagazineState::Waiting))
+        return;
+    const float now = m_scenario->time();
+    if (util::random()/float(RAND_MAX)*m_magazineDamping >= std::max(m_magazineCondition, 0.2f))
     {
-        sfx::SampleMap::get(sfx::Sample::Error).play();
+        m_magazineState = MagazineState::Jammed;
+        m_magazineTime = now + m_magazineDelay*(0.5f + util::random()/float(RAND_MAX));
         return;
     }
-    const int type = m_torpedoItems[m_selectedTorpedo] - 1;
+    const int type = m_torpedoItems[m_loadedTorpedo] - 1;
     ActiveObject *target = lockProgress() >= 1.0f ? m_lockTarget : nullptr;
     m_scenario->launchTorpedo(type, m_position + dir()*4.0f - up()*1.0f, dir(), glm::length(m_velocity), this, target);
 
-    m_torpedoItems.erase(m_torpedoItems.begin() + m_selectedTorpedo);
-    m_boat->useTorpedo(m_selectedTorpedo);
-    if (m_selectedTorpedo >= int(m_torpedoItems.size()))
-        m_selectedTorpedo = int(m_torpedoItems.size()) - 1;
-    m_torpedoReady = m_scenario->time() + m_rearmingTime;
+    m_torpedoItems.erase(m_torpedoItems.begin() + m_loadedTorpedo);
+    m_boat->useTorpedo(m_loadedTorpedo);
+    // the selection moves on past itself; the fired one's place is taken by the one after it
+    if (m_selectedTorpedo != m_loadedTorpedo)
+        m_selectedTorpedo += m_selectedTorpedo > m_loadedTorpedo ? 0 : 1;
+    m_loadedTorpedo = -1;
     m_lockTime = 0;
+    if (m_torpedoItems.empty())
+    {
+        m_selectedTorpedo = -1;
+        m_magazineState = MagazineState::Empty;
+        return;
+    }
+    m_selectedTorpedo %= int(m_torpedoItems.size());
+    m_magazineState = MagazineState::Waiting;
+    m_magazineTime = now + MagazineWait;
 }
 
 
+// Enter clicks and selects the next torpedo; one of the loaded type needs no loading, unless the
+// magazine is busy loading already, any other is loaded after the wait
 void Player::selectNextTorpedo()
 {
+    sfx::SampleMap::get(sfx::Sample::Click).play();
     if (m_torpedoItems.empty())
         return;
     m_selectedTorpedo = (m_selectedTorpedo + 1) % int(m_torpedoItems.size());
     m_lockTime = 0;
+    if (m_loadedTorpedo >= 0 && m_torpedoItems[m_selectedTorpedo] == m_torpedoItems[m_loadedTorpedo] &&
+        m_magazineState != MagazineState::Rearming && m_magazineState != MagazineState::Waiting)
+    {
+        m_loadedTorpedo = m_selectedTorpedo;
+        m_magazineState = MagazineState::Ready;
+        return;
+    }
+    m_magazineState = MagazineState::Waiting;
+    m_magazineTime = m_scenario->time() + MagazineWait;
+}
+
+
+// after the wait the selected torpedo is loaded, with the revolver's sound, for the magazine's
+// rearming time, and then the voice says it is ready; a jam just ends
+void Player::updateMagazine()
+{
+    const float now = m_scenario->time();
+    if (now < m_magazineTime)
+        return;
+    switch (m_magazineState)
+    {
+    case MagazineState::Waiting:
+        m_loadedTorpedo = m_selectedTorpedo;
+        m_magazineState = MagazineState::Rearming;
+        m_magazineTime = now + m_rearmingTime;
+        sfx::SampleMap::get(sfx::Sample::Torpedo_Reload).play();
+        break;
+    case MagazineState::Rearming:
+        m_magazineState = MagazineState::Ready;
+        sfx::SampleMap::get(sfx::Sample::Voice_TorpedoReady).play();
+        break;
+    case MagazineState::Jammed:
+        m_magazineState = MagazineState::Ready;
+        break;
+    default:
+        break;
+    }
 }
 
 
@@ -363,6 +420,7 @@ bool Player::update(float elapsedTime)
     if (m_surfaceHold)
         m_velocity.z -= 9.81f*elapsedTime;
     rechargeEnergy(elapsedTime);
+    updateMagazine();
     if (m_fixer)
         updateFixer();
 
@@ -457,25 +515,27 @@ bool Player::update(float elapsedTime)
         m_speed = -m_speed;
 
 
-    // torpedo lock: the target must stay locked and in front for the selected torpedo's lock time
+    // torpedo lock: the target must stay locked and in front for the loaded torpedo's lock time,
+    // which only runs once the torpedo is in and the magazine ready (appendix S)
     ActiveObject *target = m_scenario->target().locked();
     if (target != m_lockTarget)
     {
         m_lockTarget = target;
         m_lockTime = 0;
     }
-    if (m_lockTarget && glm::dot(dir(), glm::normalize(m_lockTarget->center() - m_position)) > std::cos(glm::radians(40.0f)))
+    if (m_lockTarget && torpedoReady() && glm::dot(dir(), glm::normalize(m_lockTarget->center() - m_position)) > std::cos(glm::radians(40.0f)))
         m_lockTime += elapsedTime;
     else
         m_lockTime = 0;
-    // a beep when locking starts, beep and voice when a homing torpedo would follow
+    // a beep when locking starts, beep and the "target locked" voice when a homing torpedo would
+    // follow
     const float progress = lockProgress();
     if (progress > 0 && m_lockTime <= elapsedTime)
         sfx::SampleMap::get(sfx::Sample::LockOn).play();
     if (progress >= 1 && !m_lockAnnounced)
     {
         sfx::SampleMap::get(sfx::Sample::TorpedoLockOn).play();
-        sfx::SampleMap::get(sfx::Sample::Voice_TorpedoReady).play();
+        sfx::SampleMap::get(sfx::Sample::Voice_TargetLocked).play();
     }
     m_lockAnnounced = progress >= 1;
 
@@ -588,7 +648,7 @@ void Player::cycleFixer()
         next = 0;
     m_fixerForced = next;
     m_fixerNext = m_scenario->time() + 1.0f;
-    sfx::SampleMap::get(sfx::Sample::Sample5).play();
+    sfx::SampleMap::get(sfx::Sample::Click).play();
 }
 
 

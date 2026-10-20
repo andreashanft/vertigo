@@ -46,6 +46,8 @@ public:
         Animation,  // plays its animation once, in place
         Debris,     // flies off, slows down and sinks; goes out on the ground, at the end of its
                     // LifeTime or when it is hit (docs/ROADMAP.md, appendix Q)
+        Body,       // a body left by a wreck (DEBRIS.DES 14-16): stays where it was left for its
+                    // LifeTime, then shrinks away within a second; goes out when hit or on the ground
         Bubble,     // rises (the billboard's Velocity) until it is far from the player; loops
         Dust,       // plays its animation where it was made
     };
@@ -109,6 +111,7 @@ private:
         Decoy decoy = Decoy::None;
         int faction = -1;
         int id = 0;     // decoys: known by this
+        bool hovering = false;  // the Torch's torch, once it has levelled off
     };
 
     struct Batch
@@ -120,6 +123,7 @@ private:
 
     // advances the particle, false when it is done
     bool update(Particle &particle, float elapsedTime);
+    bool updateTorch(Particle &particle, float elapsedTime);
     // a piece of debris goes out in an explosion of its own, with its sound
     void endDebris(const Particle &particle, int explosion, int sample);
 

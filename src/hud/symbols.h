@@ -42,7 +42,8 @@ protected:
 private:
     HUD *m_hud;
     Rect m_rect;
-    gfx::Texture m_threat;
+    gfx::Texture m_red;
+    gfx::Texture m_yellow;
 };
 
 

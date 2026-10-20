@@ -162,6 +162,13 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
 }
 
 
+bool ActiveObject::touches(const Object *object, int faction)
+{
+    const ActiveObject *unit = dynamic_cast<const ActiveObject *>(object);
+    return !unit || faction < 0 || unit->contactFaction() != faction;
+}
+
+
 bool ActiveObject::engageTorpedo(ActiveObject *attacker)
 {
     m_torpedoAttackers.erase(std::remove_if(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), [](ActiveObject *unit) {
@@ -334,8 +341,13 @@ void ActiveObject::wreckDebris(int index, float minElevation, float maxElevation
     const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
     const float elevation = between(minElevation, maxElevation);
     const Vector3D direction(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation));
-    // 0.1 to 0.6 radii out, at the piece's own speed
-    m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), centre + direction*radius*between(0.1f, 0.6f), direction);
+    // 0.1 to 0.6 radii out, at the piece's own speed; the bodies stay there (docs/ROADMAP.md,
+    // appendix R)
+    const Vector3D position = centre + direction*radius*between(0.1f, 0.6f);
+    if (index >= 14 && index <= 16)
+        m_scenario->effectManager().addBody(Effects(int(Effects::Debris_0) + index), position);
+    else
+        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), position, direction);
 }
 
 

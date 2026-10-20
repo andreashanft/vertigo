@@ -86,6 +86,8 @@ private:
     bool torpedoAfterPlayer() const;
     void release();
     void fireAt(ActiveObject *target);
+    // a unit or building whose hits would be friendly fire within the distance along the way
+    bool friendInLine(const Vector3D &from, const Vector3D &dir, float distance, const ActiveObject *target) const;
     Vector3D mountPosition() const;
 
 private:

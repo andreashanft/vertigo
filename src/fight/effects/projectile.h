@@ -37,10 +37,14 @@ public:
 public:
     void setPosition(const Vector3D &pos);
     void setDirection(const Vector3D &direction);
-    void setOwner(ActiveObject *owner) { m_owner = owner; }
+    void setOwner(ActiveObject *owner);
     // the light an energy shot gives off; black for a shell
     void setLightColor(const Vector3D &color) { m_lightColor = color; }
     const Vector3D& lightColor() const { return m_lightColor; }
+    // the Cluster Bomb's first shards leave a large puff every 0.35 s (docs/ROADMAP.md, appendix S)
+    void setPuffs(bool puffs) { m_puffs = puffs; }
+    // the Cluster Bomb's shards follow the terrain
+    void setHugsGround(bool hugs) { m_hugsGround = hugs; }
     bool update(float elapsedTime);
 
 private:
@@ -49,6 +53,13 @@ private:
     Vector3D m_lightColor = Vector3D(0);
     CollisionCache m_collisionCache;
     ActiveObject *m_owner = nullptr; // never hit by its own shots
+    int m_faction = -1;              // the owner's: it passes through that faction's units
+    bool m_puffs = false;
+    bool m_hugsGround = false;
+    static constexpr float HugSpeed = 10.0f;  // m/s up or down towards a radius over the ground
+    float m_nextPuff = PuffInterval;
+    static constexpr float PuffInterval = 0.35f;
+    static constexpr float PuffSize = 5.0f;   // m
 };
 
 

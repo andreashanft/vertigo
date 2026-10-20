@@ -91,6 +91,8 @@ public:
     void draw();
     void destroy();
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
+    // its owner's faction: it passes through that faction's units, and their shots through it
+    int contactFaction() const { return m_faction; }
 
 private:
     void detonate(const Vector3D &position, ActiveObject *hit, bool ground = false);
@@ -112,6 +114,7 @@ private:
     const TorpedoType &m_type;
     Module *m_model;
     ActiveObject *m_owner;
+    int m_faction;
     ActiveObject *m_target;
     Vector3D m_dir;
     float m_speed;

@@ -426,6 +426,13 @@ bool Orders::sees(const ActiveObject *unit) const
 }
 
 
+bool Orders::clearShot(const ActiveObject *target) const
+{
+    Vector3D position, normal;
+    return !m_scenario->surface().testCollision(m_unit->center(), target->center(), 0.0f, position, normal);
+}
+
+
 bool Orders::isBuzzer(const ActiveObject *unit)
 {
     const DecoyContact *decoy = dynamic_cast<const DecoyContact *>(unit);
@@ -874,7 +881,7 @@ void Orders::updateFight(ActiveObject *target, float speed)
             const float reach = m_runDistance - m_flightRadius;
             bool over = glm::length2(start - m_unit->position()) > reach*reach || now > m_attackEnd;
             const Vector3D way = aim - m_unit->position();
-            m_unit->setTrigger(m_unit->gun() && glm::length(way) > 0.1f && glm::dot(m_boat->dir(), glm::normalize(way)) > AimCos);
+            m_unit->setTrigger(m_unit->gun() && glm::length(way) > 0.1f && glm::dot(m_boat->dir(), glm::normalize(way)) > AimCos && clearShot(target));
             const int shots = m_unit->gun() ? m_unit->gun()->shots() - m_shotsBefore : 0;
             if (shots > 0 && m_breakOnHit && m_unit->hitRecently())
                 over = true;
@@ -996,19 +1003,19 @@ void Orders::updateTankFight(ActiveObject *target, float speed)
         return;
     }
 
-    // the drive at the target, the turret firing within 14 degrees of it
+    // the drive at the target, the turret firing within 14 degrees of it while the terrain is clear
     m_boat->steerTo(target->position(), m_attackSpeed);
     const Vector3D way = aim - m_unit->position();
-    m_unit->setTrigger(m_unit->gun() && glm::length(way) > 0.1f && glm::dot(m_boat->gunDirection(), glm::normalize(way)) > AimCos);
+    m_unit->setTrigger(m_unit->gun() && glm::length(way) > 0.1f && glm::dot(m_boat->gunDirection(), glm::normalize(way)) > AimCos && clearShot(target));
     const float distance = glm::length(Vector2D(target->position()) - Vector2D(m_unit->position()));
     if (distance < arriveRadius(m_boat->maxVelocity()) || now > m_attackEnd)
         startTankFight(Fight::Align, target, speed);
 }
 
 
-// towers: turn to the target and fire once the turret points at it; without one the turret rests
-// turned by car, and on patrol it sweeps: every 0.5-2.5 s it turns by 15-90 degrees either way,
-// wherever that takes it (docs/ROADMAP.md, appendix J)
+// towers: turn to the target and fire once the turret points at it and the terrain is clear;
+// without one the turret rests turned by car, and on patrol it sweeps: every 0.5-2.5 s it turns by
+// 15-90 degrees either way, wherever that takes it (docs/ROADMAP.md, appendix J)
 void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
 {
     TurretBase *turret = dynamic_cast<TurretBase *>(m_unit);
@@ -1031,9 +1038,9 @@ void Orders::updateTurret(ActiveObject *target, float range, bool sweep)
     const Vector3D point = lead(target);
     turret->aimAt(point);
     const float gunRange = m_unit->gun() ? std::min(range, m_unit->gun()->range()) : 0;
-    m_unit->setTrigger(m_unit->gun() && aligned(turret->aim(), point, gunRange));
-    // torpedo towers: a torpedo whenever reloaded and pointing at the target
-    if (m_unit->hasTorpedoes() && aligned(turret->aim(), target->center(), range))
+    m_unit->setTrigger(m_unit->gun() && aligned(turret->aim(), point, gunRange) && clearShot(target));
+    // torpedo towers: a torpedo whenever reloaded, pointing at the target and the terrain is clear
+    if (m_unit->hasTorpedoes() && aligned(turret->aim(), target->center(), range) && clearShot(target))
         m_unit->fireTorpedo(target, turret->aim()*4.0f + m_unit->position() + Vector3D(0, 0, 4), turret->aim());
 }
 

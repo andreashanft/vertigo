@@ -20,6 +20,7 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include <cmath>
+#include <algorithm>
 #include "txt/desfile.h"
 #include "util/bytereader.hpp"
 #include "util/datapath.h"
@@ -232,17 +233,24 @@ void Surface::setHeight(int x, int y, int refx, int refy)
 
 bool Surface::testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal)
 {
-    int x0 = end.x / m_scale.x / 8;
-    int y0 = end.y / m_scale.y / 8;
-    Element &element = getElement(x0*8, y0*8);
-    if (element.testCollision(end, radius))
+    // each step's end is tested against its cell's highest point, and only below that against the
+    // ground itself, which also tells where the step went under
+    const float step = 0.5f*std::min(m_scale.x, m_scale.y);
+    const int steps = std::max(1, int(std::ceil(glm::length(Vector2D(end - start))/step)));
+    Vector3D from = start;
+    for (int i = 1; i <= steps; i++)
     {
-        if (m_tesselator.intersect(start/m_scale, end/m_scale, radius/m_scale.z, position, normal))
+        const Vector3D to = i == steps ? end : glm::mix(start, end, float(i)/steps);
+        const int x0 = to.x / m_scale.x / 8;
+        const int y0 = to.y / m_scale.y / 8;
+        Element &element = getElement(x0*8, y0*8);
+        if (element.testCollision(to, radius) && m_tesselator.intersect(from/m_scale, to/m_scale, radius/m_scale.z, position, normal))
         {
             position *= m_scale;
             normal = glm::normalize(normal/m_scale);
             return true;
         }
+        from = to;
     }
     return false;
 }

@@ -23,6 +23,7 @@
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "fight/orders.h"
+#include "fight/weapons/torpedo.h"
 #include "fight/weapons/unitgun.h"
 #include "sfx/samplemap.h"
 #include "txt/desfile.h"
@@ -66,6 +67,17 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     m_angleFriction = Vector3D(-file.value("AngleFrictionB").toFloat(), -file.value("AngleFrictionC").toFloat(), -file.value("AngleFrictionA").toFloat());
     file.setSection("fluid");
     m_currentFactor = file.value("Current", 1).toFloat();
+    file.setSection("buzzermagazine");
+    if (file.contains("Type"))
+    {
+        m_buzzers.type = file.value("Type").toInt();
+        m_buzzers.relative = Vector3D(file.value("RelativeX").toFloat(), file.value("RelativeY").toFloat(), file.value("RelativeZ").toFloat());
+        m_buzzers.range = file.value("EjectRange").toFloat();
+        m_buzzers.probability = file.value("EjectProbability").toFloat();
+        m_buzzers.speed = file.value("EjectVelocity").toFloat()/32.0f;
+        m_buzzers.delay = file.value("EjectDelay").toFloat();
+        m_buzzers.interval = std::min(m_buzzers.delay, 1.0f);
+    }
     file.setSection("kinematics");
     m_minClimbingAngle = glm::radians(file.value("MinClimbingAngle", 20).toFloat());
     m_maxClimbingAngle = glm::radians(file.value("MaxClimbingAngle", 20).toFloat());
@@ -213,8 +225,30 @@ bool SimpleBoat::update(float elapsedTime)
     move(m_velocity*elapsedTime);
     if (m_unitGun)
         m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
+    updateBuzzers();
 
     return false;
+}
+
+
+// it looks every interval; the buzzer leaves its place (the tail if none is given) upwards and
+// backwards at the magazine's speed on top of the boat's own velocity, of the boat's faction
+void SimpleBoat::updateBuzzers()
+{
+    const float now = m_scenario->time();
+    if (m_buzzers.type == 2 || now - m_buzzers.lastLook < m_buzzers.interval)
+        return;
+    m_buzzers.lastLook = now;
+    const Torpedo *threat = m_scenario->nearestThreatTo(this);
+    if (!threat || glm::length(threat->position() - m_position) >= m_buzzers.range || util::random()/float(RAND_MAX) >= m_buzzers.probability)
+        return;
+    const Vector3D local = m_buzzers.relative != Vector3D(0) ? m_buzzers.relative/32.0f : Vector3D(0, m_localBox.minPoint().y, 0);
+    const Vector3D position = m_position + m_orientationInverted*local;
+    const Vector3D velocity = glm::normalize(2.0f*up() - dir())*m_buzzers.speed + m_velocity;
+    const bool works = util::random()/float(RAND_MAX) < (m_buzzers.type == 1 ? 0.9f : 0.4f);
+    const Effects debris = m_buzzers.type == 1 ? (works ? Effects::Debris_18 : Effects::Debris_20) : (works ? Effects::Debris_19 : Effects::Debris_21);
+    m_scenario->effectManager().addDecoy(debris, works ? Particles::Decoy::Buzzer : Particles::Decoy::None, iff(), position, velocity);
+    m_buzzers.interval = m_buzzers.delay;
 }
 
 

@@ -216,7 +216,10 @@ Scenario::Scenario(const String &name) :
 
         ActiveObject::ObjectInfo info;
         if (m_file.contains("iff"))
+        {
             info.iff = m_file.value("iff").toInt();
+            info.faction = true;
+        }
         if (m_file.contains("inf"))
             info.name = m_file.valueText("inf");
         if (m_file.contains("carg"))
@@ -1065,7 +1068,7 @@ void Scenario::playerHit(ActiveObject *unit, bool destroyed)
     for (const auto &record : m_records)
         if (record.object == unit)
             id = record.id;
-    if (id < 0 || m_conditionManager.iff(id) < 0 || isHostile(PlayerFaction, m_conditionManager.iff(id)) || m_conditionManager.isDestroyTarget(id) || dynamic_cast<Mine *>(unit))
+    if (!isFriendlyFire(id, unit))
         return;
 
     auto say = [this, unit](int text) {
@@ -1090,6 +1093,13 @@ void Scenario::playerHit(ActiveObject *unit, bool destroyed)
 }
 
 
+bool Scenario::isFriendlyFire(int id, const ActiveObject *unit) const
+{
+    return id >= 0 && m_conditionManager.iff(id) >= 0 && !isHostile(PlayerFaction, m_conditionManager.iff(id)) && !m_conditionManager.isDestroyTarget(id) &&
+           !dynamic_cast<const Mine *>(unit);
+}
+
+
 Torpedo* Scenario::launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target)
 {
     if (!TorpedoType::get(type))
@@ -1108,6 +1118,25 @@ int Scenario::threatsTo(const ActiveObject *unit) const
     return std::count_if(m_torpedoes.begin(), m_torpedoes.end(), [unit](const std::unique_ptr<Torpedo> &torpedo) {
         return !torpedo->isDone() && torpedo->target() == unit;
     });
+}
+
+
+const Torpedo* Scenario::nearestThreatTo(const ActiveObject *unit) const
+{
+    const Torpedo *nearest = nullptr;
+    float best = 0;
+    for (const auto &torpedo : m_torpedoes)
+    {
+        if (torpedo->isDone() || torpedo->target() != unit)
+            continue;
+        const float distance = glm::length2(torpedo->position() - unit->position());
+        if (!nearest || distance < best)
+        {
+            nearest = torpedo.get();
+            best = distance;
+        }
+    }
+    return nearest;
 }
 
 

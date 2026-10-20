@@ -163,6 +163,23 @@ protected:
     float m_maxClimbingAngle;
 
     AttackSettings m_attackSettings;
+
+    // the buzzer magazine (docs/ROADMAP.md, appendix S): with a torpedo after the boat within its
+    // range, a buzzer at the given chance, then a pause; type 0 throws buzzers that work four
+    // times in ten, 1 nine in ten, 2 none
+    struct BuzzerMagazine
+    {
+        int type = 2;
+        Vector3D relative;      // where it leaves the hull, game units (32 to the metre)
+        float range = 0;        // m
+        float probability = 0;
+        float speed = 0;        // m/s
+        float delay = 0;        // s between buzzers
+        float interval = 0;     // s until the next look, at most 1 s before the first buzzer
+        float lastLook = 0;
+    };
+    BuzzerMagazine m_buzzers;
+    void updateBuzzers();
 };
 
 
