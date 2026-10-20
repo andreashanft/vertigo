@@ -143,8 +143,9 @@ public:
     Torpedo* launchTorpedo(int type, const Vector3D &position, const Vector3D &direction, float speed, ActiveObject *owner, ActiveObject *target);
     const std::list<std::unique_ptr<Torpedo>>& torpedoes() const { return m_torpedoes; }
     int torpedoesLaunched() const { return m_torpedoesLaunched; }
-    // homing torpedoes on their way to the unit
+    // homing torpedoes on their way to the unit, and the nearest of them (nullptr if none)
     int threatsTo(const ActiveObject *unit) const;
+    const Torpedo* nearestThreatTo(const ActiveObject *unit) const;
     // the decoy that draws this homing torpedo away from its target, by its type's sensor; 0 if
     // none does (docs/ROADMAP.md, appendix S)
     int lure(const Torpedo *torpedo) const;

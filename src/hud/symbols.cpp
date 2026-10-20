@@ -18,6 +18,7 @@
 #include "symbols.h"
 #include "hud.h"
 #include "fight/scenario.h"
+#include "fight/weapons/torpedo.h"
 
 #include <cmath>
 #include <glm/geometric.hpp>
@@ -42,18 +43,23 @@ Threat::Threat(HUD *hud, Rect rect) :
     ui::Widget(hud->widget()),
     m_hud(hud),
     m_rect(rect),
-    m_threat(hud->getImage("hudthrey"), true)
+    m_red(hud->getImage("hudthrea"), true),
+    m_yellow(hud->getImage("hudthrey"), true)
 {
 }
 
 
+// yellow while the nearest torpedo after the player is one a buzzer can draw away (sen 3 or 4),
+// red for the others (docs/ROADMAP.md, appendix S)
 void Threat::draw()
 {
     fight::Scenario *scenario = m_hud->scenario();
-    if (scenario->threatsTo(scenario->player()) > 0 && scenario->blink())
+    const fight::Torpedo *threat = scenario->nearestThreatTo(scenario->player());
+    if (threat && scenario->blink())
     {
         const Rect rect = m_hud->projectCenter(m_rect);
-        m_threat.draw(rect.x, rect.y);
+        const int sensor = threat->type().sensor;
+        (sensor == 3 || sensor == 4 ? m_yellow : m_red).draw(rect.x, rect.y);
     }
 }
 

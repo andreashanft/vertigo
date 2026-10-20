@@ -1121,6 +1121,25 @@ int Scenario::threatsTo(const ActiveObject *unit) const
 }
 
 
+const Torpedo* Scenario::nearestThreatTo(const ActiveObject *unit) const
+{
+    const Torpedo *nearest = nullptr;
+    float best = 0;
+    for (const auto &torpedo : m_torpedoes)
+    {
+        if (torpedo->isDone() || torpedo->target() != unit)
+            continue;
+        const float distance = glm::length2(torpedo->position() - unit->position());
+        if (!nearest || distance < best)
+        {
+            nearest = torpedo.get();
+            best = distance;
+        }
+    }
+    return nearest;
+}
+
+
 // a buzzer or torch put out since the last frame becomes a contact; the others follow their decoys
 void Scenario::updateDecoyContacts()
 {

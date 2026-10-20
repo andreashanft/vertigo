@@ -22,6 +22,7 @@
 #include "fight/objects/activeobject.h"
 #include "fight/objects/building.h"
 #include "fight/effects/trash.h"
+#include "fight/weapons/torpedo.h"
 #include "fight/target.h"
 #include "gfx/colortable.h"
 #include "txt/desfile.h"
@@ -411,6 +412,12 @@ void VoxelRadar::render(fight::Scenario *scenario)
         drawLine(entry.object->center(), entry.object == locked ? gfx::rgb(160, 160, 160) :
                  entry.isFriend ? gfx::rgb(64, 200, 64) : hostile ? gfx::rgb(232, 32, 24) : gfx::rgb(64, 96, 255));
     }
+    // torpedoes, whoever launched them, need no sonar contact and blink between two reds, 0.15 s
+    // each (docs/ROADMAP.md, appendix S)
+    const bool bright = static_cast<int>(scenario->time()/0.15f)%2 == 0;
+    for (const auto &torpedo : scenario->torpedoes())
+        if (!torpedo->isDone())
+            drawLine(torpedo->center(), bright ? gfx::rgb(248, 12, 0) : gfx::rgb(160, 0, 0));
     drawLine(boat, orange);
 
     // averaged down to the radar's pixels (weighted by coverage, so edges fade out)
