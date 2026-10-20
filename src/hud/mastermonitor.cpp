@@ -78,10 +78,13 @@ void MasterMonitor::draw()
     {
         isFriend = m_hud->scenario()->isFriend(fight::Scenario::PlayerFaction, object->iff());
         txtName = object->name();
-        // what it does: its orders, or paralyzed
+        // what it does: exploding through its destruction sequence, paralyzed, or its orders
+        // (docs/ROADMAP.md, appendix P)
         if (m_hud->scenario()->sonar().detectActivity())
         {
-            if (object->eventParalyze()->isCompleted() && object->shockShield() < 0)
+            if (object->isDying())
+                txtAction = txt::StringTable::get(txt::Fight72);
+            else if (object->eventParalyze()->isCompleted() && object->shockShield() < 0)
                 txtAction = txt::StringTable::get(txt::Fight81);
             else if (object->orders())
                 txtAction = txt::StringTable::get(object->orders()->activity());

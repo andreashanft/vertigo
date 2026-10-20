@@ -893,6 +893,12 @@ and the round radars draw friends and hostiles with their two symbols and
 skip neutral contacts altogether. Vertigo does the same; its detection
 ranges are not compared yet (O4).
 
+What the target does (the second line) follows its state, with
+`FIGHTEXT` 77 to 84 for its orders (attacks, waits, guards, under way,
+escorts, infiltrates), 81 while paralysed and 72 "Explodiert" through its
+destruction sequence, which keeps the lock until the hull is gone; Vertigo
+showed its orders then until October 2026.
+
 ### Q. What the original's mines do
 
 Read off in October 2026. `dtyp` 27 is a passive mine (`MINE0.DES`), 28 an
