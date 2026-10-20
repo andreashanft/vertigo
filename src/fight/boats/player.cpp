@@ -202,7 +202,7 @@ bool Player::isCritical() const
 
 float Player::lockProgress() const
 {
-    const TorpedoType *type = m_selectedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_selectedTorpedo] - 1) : nullptr;
+    const TorpedoType *type = m_loadedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_loadedTorpedo] - 1) : nullptr;
     if (!type || type->lockType == 0 || !m_lockTarget)
         return 0;
     return type->lockDelay > 0 ? std::min(1.0f, m_lockTime/type->lockDelay) : 1.0f;
@@ -211,7 +211,7 @@ float Player::lockProgress() const
 
 float Player::lockRemaining() const
 {
-    const TorpedoType *type = m_selectedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_selectedTorpedo] - 1) : nullptr;
+    const TorpedoType *type = m_loadedTorpedo >= 0 ? TorpedoType::get(m_torpedoItems[m_loadedTorpedo] - 1) : nullptr;
     return type ? std::max(0.0f, type->lockDelay - m_lockTime) : 0;
 }
 
@@ -515,14 +515,15 @@ bool Player::update(float elapsedTime)
         m_speed = -m_speed;
 
 
-    // torpedo lock: the target must stay locked and in front for the selected torpedo's lock time
+    // torpedo lock: the target must stay locked and in front for the loaded torpedo's lock time,
+    // which only runs once the torpedo is in and the magazine ready (appendix S)
     ActiveObject *target = m_scenario->target().locked();
     if (target != m_lockTarget)
     {
         m_lockTarget = target;
         m_lockTime = 0;
     }
-    if (m_lockTarget && glm::dot(dir(), glm::normalize(m_lockTarget->center() - m_position)) > std::cos(glm::radians(40.0f)))
+    if (m_lockTarget && torpedoReady() && glm::dot(dir(), glm::normalize(m_lockTarget->center() - m_position)) > std::cos(glm::radians(40.0f)))
         m_lockTime += elapsedTime;
     else
         m_lockTime = 0;

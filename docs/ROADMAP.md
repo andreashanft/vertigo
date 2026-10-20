@@ -1104,12 +1104,14 @@ Read off in October 2026. All 22 types share one behaviour, with their
   past itself and the magazine waits as well. Waiting lasts 2 s; then the
   selected torpedo is loaded with the revolver's sound (sample 20) for the
   magazine's `rearmingtime`, and once it is in, the voice says "torpedo
-  ready" (77). A lock's completion plays the torpedo lock beep (9) and the
-  "target locked" voice (67). The weapons' own voice files (`sfvname`:
+  ready" (77). A homing torpedo's lock only runs while the magazine is
+  ready, for the loaded torpedo's `lockdelay`; it starts again after every
+  wait and loading. A lock's completion plays the torpedo lock beep (9) and
+  the "target locked" voice (67). The weapons' own voice files (`sfvname`:
   `cockpit\gunNN`, `tomaNN`, `torNN`) are on neither the installation nor
   the CD, so they never play. Vertigo does the same; it used to load at
   once, without the 2 s or the sound, said "torpedo ready" at the lock and
-  sounded an error on Tab while loading.
+  sounded an error on Tab while loading, and locked during the loading.
 - **THREAT** (appendix D) blinks while homing torpedoes are after the
   player; the nearest of them decides its colour: yellow (`HUDTHREY`) for
   one a buzzer can draw away (`sen` 3 or 4: the Thresher, Bull, Tiger and
