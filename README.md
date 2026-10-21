@@ -9,7 +9,7 @@ With the help of Claude Code, most open TODOs and missing features could finally
 The game is now portable and playable on current hard and software in modern resolutions, improving the look (eg. by upscaling) but keeping its style and oldschool graphics.  For copyright reasons, the repository does not contain any old game data or binaries, the game assets from an original version of the game (either English or German), from an old CD or GOG installation, are required.
 This implementation in its current form can be considered **96% done**:
 
-* Modern codebase and renderer that support compiling for multiple platforms (macOS, iOS (iPad), Linux, Windows - Linux and Windows are built by CI but not playtested)
+* Modern codebase and renderer that support compiling for multiple platforms: macOS, iOS (iPad), Linux, Windows (not playtested yet)
 * Import of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data 
 * Menus, stations and interactions (dialogs, dock, upgrades), notebook, movies, music all work
 * Missions are playable and story can be progressed
