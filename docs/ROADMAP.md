@@ -126,7 +126,7 @@ turret cross for a target behind the boat (T).
 |---|---|---|---|
 | O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the original's boats, tanks and gun towers hold their fire while the terrain is between them and their target, as its torpedo towers do (appendix J), and whether its turrets fire through friends (Vertigo's do neither, appendix T; in a short playtest the turrets no longer hit friends); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the original's boats, tanks and gun towers hold their fire while the terrain is between them and their target, as its torpedo towers do (appendix J), and whether its turrets fire through friends (Vertigo's do neither, appendix T; in a short playtest the turrets no longer hit friends); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength); how the units' multi-barrel guns fire their rounds from their mountings (appendix K; Vertigo's units fire one barrel per rearming time) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -718,9 +718,9 @@ Read off in October 2026; Vertigo does all of it.
   level, never less than 4 pixels.
 - **Energy guns.** Models 0–5 (the ones with `energydemand` above 0) draw
   from the pool; models 6–13 use rounds and the energy guns show "ENER" in
-  their place. A gun fires its barrels in turn, one per trigger pull with the
-  rearming time between: models 0 to 13 have 1, 2, 1, 2, 4, 1, 2, 2, 2, 3,
-  4, 2, 2 and 2 barrels. A shot takes `energydemand` divided by the barrels
+  their place. A gun fires its barrels in turn: models 0 to 13 have 1, 2, 1,
+  2, 4, 1, 2, 2, 2, 3, 4, 2, 2 and 2 barrels. An energy gun fires one barrel
+  per trigger pull with the rearming time between. A shot takes `energydemand` divided by the barrels
   off the level (never refused) and the gun is ready again once its
   `rearmingtime` has passed and the level is above the whole `energydemand`.
   So a full pool allows a burst at the rearming rate, after which the gun
@@ -734,11 +734,21 @@ Read off in October 2026; Vertigo does all of it.
   the frame after the one in which they become ready. At 60 frames a second a
   0.075 s gun fires every 0.1 s and a 0.15 s gun about every 0.18 s (Vertigo added
   0.03 s to every rearming time until October 2026).
+- **Rounds.** An ammo gun with more than one barrel fires a round: one
+  barrel per frame while the trigger is held, all its barrels in turn, and
+  only after the last one the rearming time. A released trigger leaves the
+  round where it is, and the next pull goes on with it. So the rate climbs
+  with the frame rate: a Vendetta III (4 barrels, 0.075 s) fires about 17
+  shots a second at 30 frames, 27 at 60 and 34 at 120. Vertigo fires the
+  barrels of a round 1/60 s apart whatever the frame rate, as the original
+  at 60 frames, so the Vendetta III fires about 25 shots a second at 50
+  frames. A unit's gun goes through the same rounds; Vertigo's units still
+  fire one barrel per rearming time (O4).
 - **The booster** draws from the same pool: on only while the level is at
   least 0.8, 0.15 at once, 1.2 per second while it runs (about 4 s on engines
   2–4), off below 0.05. It doubles the top speed and raises the acceleration
   2.5-fold, works from a standstill, and the engine's pitch follows the speed.
-- **Jams** are decided once per trigger pull: the gun's condition (1 when
+- **Jams** are decided before each shot: the gun's condition (1 when
   new, the saved `Defect`, at least 0.2) against a random number times the
   gun's `defectdamping`; it jams when the product reaches the condition, so
   never while the condition is at or above the damping (0.2–0.8). A jam lasts

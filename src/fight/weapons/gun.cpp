@@ -29,6 +29,13 @@ namespace fight {
 
 Gun::GunState* Gun::GunStates = nullptr;
 
+namespace {
+// the original fires the next barrel of an ammo gun's round on the next frame; Vertigo spaces them
+// as at 60 frames a second, with a quarter of that for the frames' jitter
+const float BarrelInterval = 1.0f/60;
+const float BarrelTolerance = BarrelInterval/4;
+}
+
 
 Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
     m_scenario(scenario),
@@ -129,13 +136,21 @@ bool Gun::update(float elapsedTime)
 }
 
 
+bool Gun::ready() const
+{
+    return m_state == StateReady && (m_roundShots == 0 || m_scenario->time() >= m_nextBarrel - BarrelTolerance);
+}
+
+
 void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right, bool allBarrels)
 {
-    if (m_state != StateReady)
+    if (!ready())
         return;
+    // the player's ammo guns fire a round, all the model's barrels in turn, without the rearming
+    // time between them (docs/ROADMAP.md, appendix K)
+    const bool round = usesAmmo() && !allBarrels && m_owner && m_owner == m_scenario->player() && barrels(m_model) > 1;
     m_state = StateFiring;
-    // a jam is decided once per trigger pull, before any barrel fires (docs/ROADMAP.md, appendix
-    // K): the gun's condition (1 when new, taken as 0.2 at the least) against a random share of its
+    // a jam is decided before each shot (docs/ROADMAP.md, appendix K): the gun's condition (1 when new, taken as 0.2 at the least) against a random share of its
     // defectdamping, so the chance is 1 - condition/defectdamping, and the jam lasts defectdelay
     // times 0.5 to 1.5
     auto random = []() { return static_cast<float>(util::random())/RAND_MAX; };
@@ -167,6 +182,13 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
     // more than the whole demand again (appendix K)
     if (!usesAmmo() && m_owner)
         m_owner->drawEnergy(m_energyDemand*std::max<size_t>(1, barrelsFired)/barrels(m_model));
+    if (round && ++m_roundShots < barrels(m_model) && m_ammo > 0)
+    {
+        m_state = StateReady;
+        m_nextBarrel = m_scenario->time() + BarrelInterval;
+        return;
+    }
+    m_roundShots = 0;
     m_state = usesAmmo() ? StateRearming : StateEnergyDelay;
     m_stateTime = m_scenario->time() + m_rearmingTime;
 }

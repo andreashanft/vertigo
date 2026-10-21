@@ -66,6 +66,8 @@ public:
     String stateName() const { return GunStates ? GunStates[m_state].shortName : String(); }
     String stateText() const { return GunStates ? GunStates[m_state].longName : String(); }
     State state() const { return m_state; }
+    // ready, and past the pause before a round's next barrel
+    bool ready() const;
 
     void setDefect(float defect) { m_defect = defect; }
     void setAmmo(int ammo) { m_ammo = ammo; }
@@ -104,6 +106,8 @@ protected:
     Effects m_projectile;
     std::vector<Vector3D> m_muzzles;
     size_t m_nextMuzzle = 0;  // the barrel the next pull fires from
+    int m_roundShots = 0;     // the barrels of the current round fired so far
+    float m_nextBarrel = 0;   // when the round's next barrel may fire
     int m_shots = 0;
     sfx::Sample m_sample;
 };

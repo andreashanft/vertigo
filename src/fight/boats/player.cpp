@@ -613,7 +613,7 @@ bool Player::update(float elapsedTime)
 
     // the trigger is read before the gun counts its rearming time down, so the gun fires on the
     // frame after it is ready again (docs/ROADMAP.md, appendix K)
-    if (m_firing && m_gun.state() == Gun::StateReady)
+    if (m_firing && m_gun.ready())
         m_gun.fire(m_position, dir(), up(), right());
     m_gun.update(elapsedTime);
     for (auto &turret : m_turrets)
