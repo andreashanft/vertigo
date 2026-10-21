@@ -111,7 +111,7 @@ private:
     void testFrame();
 
     void startGame(const String &name);
-    void loadGame(const String &name);
+    void loadGame(const String &path);
     void endGame();
     void startTraining(int index);
     void endTraining();

@@ -64,6 +64,10 @@ private:
 
     void activate();
     void deactivate();
+    // the notebook's name for a saved game
+    bool wantsTextInput() const { return m_notebook.wantsTextInput(); }
+    Rect textInputArea() const { return m_notebook.textInputArea(); }
+    void keyPressEvent(input::KeyEvent *event) { m_notebook.keyPressEvent(event); }
     void showRoom(int index);
     void checkDialogs();
 
