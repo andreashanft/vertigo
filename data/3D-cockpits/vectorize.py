@@ -250,3 +250,75 @@ def sample_tiles(tiles, key, x, y, s):
         out[sel] = ((img[y0, x0] * (1 - wx) + img[y0, x0 + 1] * wx) * (1 - wy)
                     + (img[y0 + 1, x0] * (1 - wx) + img[y0 + 1, x0 + 1] * wx) * wy)
     return out
+
+
+# ---------------------------------------------------------------------------------------------
+# Filling paths: the rasteriser for the SVG textures (paths of straight segments, nonzero or
+# even-odd fill, solid colours), so the texture is exactly what the SVG file says
+# ---------------------------------------------------------------------------------------------
+SUB = 4                       # sub-scanlines per pixel row
+
+
+def coverage(loops, shape, origin=(0, 0), rule="nonzero"):
+    """How much of every pixel of an image of shape (h, w) the closed loops ((n, 2) arrays of x, y
+    in pixels; pixel [i, j] covers x in [j, j + 1), y in [i, i + 1)) cover, as floats 0..1.
+    origin: the image's top left corner in the loops' coordinates."""
+    h, w = shape
+    segs = []
+    for loop in loops:
+        p = np.asarray(loop, np.float64) - origin
+        if len(p) < 3:
+            continue
+        segs.append(np.concatenate([p, np.roll(p, -1, 0)], 1))
+    out = np.zeros((h, w), np.float64)
+    if not segs:
+        return out
+    s = np.concatenate(segs)
+    s = s[s[:, 1] != s[:, 3]]
+    if not len(s):
+        return out
+    up = s[:, 3] > s[:, 1]
+    y0 = np.where(up, s[:, 1], s[:, 3]); y1 = np.where(up, s[:, 3], s[:, 1])
+    xa = np.where(up, s[:, 0], s[:, 2]); xb = np.where(up, s[:, 2], s[:, 0])
+    direction = np.where(up, 1, -1)
+    slope = (xb - xa) / (y1 - y0)
+    r0 = max(int(np.floor(y0.min() * SUB)), 0)
+    r1 = min(int(np.ceil(y1.max() * SUB)), h * SUB)
+    diff = np.zeros((h, w + 2), np.float64)
+    step = max(1, int(4e6 // max(len(s), 1)))
+    for c0 in range(r0, r1, step):
+        ys = (np.arange(c0, min(c0 + step, r1)) + 0.5) / SUB
+        hit = (y0[None, :] <= ys[:, None]) & (ys[:, None] < y1[None, :])
+        rows, cols = np.nonzero(hit)
+        if not len(rows):
+            continue
+        x = xa[cols] + (ys[rows] - y0[cols]) * slope[cols]
+        # per sample row: crossings sorted by x, inside between crossing k and k + 1
+        order = np.lexsort((x, rows))
+        rows, x, d = rows[order], x[order], direction[cols][order]
+        start = np.searchsorted(rows, rows, 'left')
+        wind = np.cumsum(d)
+        wind -= np.concatenate([[0], wind])[start]
+        if rule == "evenodd":
+            inside = (np.arange(len(rows)) - start) % 2 == 0
+        else:
+            inside = wind != 0
+        nxt = np.arange(1, len(rows) + 1)
+        ok = inside & (nxt < len(rows))
+        ok[ok] &= rows[nxt[ok]] == rows[ok]
+        r = ((c0 + rows[ok]) // SUB).astype(int)
+        a = np.clip(x[ok], 0, w)
+        b = np.clip(x[nxt[ok]], 0, w)
+        keep = b > a
+        r, a, b = r[keep], a[keep], b[keep]
+        ia, ib = np.floor(a).astype(int), np.floor(b).astype(int)
+        same = ia == ib
+        np.add.at(out, (r[same], np.minimum(ia[same], w - 1)), (b[same] - a[same]) / SUB)
+        r, a, b, ia, ib = r[~same], a[~same], b[~same], ia[~same], ib[~same]
+        np.add.at(out, (r, ia), (ia + 1 - a) / SUB)                       # first, partial pixel
+        inb = ib < w
+        np.add.at(out, (r[inb], ib[inb]), (b[inb] - ib[inb]) / SUB)       # last, partial pixel
+        np.add.at(diff, (r, ia + 1), 1 / SUB)                              # full pixels between
+        np.add.at(diff, (r, ib), -1 / SUB)
+    out += np.cumsum(diff, 1)[:, :w]
+    return np.clip(out, 0, 1)

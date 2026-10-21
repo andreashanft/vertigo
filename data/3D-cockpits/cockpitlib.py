@@ -15,6 +15,7 @@ Conventions
     is stored as a custom property (exported as glTF extras) for render-to-texture.
 """
 
+import json
 import math
 import os
 import sys
@@ -26,6 +27,7 @@ from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cockpitdata as CD  # noqa: E402
+import vectorize as VZ  # noqa: E402
 from cockpitdata import find_ci, sample_field, window_field  # noqa: E402
 
 # ------------------------------------------------------------------------------------------------
@@ -39,6 +41,7 @@ DES = {}                    # parsed DES file: {section_lower: {key_lower: value
 F, CX, CY = 245.55, 320.0, 240.0
 ART = None                  # (480, 640, 3) float sRGB colours of COCKPIT.R16
 SEE = None                  # (480, 640) bool: see-through (window) pixels of COCKPIT.R16
+WINDOW = None               # the window's outline from the layout: polygons in pixels
 MIRROR_X = 319.5            # vertical symmetry axis of the art (see mirror())
 HC = np.array([0.0, 0.05, -0.22])     # hull ellipsoid centre
 HA = np.array([1.15, 1.12, 0.98])     # hull ellipsoid semi-axes
@@ -62,20 +65,41 @@ def des_int(section, key, default=0):
 
 
 def load(cid):
-    """Read DES + COCKPIT.R16 of cockpit `cid` (camera, art, see-through mask)."""
-    global CID, DATA, OUT, F, CX, CY, ART, SEE, MIRROR_X
+    """The cockpit `cid`'s camera, DES sections and window: from layouts/cockpit_NNN.json if there
+    is one (tools/extract_layout.py; then the game data is only needed for the alignment check),
+    else from the DES file and COCKPIT.R16. ART and SEE are the art and its see-through mask, None
+    without the game data."""
+    global CID, DATA, OUT, F, CX, CY, ART, SEE, MIRROR_X, WINDOW
     CID = cid
-    DATA = CD.data_dir(arg("--data"))
     OUT = arg("--out") or os.path.join(HERE, "out", cid)
     os.makedirs(os.path.join(OUT, "renders"), exist_ok=True)
     DES.clear()  # updated in place, so `from cockpitlib import *` sees it
-    DES.update(CD.parse_des(find_ci(DATA, "VFX", "COCKPIT", f"{cid}.DES")))
-    angle, F, CX, CY = CD.camera(DES)
-    raw, ART = CD.load_r16(find_ci(DATA, "VFX", "COCKPIT", cid, "COCKPIT.R16"))
-    SEE = CD.see_through_mask(raw)
-    MIRROR_X = CD.symmetry_axis(SEE, CX)
-    log(f"camera: view angle {angle}, f={F:.1f}px, centre {CX}/{CY}; "
-        f"{SEE.mean():.0%} of the image is see-through, symmetry axis x={MIRROR_X}")
+    layout = os.path.join(HERE, "layouts", f"cockpit_{cid}.json")
+    try:
+        DATA = CD.data_dir(arg("--data"))
+        raw, ART = CD.load_r16(find_ci(DATA, "VFX", "COCKPIT", cid, "COCKPIT.R16"))
+        SEE = CD.see_through_mask(raw)
+    except (SystemExit, OSError):
+        if not os.path.exists(layout):
+            raise
+        DATA = ART = SEE = None
+    if os.path.exists(layout):
+        with open(layout) as f:
+            lay = json.load(f)
+        angle, (CX, CY) = lay["view_angle"], lay["center"]
+        F = 320.0 / math.tan(math.radians(angle) / 2)
+        DES.update(lay["sections"])
+        MIRROR_X = lay["mirror_x"]
+        WINDOW = [np.array(loop) for loop in lay["window"]]
+        source = os.path.relpath(layout, HERE) + (", game data for the checks" if DATA else "")
+    else:
+        DES.update(CD.parse_des(find_ci(DATA, "VFX", "COCKPIT", f"{cid}.DES")))
+        angle, F, CX, CY = CD.camera(DES)
+        MIRROR_X = CD.symmetry_axis(SEE, CX)
+        WINDOW = None
+        source = "game data"
+    log(f"camera: view angle {angle}, f={F:.1f}px, centre {CX}/{CY}; symmetry axis "
+        f"x={MIRROR_X} ({source})")
 
 
 def setup(cid):
@@ -389,12 +413,15 @@ def masked_hull(step_deg=0.35, coarse_deg=4.0, extend_az=None, extend_el=None, g
     elevation within extend_el = (min, max) degrees; beyond that the hull is closed.
     glass_fn(az_deg, el_deg) -> bool or 0..1 can force extra glass (0.5 is the edge). grow_px > 0
     grows the opaque area (shrinks the glass) by that many pixels. Returns (hull, glass) objects."""
-    see = SEE.copy()
-    for _ in range(grow_px):
-        s = see.copy()
-        s[1:] &= see[:-1]; s[:-1] &= see[1:]; s[:, 1:] &= see[:, :-1]; s[:, :-1] &= see[:, 1:]
-        see = s
-    field = window_field(see)
+    if WINDOW is not None:      # the layout's outline, filled: its 0.5 contour is the outline
+        field = VZ.coverage(WINDOW, (480, 640), rule="evenodd")
+    else:
+        see = SEE.copy()
+        for _ in range(grow_px):
+            s = see.copy()
+            s[1:] &= see[:-1]; s[:-1] &= see[1:]; s[:, 1:] &= see[:, :-1]; s[:, :-1] &= see[:, 1:]
+            see = s
+        field = window_field(see)
     # dense sampling where the image is, coarse elsewhere
     az0, az1 = math.degrees(math.atan2(-CX, F)) - 3, math.degrees(math.atan2(640 - CX, F)) + 3
     el0 = math.degrees(math.atan2(CY - 480, F)) - 3
@@ -1307,7 +1334,10 @@ def finish():
         return
     use_metal()
     hide = [o for o in (glass, hud) if o]
-    alignment_check(cam_eye, hide)
+    if SEE is not None:
+        alignment_check(cam_eye, hide)
+    else:
+        log("no game data: no alignment check")
     if "--quick" in ARGV:
         return
     rend = os.path.join(OUT, "renders")
