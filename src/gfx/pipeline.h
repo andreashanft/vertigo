@@ -129,8 +129,9 @@ public:
     // drops fragments without alpha
     static void setAlphaTest(bool enabled);
     // texture coordinates s/q and t/q from the model position: rows 0, 1 and 3 of the matrix give
-    // s, t and q. Fragments with q below near and outside the texture are dropped.
-    static void setTextureProjection(bool enabled, const Matrix &matrix = Matrix(1), float near = 0);
+    // s, t and q. Fragments with q below qMin and outside the texture are dropped. (Not "near":
+    // windows.h defines near and far as macros.)
+    static void setTextureProjection(bool enabled, const Matrix &matrix = Matrix(1), float qMin = 0);
 
     // groups of four vertices, each a quad (two triangles 0 1 2 and 0 2 3)
     static void drawQuads(const Vertex *vertices, int count, bool textured = true);

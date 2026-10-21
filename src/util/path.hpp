@@ -22,9 +22,9 @@
 #include <string>
 #include <vector>
 
-// Paths are UTF-8 strings (util::String can't hold every character a path can), turned into the
-// system's own form only when a file is opened: on Windows, a narrow path would be in the ANSI
-// code page.
+// Paths are UTF-8 strings (util::String can't hold every character a path can) with '/' between
+// their parts, also on Windows, turned into the system's own form only when a file is opened: on
+// Windows, a narrow path would be in the ANSI code page.
 namespace util {
 
 std::filesystem::path toPath(const std::string &path);

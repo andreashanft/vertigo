@@ -376,6 +376,8 @@ endif()
 if(WIN32)
     # CommandLineToArgvW() for the arguments in UTF-8
     target_link_libraries(vertigo shell32)
+    # windows.h without its min and max macros, which break std::min and std::max
+    target_compile_definitions(vertigo PRIVATE NOMINMAX)
 endif()
 # (GLM 1.0 also has a library, which the game doesn't need)
 if(TARGET glm::glm-header-only)

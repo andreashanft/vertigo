@@ -34,7 +34,7 @@ std::filesystem::path toPath(const std::string &path)
 
 std::string fromPath(const std::filesystem::path &path)
 {
-    return path.u8string();
+    return path.generic_u8string();
 }
 
 

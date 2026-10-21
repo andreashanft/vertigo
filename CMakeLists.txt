@@ -7,7 +7,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 endif()
 
 # 1.0.0 will be the feature-complete clone; see CLAUDE.md for the patch number
-project(vertigo VERSION 0.9.7)
+project(vertigo VERSION 0.9.8)
 
 if(IOS)
     enable_language(OBJCXX)
@@ -40,6 +40,10 @@ add_definitions(-DGLM_FORCE_CTOR_INIT)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CMAKE_CXX_STANDARD 17)
+# the sources are UTF-8, which MSVC would read in the system's code page
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
 
 add_subdirectory(src)
 

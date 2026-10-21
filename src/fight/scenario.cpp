@@ -643,7 +643,7 @@ Scenario::Scenario(const String &name) :
 
     // without a seed of its own, the milliseconds of the current minute
     const long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    util::seedRandom(s_randomSeed >= 0 ? uint(s_randomSeed) : uint(milliseconds % 60000));
+    util::seedRandom(s_randomSeed >= 0 ? unsigned(s_randomSeed) : unsigned(milliseconds % 60000));
 
     sfx::SampleMap::load();
 }

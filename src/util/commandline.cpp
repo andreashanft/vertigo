@@ -201,7 +201,7 @@ std::vector<std::string> CommandLine::arguments(int argc, char *argv[])
     int count = 0;
     if (wchar_t **wide = CommandLineToArgvW(GetCommandLineW(), &count)) {
         for (int i = 0; i < count; i++)
-            result.push_back(fromPath(std::filesystem::path(wide[i])));
+            result.push_back(std::filesystem::path(wide[i]).u8string());
         LocalFree(wide);
         return result;
     }

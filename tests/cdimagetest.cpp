@@ -227,6 +227,9 @@ int main()
     }
     CHECK_EQUAL(util::CdImage::audioTracks(util::joinPath(directory, "missing.cue")).size(), 0u);
 
+    // (Windows removes no file that is open)
+    image = util::CdImage();
+    cd = util::CdImage();
     std::filesystem::remove_all(util::toPath(directory));
     return test::result();
 }

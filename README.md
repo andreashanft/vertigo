@@ -9,7 +9,7 @@ With the help of Claude Code, most open TODOs and missing features could finally
 The game is now portable and playable on current hard and software in modern resolutions, improving the look (eg. by upscaling) but keeping its style and oldschool graphics.  For copyright reasons, the repository does not contain any old game data or binaries, the game assets from an original version of the game (either English or German), from an old CD or GOG installation, are required.
 This implementation in its current form can be considered **96% done**:
 
-* Modern codebase and renderer that support compiling for multiple platforms (macOS, iOS (iPad), Linux, Windows - untested)
+* Modern codebase and renderer that support compiling for multiple platforms (macOS, iOS (iPad), Linux, Windows - Linux and Windows are built by CI but not playtested)
 * Import of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data 
 * Menus, stations and interactions (dialogs, dock, upgrades), notebook, movies, music all work
 * Missions are playable and story can be progressed
@@ -17,6 +17,23 @@ This implementation in its current form can be considered **96% done**:
 * Experimental: 3D cockpits, also making true support for widescreen aspect ratios possible
 
 What's still missing are the details and playtesting, find the open points in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+# Downloads
+GitHub Actions builds and tests Vertigo on Linux, macOS and Windows for every
+commit on master, and keeps each build for 30 days as an artifact of the run
+(Actions › the run › Artifacts), named `vertigo-<version>-<platform>-<commit>`.
+A tag `v<version>` puts the three packages on a draft release:
+
+* `vertigo-<version>-linux-x86_64.tar.gz`: SDL 3 is built in; needs OpenAL
+  (`libopenal1`), OpenGL 3.2 and a system as recent as Ubuntu 24.04
+* `vertigo-<version>-macos-universal.zip`: `Vertigo.app` for Apple silicon and
+  Intel Macs, macOS 13.3 or later. It isn't signed by a developer, so macOS
+  refuses the first start; System Settings › Privacy & Security › Open Anyway
+  starts it (or `xattr -dr com.apple.quarantine Vertigo.app`)
+* `vertigo-<version>-windows-x86_64.zip`: `vertigo.exe` with `SDL3.dll` and
+  OpenAL Soft's `OpenAL32.dll`, Windows 10 or later
+
+The game data is added at the first start (see [Game data](#game-data)).
 
 # Compiling
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
@@ -32,12 +49,8 @@ make
 
 ## Linux
 
-GitHub Actions builds and tests Vertigo on Ubuntu 24.04 (and on macOS) for
-every commit on master. Each run keeps the Linux build for 30 days as the
-artifact `vertigo-<version>-linux-x86_64-<commit>`, with SDL 3 built in; it needs
-OpenAL (`libopenal1`) and OpenGL 3.2. Ubuntu 24.04 has no SDL 3 package, so
-building there means building SDL 3 first, as
-[the workflow](.github/workflows/build.yml) does.
+Ubuntu 24.04 has no SDL 3 package, so building there means building SDL 3
+first, as [the workflow](.github/workflows/build.yml) does.
 
 ### Nix
 
@@ -55,6 +68,20 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
+
+## Windows
+
+With Visual Studio 2022 and CMake, from the Visual Studio builds of SDL 3
+(`SDL3-devel-<version>-VC.zip`) and OpenAL Soft (`openal-soft-<version>-bin.zip`)
+and GLM's headers, as [the workflow](.github/workflows/build.yml) does:
+
+```
+cmake -S . -B build -A x64 -DSDL3_DIR=<SDL>/cmake -Dglm_DIR=<GLM>/share/glm -DOPENAL_INCLUDE_DIR=<OpenAL Soft>/include/AL -DOPENAL_LIBRARY=<OpenAL Soft>/libs/Win64/OpenAL32.lib
+cmake --build build --config Release
+```
+
+`vertigo.exe` needs `SDL3.dll` and OpenAL Soft's `soft_oal.dll`, renamed to
+`OpenAL32.dll`, next to it.
 
 ## iPad
 
