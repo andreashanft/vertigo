@@ -38,8 +38,12 @@ namespace hud {
 class Cockpit3D
 {
 public:
-    // where the models are: the setting "cockpit/directory", else 3d-cockpits in the data directory
+    // where the models are: setDirectory()'s, else the setting "cockpit/directory", else
+    // 3d-cockpits in the data directory
     static std::string directory();
+    // the models in this directory for this run (a relative one in the data directory), e.g. a
+    // variant of the textures
+    static void setDirectory(const std::string &directory);
     // cockpit_NNN.glb of the cockpit NNN, or an empty string if there is none
     static std::string find(const String &cockpit);
     // the model in this file, shared while it is in use; it is loaded on the first draw

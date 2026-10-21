@@ -60,6 +60,15 @@ python3 tools/install.py              # out/NNN/cockpit_NNN_textured.glb
 build/vertigo s00101 --cockpit 3d     # or Alt+V in a mission
 ```
 
+Variants side by side, e.g. the upscaled one (`--suffix _x4`, see *Upscaling*) as the default
+and the one without in a folder of its own:
+
+```sh
+python3 tools/install.py --suffix _x4
+python3 tools/install.py --dest "<data directory>/3d-cockpits-vector"
+build/vertigo s00101 --cockpit 3d --cockpit-dir 3d-cockpits-vector
+```
+
 `install.py` copies one model per cockpit to `3d-cockpits/cockpit_NNN.glb` in Vertigo's data
 directory (or the setting `cockpit/directory`, or `--dest`). Vertigo reads the GLB itself and
 uses the following:

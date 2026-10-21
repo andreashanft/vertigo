@@ -26,6 +26,7 @@
 
 #include "items.h"
 #include "fight/scenario.h"
+#include "hud/cockpit3d.h"
 #include "hud/hud.h"
 
 // SDL calls SDL_AppInit(), then SDL_AppIterate() for each frame and SDL_AppEvent() for each
@@ -276,6 +277,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("difficulty", "Difficulty in test mode: 0 easy, 1 normal (default), 2 hard.", "level");
     parser.addOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
     parser.addOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
+    parser.addOption("cockpit-dir", "Take the 3D cockpits' models (cockpit_NNN.glb) from this directory for this run, a relative one in the data directory, e.g. 3d-cockpits-vector.", "directory");
     parser.addOption("shake", "How strongly the pilot's head moves in the 3D cockpit, 0 to turn it off (default 1).", "factor");
     parser.addOption("screenshot", "Save the window as PNG at the given mission seconds (test mode), or seconds since the start, e.g. 3=front.png.", "time=file");
     parser.addOption("fixed-step", "Advance the mission by 20 ms per frame instead of by the real time (test mode, with a window), so runs repeat exactly, e.g. for --screenshot.");
@@ -346,6 +348,8 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         }
         hud::HUD::setCockpitMode(cockpit == "3d" ? hud::HUD::CockpitMode::Model : hud::HUD::CockpitMode::Art, false);
     }
+    if (parser.isSet("cockpit-dir"))
+        hud::Cockpit3D::setDirectory(parser.value("cockpit-dir"));
     if (parser.isSet("shake")) {
         bool ok = false;
         const float shake = text(parser.value("shake")).toFloat(&ok);

@@ -46,6 +46,9 @@ namespace {
 // triangles closer than this to the eye's plane get no HUD texture (it would be mirrored behind)
 const float DecalNear = 0.03f;
 
+// setDirectory()'s, for this run
+std::string runDirectory;
+
 #if defined(SDL_PLATFORM_IOS)
 // The iPad's screen is no larger than the texture at 4096x4096, which loads in half the time and
 // takes 0.5 GB less (the game takes 1.4 GB on the desktop with 8192x8192, 0.1 GB without the 3D
@@ -78,10 +81,18 @@ gfx::Image halved(const gfx::Image &image)
 
 std::string Cockpit3D::directory()
 {
+    if (!runDirectory.empty())
+        return util::toPath(runDirectory).is_absolute() ? runDirectory : util::joinPath(util::DataPath::directory(), runDirectory);
     const std::string directory = util::Settings::value("cockpit/directory");
     if (!directory.empty())
         return directory;
     return util::joinPath(util::DataPath::directory(), "3d-cockpits");
+}
+
+
+void Cockpit3D::setDirectory(const std::string &directory)
+{
+    runDirectory = directory;
 }
 
 
