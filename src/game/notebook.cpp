@@ -23,8 +23,21 @@
 #include "gfx/image.h"
 #include "hud/touchcontrols.h"
 #include "sfx/music.hpp"
+#include "util/datetimetext.hpp"
+
+#include <algorithm>
 
 namespace game {
+
+// the pages' width, and where the rows of the lists go: down to the arrows' line
+static const int PageWidth = 304;
+static const int RowsTop = 50;
+static const int RowsBottom = 262;
+static const int RowHeight = 10;
+static const int ArrowsY = 270;
+// the original's arrows are pieces of the notebook's font
+static const char *const ArrowUp = "\xe3\xe4\xe5\xe6";
+static const char *const ArrowDown = "\xe7\xe8\xe9\xea";
 
 Notebook::Notebook(std::function<void()> funcClose) :
     m_lblBackground(this),
@@ -45,6 +58,18 @@ Notebook::Notebook(std::function<void()> funcClose) :
     m_btnMoviePlayerHide([this]() { hideMoviePlayer(); }, &m_lblMoviePlayer),
     m_btnMissionsBack([this]() { hideMissions(); }, &m_lblMissions),
     m_listMissions(&m_lblMissions),
+    m_lblLoadSave(&m_lblBackground, false),
+    m_lblLoad(&m_lblBackground, false),
+    m_lblSave(&m_lblBackground, false),
+    m_lblSaveName(&m_lblBackground, false),
+    m_lblLoadConfirm(&m_lblBackground, false),
+    m_btnLoadUp([this]() { scroll(m_loadRows, m_loadFirst, -1, m_btnLoadUp, m_btnLoadDown); }, &m_lblLoad),
+    m_btnLoadDown([this]() { scroll(m_loadRows, m_loadFirst, 1, m_btnLoadUp, m_btnLoadDown); }, &m_lblLoad),
+    m_btnSaveUp([this]() { scroll(m_saveRows, m_saveFirst, -1, m_btnSaveUp, m_btnSaveDown); }, &m_lblSave),
+    m_btnSaveDown([this]() { scroll(m_saveRows, m_saveFirst, 1, m_btnSaveUp, m_btnSaveDown); }, &m_lblSave),
+    m_lblSaveNameText(&m_lblSaveName),
+    m_btnSaveSave([this]() { saveGame(); }, &m_lblSaveName),
+    m_lblLoadConfirmName(&m_lblLoadConfirm),
     m_funcClose(std::move(funcClose))
 {
     const gfx::ColorTable colorTable("gfx:pal/notebook/notebook.pal");
@@ -67,7 +92,7 @@ Notebook::Notebook(std::function<void()> funcClose) :
         createLabel(&m_lblMain, txt::Notebook_TitleLine, 40);
 
         createButton([this]() { showMissions(); }, &m_lblMain, txt::Notebook_Missions, 90);
-        createButton([]() {}, &m_lblMain, txt::Notebook_LoadSave, 110);
+        createButton([this]() { showLoadSave(); }, &m_lblMain, txt::Notebook_LoadSave, 110);
         createButton([this]() { showOptions(); }, &m_lblMain, txt::Notebook_Options, 130);
         createButton([this]() { showMap(); }, &m_lblMain, txt::Notebook_Map, 150);
         createButton(m_funcClose, &m_lblMain, txt::Notebook_Back, 170);
@@ -163,8 +188,269 @@ Notebook::Notebook(std::function<void()> funcClose) :
 
         m_btnMissionsBack.setFont(m_fontGreen);
         m_btnMissionsBack.setText(txt::StringTable::get(txt::Notebook_Back));
-        m_btnMissionsBack.setPosition(180, 270);
+        m_btnMissionsBack.setPosition(180, ArrowsY);
     }
+
+    {
+        // loading and saving, as in the original (docs/ROADMAP.md, appendix U): the saved games
+        // by slot, any number of them, and the arrows and the way back on the bottom line as on
+        // the missions' page
+        for (ui::Label *page : { &m_lblLoadSave, &m_lblLoad, &m_lblSave, &m_lblSaveName, &m_lblLoadConfirm }) {
+            page->setPosition(162, 73);
+            page->setTexture(m_background);
+        }
+
+        createLabel(&m_lblLoadSave, txt::Notebook_LoadSave_Title, 10);
+        createLabel(&m_lblLoadSave, txt::Notebook_LoadSave_TitleLine, 20);
+        createButton([this]() { showLoad(); }, &m_lblLoadSave, txt::Notebook_LoadGame, 70);
+        createButton([this]() { showSave(); }, &m_lblLoadSave, txt::Notebook_SaveGame, 90);
+        createButton([this]() { hideLoadSave(); }, &m_lblLoadSave, txt::Notebook_Back, 110);
+
+        createLabel(&m_lblLoad, txt::Notebook_Load_Title, 10);
+        createLabel(&m_lblLoad, txt::Notebook_Load_TitleLine, 20);
+        createLabel(&m_lblSave, txt::Notebook_Save_Title, 10);
+        createLabel(&m_lblSave, txt::Notebook_Save_TitleLine, 20);
+        for (ui::Button *arrow : { &m_btnLoadUp, &m_btnLoadDown, &m_btnSaveUp, &m_btnSaveDown }) {
+            const bool up = arrow == &m_btnLoadUp || arrow == &m_btnSaveUp;
+            arrow->setFont(m_fontGreen);
+            arrow->setText(String::fromLatin1(up ? ArrowUp : ArrowDown));
+            arrow->setPosition(up ? 20 : 99, ArrowsY);
+            arrow->setDisabledOpacity(0.5f);
+        }
+        for (ui::Label *page : { &m_lblLoad, &m_lblSave }) {
+            m_buttons.emplace_back([this]() { showLoadSave(); }, page);
+            m_buttons.back().setFont(m_fontGreen);
+            m_buttons.back().setText(txt::StringTable::get(txt::Notebook_Back));
+            m_buttons.back().setPosition(180, ArrowsY);
+        }
+
+        // a save's name: typed, with a cursor, over a dotted line; it can't be saved without one
+        createLabel(&m_lblSaveName, txt::Notebook_Save_Title, 10);
+        createLabel(&m_lblSaveName, txt::Notebook_Save_TitleLine, 20);
+        createLabel(&m_lblSaveName, txt::Notebook_Save_EnterName, 80);
+        m_lblSaveNameText.setFont(m_fontYellow);
+        m_lblSaveNameText.setPosition(0, 110);
+        m_lblSaveNameText.setWidth(PageWidth);
+        m_lblSaveNameText.setAlignment(ui::Label::AlignHCenter);
+        m_labels.emplace_back(&m_lblSaveName);
+        m_labels.back().setFont(m_fontYellow);
+        m_labels.back().setText(String(24, '.'));
+        m_labels.back().setPosition(0, 114);
+        m_labels.back().setWidth(PageWidth);
+        m_labels.back().setAlignment(ui::Label::AlignHCenter);
+        setupButton(m_btnSaveSave, txt::Notebook_Save_Save, 170);
+        m_btnSaveSave.setDisabledOpacity(0.5f);
+        createButton([this]() { m_lblSaveName.hide(); m_lblSave.show(); }, &m_lblSaveName, txt::Notebook_Save_Cancel, 190);
+
+        // the question before a game is loaded
+        createLabel(&m_lblLoadConfirm, txt::Notebook_Load_Title, 10);
+        createLabel(&m_lblLoadConfirm, txt::Notebook_Load_TitleLine, 20);
+        createLabel(&m_lblLoadConfirm, txt::LoadGame_Question, 60);
+        m_lblLoadConfirmName.setFont(m_fontYellow);
+        m_lblLoadConfirmName.setPosition(0, 80);
+        m_lblLoadConfirmName.setWidth(PageWidth);
+        m_lblLoadConfirmName.setAlignment(ui::Label::AlignHCenter);
+        createButton([this]() { Chapter::get()->loadGame(m_slot.file); }, &m_lblLoadConfirm, txt::Yes, 120);
+        createButton([this]() { m_lblLoadConfirm.hide(); m_lblLoad.show(); }, &m_lblLoadConfirm, txt::No, 140);
+    }
+}
+
+bool Notebook::wantsTextInput() const
+{
+    return isVisible() && m_lblSaveName.isVisible();
+}
+
+Rect Notebook::textInputArea() const
+{
+    // the name on its line, with some room around it
+    return Rect(48 + 162, 48 + 73 + 104, PageWidth, 24);
+}
+
+void Notebook::keyPressEvent(input::KeyEvent *event)
+{
+    if (!wantsTextInput())
+        return;
+
+    switch (event->key()) {
+    case input::Key_Return:
+    case input::Key_Enter:
+        saveGame();
+        return;
+
+    case input::Key_Escape:
+        m_lblSaveName.hide();
+        m_lblSave.show();
+        return;
+
+    case input::Key_Backspace:
+        m_saveName.chop(1);
+        break;
+
+    default:
+        break;
+    }
+
+    // letters, digits, spaces and some punctuation (none that the saved game's file would take
+    // for more than text); the umlauts as the game's texts and fonts have them
+    static const std::pair<unsigned char, unsigned char> umlauts[] = {
+        { 0xe4, 0x84 }, { 0xf6, 0x94 }, { 0xfc, 0x81 }, { 0xc4, 0x8e }, { 0xd6, 0x99 }, { 0xdc, 0x9a }, { 0xdf, 0xe1 }
+    };
+    for (unsigned char c : event->text().toLatin1()) {
+        for (const auto &umlaut : umlauts) {
+            if (c == umlaut.first)
+                c = umlaut.second;
+        }
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c >= 0x80 || String(" -.,!?'()&+:/").contains(char(c)))
+            m_saveName += String(1, char(c));
+    }
+    if (m_saveName.length() > 20)
+        m_saveName.chop(m_saveName.length() - 20);
+    updateSaveName();
+}
+
+void Notebook::showLoadSave()
+{
+    m_lblMain.hide();
+    m_lblLoad.hide();
+    m_lblSave.hide();
+    m_lblSaveName.hide();
+    m_lblLoadConfirm.hide();
+    m_lblLoadSave.show();
+}
+
+void Notebook::hideLoadSave()
+{
+    m_lblLoadSave.hide();
+    m_lblMain.show();
+}
+
+void Notebook::showLoad()
+{
+    m_lblLoadSave.hide();
+    m_lblLoad.show();
+
+    // as name: station - date time (Auto)
+    m_loadRows.clear();
+    for (const SavedGame &game : Chapter::savedGames()) {
+        String row = String("%1: %2 - %3").arg(game.name, game.station, util::shortDateTime(game.time));
+        if (game.autosave)
+            row = String("%1 (%2)").arg(row, txt::StringTable::get(txt::AutosaveShort));
+        addRow(m_loadRows, &m_lblLoad, row, [this, game]() { confirmLoad(game); });
+    }
+    m_loadFirst = 0;
+    updateRows(m_loadRows, m_loadFirst, m_btnLoadUp, m_btnLoadDown);
+}
+
+void Notebook::showSave()
+{
+    m_lblLoadSave.hide();
+    m_lblSave.show();
+
+    // the saves by hand can be saved over, the autosaves not; below them, after a gap, a new one
+    m_saveRows.clear();
+    for (const SavedGame &game : Chapter::savedGames()) {
+        if (game.autosave)
+            addRow(m_saveRows, &m_lblSave, String("%1 (%2)").arg(game.name, txt::StringTable::get(txt::AutosaveShort)), []() {}, false);
+        else
+            addRow(m_saveRows, &m_lblSave, game.name, [this, game]() { showSaveName(game); });
+    }
+    if (!m_saveRows.empty())
+        m_saveRows.emplace_back();
+    addRow(m_saveRows, &m_lblSave, txt::StringTable::get(txt::NewSave), [this]() { showSaveName(Chapter::freeSlot()); });
+    m_saveFirst = 0;
+    updateRows(m_saveRows, m_saveFirst, m_btnSaveUp, m_btnSaveDown);
+}
+
+void Notebook::showSaveName(const SavedGame &slot)
+{
+    // a save's name to change, none for a new one
+    m_slot = slot;
+    m_saveName = slot.name;
+    m_lblSave.hide();
+    m_lblSaveName.show();
+    m_cursor = true;
+    m_cursorTime.start();
+    updateSaveName();
+}
+
+void Notebook::confirmLoad(const SavedGame &game)
+{
+    m_slot = game;
+    m_lblLoadConfirmName.setText(String("---- %1 ----").arg(game.name));
+    m_lblLoad.hide();
+    m_lblLoadConfirm.show();
+}
+
+void Notebook::saveGame()
+{
+    const String name = m_saveName.trimmed();
+    if (name.isEmpty())
+        return;
+    Chapter::get()->saveGame(m_slot, name);
+    showLoadSave();
+}
+
+void Notebook::updateSaveName()
+{
+    m_lblSaveNameText.setText(m_saveName + (m_cursor ? "_" : " "));
+    m_btnSaveSave.setEnabled(!m_saveName.trimmed().isEmpty());
+}
+
+void Notebook::addRow(std::list<Row> &rows, ui::Widget *page, const String &text, std::function<void()> funcClick, bool enabled)
+{
+    // the words that fit on the page on each line
+    StringList lines;
+    for (const String &word : text.split(" ")) {
+        const String line = lines.empty() ? word : lines.back() + " " + word;
+        if (lines.empty())
+            lines.append(line);
+        else if (m_fontGreen.width(line) > PageWidth)
+            lines.append(word);
+        else
+            lines.back() = line;
+    }
+
+    rows.emplace_back();
+    for (const String &line : lines) {
+        rows.back().lines.emplace_back(funcClick, page);
+        ui::Button &button = rows.back().lines.back();
+        button.setFont(m_fontGreen);
+        button.setText(line);
+        button.setWidth(PageWidth);
+        button.setAlignment(ui::Label::AlignHCenter);
+        button.setEnabled(enabled);
+        button.setDisabledOpacity(0.5f);
+    }
+}
+
+void Notebook::scroll(std::list<Row> &rows, int &first, int step, ui::Button &up, ui::Button &down)
+{
+    first = std::clamp(first + step, 0, std::max(0, int(rows.size()) - 1));
+    updateRows(rows, first, up, down);
+}
+
+void Notebook::updateRows(std::list<Row> &rows, int first, ui::Button &up, ui::Button &down)
+{
+    // from the first row shown, as many as fit above the arrows
+    int y = RowsTop;
+    int i = 0;
+    bool full = false;
+    for (Row &row : rows) {
+        const int height = RowHeight*std::max(1, int(row.lines.size()));
+        const bool shown = i++ >= first && !full && y + height <= RowsBottom;
+        if (i > first && !shown)
+            full = true;
+        int lineY = y;
+        for (ui::Button &line : row.lines) {
+            line.setVisible(shown);
+            line.setPosition(0, lineY);
+            lineY += RowHeight;
+        }
+        if (shown)
+            y += height;
+    }
+    up.setEnabled(first > 0);
+    down.setEnabled(full);
 }
 
 void Notebook::createLabel(ui::Widget *parent, txt::StringId text, float posY)
@@ -341,6 +627,17 @@ void Notebook::updateInput()
     m_btnInputTouchStick.setText(txt::StringTable::get(hud::TouchControls::isStickInverted() ? txt::Touch_Stick_Inverted : txt::Touch_Stick_Normal));
 }
 
+void Notebook::draw()
+{
+    // the cursor blinks while a name is typed
+    if (m_lblSaveName.isVisible() && m_cursorTime.elapsed() > 300) {
+        m_cursorTime.start();
+        m_cursor = !m_cursor;
+        updateSaveName();
+    }
+    ui::Label::draw();
+}
+
 bool Notebook::mousePressEvent(const Point &pos, input::MouseButton button)
 {
     if (m_lblMap.isVisible()) {
@@ -349,6 +646,24 @@ bool Notebook::mousePressEvent(const Point &pos, input::MouseButton button)
     }
 
     if (button == input::RightButton) {
+        if (m_lblLoadConfirm.isVisible()) {
+            m_lblLoadConfirm.hide();
+            m_lblLoad.show();
+            return true;
+        }
+        if (m_lblSaveName.isVisible()) {
+            m_lblSaveName.hide();
+            m_lblSave.show();
+            return true;
+        }
+        if (m_lblLoad.isVisible() || m_lblSave.isVisible()) {
+            showLoadSave();
+            return true;
+        }
+        if (m_lblLoadSave.isVisible()) {
+            hideLoadSave();
+            return true;
+        }
         if (m_lblMissions.isVisible()) {
             hideMissions();
             return true;

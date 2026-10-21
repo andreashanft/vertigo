@@ -85,10 +85,15 @@ void Button::draw()
     } else {
         Point offset(m_pressed ? m_offset : 0);
 
-        if (!isEnabled() && m_disabledFont.height() != 0)
+        if (!isEnabled() && m_disabledFont.height() != 0) {
             m_drawRect = m_disabledFont.draw(m_text, Rect(offset, Size(width(), height())), m_alignment & AlignHCenter, m_alignment & AlignBottom);
-        else
+        } else if (!isEnabled() && m_disabledOpacity < 1.0f) {
+            // (the font sets the colour back to opaque white)
+            gfx::Pipeline::setColor(Vector4D(1, 1, 1, m_disabledOpacity));
             m_drawRect = m_font.draw(m_text, Rect(offset, Size(width(), height())), m_alignment & AlignHCenter, m_alignment & AlignBottom);
+        } else {
+            m_drawRect = m_font.draw(m_text, Rect(offset, Size(width(), height())), m_alignment & AlignHCenter, m_alignment & AlignBottom);
+        }
         m_drawRect.setPos(m_drawRect.pos() - offset);
     }
 }

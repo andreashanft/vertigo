@@ -580,10 +580,9 @@ void Vertigo::startGame(const String &name)
     if (name.isEmpty())
         return;
 
-    for (const Chapter::SavedGame &game : Chapter::savedGames()) {
-        if (game.name.toLower() == name)
-            return;
-    }
+    // a game's name stays its own: it finds the game's autosave
+    if (!Chapter::autosaveOf(name).file.empty())
+        return;
 
     m_name = name;
     m_intro.reset(new Movie("gfx:mvi/film/d02.mvi", Movie::MovieFilm));
@@ -591,10 +590,10 @@ void Vertigo::startGame(const String &name)
     m_intro->play([this]() { introFinished(); });
 }
 
-void Vertigo::loadGame(const String &name)
+void Vertigo::loadGame(const String &path)
 {
     createChapter();
-    m_chapter->load(name);
+    m_chapter->loadGame(path.toUtf8());
 }
 
 void Vertigo::endGame()

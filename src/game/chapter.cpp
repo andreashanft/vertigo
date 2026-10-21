@@ -25,6 +25,7 @@
 #include "util/containers.hpp"
 #include "util/path.hpp"
 #include "util/settings.hpp"
+#include <algorithm>
 
 
 namespace game {
@@ -32,10 +33,34 @@ namespace game {
 
 Chapter *Chapter::m_singleton = NULL;
 
-// of a saved game
-static std::string savePath(const String &name)
+// of the saved games: a new one's file is named after its slot, slot_<n>.des (the games saved
+// before there were slots are named after the game, which can't hold an underscore)
+static std::string saveDirectory()
 {
-    return util::appDataLocation() + "/save/" + name.toUtf8() + ".des";
+    return util::appDataLocation() + "/save";
+}
+
+// what the list of saved games shows of one; a game saved before there were slots is its game's
+// autosave, named after its file, and has no slot yet
+static Chapter::SavedGame readSave(const std::string &path, const String &stem)
+{
+    txt::DesFile file(path);
+
+    Chapter::SavedGame game;
+    game.file = path;
+    game.slot = file.value("slot", 0).toInt();
+    game.station = file.value("name").toString();
+    game.time = util::DateTime::fromIso(file.value("time").toString());
+    if (game.slot > 0) {
+        game.name = file.value("savename").toString();
+        game.game = file.value("game").toString();
+        game.autosave = file.value("autosave").toString().toLower() == "yes";
+    } else {
+        game.name = stem;
+        game.game = stem;
+        game.autosave = true;
+    }
+    return game;
 }
 
 Chapter::Chapter(const String &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame) :
@@ -107,8 +132,10 @@ void Chapter::load(const std::string &filename, bool load)
 {
     m_movies = std::queue<Movie, std::list<Movie>>();
     delete m_area;
-    // save again once the new station is set up
+    // save again once the new station is set up, after a new chapter and in a new game (which so
+    // has its autosave at once), but not after loading a saved game
     const bool replaceDesktop = m_desktop != NULL;
+    const bool newGame = m_code == -1;
     if (m_desktop) {
         m_desktop->deleteLater();
         m_desktop = NULL;
@@ -122,7 +149,7 @@ void Chapter::load(const std::string &filename, bool load)
     m_missions.clear();
     delete m_mission;
     m_mission = NULL;
-    m_save = replaceDesktop;
+    m_save = (replaceDesktop || newGame) && !load;
 
     txt::DesFile file(filename);
 
@@ -203,12 +230,39 @@ void Chapter::load(const std::string &filename, bool load)
 
 void Chapter::save() const
 {
+    // the game's autosave, in the next free slot when it has none yet (a game saved before there
+    // were slots gets its slot now)
+    if (m_autosave.file.empty() || !util::exists(m_autosave.file)) {
+        m_autosave = autosaveOf(m_name);
+        if (m_autosave.file.empty())
+            m_autosave = freeSlot();
+    }
+    write(m_autosave.file, m_autosave.slot, m_name, true);
+}
+
+
+void Chapter::saveGame(const SavedGame &slot, const String &name) const
+{
+    // never over an autosave
+    assert(!slot.autosave);
+    write(slot.file, slot.slot, name, false);
+}
+
+
+void Chapter::write(const std::string &path, int slot, const String &name, bool autosave) const
+{
     txt::DesFile file;
 
     file.setValue("name", m_desktop->name());
     // local, with milliseconds (as QVariant wrote it before)
     file.setValue("time", util::DateTime::now().toIso());
     file.setValue("credit", m_credits);
+    // the slot and the save's name; any save belongs to its game, whose autosave the game keeps
+    // writing when it is loaded
+    file.setValue("slot", slot);
+    file.setValue("savename", name);
+    file.setValue("game", m_name);
+    file.setValue("autosave", autosave ? "yes" : "no");
 
     file.setSection("chapter");
     file.setValue("code", m_code);
@@ -322,14 +376,21 @@ void Chapter::save() const
     file.setValue("Tur1", m_boat->defects()[Boat::DefectTur1]);
     file.setValue("Tur2", m_boat->defects()[Boat::DefectTur2]);
 
-    file.save(savePath(m_name));
+    file.save(path);
 }
 
 
-void Chapter::load(const String &name)
+void Chapter::loadGame(const std::string &path)
 {
-    m_name = name;
-    load(savePath(name), true);
+    // the game goes on with its autosave: this one, or for a game saved by hand its game's
+    for (const SavedGame &game : savedGames()) {
+        if (game.file == path) {
+            m_name = game.game;
+            m_autosave = game.autosave ? game : autosaveOf(game.game);
+        }
+    }
+    m_playedMovies.clear();
+    load(path, true);
 }
 
 
@@ -483,7 +544,7 @@ void Chapter::restartMission()
 void Chapter::loadLastSave()
 {
     assert(m_scenario);
-    if (!util::exists(savePath(m_name))) {
+    if (m_autosave.file.empty() || !util::exists(m_autosave.file)) {
         restartMission();
         return;
     }
@@ -491,7 +552,7 @@ void Chapter::loadLastSave()
     m_scenario->deleteLater();
     m_scenario = NULL;
 
-    load(m_name);
+    loadGame(m_autosave.file);
 }
 
 
@@ -748,23 +809,58 @@ std::vector<Task> Chapter::tasks()
 std::vector<Chapter::SavedGame> Chapter::savedGames()
 {
     std::vector<SavedGame> saves;
+    std::vector<SavedGame> withoutSlot;
 
     // the files ending in .des, but not hidden ones
-    const std::string directory = util::appDataLocation() + "/save";
-    for (const std::string &save : util::files(directory)) {
+    for (const std::string &save : util::files(saveDirectory())) {
         const std::string suffix = ".des";
         if (save.size() > suffix.size() && save[0] != '.' && save.compare(save.size() - suffix.size(), suffix.size(), suffix) == 0) {
-            txt::DesFile file(util::joinPath(directory, save));
-
-            SavedGame game;
-            game.name = String::fromUtf8(save.substr(0, save.size() - suffix.size()));
-            game.station = file.value("name").toString();
-            game.time = util::DateTime::fromIso(file.value("time").toString());
-            saves.push_back(game);
+            SavedGame game = readSave(util::joinPath(saveDirectory(), save), String::fromUtf8(save.substr(0, save.size() - suffix.size())));
+            (game.slot > 0 ? saves : withoutSlot).push_back(game);
         }
     }
 
+    // the games saved before there were slots take the free ones, the oldest first, until they
+    // are saved again with theirs
+    std::sort(withoutSlot.begin(), withoutSlot.end(), [](const SavedGame &a, const SavedGame &b) { return a.time < b.time; });
+    std::set<int> used;
+    for (const SavedGame &game : saves)
+        used.insert(game.slot);
+    int slot = 1;
+    for (SavedGame &game : withoutSlot) {
+        while (used.count(slot))
+            slot++;
+        game.slot = slot++;
+        saves.push_back(game);
+    }
+
+    std::sort(saves.begin(), saves.end(), [](const SavedGame &a, const SavedGame &b) { return a.slot < b.slot || (a.slot == b.slot && a.file < b.file); });
     return saves;
+}
+
+
+Chapter::SavedGame Chapter::freeSlot()
+{
+    // the first slot no saved game has
+    std::set<int> used;
+    for (const SavedGame &game : savedGames())
+        used.insert(game.slot);
+    SavedGame slot;
+    slot.slot = 1;
+    while (used.count(slot.slot))
+        slot.slot++;
+    slot.file = util::joinPath(saveDirectory(), "slot_" + std::to_string(slot.slot) + ".des");
+    return slot;
+}
+
+
+Chapter::SavedGame Chapter::autosaveOf(const String &game)
+{
+    for (const SavedGame &save : savedGames()) {
+        if (save.autosave && save.game.toLower() == game.toLower())
+            return save;
+    }
+    return SavedGame();
 }
 
 
