@@ -36,6 +36,8 @@ public:
 
 public:
     bool isActive() const { return m_speed > 0; }
+    // the sonar never lists a mine, so it can't be locked either (docs/ROADMAP.md, appendix Q)
+    bool isContact() const { return false; }
     bool isChasing() const { return m_chasing; }
     // whether running into this unit sets the mine off: boats, tanks, ships, towers, turrets,
     // buildings and trash of another faction (the player has one of its own); mines of the same

@@ -936,7 +936,9 @@ the same for the mines, their contacts with the player, boats, tanks,
 towers, buildings and ship segments; its explosions keep
 their own size, which comes within about 10 % of that. Running into a
 mine hits from below the window, so its explosion is mostly hidden by the
-cockpit.
+cockpit. The sonar never lists a mine, active or passive, so mines show
+on none of the radars and the HUD and can't be locked; they have to be
+seen. Vertigo listed them as contacts until October 2026.
 
 Vertigo applies the faction rule to shots and torpedoes too, each with the
 faction of whoever fired it: they pass through the units, mines and ship
