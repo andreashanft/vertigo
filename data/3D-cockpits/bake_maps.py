@@ -42,6 +42,7 @@ from mathutils import Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cockpitlib as CL  # noqa: E402
+import kitfile  # noqa: E402
 
 arg = CL.arg
 CID = arg("--cockpit") or re.search(r"cockpit_(\d+)", os.path.basename(bpy.data.filepath)).group(1)
@@ -52,6 +53,8 @@ RES = int(arg("--res", 8192))
 SAMPLES = int(arg("--samples", 32))
 EYE_SCALE = int(arg("--eye-scale", 8))
 HIDDEN_DENSITY = CL.HIDDEN_DENSITY   # texel density of surfaces the art never shows (relative)
+KIT_ONLY = "--kit-only" in CL.ARGV   # only the kit (kits/cockpit_NNN.glb), not compose_texture.py's maps
+KITS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kits")
 MAPS = os.path.join(OUT, "maps")
 os.makedirs(MAPS, exist_ok=True)
 T0 = time.time()
@@ -305,6 +308,75 @@ def build_part(N, L, geo):
     return comb.outputs[0]
 
 
+def mesh_data(o, uv=True, normals=True):
+    """Triangles of an object in glTF coordinates (x right, y up, -z forward): unique corners
+    (position, normal, atlas UV with v down) and indices."""
+    me = o.data
+    me.calc_loop_triangles()
+    tri = np.empty(len(me.loop_triangles) * 3, np.int32)
+    me.loop_triangles.foreach_get("loops", tri)
+    lv = np.empty(len(me.loops), np.int32)
+    me.loops.foreach_get("vertex_index", lv)
+    co = np.empty(len(me.vertices) * 3, np.float32)
+    me.vertices.foreach_get("co", co)
+    mw = np.array(o.matrix_world, np.float64)
+    co = co.reshape(-1, 3) @ mw[:3, :3].T + mw[:3, 3]
+    to_gltf = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]], np.float64)
+    cols = [lv[:, None].astype(np.float64)]
+    n = u = None
+    if normals:
+        n = np.empty(len(me.loops) * 3, np.float32)
+        me.corner_normals.foreach_get("vector", n)
+        rot = mw[:3, :3] / np.linalg.norm(mw[:3, :3], axis=0)
+        n = n.reshape(-1, 3) @ rot.T @ to_gltf.T
+        n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
+        cols.append(np.rint(n * 127))
+    if uv:
+        u = np.empty(len(me.loops) * 2, np.float32)
+        me.uv_layers["Atlas"].data.foreach_get("uv", u)
+        u = u.reshape(-1, 2) * [1, -1] + [0, 1]
+        cols.append(np.rint(u * 65535))
+    keys = np.concatenate(cols, 1)[tri]
+    unique, first, inverse = np.unique(keys, axis=0, return_index=True, return_inverse=True)
+    corners = tri[first]
+    out = dict(positions=co[lv[corners]] @ to_gltf.T, indices=inverse.ravel().astype(np.uint32))
+    out["normals"] = n[corners] if normals else None
+    out["uvs"] = u[corners] if uv else None
+    return out
+
+
+def object_extras(o):
+    return {k: (list(o[k]) if hasattr(o[k], "__len__") and not isinstance(o[k], str) else o[k])
+            for k in o.keys() if not k.startswith(("_", "cycles"))}
+
+
+def write_kit():
+    """kits/cockpit_NNN.glb: the parts with their atlas UVs and normals, the window glass, the HUD
+    plane and the fallback shading (kitfile.py)."""
+    used = shade_lum > 0
+    s = np.clip(shade_lum / max(float(np.percentile(shade_lum[used], 99.5)), 1e-6), 0, 1)
+    s = np.where(s <= 0.0031308, 12.92 * s, 1.055 * np.power(s, 1 / 2.4) - 0.055)
+    path = os.path.join(MAPS, "kit_shade.jpg")
+    spec = oiio.ImageSpec(s.shape[1], s.shape[0], 1, oiio.UINT8)
+    spec.attribute("CompressionQuality", 90)
+    o_ = oiio.ImageOutput.create(path)
+    o_.open(path, spec)
+    o_.write_image(np.ascontiguousarray((s * 255 + 0.5).astype(np.uint8)[..., None]))   # (h, w, 1): OIIO misreads 2D arrays
+    o_.close()
+    out = []
+    for o, p in zip(obs, parts):
+        extras = dict(object_extras(o), material=p["material"])
+        out.append(dict(mesh_data(o), name=o.name, material="Cockpit", extras=extras))
+    for o, m in ((glass, "Glass"), (hud, "HUD")):
+        out.append(dict(mesh_data(o, uv=False, normals=False), name=o.name, material=m,
+                        extras=object_extras(o)))
+    os.makedirs(KITS, exist_ok=True)
+    kit = os.path.join(KITS, f"cockpit_{CID}.glb")
+    kitfile.write(kit, out, open(path, "rb").read(), dict(cockpit=CID, camera=[F, CX, CY], atlas=RES))
+    log(f"kit: {kit} ({os.path.getsize(kit) / 1e6:.1f} MB, "
+        f"{sum(len(d['indices']) // 3 for d in out)} triangles)")
+
+
 def save_exr(name, a):
     path = os.path.join(MAPS, name)
     spec = oiio.ImageSpec(a.shape[1], a.shape[0], a.shape[2], oiio.FLOAT if a.dtype == np.float32
@@ -343,6 +415,15 @@ def bake(name, btype, material=None, samples=1, res=RES, decode=None):
     return a
 
 
+shade = bake("shade", 'COMBINED', samples=SAMPLES, res=RES // 2)
+shade_lum = shade @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+if not KIT_ONLY:
+    save_exr("shade.exr", shade.astype(np.float16))
+del shade
+if KIT_ONLY:
+    write_kit()
+    log("done")
+    sys.exit(0)
 view = bake("view", 'EMIT', emission_material("BakeView", build_view),
             decode=lambda a: np.stack([(a[..., 0] - 0.5) * 1024, (a[..., 1] - 0.5) * 1024,
                                        a[..., 2] * 2 - 1], -1).astype(np.float32))
@@ -353,9 +434,6 @@ part = bake("part", 'EMIT', part_mat,
             decode=lambda a: np.stack([np.rint(a[..., 0] * 4096), np.rint(a[..., 1] * 256)], -1))
 save_exr("part.exr", part.astype(np.float32))
 del part
-shade = bake("shade", 'COMBINED', samples=SAMPLES, res=RES // 2)
-save_exr("shade.exr", shade.astype(np.float16))
-del shade
 
 # the model from the eye, point sampled: which part the eye sees at every sub-pixel of the art
 for s in proxy.material_slots:
@@ -431,4 +509,5 @@ bpy.ops.export_scene.gltf(filepath=os.path.join(MAPS, f"cockpit_{CID}_atlas.glb"
                           export_format='GLB', use_selection=True, export_apply=True,
                           export_extras=True, export_cameras=False, export_lights=False,
                           export_image_format='JPEG')
+write_kit()
 log("done")
