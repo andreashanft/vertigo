@@ -1,5 +1,10 @@
-# Builds and tests Vertigo for every commit on master (and for pull requests to it): on Linux,
-# where the build is also packed up for download (Actions › the run › Artifacts), and on macOS.
+# Builds and tests Vertigo for every commit on master (and for pull requests to it) on Linux,
+# macOS and Windows, and packs each build up for download (Actions › the run › Artifacts):
+#   vertigo-<version>-linux-x86_64.tar.gz    the program, SDL 3 built in; needs OpenAL
+#   vertigo-<version>-macos-universal.zip    Vertigo.app for Apple silicon and Intel, macOS 13.3 on
+#   vertigo-<version>-windows-x86_64.zip     vertigo.exe with SDL3.dll and OpenAL32.dll
+# A tag v<version> (the version of CMakeLists.txt's project()) also puts the three on a draft
+# release of that name, to be checked and published by hand.
 # The tests are those of ctest; the missions need the game's data, which the repository doesn't
 # have.
 name: Build
@@ -7,6 +12,7 @@ name: Build
 on:
   push:
     branches: [master]
+    tags: ['v*']
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -19,17 +25,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  # the SDL release the iPad build uses (see CMakeLists.txt)
+  SDL_VERSION: 3.4.18
+  SDL_SHA256: 9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
+
 jobs:
   linux:
     name: Linux
     runs-on: ubuntu-24.04
-    env:
-      # Ubuntu 24.04 has no SDL 3, so it is built from the release the iPad build uses (see
-      # CMakeLists.txt), linked in statically: the game then runs wherever OpenAL is installed.
-      # SDL opens X11, Wayland and the rest at run time if the system has them; its audio is
-      # left out, as the game plays its sounds with OpenAL.
-      SDL_VERSION: 3.4.18
-      SDL_SHA256: 9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
+    # Ubuntu 24.04 has no SDL 3, so it is built from its source release, linked in statically:
+    # the game then runs wherever OpenAL is installed. SDL opens X11, Wayland and the rest at run
+    # time if the system has them; its audio is left out, as the game plays its sounds with OpenAL.
     steps:
       - uses: actions/checkout@v7
 
@@ -90,33 +97,223 @@ jobs:
           cmake --install build --prefix "$PWD/package/vertigo"
           cp README.md LICENSE AUTHORS package/vertigo/
           tar -C package -czf "vertigo-$version-linux-x86_64.tar.gz" vertigo
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "name=vertigo-$version-linux-x86_64" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: vertigo-${{ steps.pack.outputs.version }}-linux-x86_64-${{ github.sha }}
-          path: vertigo-${{ steps.pack.outputs.version }}-linux-x86_64.tar.gz
+          name: ${{ steps.pack.outputs.name }}-${{ github.sha }}
+          path: ${{ steps.pack.outputs.name }}.tar.gz
           retention-days: 30
 
   macos:
     name: macOS
     runs-on: macos-15
+    # One program for Apple silicon and Intel, from macOS 13.3 on (the first whose C++ library
+    # writes and reads floating-point numbers with std::to_chars), with SDL built in as on Linux
+    # and the system's OpenAL: nothing of Homebrew's is left in it.
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '13.3'
+      ARCHITECTURES: arm64;x86_64
     steps:
       - uses: actions/checkout@v7
 
       - name: Install packages
-        run: brew install sdl3 glm
+        run: brew install glm ninja
+
+      # (with other options below, raise the last number so that SDL is built again)
+      - name: Restore SDL
+        id: sdl
+        uses: actions/cache@v6
+        with:
+          path: ~/sdl3
+          key: sdl3-${{ env.SDL_VERSION }}-macos-${{ env.MACOSX_DEPLOYMENT_TARGET }}-universal-1
+
+      - name: Build SDL
+        if: steps.sdl.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL -o sdl.tar.gz "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-$SDL_VERSION.tar.gz"
+          echo "$SDL_SHA256  sdl.tar.gz" | shasum -a 256 -c -
+          tar -xzf sdl.tar.gz
+          cmake -S "SDL3-$SDL_VERSION" -B sdl-build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$HOME/sdl3" -DCMAKE_OSX_ARCHITECTURES="$ARCHITECTURES" \
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF \
+            -DSDL_AUDIO=OFF
+          cmake --build sdl-build
+          cmake --install sdl-build
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$HOME/sdl3" \
+            -DCMAKE_OSX_ARCHITECTURES="$ARCHITECTURES"
 
-      # (as many compilers at once as the runner has cores; without a number make starts one for
-      # every file, more than its memory takes)
       - name: Build
-        run: cmake --build build --parallel "$(sysctl -n hw.ncpu)"
+        run: cmake --build build -- -k 0
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+      # Vertigo.app: the program with the iPad's icon, signed for no one (macOS asks once whether
+      # to open it, see the README)
+      - name: Pack
+        id: pack
+        run: |
+          version=$(sed -nE 's/^project\(vertigo VERSION ([0-9.]+)\)$/\1/p' CMakeLists.txt)
+          app=package/vertigo/Vertigo.app
+          mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" icon.iconset
+          cp build/vertigo "$app/Contents/MacOS/"
+          for size in 16 32 128 256 512; do
+            sips -z $size $size ios/Assets.xcassets/AppIcon.appiconset/icon-1024.png --out icon.iconset/icon_${size}x${size}.png > /dev/null
+            sips -z $((size * 2)) $((size * 2)) ios/Assets.xcassets/AppIcon.appiconset/icon-1024.png --out icon.iconset/icon_${size}x${size}@2x.png > /dev/null
+          done
+          iconutil -c icns icon.iconset -o "$app/Contents/Resources/Vertigo.icns"
+          cat > "$app/Contents/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleDevelopmentRegion</key><string>en</string>
+              <key>CFBundleDisplayName</key><string>Vertigo</string>
+              <key>CFBundleExecutable</key><string>vertigo</string>
+              <key>CFBundleIconFile</key><string>Vertigo</string>
+              <key>CFBundleIdentifier</key><string>com.vertigo.Vertigo</string>
+              <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+              <key>CFBundleName</key><string>Vertigo</string>
+              <key>CFBundlePackageType</key><string>APPL</string>
+              <key>CFBundleShortVersionString</key><string>$version</string>
+              <key>CFBundleVersion</key><string>$version</string>
+              <key>LSApplicationCategoryType</key><string>public.app-category.games</string>
+              <key>LSMinimumSystemVersion</key><string>$MACOSX_DEPLOYMENT_TARGET</string>
+              <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          EOF
+          plutil -lint "$app/Contents/Info.plist"
+          codesign --force --sign - "$app"
+          cp README.md LICENSE AUTHORS package/vertigo/
+          ditto -c -k --norsrc --noextattr --keepParent package/vertigo "vertigo-$version-macos-universal.zip"
+          echo "name=vertigo-$version-macos-universal" >> "$GITHUB_OUTPUT"
+
+      # the packed program starts (--help only), runs on both processors and names no library
+      # outside the system's
       - name: Start
-        run: build/vertigo --help
+        run: |
+          program=package/vertigo/Vertigo.app/Contents/MacOS/vertigo
+          "$program" --help
+          test "$(lipo -archs "$program")" = "x86_64 arm64"
+          otool -L "$program"
+          if otool -L "$program" | grep -E '^\s' | grep -vE '^\s+(/System/Library/|/usr/lib/)'; then exit 1; fi
+          codesign --verify --strict package/vertigo/Vertigo.app
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.pack.outputs.name }}-${{ github.sha }}
+          path: ${{ steps.pack.outputs.name }}.zip
+          retention-days: 30
+
+  windows:
+    name: Windows
+    runs-on: windows-2025
+    # With Visual Studio, from the libraries' own releases, pinned by their SHA-256: SDL's and
+    # OpenAL Soft's builds for Visual Studio, which go along as DLLs, and GLM's headers. The C++
+    # library is linked in, so no Visual C++ redistributable is needed.
+    env:
+      SDL_VC_SHA256: 78d84602ae616cfe26b33a73b7d3b9b6b56e8a6650e53d92c9c6ca938f747acd
+      OPENAL_VERSION: 1.25.2
+      OPENAL_SHA256: 67a0c4b800bd860c93c04f38caf8cbe4875f9c84700ac430efc451f70e265434
+      GLM_VERSION: 1.0.3
+      GLM_SHA256: 6775e47231a446fd086d660ecc18bcd076531cfedd912fbd66e576b118607001
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Fetch libraries
+        run: |
+          mkdir deps
+          cd deps
+          curl -fsSL -o sdl.zip "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-devel-$SDL_VERSION-VC.zip"
+          curl -fsSL -o openal.zip "https://github.com/kcat/openal-soft/releases/download/$OPENAL_VERSION/openal-soft-$OPENAL_VERSION-bin.zip"
+          curl -fsSL -o glm.tar.gz "https://github.com/g-truc/glm/archive/refs/tags/$GLM_VERSION.tar.gz"
+          sha256sum -c - <<EOF
+          $SDL_VC_SHA256  sdl.zip
+          $OPENAL_SHA256  openal.zip
+          $GLM_SHA256  glm.tar.gz
+          EOF
+          7z x -bso0 sdl.zip
+          7z x -bso0 openal.zip
+          tar -xzf glm.tar.gz
+          cmake -S "glm-$GLM_VERSION" -B glm-build -DGLM_BUILD_LIBRARY=OFF -DGLM_BUILD_TESTS=OFF -DGLM_BUILD_INSTALL=ON
+          cmake --install glm-build --prefix glm
+
+      # (pwd -W: the directory as Windows writes it, which CMake understands)
+      - name: Configure
+        run: |
+          deps="$(pwd -W)/deps"
+          cmake -S . -B build -A x64 \
+            -DSDL3_DIR="$deps/SDL3-$SDL_VERSION/cmake" -Dglm_DIR="$deps/glm/share/glm" \
+            -DOPENAL_INCLUDE_DIR="$deps/openal-soft-$OPENAL_VERSION-bin/include/AL" \
+            -DOPENAL_LIBRARY="$deps/openal-soft-$OPENAL_VERSION-bin/libs/Win64/OpenAL32.lib" \
+            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      # (the tests start without the DLLs; they use neither SDL nor OpenAL)
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      # OpenAL Soft's DLL under the name programs look for, with the licences of both libraries
+      - name: Pack
+        id: pack
+        run: |
+          version=$(sed -nE 's/^project\(vertigo VERSION ([0-9.]+)\)$/\1/p' CMakeLists.txt)
+          mkdir -p package/vertigo/licenses
+          cp build/Release/vertigo.exe "deps/SDL3-$SDL_VERSION/lib/x64/SDL3.dll" package/vertigo/
+          cp "deps/openal-soft-$OPENAL_VERSION-bin/bin/Win64/soft_oal.dll" package/vertigo/OpenAL32.dll
+          cp README.md LICENSE AUTHORS package/vertigo/
+          cp "deps/SDL3-$SDL_VERSION/LICENSE.txt" package/vertigo/licenses/SDL.txt
+          cp "deps/openal-soft-$OPENAL_VERSION-bin/COPYING" package/vertigo/licenses/OpenAL-Soft.txt
+          cp "deps/openal-soft-$OPENAL_VERSION-bin/LICENSE-pffft" package/vertigo/licenses/pffft.txt
+          (cd package && 7z a -tzip -bso0 "../vertigo-$version-windows-x86_64.zip" vertigo)
+          echo "name=vertigo-$version-windows-x86_64" >> "$GITHUB_OUTPUT"
+
+      # the packed program starts (--help only) and needs no DLL beyond the two packed with it and
+      # Windows' own
+      - name: Start
+        run: |
+          package/vertigo/vertigo.exe --help | cat
+          ldd package/vertigo/vertigo.exe
+          if ldd package/vertigo/vertigo.exe | grep -iE 'vcruntime|msvcp|not found'; then exit 1; fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.pack.outputs.name }}-${{ github.sha }}
+          path: ${{ steps.pack.outputs.name }}.zip
+          retention-days: 30
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: packages
+          merge-multiple: true
+
+      # (only for the tag of the packages' version)
+      - name: Draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          ls -l packages
+          for platform in linux-x86_64.tar.gz macos-universal.zip windows-x86_64.zip; do
+            test -f "packages/vertigo-$version-$platform"
+          done
+          gh release create "$GITHUB_REF_NAME" packages/* --repo "$GITHUB_REPOSITORY" \
+            --draft --title "Vertigo $version" --generate-notes --verify-tag
