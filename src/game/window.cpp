@@ -165,10 +165,19 @@ Window::Window(bool focusable)
     // (without the status bar)
     flags |= SDL_WINDOW_FULLSCREEN;
 #endif
-    m_window = SDL_CreateWindow("Vertigo", 1280, 960, flags);
-    if (!m_window)
-        util::fatal((std::string("Cannot create the window: ") + SDL_GetError()).c_str());
-    m_context = SDL_GL_CreateContext(m_window);
+    // 4x multisampling smooths the edges of the 3D cockpit's (and the world's) polygons; without
+    // it if the system has none
+    for (int samples : { 4, 0 }) {
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, samples > 0);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples);
+        m_window = SDL_CreateWindow("Vertigo", 1280, 960, flags);
+        if (!m_window)
+            util::fatal((std::string("Cannot create the window: ") + SDL_GetError()).c_str());
+        m_context = SDL_GL_CreateContext(m_window);
+        if (m_context || samples == 0)
+            break;
+        SDL_DestroyWindow(m_window);
+    }
     std::string missing;
     if (!m_context || !SDL_GL_MakeCurrent(m_window, m_context))
         util::fatal((std::string("Cannot create an OpenGL 3.2 or OpenGL ES 3 context: ") + SDL_GetError()).c_str());

@@ -3,6 +3,7 @@
 #   vertigo-<version>-linux-x86_64.tar.gz    the program, SDL 3 built in; needs OpenAL
 #   vertigo-<version>-macos-universal.zip    Vertigo.app for Apple silicon and Intel, macOS 13.3 on
 #   vertigo-<version>-windows-x86_64.zip     vertigo.exe with SDL3.dll and OpenAL32.dll
+# each with the 3D cockpits' kits (cockpits, share/vertigo/cockpits on Linux)
 # A tag v<version> (the version of CMakeLists.txt's project()) also puts the three on the release
 # of that tag: the one made for it on GitHub's page, if there is one, or else a new draft to be
 # checked and published by hand.
@@ -162,6 +163,7 @@ jobs:
           app=package/vertigo/Vertigo.app
           mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" icon.iconset
           cp build/vertigo "$app/Contents/MacOS/"
+          cp -R build/cockpits "$app/Contents/Resources/"
           for size in 16 32 128 256 512; do
             sips -z $size $size ios/Assets.xcassets/AppIcon.appiconset/icon-1024.png --out icon.iconset/icon_${size}x${size}.png > /dev/null
             sips -z $((size * 2)) $((size * 2)) ios/Assets.xcassets/AppIcon.appiconset/icon-1024.png --out icon.iconset/icon_${size}x${size}@2x.png > /dev/null
@@ -271,6 +273,7 @@ jobs:
           version=$(sed -nE 's/^project\(vertigo VERSION ([0-9.]+)\)$/\1/p' CMakeLists.txt)
           mkdir -p package/vertigo/licenses
           cp build/Release/vertigo.exe "deps/SDL3-$SDL_VERSION/lib/x64/SDL3.dll" package/vertigo/
+          cp -R build/Release/cockpits package/vertigo/
           cp "deps/openal-soft-$OPENAL_VERSION-bin/bin/Win64/soft_oal.dll" package/vertigo/OpenAL32.dll
           cp README.md LICENSE AUTHORS package/vertigo/
           cp "deps/SDL3-$SDL_VERSION/LICENSE.txt" package/vertigo/licenses/SDL.txt

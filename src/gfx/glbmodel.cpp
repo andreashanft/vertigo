@@ -158,6 +158,7 @@ bool GlbModel::fail(const std::string &error)
     m_error = error;
     m_meshes.clear();
     m_images.clear();
+    m_extras = util::Json();
     return false;
 }
 
@@ -167,6 +168,7 @@ bool GlbModel::load(const std::string &fileName)
     m_error.clear();
     m_meshes.clear();
     m_images.clear();
+    m_extras = util::Json();
 
     std::vector<char> bytes;
     if (!util::readFile(fileName, bytes))
@@ -194,6 +196,7 @@ bool GlbModel::load(const std::string &fileName)
     if (!parseError.empty())
         return fail(fileName + ": " + parseError);
     const Reader reader(json, bin);
+    m_extras = json["asset"]["extras"];
 
     for (const util::Json &image : json["images"].elements()) {
         Image decoded;
@@ -260,13 +263,22 @@ bool GlbModel::load(const std::string &fileName)
                 }
 
                 const util::Json &attributes = primitive["attributes"];
-                std::vector<float> positions, uvs;
+                std::vector<float> positions, normals, uvs;
                 if (!attributes.contains("POSITION") || !reader.floats(attributes["POSITION"].toInt(), 3, positions))
                     return fail(fileName + ": mesh " + mesh.name + " has no positions");
                 const size_t count = positions.size()/3;
                 mesh.positions.reserve(count);
                 for (size_t i = 0; i < count; i++)
                     mesh.positions.push_back(Vector3D(world*Vector4D(positions[3*i], positions[3*i + 1], positions[3*i + 2], 1)));
+                if (attributes.contains("NORMAL") && reader.floats(attributes["NORMAL"].toInt(), 3, normals) && normals.size() == 3*count) {
+                    const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(world)));
+                    mesh.normals.reserve(count);
+                    for (size_t i = 0; i < count; i++) {
+                        const Vector3D n = normalMatrix*Vector3D(normals[3*i], normals[3*i + 1], normals[3*i + 2]);
+                        const float length = glm::length(n);
+                        mesh.normals.push_back(length > 0 ? n/length : Vector3D(0));
+                    }
+                }
                 const std::string uvName = "TEXCOORD_" + std::to_string(texCoord);
                 if (mesh.image >= 0 && attributes.contains(uvName) && reader.floats(attributes[uvName].toInt(), 2, uvs) && uvs.size() == 2*count) {
                     mesh.texCoords.reserve(count);

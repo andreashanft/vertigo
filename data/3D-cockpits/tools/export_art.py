@@ -1,23 +1,27 @@
 """
 Export a cockpit's art as a plain 640x480 PNG for an image upscaler. The see-through (window)
 area is filled with the surrounding colours so upscalers don't form dark halos at its edge; the
-mask itself is re-applied from COCKPIT.R16 by project_textures.py --art.
+mask itself comes from COCKPIT.R16 again in compose_texture.py --art.
 
   Blender -b --factory-startup --python tools/export_art.py -- --cockpit 000 [--data DIR]
 
-Writes out/NNN/art/cockpit_NNN_art.png.
+Writes out/NNN/art/cockpit_NNN_art.png. Needs numpy and OpenImageIO only.
 """
 
 import os
 import sys
 
 import numpy as np
+import OpenImageIO as oiio
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-import cockpitlib as L  # noqa: E402
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, HERE)
+import cockpitdata as CD  # noqa: E402
 
-L.load(L.arg("--cockpit", "000"))
-rgb, filled = L.ART.astype(np.float64).copy(), ~L.SEE
+ARGV = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
+cid = ARGV[ARGV.index("--cockpit") + 1] if "--cockpit" in ARGV else "000"
+cp = CD.Cockpit(cid, ARGV[ARGV.index("--data") + 1] if "--data" in ARGV else None)
+rgb, filled = cp.art.astype(np.float64).copy(), ~cp.see
 for _ in range(400):
     if filled.all():
         break
@@ -29,8 +33,11 @@ for _ in range(400):
     grow = ~filled & (n > 0)
     rgb[grow] = acc[grow] / n[grow, None]
     filled |= grow
-out = os.path.join(L.OUT, "art")
+out = os.path.join(HERE, "out", cid, "art")
 os.makedirs(out, exist_ok=True)
-path = os.path.join(out, f"cockpit_{L.CID}_art.png")
-L.save_rgba(rgb.astype(np.float32), path)
+path = os.path.join(out, f"cockpit_{cid}_art.png")
+o = oiio.ImageOutput.create(path)
+o.open(path, oiio.ImageSpec(640, 480, 3, oiio.UINT8))
+o.write_image((np.clip(rgb, 0, 1) * 255 + 0.5).astype(np.uint8))
+o.close()
 print("[art] written", path)

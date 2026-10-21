@@ -53,3 +53,30 @@ add_executable(cdimagetest
 )
 target_include_directories(cdimagetest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME cdimage COMMAND cdimagetest)
+
+# hud::CockpitPaint with a kit of data/3D-cockpits/kits
+find_package(Threads REQUIRED)
+add_executable(cockpitpainttest
+    cockpitpainttest.cpp
+    ${PROJECT_SOURCE_DIR}/src/hud/cockpitpaint.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/glbmodel.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/colortable.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/image.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/rgb.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/datapath.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/error.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/file.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/json.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/path.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/string.cpp
+)
+target_include_directories(cockpitpainttest PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(cockpitpainttest SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/3rdparty/stb)
+target_compile_definitions(cockpitpainttest PRIVATE VERTIGO_KITS_DIR="${PROJECT_SOURCE_DIR}/data/3D-cockpits/kits")
+target_link_libraries(cockpitpainttest Threads::Threads)
+if(TARGET glm::glm-header-only)
+    target_link_libraries(cockpitpainttest glm::glm-header-only)
+elseif(TARGET glm::glm)
+    target_link_libraries(cockpitpainttest glm::glm)
+endif()
+add_test(NAME cockpitpaint COMMAND cockpitpainttest)
