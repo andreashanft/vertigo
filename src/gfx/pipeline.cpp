@@ -535,12 +535,12 @@ void Pipeline::setAlphaTest(bool enabled)
 }
 
 
-void Pipeline::setTextureProjection(bool enabled, const Matrix &matrix, float near)
+void Pipeline::setTextureProjection(bool enabled, const Matrix &matrix, float qMin)
 {
     State &s = state();
     s.textureProjection = enabled;
     s.textureMatrix = matrix;
-    s.textureNear = near;
+    s.textureNear = qMin;
 }
 
 

@@ -519,10 +519,10 @@ Image Image::decodeImage(util::File &file, int width, int height, Rgb color)
             std::uint16_t opaque = 0;
             file >> transparent >> opaque;
 
-            for (uint i = 0; i < transparent; i++)
+            for (unsigned int i = 0; i < transparent; i++)
                 image.setPixel(x++, y, rgba(0, 0, 0, 0));
 
-            for (uint i = 0; i < opaque; i++)
+            for (unsigned int i = 0; i < opaque; i++)
                 image.setPixel(x++, y, color);
         }
     }
@@ -545,10 +545,10 @@ Image Image::decodeImage(util::File &file, int width, int height, const ColorTab
             std::uint16_t opaque = 0;
             file >> transparent >> opaque;
 
-            for (uint i = 0; i < transparent; i++)
+            for (unsigned int i = 0; i < transparent; i++)
                 image.setPixel(x++, y, rgba(0, 0, 0, 0));
 
-            for (uint i = 0; i < opaque; i++) {
+            for (unsigned int i = 0; i < opaque; i++) {
                 std::uint8_t index;
                 file >> index;
                 image.setPixel(x++, y, colorTable[index]);
@@ -574,10 +574,10 @@ Image Image::decodeImage(util::File &file, int width, int height)
             std::uint16_t opaque = 0;
             file >> transparent >> opaque;
 
-            for (uint i = 0; i < transparent; i++)
+            for (unsigned int i = 0; i < transparent; i++)
                 image.setPixel(x++, y, rgba(0, 0, 0, 0));
 
-            for (uint i = 0; i < opaque; i++) {
+            for (unsigned int i = 0; i < opaque; i++) {
                 std::uint16_t value;
                 file >> value;
 
