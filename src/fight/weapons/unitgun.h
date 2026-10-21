@@ -33,7 +33,7 @@ namespace fight {
 class ActiveObject;
 
 
-// The gun of an enemy unit: a Gun with muzzles in the unit's coordinates (metres),
+// The gun of an enemy unit: a Gun with its mountings in the unit's coordinates (metres),
 // fired in the rhythm of the unit's [VolleyGun] (active and pause phases) while the trigger is pulled.
 class UnitGun
 {
@@ -59,7 +59,11 @@ public:
     const String& shortName() const { return m_gun.shortName(); }
     void setAmmunition(int ammunition) { m_gun.setAmmo(ammunition); }
     // how many shots it has fired
-    int shots() const { return m_shots; }
+    int shots() const { return m_gun.shots(); }
+    // most units fire before their gun counts its rearming time down, so on the frame after it is
+    // ready again; a tank's fixed gun counts down first and fires on the frame it is ready
+    // (docs/ROADMAP.md, appendix K)
+    void setCountFirst(bool countFirst) { m_countFirst = countFirst; }
     void update(float elapsedTime, bool trigger, const Vector3D &position, const Vector3D &dir, const Vector3D &up, const Vector3D &right);
 
 private:
@@ -73,7 +77,7 @@ private:
     std::vector<Phase> m_volley; // empty: fire whenever the gun is ready
     int m_phase;
     float m_phaseTime;
-    int m_shots = 0;
+    bool m_countFirst = false;
 };
 
 

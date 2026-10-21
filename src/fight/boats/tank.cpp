@@ -113,6 +113,7 @@ void Tank::arm(int model, txt::DesFile &file)
     for (const Vector3D &muzzle : mount.muzzles)
         muzzles.push_back(muzzle*m_scale);
     m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &file));
+    m_unitGun->setCountFirst(!m_turret);
     if (mount.ammunition >= 0)
         m_unitGun->setAmmunition(mount.ammunition);
 }
