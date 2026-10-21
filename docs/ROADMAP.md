@@ -169,6 +169,7 @@ master monitor's target picture, D/H/V/N and R.
 | G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing. Below them Vertigo's own OFFENE MISSION: one of the four boats with chapter 1's fittings but the Spy II sonar (chapter 1's Spy I has no IFF, so every contact would show as a friend), the depot with every item and $10,000,000, then any of the 71 scenarios, played as test mode plays it |
 | G8 | Destruction and death view | Done. A destroyed boat goes through the original's sequence of explosions and debris before its hull is gone, and the player's boat is watched from outside in the death view (appendix R) |
 | G9 | Credits | Done. CREDITS in the main menu, between TRAINING and the options, as in the original: `gfx/pic/title/credits0`–`3.r16` (640×480, RGB565) full screen, twelve seconds each, then back to the menu; a key or a click ends them at once (read off in October 2026). The difficulty, which the original's main menu cycles, is the first line of Vertigo's options; these are in the medium font, 15 pixels apart, as on the original's option pages |
+| G10 | Saved games | Done. The original's named slots (appendix U), as many as there are, and Vertigo's autosave: a new game's autosave takes the next free slot and the game keeps writing it (on arriving at a station, after each conversation, before each mission), marked as such; the notebook saves by hand in a new slot or over another hand-made save, never over an autosave, and a game loaded from one goes on writing its game's autosave. The games saved before there were slots are their game's autosaves and take free slots |
 
 ## Open questions and how to settle them
 
@@ -1305,3 +1306,39 @@ Read off in October 2026.
 Vertigo does the same; the edge and the barrels in sync were watched in the
 original. Not read: what the original draws when a turret's target is
 behind the boat (Vertigo puts the cross on the edge away from it).
+
+### U. How the original loads and saves games
+
+Read off in October 2026; the texts are `TXT/DEEPTEXT.DES` 35–51, 110 and
+113.
+
+- **Main menu.** SPIELSTAND LADEN (110) lists the saved games by slot, each
+  by its name in the large font, 20 pixels apart from y = 282, with the
+  arrows `IMG/TITLE/ARR1_UP`/`ARR1_DO` (up; normal and pressed) and
+  `ARR2_UP`/`ARR2_DO` (down) at the bar's right end, x = 465, y = 304 and
+  345; they show half transparent when there is nothing to scroll. A click
+  asks SPIEL LADEN ? (41) with `--- NAME ---` and JA / NEIN (42, 43), 30,
+  30 and 20 pixels apart from y = 288, without the way back to the main menu.
+- **Notebook.** LADEN / SPEICHERN (17) opens L A D E N  U N D  S P E I C H E
+  R N (35) with SPIEL LADEN (37), SPIEL SPEICHERN (38) and ZURÜCK at y = 70,
+  90 and 110 of the page. SPIEL SPEICHERN (44) lists 16 slots 10 pixels
+  apart from y = 50, each by its name or F R E I (50) when free, with ZURÜCK
+  below; a slot asks Bitte Namen eingeben (46) at y = 80 over the name with
+  the cursor on a dotted line at y = 110, and SPEICHERN / ABBRUCH (47, 48) at
+  y = 170 and 190. The name starts as the slot's, so a free slot left
+  unchanged is saved as "F R E I". SPIEL LADEN (39) lists only the used
+  slots; a click asks SPIEL LADEN ? (41) at y = 60 with `---- Name ----` at
+  80 and JA / NEIN at 120 and 140.
+- **Scrolling.** The notebook's long pages (the missions) have the arrows of
+  its font (characters 0xE3–0xE6 up, 0xE7–0xEA down) on the bottom line,
+  y = 270, with ZURÜCK beside them; the font draws ( and ) as [ and ].
+
+Vertigo does the same with any number of slots: the notebook lists only
+the used ones, a new save comes after them and a gap as "Neuer
+Speicherstand", and SPEICHERN stays half transparent until the name has a
+character (on the iPad the keyboard comes up). The lists scroll with the
+arrows, and a row too wide for the page continues on the next line. Each
+save shows its station and date, and an autosave says so: the notebook
+lists `Name: Station - Date Time (Auto)`, the main menu `Name: Station`
+(the station cut off with "..." before the arrows) over
+`Date Time (Autosave)`.
