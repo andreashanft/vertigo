@@ -79,7 +79,8 @@ public:
     int fixerSystem() const { return m_fixerSystem; }
     int fixerForced() const { return m_fixerForced; }
     void cycleFixer();
-    // the torpedo magazine's condition, 0 to 1 (the Fixer mends it; nothing else uses it yet)
+    // the torpedo magazine's condition, 0 to 1: hits on the front wear it down, the Fixer mends it,
+    // and the lower it is the more often the magazine jams
     float magazineCondition() const { return m_magazineCondition; }
     float noise() const;
     float range() const;
@@ -152,6 +153,9 @@ private:
     bool m_firing;
     Gun m_gun;
     std::unique_ptr<PlayerTurret> m_turrets[2];
+    // a hit on an armour side (0 front, 1 left, 2 right, 3 back) that left it from before to after
+    // of its full armour wears down the systems behind it once it is low
+    void damageSystems(int side, float before, float after);
 
     // the Fixer
     void updateFixer();
