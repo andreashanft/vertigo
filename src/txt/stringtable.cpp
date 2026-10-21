@@ -84,6 +84,9 @@ String StringTable::get(StringVertigo string)
         { "Touch-Stick vertikal: UMGEKEHRT", "Touch stick vertical: INVERTED" },
         { "OFFENE MISSION", "OPEN MISSION" },
         { "MISSIONEN", "MISSIONS" },
+        { "Neuer Speicherstand", "New saved game" },
+        { "Autosave", "Autosave" },
+        { "Auto", "Auto" },
     };
     return texts[string][m_language == "English" ? 1 : 0];
 }

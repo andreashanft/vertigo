@@ -34,6 +34,7 @@
 #include "movie.h"
 #include "task.h"
 #include "boat.h"
+#include "savedgame.h"
 
 #include "util/datetime.hpp"
 #include "util/string.hpp"
@@ -49,17 +50,7 @@ namespace game {
 class Chapter : public util::DeferredDeletable
 {
 public:
-    struct SavedGame
-    {
-        bool operator < (const SavedGame& rho) const
-        {
-            return time > rho.time;
-        }
-
-        String name;
-        String station;
-        util::DateTime time;   // local
-    };
+    using SavedGame = game::SavedGame;
 
 public:
     Chapter(const String &name, std::function<void(Renderer*)> funcSetRenderer, std::function<void()> funcEndGame);
@@ -72,8 +63,11 @@ public:
     void toggleMovieHarbour();
     void addCredit(int credit);
 
+    // the game's autosave
     void save() const;
-    void load(const String &name);
+    // by hand: over a save that isn't an autosave, or in a free slot
+    void saveGame(const SavedGame &slot, const String &name) const;
+    void loadGame(const std::string &path);
     void loadChapter(int chapter);
     void setStation(int station, bool load = false);
     Area* area() const { return m_area; }
@@ -100,6 +94,7 @@ public:
     hud::HUD* hud() const { return m_HUD.get(); }
 
 private:
+    void write(const std::string &path, int slot, const String &name, bool autosave) const;
     void load(const std::string &filename, bool load);
     void playApproach(bool autopilot);
     void playMovies();
@@ -128,7 +123,12 @@ private:
 
 public:
     static Chapter* get() { assert(m_singleton); return m_singleton; }
+    // by slot
     static std::vector<SavedGame> savedGames();
+    // the first slot no saved game has, for a new one
+    static SavedGame freeSlot();
+    // none when the game has no autosave yet
+    static SavedGame autosaveOf(const String &game);
 
 private:
     int m_code;
@@ -164,7 +164,9 @@ private:
     // the boat as it left for the mission, for starting it again
     std::unique_ptr<Boat> m_boatAtStart;
     bool m_end;
+    // the game's, and its autosave once it has one
     String m_name;
+    mutable SavedGame m_autosave;
     std::function<void(Renderer*)> m_funcSetRenderer;
     std::function<void()> m_funcEndGame;
 };

@@ -41,6 +41,10 @@ private:
     void showMain();
     void showNew();
     void showLoad();
+    void showLoadList();
+    void scrollLoad(int step);
+    void updateLoadList();
+    void confirmLoad(const String &path, const String &name);
     void showTraining();
     void showOpenMission();
     void showOptions();
@@ -78,9 +82,22 @@ private:
     ui::Button m_btnNewBack;
     ui::Label m_lblLoad;
     ui::Label m_lblLoadTitle;
+    // the saved games, LoadRows of them at a time from m_loadFirst, and the question before one
+    // is loaded
+    static const int LoadRows = 4;
+    static const int LoadArrowsX = 465;
+    ui::Label m_lblLoadList;
+    ui::Button m_btnLoadUp;
+    ui::Button m_btnLoadDown;
     ui::Button m_btnLoadBack;
+    ui::Label m_lblLoadConfirm;
+    ui::Label m_lblLoadQuestion;
+    ui::Label m_lblLoadName;
+    ui::Button m_btnLoadYes;
+    ui::Button m_btnLoadNo;
     std::list<ui::Label> m_lblLoadSave;
     std::list<ui::Button> m_btnLoadSave;
+    int m_loadFirst = 0;
     ui::Label m_lblTraining;
     ui::Label m_lblTrainingTitle;
     ui::Button m_btnTrainingBack;
@@ -121,7 +138,7 @@ private:
     std::function<void(String)> m_funcLoadGame;
     std::function<void(int)> m_funcStartTraining;
     std::function<void(int)> m_funcStartOpenMission;
-    String m_loadingGame;
+    String m_loadingGame;   // its file
 };
 
 } // namespace game

@@ -138,6 +138,7 @@ set(SOURCES
     game/renderer.h
     game/room.cpp
     game/room.h
+    game/savedgame.h
     game/station.cpp
     game/station.h
     game/task.cpp

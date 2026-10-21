@@ -54,7 +54,15 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnNewBack([this]() { showMain(); }, &m_lblNew),
     m_lblLoad(&m_title, false),
     m_lblLoadTitle(&m_lblLoad),
-    m_btnLoadBack([this]() { showMain(); }, &m_lblLoad),
+    m_lblLoadList(&m_lblLoad),
+    m_btnLoadUp([this]() { scrollLoad(-1); }, &m_lblLoadList),
+    m_btnLoadDown([this]() { scrollLoad(1); }, &m_lblLoadList),
+    m_btnLoadBack([this]() { showMain(); }, &m_lblLoadList),
+    m_lblLoadConfirm(&m_lblLoad, false),
+    m_lblLoadQuestion(&m_lblLoadConfirm),
+    m_lblLoadName(&m_lblLoadConfirm),
+    m_btnLoadYes([this]() { changeState(Loading); }, &m_lblLoadConfirm),
+    m_btnLoadNo([this]() { showLoadList(); }, &m_lblLoadConfirm),
     m_lblTraining(&m_title, false),
     m_lblTrainingTitle(&m_lblTraining),
     m_btnTrainingBack([this]() { showMain(); }, &m_lblTraining),
@@ -248,6 +256,29 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnLoadBack.setFont(gfx::Font::Large);
     m_btnLoadBack.setText(txt::StringTable::get(txt::MainMenu));
 
+    // as in the original: the saved games by slot with the arrows at the bar's right end (arr1 up,
+    // arr2 down, each _up and pressed _do), half transparent when they have nowhere to go, and a
+    // question before one is loaded
+    m_btnLoadUp.setTexture(gfx::Image::load("gfx:img/title/arr1_up.img", colorTable));
+    m_btnLoadUp.setPressedTexture(gfx::Image::load("gfx:img/title/arr1_do.img", colorTable));
+    m_btnLoadUp.setDisabledOpacity(0.5f);
+    m_btnLoadUp.setPosition(LoadArrowsX, 304);
+    m_btnLoadDown.setTexture(gfx::Image::load("gfx:img/title/arr2_up.img", colorTable));
+    m_btnLoadDown.setPressedTexture(gfx::Image::load("gfx:img/title/arr2_do.img", colorTable));
+    m_btnLoadDown.setDisabledOpacity(0.5f);
+    m_btnLoadDown.setPosition(LoadArrowsX, 345);
+
+    const std::pair<ui::Label *, int> confirm[] = { { &m_lblLoadQuestion, 288 }, { &m_lblLoadName, 318 }, { &m_btnLoadYes, 348 }, { &m_btnLoadNo, 368 } };
+    for (const auto &line : confirm) {
+        line.first->setFont(fontLarge);
+        line.first->setPosition(0, line.second);
+        line.first->setWidth(640);
+        line.first->setAlignment(ui::Label::AlignHCenter);
+    }
+    m_lblLoadQuestion.setText(txt::StringTable::get(txt::LoadGame_Question));
+    m_btnLoadYes.setText(txt::StringTable::get(txt::Yes));
+    m_btnLoadNo.setText(txt::StringTable::get(txt::No));
+
     m_lblLoadingTitle.setFont(gfx::Font::Large);
     m_lblLoadingTitle.setPosition(0, 316);
     m_lblLoadingTitle.setWidth(640);
@@ -358,7 +389,11 @@ void MainMenu::mousePressEvent(input::MouseEvent *event)
     }
 
     if (event->button() == input::RightButton) {
-        showMain();
+        // from the question back to the saved games
+        if (m_lblLoad.isVisible() && m_lblLoadConfirm.isVisible())
+            showLoadList();
+        else
+            showMain();
     }
 }
 
@@ -417,36 +452,81 @@ void MainMenu::showLoad()
     m_lblMain.hide();
     m_lblLoad.show();
 
-    int y = 282;
-
     m_lblLoadSave.clear();
     m_btnLoadSave.clear();
 
-    std::vector<Chapter::SavedGame> games = Chapter::savedGames();
-    std::sort(games.begin(), games.end());
-    for (const Chapter::SavedGame &game : games) {
-        String name = game.name;
+    // each with its station, and its date; a line too wide for the room left of the arrows ends
+    // its station with "..."
+    const gfx::Font fontLarge(gfx::Font::Large);
+    for (const Chapter::SavedGame &game : Chapter::savedGames()) {
+        const String path = String::fromUtf8(game.file);
+        const String name = game.name;
+        String line = String("%1: %2").arg(game.name, game.station);
+        for (int keep = game.station.length() - 1; keep > 0 && fontLarge.width(line) > 2*(LoadArrowsX - 320); keep--)
+            line = String("%1: %2...").arg(game.name, game.station.left(keep).trimmed());
+        String date = util::shortDateTime(game.time);
+        if (game.autosave)
+            date = String("%1 (%2)").arg(date, txt::StringTable::get(txt::Autosave));
 
-        m_btnLoadSave.emplace_back([this, name]() { changeState(Loading); m_loadingGame = name; }, &m_lblLoad);
+        m_btnLoadSave.emplace_back([this, path, name]() { confirmLoad(path, name); }, &m_lblLoadList);
         ui::Button &button = m_btnLoadSave.back();
-        button.setPosition(0, y);
         button.setWidth(640);
         button.setAlignment(ui::Button::AlignHCenter);
         button.setFont(gfx::Font::Large);
-        button.setText(String("%1: %2").arg(game.name, game.station));
+        button.setText(line);
 
-        y += 13;
-
-        m_lblLoadSave.emplace_back(&m_lblLoad);
+        m_lblLoadSave.emplace_back(&m_lblLoadList);
         ui::Label &label = m_lblLoadSave.back();
-        label.setPosition(0, y);
         label.setWidth(640);
         label.setAlignment(ui::Button::AlignHCenter);
         label.setFont(gfx::Font::Small);
-        label.setText(util::shortDateTime(game.time));
-
-        y += 20;
+        label.setText(date);
     }
+
+    m_loadFirst = 0;
+    showLoadList();
+}
+
+
+void MainMenu::showLoadList()
+{
+    m_lblLoadConfirm.hide();
+    m_lblLoadList.show();
+    updateLoadList();
+}
+
+
+void MainMenu::scrollLoad(int step)
+{
+    m_loadFirst = std::clamp(m_loadFirst + step, 0, std::max(0, int(m_btnLoadSave.size()) - LoadRows));
+    updateLoadList();
+}
+
+
+void MainMenu::updateLoadList()
+{
+    // the rows from the first one shown
+    auto label = m_lblLoadSave.begin();
+    int i = 0;
+    for (ui::Button &button : m_btnLoadSave) {
+        const int row = i++ - m_loadFirst;
+        const bool shown = row >= 0 && row < LoadRows;
+        button.setVisible(shown);
+        label->setVisible(shown);
+        button.setPosition(0, 282 + 33*row);
+        (label++)->setPosition(0, 282 + 33*row + 13);
+    }
+    m_btnLoadUp.setEnabled(m_loadFirst > 0);
+    m_btnLoadDown.setEnabled(m_loadFirst + LoadRows < int(m_btnLoadSave.size()));
+}
+
+
+void MainMenu::confirmLoad(const String &path, const String &name)
+{
+    m_loadingGame = path;
+    m_lblLoadName.setText(String("--- %1 ---").arg(name));
+    m_lblLoadList.hide();
+    m_lblLoadConfirm.show();
 }
 
 

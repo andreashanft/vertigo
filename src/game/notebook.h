@@ -18,10 +18,12 @@
 #ifndef GAME_NOTEBOOK_H
 #define GAME_NOTEBOOK_H
 
+#include "savedgame.h"
 #include "gfx/font.h"
 #include "txt/stringtable.h"
 #include "ui/button.h"
 #include "ui/list.h"
+#include "util/timer.hpp"
 
 #include <list>
 
@@ -32,7 +34,30 @@ class Notebook : public ui::Label
 public:
     Notebook(std::function<void()> funcClose);
 
+public:
+    // typing a saved game's name
+    bool wantsTextInput() const;
+    Rect textInputArea() const;
+    void keyPressEvent(input::KeyEvent *event);
+
 private:
+    void showLoadSave();
+    void hideLoadSave();
+    void showLoad();
+    void showSave();
+    void showSaveName(const SavedGame &slot);
+    void confirmLoad(const SavedGame &game);
+    void saveGame();
+    // a row of the lists: a line, or more where it is too wide for the page, each centred; none
+    // for a gap
+    struct Row
+    {
+        std::list<ui::Button> lines;
+    };
+    void addRow(std::list<Row> &rows, ui::Widget *page, const String &text, std::function<void()> funcClick, bool enabled = true);
+    void scroll(std::list<Row> &rows, int &first, int step, ui::Button &up, ui::Button &down);
+    void updateRows(std::list<Row> &rows, int first, ui::Button &up, ui::Button &down);
+    void updateSaveName();
     void showMissions();
     void hideMissions();
     void showOptions();
@@ -58,6 +83,7 @@ private:
     void setupButton(ui::Button &button, txt::StringId text, float posY);
 
 private:
+    void draw();
     bool mousePressEvent(const Point &pos, input::MouseButton button);
 
 private:
@@ -82,6 +108,28 @@ private:
     ui::Button m_btnMoviePlayerHide;
     ui::Button m_btnMissionsBack;
     ui::List m_listMissions;
+    // loading and saving: the saved games to load and the slots to save in, scrolled by the
+    // arrows from the first row shown, then a save's name or the question before loading
+    ui::Label m_lblLoadSave;
+    ui::Label m_lblLoad;
+    ui::Label m_lblSave;
+    ui::Label m_lblSaveName;
+    ui::Label m_lblLoadConfirm;
+    ui::Button m_btnLoadUp;
+    ui::Button m_btnLoadDown;
+    ui::Button m_btnSaveUp;
+    ui::Button m_btnSaveDown;
+    ui::Label m_lblSaveNameText;
+    ui::Button m_btnSaveSave;
+    ui::Label m_lblLoadConfirmName;
+    std::list<Row> m_loadRows;
+    std::list<Row> m_saveRows;
+    int m_loadFirst = 0;
+    int m_saveFirst = 0;
+    SavedGame m_slot;   // to save in, or to load
+    String m_saveName;
+    bool m_cursor = false;
+    util::ElapsedTimer m_cursorTime;
     std::list<ui::Label> m_labels;
     std::list<ui::Button> m_buttons;
     std::list<ui::Button> m_movieButtons;

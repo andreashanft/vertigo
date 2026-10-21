@@ -227,6 +227,15 @@ Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
 `~/.local/share/Vertigo/Vertigo` on Linux, and in the app's own folder on the
 iPad.
 
+A new game's name names its autosave, which takes the next free slot and is
+written on arriving at a station, after each conversation and before each
+mission. The notebook's LOAD / SAVE saves by hand, in a new slot or over
+another hand-made save (never over an autosave), and loads any saved game;
+the main menu's LOAD does too. A game loaded from a hand-made save goes on
+writing its own autosave. There are as many slots as saves, each `slot_<n>.des`
+in `save`; games saved before there were slots keep their file and take a
+free slot.
+
 ## Training
 
 The main menu's Training has the original's four training missions, each with

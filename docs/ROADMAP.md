@@ -169,6 +169,7 @@ master monitor's target picture, D/H/V/N and R.
 | G7 | Training | Done. TRAINING in the main menu lists the four training missions (`strai0`–`strai3` with their setups `dat/save/ftrai0`–`3.des`), each starting with its briefing. Below them Vertigo's own OFFENE MISSION: one of the four boats with chapter 1's fittings but the Spy II sonar (chapter 1's Spy I has no IFF, so every contact would show as a friend), the depot with every item and $10,000,000, then any of the 71 scenarios, played as test mode plays it |
 | G8 | Destruction and death view | Done. A destroyed boat goes through the original's sequence of explosions and debris before its hull is gone, and the player's boat is watched from outside in the death view (appendix R) |
 | G9 | Credits | Done. CREDITS in the main menu, between TRAINING and the options, as in the original: `gfx/pic/title/credits0`–`3.r16` (640×480, RGB565) full screen, twelve seconds each, then back to the menu; a key or a click ends them at once (read off in October 2026). The difficulty, which the original's main menu cycles, is the first line of Vertigo's options; these are in the medium font, 15 pixels apart, as on the original's option pages |
+| G10 | Saved games | Done. The original's named slots (appendix U), as many as there are, and Vertigo's autosave: a new game's autosave takes the next free slot and the game keeps writing it (on arriving at a station, after each conversation, before each mission), marked as such; the notebook saves by hand in a new slot or over another hand-made save, never over an autosave, and a game loaded from one goes on writing its game's autosave. The games saved before there were slots are their game's autosaves and take free slots |
 
 ## Open questions and how to settle them
 
@@ -718,20 +719,50 @@ Read off in October 2026; Vertigo does all of it.
   level, never less than 4 pixels.
 - **Energy guns.** Models 0–5 (the ones with `energydemand` above 0) draw
   from the pool; models 6–13 use rounds and the energy guns show "ENER" in
-  their place. A gun fires its barrels in turn, one per trigger pull with the
-  rearming time between: models 0 to 13 have 1, 2, 1, 2, 4, 1, 2, 2, 2, 3,
-  4, 2, 2 and 2 barrels. A shot takes `energydemand` divided by the barrels
+  their place. A gun fires its barrels in turn: models 0 to 13 have 1, 2, 1,
+  2, 4, 1, 2, 2, 2, 3, 4, 2, 2 and 2 barrels. An energy gun fires one barrel
+  per trigger pull with the rearming time between. A shot takes `energydemand` divided by the barrels
   off the level (never refused) and the gun is ready again once its
   `rearmingtime` has passed and the level is above the whole `energydemand`.
   So a full pool allows a burst at the rearming rate, after which the gun
   settles to one shot per (`energydemand` / barrels) × recharge time: a
   Plasma Death II (0.3, 2 barrels, 0.075 s) on engine 2 fires at its rearming
   rate for about 4 s and then every 0.15 s, on engine 0 every 0.75 s.
+- **Rearming time and frames.** The rearming time is the gun's
+  `rearmingtime` exactly, counted from the shot. A gun is ready once the
+  time is past it, but the player's trigger is read at the start of a frame,
+  before the guns count down, so the main gun and the turrets in sync fire on
+  the frame after the one in which they become ready. At 60 frames a second a
+  0.075 s gun fires every 0.1 s and a 0.15 s gun about every 0.18 s (Vertigo added
+  0.03 s to every rearming time until October 2026).
+- **Rounds.** An ammo gun with more than one barrel fires a round: one
+  barrel per frame while the trigger is held, all its barrels in turn, and
+  only after the last one the rearming time. A released trigger leaves the
+  round where it is, and the next pull goes on with it. So the rate climbs
+  with the frame rate: a Vendetta III (4 barrels, 0.075 s) fires about 17
+  shots a second at 30 frames, 27 at 60 and 34 at 120. Vertigo fires the
+  barrels of a round 1/60 s apart whatever the frame rate, as the original
+  at 60 frames, so the Vendetta III fires about 25 shots a second at 50
+  frames. A round takes one of the gun's rounds (the `defaultammo` or a
+  unit's `ammunition`), counted when its last barrel has fired.
+- **Mountings and barrels.** A gun has one or two mountings (the player's
+  gun one, 3 m ahead; a unit's from its `relative` keys), and each round
+  fires from the next mounting. The barrels sit around it: two 0.75 m to
+  either side; the Vendetta II's third 0.75 m above; the four of the
+  Vendetta III and the Plasma Death III 0.75 m to either side, the second
+  and third 0.8 m lower. The order is right, left, (above or lower left,
+  lower right,) left.
+- **Units** fire the same rounds. Boats, bombers, gun towers and turrets
+  (the cargo ships', TANK2's) fire before their gun counts down, so like
+  the player on the frame after it is ready again; a tank's fixed gun
+  counts down first and fires on the frame it is ready. In Vertigo's
+  seeded idle runs (60 s, three seeds) the idle boat is destroyed in 48 of
+  213 runs, 41 before; S00103, S00106, S00205 and S02205 got harder.
 - **The booster** draws from the same pool: on only while the level is at
   least 0.8, 0.15 at once, 1.2 per second while it runs (about 4 s on engines
   2–4), off below 0.05. It doubles the top speed and raises the acceleration
   2.5-fold, works from a standstill, and the engine's pitch follows the speed.
-- **Jams** are decided once per trigger pull: the gun's condition (1 when
+- **Jams** are decided before each shot: the gun's condition (1 when
   new, the saved `Defect`, at least 0.2) against a random number times the
   gun's `defectdamping`; it jams when the product reaches the condition, so
   never while the condition is at or above the damping (0.2–0.8). A jam lasts
@@ -935,7 +966,9 @@ the same for the mines, their contacts with the player, boats, tanks,
 towers, buildings and ship segments; its explosions keep
 their own size, which comes within about 10 % of that. Running into a
 mine hits from below the window, so its explosion is mostly hidden by the
-cockpit.
+cockpit. The sonar never lists a mine, active or passive, so mines show
+on none of the radars and the HUD and can't be locked; they have to be
+seen. Vertigo listed them as contacts until October 2026.
 
 Vertigo applies the faction rule to shots and torpedoes too, each with the
 faction of whoever fired it: they pass through the units, mines and ship
@@ -1305,3 +1338,39 @@ Read off in October 2026.
 Vertigo does the same; the edge and the barrels in sync were watched in the
 original. Not read: what the original draws when a turret's target is
 behind the boat (Vertigo puts the cross on the edge away from it).
+
+### U. How the original loads and saves games
+
+Read off in October 2026; the texts are `TXT/DEEPTEXT.DES` 35–51, 110 and
+113.
+
+- **Main menu.** SPIELSTAND LADEN (110) lists the saved games by slot, each
+  by its name in the large font, 20 pixels apart from y = 282, with the
+  arrows `IMG/TITLE/ARR1_UP`/`ARR1_DO` (up; normal and pressed) and
+  `ARR2_UP`/`ARR2_DO` (down) at the bar's right end, x = 465, y = 304 and
+  345; they show half transparent when there is nothing to scroll. A click
+  asks SPIEL LADEN ? (41) with `--- NAME ---` and JA / NEIN (42, 43), 30,
+  30 and 20 pixels apart from y = 288, without the way back to the main menu.
+- **Notebook.** LADEN / SPEICHERN (17) opens L A D E N  U N D  S P E I C H E
+  R N (35) with SPIEL LADEN (37), SPIEL SPEICHERN (38) and ZURÜCK at y = 70,
+  90 and 110 of the page. SPIEL SPEICHERN (44) lists 16 slots 10 pixels
+  apart from y = 50, each by its name or F R E I (50) when free, with ZURÜCK
+  below; a slot asks Bitte Namen eingeben (46) at y = 80 over the name with
+  the cursor on a dotted line at y = 110, and SPEICHERN / ABBRUCH (47, 48) at
+  y = 170 and 190. The name starts as the slot's, so a free slot left
+  unchanged is saved as "F R E I". SPIEL LADEN (39) lists only the used
+  slots; a click asks SPIEL LADEN ? (41) at y = 60 with `---- Name ----` at
+  80 and JA / NEIN at 120 and 140.
+- **Scrolling.** The notebook's long pages (the missions) have the arrows of
+  its font (characters 0xE3–0xE6 up, 0xE7–0xEA down) on the bottom line,
+  y = 270, with ZURÜCK beside them; the font draws ( and ) as [ and ].
+
+Vertigo does the same with any number of slots: the notebook lists only
+the used ones, a new save comes after them and a gap as "Neuer
+Speicherstand", and SPEICHERN stays half transparent until the name has a
+character (on the iPad the keyboard comes up). The lists scroll with the
+arrows, and a row too wide for the page continues on the next line. Each
+save shows its station and date, and an autosave says so: the notebook
+lists `Name: Station - Date Time (Auto)`, the main menu `Name: Station`
+(the station cut off with "..." before the arrows) over
+`Date Time (Autosave)`.
