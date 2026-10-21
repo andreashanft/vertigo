@@ -63,7 +63,7 @@ PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int 
     m_volleyLeft(0),
     m_volleyEnd(0)
 {
-    m_gun.addMuzzles(Vector3D(0), gunItem);
+    m_gun.addMuzzle(Vector3D(0));
     m_gun.setDefect(defect);
 
     // items 7169-7177 are Software0-8: Claw V1.6-V3.6 (torpedoes), Punisher V1.0-V2.2 (vessels),
@@ -316,18 +316,12 @@ void PlayerTurret::fireAt(ActiveObject *target)
 
 void PlayerTurret::update(float elapsedTime, bool playerFiring)
 {
-    m_gun.update(elapsedTime);
-    const float time = m_scenario->time();
-    const bool ready = m_gun.state() == Gun::StateReady;
-
-    switch (m_order)
+    if (m_order == Order::Sync)
     {
-    case Order::Stop:
-        return;
-
-    case Order::Sync:
         // each pull of the main gun's trigger fires the turret's own gun too, straight ahead and
-        // from all its barrels at once
+        // from all its barrels at once; as the main gun, it fires on the frame after its gun is
+        // ready again (docs/ROADMAP.md, appendix K)
+        const bool ready = m_gun.ready();
         if (m_state == State::Rearming && ready)
             m_state = State::Sync;
         if (playerFiring && ready)
@@ -335,12 +329,15 @@ void PlayerTurret::update(float elapsedTime, bool playerFiring)
             m_gun.fire(mountPosition(), m_player->dir(), m_player->up(), m_player->right(), true);
             m_state = State::Rearming;
         }
+        m_gun.update(elapsedTime);
         return;
-
-    case Order::Attack:
-    case Order::Search:
-        break;
     }
+
+    m_gun.update(elapsedTime);
+    if (m_order == Order::Stop)
+        return;
+    const float time = m_scenario->time();
+    const bool ready = m_gun.ready();
 
     if (m_gun.usesAmmo() && m_gun.ammo() <= 0)
     {
