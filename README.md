@@ -22,7 +22,8 @@ What's still missing are the details and playtesting, find the open points in [d
 GitHub Actions builds and tests Vertigo on Linux, macOS and Windows for every
 commit on master, and keeps each build for 30 days as an artifact of the run
 (Actions › the run › Artifacts), named `vertigo-<version>-<platform>-<commit>`.
-A tag `v<version>` puts the three packages on a draft release:
+A tag `v<version>` puts the three packages on its release: the one made for
+the tag on GitHub's page, or else a new draft to publish:
 
 * `vertigo-<version>-linux-x86_64.tar.gz`: SDL 3 is built in; needs OpenAL
   (`libopenal1`), OpenGL 3.2 and a system as recent as Ubuntu 24.04
