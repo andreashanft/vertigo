@@ -180,6 +180,8 @@ set(SOURCES
 
     hud/cockpit3d.cpp
     hud/cockpit3d.h
+    hud/cockpitpaint.cpp
+    hud/cockpitpaint.h
     hud/hud.cpp
     hud/hud.h
     hud/crosshair.cpp
@@ -334,6 +336,19 @@ if(IOS)
     target_link_libraries(vertigo "-framework AVFoundation")
 else()
     add_executable(vertigo WIN32 ${SOURCES})
+endif()
+# the 3D cockpits' kits (data/3D-cockpits/kits), which Vertigo paints from the game's cockpit art:
+# next to the program (in the app's resources on iOS), and in share/vertigo/cockpits when installed
+file(GLOB VERTIGO_KITS CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/data/3D-cockpits/kits/*.glb)
+if(IOS)
+    target_sources(vertigo PRIVATE ${VERTIGO_KITS})
+    set_source_files_properties(${VERTIGO_KITS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/cockpits)
+elseif(VERTIGO_KITS)
+    add_custom_command(TARGET vertigo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:vertigo>/cockpits
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${VERTIGO_KITS} $<TARGET_FILE_DIR:vertigo>/cockpits/
+        VERBATIM)
+    install(FILES ${VERTIGO_KITS} DESTINATION share/vertigo/cockpits)
 endif()
 # the version, for the main menu and --help
 target_compile_definitions(vertigo PRIVATE VERTIGO_VERSION="${PROJECT_VERSION}")

@@ -221,7 +221,7 @@ HUD::~HUD()
 
 bool HUD::showsModel() const
 {
-    return cockpitMode() == CockpitMode::Model && m_model && m_model->isValid();
+    return cockpitMode() == CockpitMode::Model && m_model && m_model->isReady();
 }
 
 
@@ -262,7 +262,8 @@ void HUD::load(game::Boat *boat)
         m_model->setCamera(m_focal, m_center);
     else if (cockpitMode() == CockpitMode::Model)
         std::cerr << "No 3D cockpit cockpit_" << boat->cockpit() << ".glb in "
-                  << Cockpit3D::directory() << ", showing the 2D cockpit" << std::endl;
+                  << Cockpit3D::directory() << " or " << (Cockpit3D::kitDirectory().empty() ? "the program's cockpits" : Cockpit3D::kitDirectory())
+                  << ", showing the 2D cockpit" << std::endl;
     m_rectGL = Rect();
 
     m_integerScale = true;
@@ -714,6 +715,15 @@ void HUD::drawFrame()
         drawDeathView(pixelRatio);
         return;
     }
+    // the 3D cockpit is loaded (a kit's texture painted) while the 2D one is shown; with a fixed
+    // step at once, for repeatable screenshots
+    if (cockpitMode() == CockpitMode::Model && m_model && m_model->isValid())
+    {
+        const bool ready = m_model->isReady();
+        m_model->prepare(m_boat->cockpit(), g_fixedStep > 0);
+        if (m_model->isReady() != ready)
+            m_rectGL = Rect();      // the view angle changes with it
+    }
     if (showsModel() && drawModel(pixelRatio))
     {
         drawTouchControls(pixelRatio);
@@ -934,10 +944,11 @@ void HUD::press(input::KeyEvent *e)
     if (e->key() == input::Key_V && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
     {
         setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
-        if (cockpitMode() == CockpitMode::Model && !showsModel())
+        const bool model = cockpitMode() == CockpitMode::Model && m_model && m_model->isValid();
+        if (cockpitMode() == CockpitMode::Model && !model)
             std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit() << " in "
-                      << Cockpit3D::directory() << std::endl;
-        m_menu->notice({ showsModel() ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
+                      << Cockpit3D::directory() << " or " << Cockpit3D::kitDirectory() << std::endl;
+        m_menu->notice({ model ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
         // the view angle changes with it
         m_rectGL = Rect();
         return;

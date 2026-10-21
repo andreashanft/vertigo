@@ -76,6 +76,24 @@ std::string appDataLocation()
 }
 
 
+std::string cacheLocation()
+{
+#if defined(__APPLE__)
+    std::string home = environment("CFFIXED_USER_HOME");
+    if (home.empty())
+        home = environment("HOME");
+    return home + "/Library/Caches/Vertigo";
+#elif defined(_WIN32)
+    return appDataLocation() + "/Cache";
+#else
+    std::string cache = environment("XDG_CACHE_HOME");
+    if (cache.empty() || cache[0] != '/')
+        cache = environment("HOME") + "/.cache";
+    return cache + "/vertigo";
+#endif
+}
+
+
 bool exists(const std::string &path)
 {
     std::error_code error;

@@ -31,8 +31,9 @@ namespace gfx {
 
 
 // Reads binary glTF 2.0 files (.glb) as far as the 3D cockpits (data/3D-cockpits) need it:
-// triangle meshes with positions and texture coordinates, the node hierarchy with its
-// transforms, materials with a base colour and texture, and embedded JPEG or PNG images.
+// triangle meshes with positions, normals and texture coordinates (also quantized, as with
+// KHR_mesh_quantization), the node hierarchy with its transforms, materials with a base colour
+// and texture, embedded JPEG or PNG images, and the extras of the nodes and the asset.
 class GlbModel
 {
 public:
@@ -45,6 +46,7 @@ public:
         Vector4D color = Vector4D(1);
         bool blend = false;         // alphaMode BLEND
         std::vector<Vector3D> positions;    // node transforms applied
+        std::vector<Vector3D> normals;      // the same, unit length; empty without them
         std::vector<Vector2D> texCoords;    // of the base colour texture; empty without one
         std::vector<std::uint32_t> indices;       // triangles
     };
@@ -56,6 +58,8 @@ public:
 
     const std::vector<Mesh>& meshes() const { return m_meshes; }
     const std::vector<Image>& images() const { return m_images; }
+    // asset.extras
+    const util::Json& extras() const { return m_extras; }
 
 private:
     bool fail(const std::string &error);
@@ -64,6 +68,7 @@ private:
     std::string m_error;
     std::vector<Mesh> m_meshes;
     std::vector<Image> m_images;
+    util::Json m_extras;
 };
 
 

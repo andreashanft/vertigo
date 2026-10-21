@@ -4,16 +4,20 @@ Feasibility work for a VR version: the four pre-rendered 640×480 cockpits of Sc
 Archimedean Dynasty (`VFX/COCKPIT/000`–`003`) rebuilt as 3D models with Blender scripts, then
 textured part by part from the original artwork, with the outlines as vectors.
 
-Nothing here ships game data. Every script reads the original files from your own game data
-directory and writes its results to `out/` (ignored by git), like the rest of Vertigo.
+Nothing here ships game data. The repository has the scripts, the cockpits' layouts (camera,
+monitor rectangles and window outlines, `layouts/`) and the kits Vertigo paints the textures on
+(`kits/`). Their art comes from your own game data, at run time; everything else the scripts
+make goes to `out/` (ignored by git).
 
 ## Requirements
 
 - Blender 4.2 or newer (tested with 5.2), run headless. On macOS:
   `/Applications/Blender.app/Contents/MacOS/Blender`.
-- The game data directory Vertigo uses. The scripts read Vertigo's `datadir` setting from its
-  `settings.ini` (in `~/Library/Application Support/Vertigo/Vertigo` on macOS); override it
-  with `--data DIR` or `VERTIGO_DATA`.
+- For the models and kits nothing else: the layouts stand in for the game data. The alignment
+  check, `compose_texture.py` and the tools need the game data directory Vertigo uses. They read
+  Vertigo's `datadir` setting from its `settings.ini` (in
+  `~/Library/Application Support/Vertigo/Vertigo` on macOS); override it with `--data DIR` or
+  `VERTIGO_DATA`.
 
 ## Usage
 
@@ -23,15 +27,25 @@ B=/Applications/Blender.app/Contents/MacOS/Blender
 # 1. build the model (out/000/cockpit_000.blend/.glb + renders/)
 $B -b --factory-startup --python cockpit_000.py
 
-# 2. lay out the texture atlas and bake the maps of the geometry (out/000/maps/)
+# 2. lay out the texture atlas and bake the kit (kits/cockpit_000.glb), which Vertigo paints
+$B -b out/000/cockpit_000.blend --python bake_maps.py -- --kit-only
+```
+
+That is all Vertigo needs: it takes the kits from `kits/` (CMake copies them next to the
+program) and paints their textures from the game data itself (see *How Vertigo paints the
+textures*). Step 1 takes seconds, step 2 about two minutes (Cycles on the GPU).
+
+Finished models with their textures, e.g. with upscaled art, are made by the same scripts:
+
+```sh
+# 2. without --kit-only: also the maps of the geometry (out/000/maps/)
 $B -b out/000/cockpit_000.blend --python bake_maps.py
 
-# 3. make the texture from the art (out/000/cockpit_000_textured.glb, textures/, vector/)
+# 3. the texture from the art (out/000/cockpit_000_textured.glb, textures/, vector/)
 $B -b --factory-startup --python compose_texture.py -- --cockpit 000
 ```
 
-Step 1 takes seconds, step 2 two to three minutes (Cycles on the GPU), step 3 about a minute.
-Step 3 needs numpy and OpenImageIO only; Blender's Python has both.
+Step 3 takes about a minute; it needs numpy and OpenImageIO only, which Blender's Python has.
 
 Options after `--`:
 
@@ -39,7 +53,8 @@ Options after `--`:
 | --- | --- | --- |
 | `cockpit_NNN.py` | `--quick` | save/export plus the alignment check only |
 | | `--no-render` | save/export only |
-| `bake_maps.py` | `--res 4096` | atlas size (default 8192) |
+| `bake_maps.py` | `--kit-only` | the kit only, not `compose_texture.py`'s maps |
+| | `--res 4096` | atlas size (default 8192) |
 | `compose_texture.py` | `--art FILE` | colours from this image instead of COCKPIT.R16: the art upscaled 2×, 4× or 8× (e.g. by Real-ESRGAN) |
 | | `--soft` | don't sharpen the art's strong edges |
 | | `--suffix _x4` | suffix for the outputs, to compare variants |
@@ -51,17 +66,19 @@ Tools:
   the original (grey lines every 10 px, yellow every 50 px) for tracing shapes.
 - `tools/export_art.py -- --cockpit NNN`: the art as a plain PNG with the window area filled
   in, ready for an image upscaler (see *Upscaling*).
-- `tools/install.py` (plain Python 3): copies the textured models to Vertigo (see below).
+- `tools/extract_layout.py -- --cockpit NNN`: writes `layouts/cockpit_NNN.json` from the game
+  data (camera, the DES file's monitor and lamp rectangles, the window's outline).
+- `tools/install.py` (plain Python 3): copies finished models to Vertigo (see below).
 
 ## Using the models in Vertigo
 
 ```sh
-python3 tools/install.py              # out/NNN/cockpit_NNN_textured.glb
-build/vertigo s00101 --cockpit 3d     # or Alt+V in a mission
+build/vertigo s00101 --cockpit 3d     # or Alt+V in a mission: the kit, painted on first use
 ```
 
-Variants side by side, e.g. the upscaled one (`--suffix _x4`, see *Upscaling*) as the default
-and the one without in a folder of its own:
+A finished model in the folder `3d-cockpits` of the data directory takes the kit's place, e.g.
+one with upscaled art (`--suffix _x4`, see *Upscaling*); `--cockpit-dir` takes them from another
+folder for one run:
 
 ```sh
 python3 tools/install.py --suffix _x4
@@ -70,11 +87,11 @@ build/vertigo s00101 --cockpit 3d --cockpit-dir 3d-cockpits-vector
 ```
 
 `install.py` copies one model per cockpit to `3d-cockpits/cockpit_NNN.glb` in Vertigo's data
-directory (or the setting `cockpit/directory`, or `--dest`). Vertigo reads the GLB itself and
-uses the following:
+directory (or the setting `cockpit/directory`, or `--dest`). Vertigo reads the GLB itself (a kit
+or a finished model) and uses the following:
 
-- **Meshes and texture.** Everything with the projected texture, the `Glass` material only as
-  a surface for the HUD, and node transforms. The `HUD_MasterHUD` plane is skipped.
+- **Meshes and texture.** Everything with the texture, the `Glass` material only as a surface for
+  the HUD, and node transforms. The `HUD_MasterHUD` plane is skipped.
 - **Camera.** The eye at rest is the origin. The world and the model are drawn with the camera
   of the cockpit art.
 - **Instruments.** The HUD's instruments are rendered into a texture covering the 640×480 view
@@ -167,6 +184,37 @@ art.
   (see *Upscaling*): the parts' edges still come from the model, the surfaces get the
   upscaler's detail. A 4× source takes about three minutes.
 
+## How Vertigo paints the textures
+
+A kit (`kits/cockpit_NNN.glb`, written by `bake_maps.py` with `kitfile.py`, 5–10 MB) is the
+model without its texture: one mesh per part with its atlas UVs and normals, quantized
+(`KHR_mesh_quantization`), the window glass and the HUD plane, and the fallback shading (the
+model lit by the scene lights) as a grey JPEG. Its `asset.extras.vertigo_kit` names the cockpit,
+the camera and the atlas size.
+
+The first time a cockpit is shown in 3D, Vertigo paints the texture from the kit and the game's
+`COCKPIT.R16` (`src/hud/cockpitpaint.cpp`, a port of `compose_texture.py`), on a worker thread
+while the 2D cockpit is shown:
+
+1. it draws the kit from the eye at 8× the art's resolution (4× on the iPad), each part in its
+   own colour: how much of every pixel of the art each part covers;
+2. per part, it makes a colour field from those pixels (push-pull) and finds the art's strong,
+   long edges;
+3. it draws every part into the atlas, each texel taking its part's field where the eye sees it
+   (with the edges drawn crisp), else the fallback shading tinted with the part's colour;
+4. it fills the texels between the islands (pull-push).
+
+That takes about 3 seconds for an 8192×8192 texture on an M1 Pro. The texture goes to the cache
+(`util::cacheLocation()`, as JPEG, named after a hash of the kit, the art, the camera and the
+size), so later starts only load it. On the iPad the texture is 4096×4096. The test
+`cockpitpaint` paints the Gator's kit from a made-up art.
+
+The kits come from the layouts, not the game data, so they can be built without it; they hold
+nothing of the art but the window outlines.
+
+Not done: the upscaler. Real-ESRGAN would need a 65 MB network and an inference runtime on every
+platform; finished models with upscaled art (`--art`, see *Upscaling*) still take the kit's place.
+
 ## Findings
 
 ### The four cockpits
@@ -249,54 +297,3 @@ $B -b --factory-startup --python compose_texture.py -- --cockpit 000 \
   assets, an artist pass over the upscaled art, or a model tuned on 90s pre-rendered CG, would
   remove the painted look.
 - **Speed.** The upscale takes seconds per cockpit on an M1 Pro (ncnn-vulkan via Metal).
-
-## Plan: building the cockpits when the game data is imported
-
-Today a player who wants the 3D cockpits needs Blender, runs three scripts per cockpit and
-copies the results. The goal: Vertigo builds them itself from the player's game data, on every
-platform including the iPad, when it builds `Game Data` (or the first time the 3D cockpit is
-shown), in seconds.
-
-Where the pipeline stands now:
-
-- `bake_maps.py`'s output depends on the geometry only. The geometry itself still needs two
-  things from the game data: the camera (`ViewAngle` and the optical centre from the DES file,
-  three numbers per cockpit) and the art's see-through mask, which shapes `masked_hull` (and
-  003's sill).
-- `compose_texture.py` needs nothing but numpy: art and maps in, texture out. All of its steps
-  (coverage, push-pull, edge detail, sampling, filling the gaps) are simple image operations.
-
-Steps:
-
-1. **Geometry without the game data.** Put the camera numbers and the window outlines (the
-   contours `vector/cockpit_NNN.svg` already contains, a few hundred points each) into the
-   scripts, like the outlines they already trace from the art. Then the Blender steps run
-   without the game data, e.g. in CI. Whether outlines traced from the art may live in the
-   repository is the same question as for the scripts' traced coordinates.
-2. **A kit per cockpit**, built by those steps and shipped with Vertigo (release download or app
-   bundle, about 10 MB each, no art in it): the model with its atlas UVs, one mesh per part, and
-   the fallback shading, as vertex colours or a small grey texture. The maps are not shipped;
-   Vertigo derives them from the model.
-3. **Compose in Vertigo** (C++, about 600 lines, a port of `compose_texture.py` and
-   `vectorize.py`):
-   1. render the kit from the eye at 8× into an id framebuffer: the parts' coverage of the
-      art's pixels;
-   2. per part: the colour field (push-pull) and the sharp edges, from `COCKPIT.R16`;
-   3. draw every mesh into the atlas in UV space (`gl_Position` from the UVs): the fragment
-      shader projects the interpolated position to the art's pixel, samples the part's field
-      and edges, blends with the fallback; then fill the gaps and build the mipmaps;
-   4. save the texture next to the game data (`Game Data/3d-cockpits/cockpit_NNN.png`, or
-      compressed: BC7 on desktops, ASTC on the iPad).
-   Expected: a few seconds per cockpit, against a minute in numpy.
-4. **Drop the manual steps.** `tools/install.py` goes; Blender and the scripts stay for whoever
-   works on the models.
-
-Alternatives considered:
-
-- **Compose at every start, no cache.** The GPU part takes milliseconds, but the fields and
-  edges are about a second of CPU work per cockpit; caching is simpler and starts faster.
-- **Projective texturing at run time, no atlas.** Avoids the atlas, but ties the cockpit to
-  Vertigo's renderer; an atlas works in any engine (VR runtimes, other tools).
-- **An upscaler in the import step.** Real-ESRGAN would need a 65 MB network and an inference
-  runtime on every platform. The sharp edges give most of the crispness without it; `--art`
-  stays for those who run an upscaler themselves.

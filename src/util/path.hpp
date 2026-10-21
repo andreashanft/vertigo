@@ -34,6 +34,10 @@ std::string fromPath(const std::filesystem::path &path);
 // (in CFFIXED_USER_HOME if that is set), AppData/Local/Vertigo/Vertigo on Windows and
 // .local/share/Vertigo/Vertigo (XDG_DATA_HOME) elsewhere, where Qt kept them
 std::string appDataLocation();
+// where the game keeps what it can make again (the 3D cockpits' textures): Library/Caches/Vertigo
+// on macOS and iOS (not backed up), AppData/Local/Vertigo/Vertigo/Cache on Windows and
+// .cache/vertigo (XDG_CACHE_HOME) elsewhere
+std::string cacheLocation();
 
 // a file or a directory
 bool exists(const std::string &path);

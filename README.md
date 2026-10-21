@@ -349,19 +349,27 @@ build/vertigo --check > docs/mission-check.txt
 ## 3D cockpits
 
 Besides the original 2D cockpit art, Vertigo can show 3D models of the four
-cockpits. They are built and textured from your game data by the Blender
-scripts in [data/3D-cockpits](data/3D-cockpits/README.md), whose
-`tools/install.py` copies them to the folder `3d-cockpits` in the data
-directory (or the folder set as `cockpit/directory`).
+cockpits. They come with Vertigo as kits: the models without their textures
+(`cockpits` next to the program, built by the Blender scripts in
+[data/3D-cockpits](data/3D-cockpits/README.md)). The first time a cockpit is
+shown in 3D, Vertigo paints its texture from the cockpit art of your game
+data, in a few seconds and in the background (the 2D cockpit shows
+meanwhile), and keeps it in its cache (`~/Library/Caches/Vertigo` on macOS,
+`~/.cache/vertigo` on Linux, `AppData/Local/Vertigo/Vertigo/Cache` on
+Windows).
 
 - `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
   mission and saves the choice (setting `cockpit/mode`). Without a model for
   the boat's cockpit the 2D art is shown.
-- `--cockpit-dir 3d-cockpits-vector` takes the models from another folder for
-  one run (a relative one in the data directory), e.g. to compare variants of
-  the textures.
-- On the iPad the texture is halved to 4096x4096, which its screen doesn't
-  need more than; it loads in half the time and takes 0.5 GB less.
+- A finished model, e.g. one textured with upscaled art by the scripts in
+  data/3D-cockpits, takes the kit's place when it is in the folder
+  `3d-cockpits` of the data directory (or the folder set as
+  `cockpit/directory`). `--cockpit-dir 3d-cockpits-vector` takes them from
+  another folder for one run (a relative one in the data directory), e.g. to
+  compare variants of the textures; without a model there, the kit is used.
+- On the iPad the texture is painted at 4096x4096 (8192x8192 on the desktop),
+  which its screen doesn't need more than; it takes half the time and 0.5 GB
+  less. A finished model's texture is halved to that size.
 - In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
   cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
   window. The instruments are projected onto the model's screens.

@@ -333,6 +333,14 @@ bool Image::save(const std::string &fileName) const
 }
 
 
+bool Image::saveJpeg(const std::string &fileName, int quality) const
+{
+    if (m_format != RGB888)
+        return !isNull() && convertToFormat(RGB888).saveJpeg(fileName, quality);
+    return stbi_write_jpg(fileName.c_str(), m_width, m_height, 3, constBits(), quality) != 0;
+}
+
+
 Image Image::fromData(const std::uint8_t *data, std::size_t size)
 {
     int width, height, channels;
