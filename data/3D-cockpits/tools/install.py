@@ -3,10 +3,11 @@ Copy the textured cockpit models from out/ to where Vertigo looks for them: the 
 3d-cockpits in Vertigo's data directory (or the setting "cockpit/directory", or --dest).
 Plain Python 3, no Blender needed.
 
-  python3 tools/install.py [--dest DIR] [--data DIR] [--out DIR]
+  python3 tools/install.py [--suffix _x4] [--dest DIR] [--data DIR] [--out DIR]
 
-Copies out/NNN/cockpit_NNN_textured.glb (made by compose_texture.py) as cockpit_NNN.glb. Then
-start the game with --cockpit 3d, or press Alt+V in a mission.
+Copies out/NNN/cockpit_NNN_textured{suffix}.glb (made by compose_texture.py) as
+cockpit_NNN.glb; without that variant, cockpit_NNN_textured.glb. Then start the game with
+--cockpit 3d, or press Alt+V in a mission.
 """
 
 import argparse
@@ -21,6 +22,7 @@ import cockpitdata  # noqa: E402
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
+    parser.add_argument("--suffix", default="", help="the variant, e.g. _x4 (compose_texture.py --suffix)")
     parser.add_argument("--dest", help="target folder (default: see above)")
     parser.add_argument("--data", help="Vertigo data directory")
     parser.add_argument("--out", default=os.path.join(HERE, "out"), help="the pipeline's output folder")
@@ -35,7 +37,10 @@ def main():
     for cid in sorted(os.listdir(args.out)):
         if not os.path.isdir(os.path.join(args.out, cid)):
             continue
-        src = os.path.join(args.out, cid, f"cockpit_{cid}_textured.glb")
+        for suffix in dict.fromkeys((args.suffix, "")):
+            src = os.path.join(args.out, cid, f"cockpit_{cid}_textured{suffix}.glb")
+            if os.path.exists(src):
+                break
         if os.path.exists(src):
             target = os.path.join(dest, f"cockpit_{cid}.glb")
             shutil.copyfile(src, target)

@@ -49,6 +49,8 @@ Tools:
 
 - `tools/trace_crops.py -- --cockpit NNN --crop name,x0,y0,x1,y1,scale …`: gridded zoom crops of
   the original (grey lines every 10 px, yellow every 50 px) for tracing shapes.
+- `tools/export_art.py -- --cockpit NNN`: the art as a plain PNG with the window area filled
+  in, ready for an image upscaler (see *Upscaling*).
 - `tools/install.py` (plain Python 3): copies the textured models to Vertigo (see below).
 
 ## Using the models in Vertigo
@@ -178,23 +180,23 @@ The first version baked the art projected from the eye into the atlas, from a Re
 upscale, and lit the rest. Compared in Vertigo at 3024×1522, looking ahead and 35°/60° to the
 sides:
 
-| | projected (Real-ESRGAN 4×) | part by part, vector edges |
-| --- | --- | --- |
-| side walls (001–003) | zigzag lines: seams between the islands of the faces the art shows and those it doesn't, along the faces' staircase | none |
-| window edge of the hull (001–003) | staircase of the hull's faces (about 1.5 px of the art) | smooth curve; window IoU up by up to 0.007 |
-| edges of struts and pillars | stair-stepped fringes where the art lands on the hull behind them | the model's edges |
-| part behind a part, head moved | the front part's colours (ghosting) | the part's own colours |
-| inside the surfaces | crisp, slightly painted (the upscaler's detail) | softer; strong edges crisp |
-| needs | an ML upscaler | numpy |
+| | projected (Real-ESRGAN 4×) | part by part, vector edges | part by part, `--art` Real-ESRGAN 4× |
+| --- | --- | --- | --- |
+| side walls (001–003) | zigzag lines: seams between the islands of the faces the art shows and those it doesn't, along the faces' staircase | none | none |
+| window edge of the hull (001–003) | staircase of the hull's faces (about 1.5 px of the art) | smooth curve; window IoU up by up to 0.007 | smooth curve |
+| edges of struts and pillars | stair-stepped fringes where the art lands on the hull behind them | the model's edges | the model's edges |
+| part behind a part, head moved | the front part's colours (ghosting) | the part's own colours | the part's own colours |
+| inside the surfaces | crisp, slightly painted (the upscaler's detail) | softer, dithering visible; strong edges crisp | crisp, slightly painted |
+| needs | an ML upscaler | numpy | an ML upscaler |
 
-`--art` with a Real-ESRGAN upscale combines both. Polygon edges are drawn with 4×
-multisampling in Vertigo.
+The combination is the best of the three: the upscaler's surfaces with the model's edges.
+Polygon edges are drawn with 4× multisampling in Vertigo.
 
 ### Limitations and next steps
 
 - **Hidden surfaces.** Surfaces the original never shows get the tinted fallback: plausible,
   but flat. They are the place for real modelling and texturing.
-- **Interior detail.** Without an upscaler the surfaces are as soft as 4× bicubic between their
+- **Interior detail without an upscaler.** The surfaces are as soft as 4× bicubic between their
   sharp edges. Fine dirt next to strong edges (002's stripes) can still turn into small blobs.
 - **Lamps on the 3D cockpit.** The cockpit lamps the HUD draws are projected with the
   instruments at the HUD's resolution and look blocky up close.
@@ -206,11 +208,16 @@ multisampling in Vertigo.
 
 Evaluated with the first, projected version of the texture: the upscalers were run on the art,
 the textures baked at 4096 and 8192 px and compared in close-ups rendered at 32 pixels per
-degree. To use an upscale now, upscale `COCKPIT.R16` (as PNG) and pass it with `--art`:
+degree. To use an upscale now, export the art (its window area filled with the surrounding
+colours, so the upscaler draws no dark halos at the window's edge), upscale it and pass it with
+`--art`:
 
 ```sh
-realesrgan-ncnn-vulkan -i cockpit_000.png -o cockpit_000_x4.png -n realesrgan-x4plus -s 4
-$B -b --factory-startup --python compose_texture.py -- --cockpit 000 --art cockpit_000_x4.png
+$B -b --factory-startup --python tools/export_art.py -- --cockpit 000
+realesrgan-ncnn-vulkan -i out/000/art/cockpit_000_art.png -o out/000/art/cockpit_000_art_x4.png \
+    -n realesrgan-x4plus -s 4
+$B -b --factory-startup --python compose_texture.py -- --cockpit 000 \
+    --art out/000/art/cockpit_000_art_x4.png
 ```
 
 | variant | result |
@@ -227,8 +234,9 @@ $B -b --factory-startup --python compose_texture.py -- --cockpit 000 --art cockp
   of the gain survives. At 8192 px (about 1900 texels/m) nearly all of it does.
 - **Cost of 8192 px.** 256 MB as uncompressed RGBA8, 64 MB as BC7. That is fine for PC VR. For
   standalone headsets use 4096 px.
-- **Recommendation.** Real-ESRGAN x4plus with an 8192 px atlas, now through `--art`. The
-  smeared text doesn't matter because the game draws screen contents at runtime. For final
+- **Recommendation.** Real-ESRGAN x4plus with an 8192 px atlas, through `--art` (it takes
+  about 8 s per cockpit, composing then 2–3 minutes). The smeared text doesn't matter because
+  the game draws screen contents at runtime. For final
   assets, an artist pass over the upscaled art, or a model tuned on 90s pre-rendered CG, would
   remove the painted look.
 - **Speed.** The upscale takes seconds per cockpit on an M1 Pro (ncnn-vulkan via Metal).
