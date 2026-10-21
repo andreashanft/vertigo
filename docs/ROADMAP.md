@@ -126,7 +126,7 @@ turret cross for a target behind the boat (T).
 |---|---|---|---|
 | O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the original's boats, tanks and gun towers hold their fire while the terrain is between them and their target, as its torpedo towers do (appendix J), and whether its turrets fire through friends (Vertigo's do neither, appendix T; in a short playtest the turrets no longer hit friends); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength); how the units' multi-barrel guns fire their rounds from their mountings (appendix K; Vertigo's units fire one barrel per rearming time) |
+| O4 | Open comparisons | – | Whether the original limits an attacking boat's pitch to `Min/MaxClimbingAngle` (20° on all scouts and bombers; Vertigo does, so a boat right under or over its target can't aim at it); whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; what an attacking boat does once its area time is up (the original may pick a new point every frame); the lower bound of a tank's attack speed; GotoWithInfiltrate's approach and docking; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; how a boat keeps hitting a standing player while its turning leaves up to 1° of error alone (appendix J; with Vertigo's 1.5 m hit sphere for the player such a boat misses from about 85 m, so Vertigo turns on until the error is gone); what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original stacks mine columns upwards; whether the original's boats, tanks and gun towers hold their fire while the terrain is between them and their target, as its torpedo towers do (appendix J), and whether its turrets fire through friends (Vertigo's do neither, appendix T; in a short playtest the turrets no longer hit friends); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -743,8 +743,21 @@ Read off in October 2026; Vertigo does all of it.
   shots a second at 30 frames, 27 at 60 and 34 at 120. Vertigo fires the
   barrels of a round 1/60 s apart whatever the frame rate, as the original
   at 60 frames, so the Vendetta III fires about 25 shots a second at 50
-  frames. A unit's gun goes through the same rounds; Vertigo's units still
-  fire one barrel per rearming time (O4).
+  frames. A round takes one of the gun's rounds (the `defaultammo` or a
+  unit's `ammunition`), counted when its last barrel has fired.
+- **Mountings and barrels.** A gun has one or two mountings (the player's
+  gun one, 3 m ahead; a unit's from its `relative` keys), and each round
+  fires from the next mounting. The barrels sit around it: two 0.75 m to
+  either side; the Vendetta II's third 0.75 m above; the four of the
+  Vendetta III and the Plasma Death III 0.75 m to either side, the second
+  and third 0.8 m lower. The order is right, left, (above or lower left,
+  lower right,) left.
+- **Units** fire the same rounds. Boats, bombers, gun towers and turrets
+  (the cargo ships', TANK2's) fire before their gun counts down, so like
+  the player on the frame after it is ready again; a tank's fixed gun
+  counts down first and fires on the frame it is ready. In Vertigo's
+  seeded idle runs (60 s, three seeds) the idle boat is destroyed in 48 of
+  213 runs, 41 before; S00103, S00106, S00205 and S02205 got harder.
 - **The booster** draws from the same pool: on only while the level is at
   least 0.8, 0.15 at once, 1.2 per second while it runs (about 4 s on engines
   2–4), off below 0.05. It doubles the top speed and raises the acceleration

@@ -63,26 +63,26 @@ UnitGun::Mount UnitGun::readMount(txt::DesFile &file)
 
 void UnitGun::update(float elapsedTime, bool trigger, const Vector3D &position, const Vector3D &dir, const Vector3D &up, const Vector3D &right)
 {
-    m_gun.update(elapsedTime);
-    if (!trigger)
-        return;
-
-    bool active = true;
-    if (!m_volley.empty())
+    if (m_countFirst)
+        m_gun.update(elapsedTime);
+    if (trigger)
     {
-        m_phaseTime += elapsedTime;
-        while (m_phaseTime >= m_volley[m_phase].duration)
+        bool active = true;
+        if (!m_volley.empty())
         {
-            m_phaseTime -= m_volley[m_phase].duration;
-            m_phase = (m_phase + 1) % m_volley.size();
+            m_phaseTime += elapsedTime;
+            while (m_phaseTime >= m_volley[m_phase].duration)
+            {
+                m_phaseTime -= m_volley[m_phase].duration;
+                m_phase = (m_phase + 1) % m_volley.size();
+            }
+            active = m_volley[m_phase].active;
         }
-        active = m_volley[m_phase].active;
+        if (active && m_gun.ready())
+            m_gun.fire(position, dir, up, right);
     }
-    if (active && m_gun.state() == Gun::StateReady)
-    {
-        m_gun.fire(position, dir, up, right);
-        m_shots++;
-    }
+    if (!m_countFirst)
+        m_gun.update(elapsedTime);
 }
 
 

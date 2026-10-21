@@ -56,9 +56,9 @@ public:
     sfx::Sample sample() const { return m_sample; }
 
     float defect() const { return m_defect; }
+    // the rounds left: one round fires all the barrels in turn
     int ammo() const { return m_ammo; }
-    // the rounds left as the displays count them: one round fires all the barrels in turn
-    int rounds() const { return m_muzzles.empty() ? m_ammo : int((m_ammo + m_muzzles.size() - 1)/m_muzzles.size()); }
+    int rounds() const { return m_ammo; }
     int shots() const { return m_shots; }  // fired so far
     bool usesAmmo() const { return m_energyDemand == 0.0f; }
     const String& shortName() const { return m_shortName; }
@@ -66,20 +66,23 @@ public:
     String stateName() const { return GunStates ? GunStates[m_state].shortName : String(); }
     String stateText() const { return GunStates ? GunStates[m_state].longName : String(); }
     State state() const { return m_state; }
-    // ready, and past the pause before a round's next barrel
+    // ready, and for an ammo gun past the pause before the round's next barrel
     bool ready() const;
 
     void setDefect(float defect) { m_defect = defect; }
     void setAmmo(int ammo) { m_ammo = ammo; }
+    // a mounting (metres, x right, y ahead, z up); each round fires from the next one, its
+    // barrels around it
     void addMuzzle(const Vector3D &muzzle);
-    void addMuzzles(const Vector3D &muzzle, int model);
     // the barrels a gun model fires in turn (appendix K): 1, 2, 1, 2, 4, 1 for the energy guns,
     // 2, 2, 2, 3, 4, 2, 2, 2 for the others
     static int barrels(int model);
+    // where a barrel sits relative to the mounting (metres)
+    static Vector3D barrelOffset(int model, int barrel);
 
 public:
     bool update(float elapsedTime);
-    // one barrel, the barrels in turn; or all of them at once (a turret firing in sync)
+    // the round's next barrel; or the rest of the round at once (a turret firing in sync)
     void fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, const Vector3D &right, bool allBarrels = false);
 
 protected:
@@ -104,10 +107,10 @@ protected:
     float m_stateTime;
 
     Effects m_projectile;
-    std::vector<Vector3D> m_muzzles;
-    size_t m_nextMuzzle = 0;  // the barrel the next pull fires from
-    int m_roundShots = 0;     // the barrels of the current round fired so far
-    float m_nextBarrel = 0;   // when the round's next barrel may fire
+    std::vector<Vector3D> m_muzzles;  // the mountings
+    size_t m_mounting = 0;    // the mounting of the current round
+    int m_barrel = 0;         // the round's next barrel
+    float m_nextBarrel = 0;   // when an ammo gun's next barrel may fire
     int m_shots = 0;
     sfx::Sample m_sample;
 };

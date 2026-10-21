@@ -63,7 +63,7 @@ PlayerTurret::PlayerTurret(Scenario *scenario, Player *player, int gunItem, int 
     m_volleyLeft(0),
     m_volleyEnd(0)
 {
-    m_gun.addMuzzles(Vector3D(0), gunItem);
+    m_gun.addMuzzle(Vector3D(0));
     m_gun.setDefect(defect);
 
     // items 7169-7177 are Software0-8: Claw V1.6-V3.6 (torpedoes), Punisher V1.0-V2.2 (vessels),

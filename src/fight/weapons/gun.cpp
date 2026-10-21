@@ -31,7 +31,8 @@ Gun::GunState* Gun::GunStates = nullptr;
 
 namespace {
 // the original fires the next barrel of an ammo gun's round on the next frame; Vertigo spaces them
-// as at 60 frames a second, with a quarter of that for the frames' jitter
+// as at 60 frames a second, with a quarter of that for the frames' jitter (docs/ROADMAP.md,
+// appendix K)
 const float BarrelInterval = 1.0f/60;
 const float BarrelTolerance = BarrelInterval/4;
 }
@@ -92,30 +93,24 @@ void Gun::addMuzzle(const Vector3D &muzzle)
 }
 
 
-void Gun::addMuzzles(const Vector3D &muzzle, int model)
+Vector3D Gun::barrelOffset(int model, int barrel)
 {
-    if (model == 3073 || model == 3075 || model == 3078)
-        addMuzzle(muzzle);
-    else if (model == 3082)
+    // 0.75 m to either side, the lower pair of four 0.8 m down; the Vendetta II's third barrel
+    // sits 0.75 m above (docs/ROADMAP.md, appendix K)
+    const float side = 0.75f, down = -0.8f;
+    switch (barrels(model))
     {
-        addMuzzle(muzzle + Vector3D(-1, 0, 0));
-        addMuzzle(muzzle + Vector3D(1, 0, 0));
-        addMuzzle(muzzle + Vector3D(0, 0, 1));
-        m_ammo *= 3;
+    case 2:
+        return Vector3D(barrel == 0 ? side : -side, 0, 0);
+    case 3:
+        return barrel == 0 ? Vector3D(side, 0, 0) : barrel == 1 ? Vector3D(-side, 0, 0) : Vector3D(0, 0, side);
+    case 4:
+    {
+        static const Vector3D offsets[4] = { Vector3D(side, 0, 0), Vector3D(-side, 0, down), Vector3D(side, 0, down), Vector3D(-side, 0, 0) };
+        return offsets[barrel % 4];
     }
-    else if (model == 3077 || model == 3083)
-    {
-        addMuzzle(muzzle + Vector3D(-1, 0, 0));
-        addMuzzle(muzzle + Vector3D(1, 0, 0));
-        addMuzzle(muzzle + Vector3D(-1, 0, -1));
-        addMuzzle(muzzle + Vector3D(1, 0, -1));
-        m_ammo *= 4;
-    }
-    else
-    {
-        addMuzzle(muzzle + Vector3D(-1, 0, 0));
-        addMuzzle(muzzle + Vector3D(1, 0, 0));
-        m_ammo *= 2;
+    default:
+        return Vector3D(0);
     }
 }
 
@@ -138,7 +133,7 @@ bool Gun::update(float elapsedTime)
 
 bool Gun::ready() const
 {
-    return m_state == StateReady && (m_roundShots == 0 || m_scenario->time() >= m_nextBarrel - BarrelTolerance);
+    return m_state == StateReady && (!usesAmmo() || m_barrel == 0 || m_scenario->time() >= m_nextBarrel - BarrelTolerance);
 }
 
 
@@ -146,13 +141,10 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
 {
     if (!ready())
         return;
-    // the player's ammo guns fire a round, all the model's barrels in turn, without the rearming
-    // time between them (docs/ROADMAP.md, appendix K)
-    const bool round = usesAmmo() && !allBarrels && m_owner && m_owner == m_scenario->player() && barrels(m_model) > 1;
     m_state = StateFiring;
-    // a jam is decided before each shot (docs/ROADMAP.md, appendix K): the gun's condition (1 when new, taken as 0.2 at the least) against a random share of its
-    // defectdamping, so the chance is 1 - condition/defectdamping, and the jam lasts defectdelay
-    // times 0.5 to 1.5
+    // a jam is decided before each shot (docs/ROADMAP.md, appendix K): the gun's condition (1 when
+    // new, taken as 0.2 at the least) against a random share of its defectdamping, so the chance is
+    // 1 - condition/defectdamping, and the jam lasts defectdelay times 0.5 to 1.5
     auto random = []() { return static_cast<float>(util::random())/RAND_MAX; };
     const float condition = std::max(m_defect, 0.2f);
     if (condition < m_defectDamping && random()*m_defectDamping >= condition)
@@ -161,35 +153,46 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
         m_stateTime = m_scenario->time() + m_defectDelay*(0.5f + random());
         return;
     }
-    // one barrel fires per pull, the barrels in turn (appendix K), or all of them
-    const size_t barrelsFired = allBarrels ? m_muzzles.size() : std::min<size_t>(1, m_muzzles.size());
-    for (size_t i = 0; i < barrelsFired; i++)
+    // a round fires the model's barrels in turn around the next mounting (appendix K)
+    const int barrelCount = barrels(m_model);
+    if (m_barrel == 0 && !m_muzzles.empty())
+        m_mounting = (m_mounting + 1) % m_muzzles.size();
+    const Vector3D mounting = m_muzzles.empty() ? Vector3D(0) : m_muzzles[m_mounting];
+    const int barrelsFired = allBarrels ? barrelCount - m_barrel : 1;
+    for (int i = 0; i < barrelsFired; i++)
     {
-        const Vector3D &muzzle = m_muzzles[m_nextMuzzle % m_muzzles.size()];
-        m_nextMuzzle = (m_nextMuzzle + 1) % m_muzzles.size();
+        const Vector3D muzzle = mounting + barrelOffset(m_model, m_barrel + i);
         m_scenario->effectManager().addProjectile(m_projectile, pos + right*muzzle.x + dir*muzzle.y + up*muzzle.z, dir, m_owner);
     }
+    m_barrel = (m_barrel + barrelsFired) % barrelCount;
     m_shots++;
-    if (usesAmmo())
-        m_ammo = std::max(0, m_ammo - int(std::max<size_t>(1, barrelsFired)));
     // the player's guns sound in the cockpit, others where they fire
     if (m_owner && m_owner != m_scenario->player())
         sfx::SampleMap::playAt(m_sample, pos.x, pos.y, pos.z);
     else
         sfx::SampleMap::get(m_sample).playInstance();
-    // a barrel's shot takes energydemand divided by the model's barrels off the owner's pool,
-    // however little is left; the gun then waits for its rearming time and for the pool to hold
-    // more than the whole demand again (appendix K)
-    if (!usesAmmo() && m_owner)
-        m_owner->drawEnergy(m_energyDemand*std::max<size_t>(1, barrelsFired)/barrels(m_model));
-    if (round && ++m_roundShots < barrels(m_model) && m_ammo > 0)
+    if (usesAmmo())
     {
-        m_state = StateReady;
-        m_nextBarrel = m_scenario->time() + BarrelInterval;
-        return;
+        // an ammo gun fires the round's barrels without the rearming time between them, and the
+        // round takes one of its rounds
+        if (m_barrel != 0)
+        {
+            m_state = StateReady;
+            m_nextBarrel = m_scenario->time() + BarrelInterval;
+            return;
+        }
+        m_ammo = std::max(0, m_ammo - 1);
+        m_state = StateRearming;
     }
-    m_roundShots = 0;
-    m_state = usesAmmo() ? StateRearming : StateEnergyDelay;
+    else
+    {
+        // a barrel's shot takes energydemand divided by the model's barrels off the owner's pool,
+        // however little is left; the gun then waits for its rearming time and for the pool to
+        // hold more than the whole demand again
+        if (m_owner)
+            m_owner->drawEnergy(m_energyDemand*barrelsFired/barrelCount);
+        m_state = StateEnergyDelay;
+    }
     m_stateTime = m_scenario->time() + m_rearmingTime;
 }
 
