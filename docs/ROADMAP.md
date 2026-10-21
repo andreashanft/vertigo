@@ -857,9 +857,19 @@ of the full state: to the weakest armour side (a 160th of that side's
 armour), or to the gun's, magazine's or turret's condition. A system at
 three quarters or more is left alone and the Fixer moves on to the next;
 the armour hands over once every side is at three quarters. The forced
-system is forced only until it reaches that mark. Vertigo keeps the
-magazine's condition for the Fixer alone; nothing else wears it down yet.
+system is forced only until it reaches that mark.
 What the Fixer mends stays with the boat after the mission (B1).
+
+What wears the systems down (read off in October 2026): hits on the armour.
+Once a side is below 45 % of its full armour, what a hit takes from it,
+counted from 45 % down, comes off the systems behind that side 2.2 times
+over: the front's off the gun's and the torpedo magazine's conditions, the
+left, right and back sides' off both turrets'. A condition never goes below
+0. A hit that takes the front from 50 % to 30 % costs the gun and the
+magazine a third of their full condition each (0.15 × 2.2). The lower a
+condition, the more often that gun, turret or magazine jams (`defectdamping`).
+Shock hits lower the boat's energy defence, but nothing on the boat was seen
+to react to it.
 
 The system state page (I, in turn with the armor page): `SYSTEM STATE`
 centred at the top, then a row of 10 px for each system, `ARMO`, `GUN`,

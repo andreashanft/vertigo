@@ -164,6 +164,17 @@ float Player::range() const
 }
 
 
+namespace {
+
+// below this share of its armour a side passes what it loses on to the systems behind it (the
+// front's to the gun and the torpedo magazine, the others' to the turrets), this many times over
+// (appendix O)
+const float SystemDamageBelow = 0.45f;
+const float SystemDamageFactor = 2.2f;
+
+} // namespace
+
+
 void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
     if (attacker && attacker != this)
@@ -181,13 +192,33 @@ void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObje
         else
             side = right > 0 ? 2 : 1;
     }
+    const int before = m_shield[side];
     m_shield[side] -= kinetic;
+    if (kinetic > 0 && m_shieldMax[side] > 0)
+        damageSystems(side, float(before)/m_shieldMax[side], float(m_shield[side])/m_shieldMax[side]);
     // a shot rattles the cockpit a little, a torpedo fully
     if (kinetic > 0)
         m_scenario->headMotion().shake(std::min(1.0f, std::sqrt(kinetic/2000.0f)));
     storeCondition();
     if (m_shield[side] < 0)
         destroy();
+}
+
+
+void Player::damageSystems(int side, float before, float after)
+{
+    if (after >= SystemDamageBelow)
+        return;
+    const float loss = (std::min(before, SystemDamageBelow) - after)*SystemDamageFactor;
+    if (side == 0)
+    {
+        m_gun.setDefect(std::max(0.0f, m_gun.defect() - loss));
+        m_magazineCondition = std::max(0.0f, m_magazineCondition - loss);
+        return;
+    }
+    for (const std::unique_ptr<PlayerTurret> &turret : m_turrets)
+        if (turret)
+            turret->gun().setDefect(std::max(0.0f, turret->gun().defect() - loss));
 }
 
 

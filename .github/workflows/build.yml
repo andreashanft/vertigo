@@ -3,8 +3,9 @@
 #   vertigo-<version>-linux-x86_64.tar.gz    the program, SDL 3 built in; needs OpenAL
 #   vertigo-<version>-macos-universal.zip    Vertigo.app for Apple silicon and Intel, macOS 13.3 on
 #   vertigo-<version>-windows-x86_64.zip     vertigo.exe with SDL3.dll and OpenAL32.dll
-# A tag v<version> (the version of CMakeLists.txt's project()) also puts the three on a draft
-# release of that name, to be checked and published by hand.
+# A tag v<version> (the version of CMakeLists.txt's project()) also puts the three on the release
+# of that tag: the one made for it on GitHub's page, if there is one, or else a new draft to be
+# checked and published by hand.
 # The tests are those of ctest; the missions need the game's data, which the repository doesn't
 # have.
 name: Build
@@ -305,8 +306,10 @@ jobs:
           path: packages
           merge-multiple: true
 
-      # (only for the tag of the packages' version)
-      - name: Draft
+      # (only for the tag of the packages' version). A release made for the tag on GitHub's page,
+      # published or a draft, gets the packages (again, when the job runs again); otherwise they go
+      # on a new draft.
+      - name: Attach
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -315,5 +318,9 @@ jobs:
           for platform in linux-x86_64.tar.gz macos-universal.zip windows-x86_64.zip; do
             test -f "packages/vertigo-$version-$platform"
           done
-          gh release create "$GITHUB_REF_NAME" packages/* --repo "$GITHUB_REPOSITORY" \
-            --draft --title "Vertigo $version" --generate-notes --verify-tag
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null; then
+            gh release upload "$GITHUB_REF_NAME" packages/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" packages/* --repo "$GITHUB_REPOSITORY" \
+              --draft --title "Vertigo $version" --generate-notes --verify-tag
+          fi
