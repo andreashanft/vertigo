@@ -54,7 +54,7 @@ Gun::Gun(Scenario *scenario, int model, ActiveObject *owner) :
     m_longName = file.value("longname").toString();
     m_shortName = file.value("shortname").toString();
     m_imageName = file.value("imagename").toString();
-    m_rearmingTime = file.value("rearmingtime").toFloat() + 0.03f;
+    m_rearmingTime = file.value("rearmingtime").toFloat();
     m_energyDemand = file.value("energydemand").toFloat();
     m_defectDamping = file.value("defectdamping").toFloat();
     m_defectDelay = file.value("defectdelay").toFloat();

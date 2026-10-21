@@ -727,6 +727,13 @@ Read off in October 2026; Vertigo does all of it.
   settles to one shot per (`energydemand` / barrels) × recharge time: a
   Plasma Death II (0.3, 2 barrels, 0.075 s) on engine 2 fires at its rearming
   rate for about 4 s and then every 0.15 s, on engine 0 every 0.75 s.
+- **Rearming time and frames.** The rearming time is the gun's
+  `rearmingtime` exactly, counted from the shot. A gun is ready once the
+  time is past it, but the player's trigger is read at the start of a frame,
+  before the guns count down, so the main gun and the turrets in sync fire on
+  the frame after the one in which they become ready. At 60 frames a second a
+  0.075 s gun fires every 0.1 s and a 0.15 s gun about every 0.18 s (Vertigo added
+  0.03 s to every rearming time until October 2026).
 - **The booster** draws from the same pool: on only while the level is at
   least 0.8, 0.15 at once, 1.2 per second while it runs (about 4 s on engines
   2–4), off below 0.05. It doubles the top speed and raises the acceleration

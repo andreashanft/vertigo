@@ -316,18 +316,12 @@ void PlayerTurret::fireAt(ActiveObject *target)
 
 void PlayerTurret::update(float elapsedTime, bool playerFiring)
 {
-    m_gun.update(elapsedTime);
-    const float time = m_scenario->time();
-    const bool ready = m_gun.state() == Gun::StateReady;
-
-    switch (m_order)
+    if (m_order == Order::Sync)
     {
-    case Order::Stop:
-        return;
-
-    case Order::Sync:
         // each pull of the main gun's trigger fires the turret's own gun too, straight ahead and
-        // from all its barrels at once
+        // from all its barrels at once; as the main gun, it fires on the frame after its gun is
+        // ready again (docs/ROADMAP.md, appendix K)
+        const bool ready = m_gun.state() == Gun::StateReady;
         if (m_state == State::Rearming && ready)
             m_state = State::Sync;
         if (playerFiring && ready)
@@ -335,12 +329,15 @@ void PlayerTurret::update(float elapsedTime, bool playerFiring)
             m_gun.fire(mountPosition(), m_player->dir(), m_player->up(), m_player->right(), true);
             m_state = State::Rearming;
         }
+        m_gun.update(elapsedTime);
         return;
-
-    case Order::Attack:
-    case Order::Search:
-        break;
     }
+
+    m_gun.update(elapsedTime);
+    if (m_order == Order::Stop)
+        return;
+    const float time = m_scenario->time();
+    const bool ready = m_gun.state() == Gun::StateReady;
 
     if (m_gun.usesAmmo() && m_gun.ammo() <= 0)
     {

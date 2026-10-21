@@ -611,9 +611,11 @@ bool Player::update(float elapsedTime)
     }
     m_radiation = radiation;
 
-    m_gun.update(elapsedTime);
+    // the trigger is read before the gun counts its rearming time down, so the gun fires on the
+    // frame after it is ready again (docs/ROADMAP.md, appendix K)
     if (m_firing && m_gun.state() == Gun::StateReady)
         m_gun.fire(m_position, dir(), up(), right());
+    m_gun.update(elapsedTime);
     for (auto &turret : m_turrets)
         if (turret)
             turret->update(elapsedTime, m_firing);
