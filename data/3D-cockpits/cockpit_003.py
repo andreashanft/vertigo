@@ -49,14 +49,15 @@ SILL = np.array([np.nonzero(L.SEE[:, x])[0].max() for x in range(640)])
 
 
 def canopy(az, el):
-    """glass_fn for masked_hull()."""
+    """glass_fn for masked_hull(): glass above the sill (0.5 on the sill line, interpolated between
+    the pixel columns so that it is smooth)."""
     a, e = math.radians(az), math.radians(el)
     d = np.array([math.sin(a) * math.cos(e), math.cos(a) * math.cos(e), math.sin(e)])
     if d[1] > 0.02:
         x, y = to_px(d)
         if 0 <= x < 640 and 0 <= y < 480:
-            return y <= SILL[int(x)]
-    return (abs(az) <= 74 and -12 <= el <= 33) or (abs(az) <= 27 and el <= 64)
+            return min(max(0.5 + np.interp(x - 0.5, np.arange(640), SILL) + 1 - y, 0.0), 1.0)
+    return float((abs(az) <= 74 and -12 <= el <= 33) or (abs(az) <= 27 and el <= 64))
 
 
 masked_hull(glass_fn=canopy)

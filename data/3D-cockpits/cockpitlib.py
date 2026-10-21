@@ -17,13 +17,16 @@ Conventions
 
 import math
 import os
-import plistlib
 import sys
 
 import bmesh
 import bpy
 import numpy as np
 from mathutils import Matrix, Vector
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cockpitdata as CD  # noqa: E402
+from cockpitdata import find_ci, sample_field, window_field  # noqa: E402
 
 # ------------------------------------------------------------------------------------------------
 # Configuration (filled in by setup())
@@ -40,6 +43,7 @@ MIRROR_X = 319.5            # vertical symmetry axis of the art (see mirror())
 HC = np.array([0.0, 0.05, -0.22])     # hull ellipsoid centre
 HA = np.array([1.15, 1.12, 0.98])     # hull ellipsoid semi-axes
 FLOOR_Z = -1.0
+HIDDEN_DENSITY = 0.3         # texel density of hull parts the art doesn't show (relative)
 M = {}                      # materials
 COLL = {}                   # collections
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -53,102 +57,23 @@ def log(*a):
     print(f"[cockpit {CID}]", *a, flush=True)
 
 
-def find_ci(base, *parts):
-    """Resolve a path case-insensitively (the game data mixes upper and lower case)."""
-    p = base
-    for part in parts:
-        hit = next((e for e in os.listdir(p) if e.lower() == part.lower()), None)
-        if hit is None:
-            raise FileNotFoundError(os.path.join(p, part))
-        p = os.path.join(p, hit)
-    return p
-
-
-def default_data_dir():
-    if os.environ.get("VERTIGO_DATA"):
-        return os.environ["VERTIGO_DATA"]
-    plist = os.path.expanduser("~/Library/Preferences/com.vertigo.Vertigo.plist")
-    if os.path.exists(plist):
-        with open(plist, "rb") as f:
-            d = plistlib.load(f).get("datadir")
-        if d:
-            return d
-    conf = os.path.expanduser("~/.config/vertigo/Vertigo.conf")
-    if os.path.exists(conf):
-        for line in open(conf):
-            if line.startswith("datadir="):
-                return line.split("=", 1)[1].strip()
-    raise SystemExit("Vertigo data directory unknown: pass --data DIR or set VERTIGO_DATA")
-
-
-def parse_des(path):
-    des, sec = {}, None
-    for line in open(path, encoding="cp437"):
-        line = line.strip()
-        if not line or line.startswith(("*", ";")):
-            continue
-        if line.startswith("["):
-            sec = des.setdefault(line.strip("[]").lower(), {})
-        elif "=" in line and sec is not None:
-            k, v = line.split("=", 1)
-            sec[k.strip().lower()] = v.strip()
-    return des
-
-
 def des_int(section, key, default=0):
-    return int(float(DES.get(section.lower(), {}).get(key.lower(), default)))
-
-
-def load_r16(path):
-    raw = np.fromfile(path, dtype='<u2').reshape(480, 640)
-    rgb = np.stack([((raw >> 8) & 0xf8), ((raw >> 3) & 0xfc), ((raw << 3) & 0xf8)], -1) / 255.0
-    return raw, rgb.astype(np.float32)
-
-
-def see_through_mask(raw, min_size=40):
-    """Colour key (pure black) pixels form the window; tiny components are genuine black art."""
-    key = raw == 0
-    lab = np.where(key, np.arange(key.size).reshape(key.shape), key.size)
-    while True:
-        m = lab.copy()
-        m[1:] = np.minimum(m[1:], lab[:-1]); m[:-1] = np.minimum(m[:-1], lab[1:])
-        m[:, 1:] = np.minimum(m[:, 1:], lab[:, :-1]); m[:, :-1] = np.minimum(m[:, :-1], lab[:, 1:])
-        m = np.where(key, m, key.size)
-        if np.array_equal(m, lab):
-            break
-        lab = m
-    ids, counts = np.unique(lab[key], return_counts=True)
-    return key & np.isin(lab, ids[counts >= min_size])
-
-
-def symmetry_axis(mask, around, span=3.0):
-    """x of the vertical axis (in half-pixel steps around `around`) that mirrors the see-through
-    mask best onto itself: pixel column x maps to 2 * axis - x."""
-    xs = np.arange(mask.shape[1])
-    best = (2.0, around)
-    for a in np.arange(around - span, around + span + 0.25, 0.5):
-        m = np.rint(2 * a - xs).astype(int)
-        ok = (m >= 0) & (m < len(xs))
-        best = min(best, ((mask[:, xs[ok]] != mask[:, m[ok]]).mean(), a))
-    return float(best[1])
+    return CD.des_int(DES, section, key, default)
 
 
 def load(cid):
     """Read DES + COCKPIT.R16 of cockpit `cid` (camera, art, see-through mask)."""
     global CID, DATA, OUT, F, CX, CY, ART, SEE, MIRROR_X
     CID = cid
-    DATA = arg("--data") or default_data_dir()
+    DATA = CD.data_dir(arg("--data"))
     OUT = arg("--out") or os.path.join(HERE, "out", cid)
     os.makedirs(os.path.join(OUT, "renders"), exist_ok=True)
     DES.clear()  # updated in place, so `from cockpitlib import *` sees it
-    DES.update(parse_des(find_ci(DATA, "VFX", "COCKPIT", f"{cid}.DES")))
-    angle = float(DES.get("camera", {}).get("viewangle", 105.0))
-    F = 320.0 / math.tan(math.radians(angle) / 2)
-    CX = des_int("front", "VFX_StartX") + des_int("front", "VFX_FlightX", 320)
-    CY = des_int("front", "VFX_StartY") + des_int("front", "VFX_FlightY", 240)
-    raw, ART = load_r16(find_ci(DATA, "VFX", "COCKPIT", cid, "COCKPIT.R16"))
-    SEE = see_through_mask(raw)
-    MIRROR_X = symmetry_axis(SEE, CX)
+    DES.update(CD.parse_des(find_ci(DATA, "VFX", "COCKPIT", f"{cid}.DES")))
+    angle, F, CX, CY = CD.camera(DES)
+    raw, ART = CD.load_r16(find_ci(DATA, "VFX", "COCKPIT", cid, "COCKPIT.R16"))
+    SEE = CD.see_through_mask(raw)
+    MIRROR_X = CD.symmetry_axis(SEE, CX)
     log(f"camera: view angle {angle}, f={F:.1f}px, centre {CX}/{CY}; "
         f"{SEE.mean():.0%} of the image is see-through, symmetry axis x={MIRROR_X}")
 
@@ -398,20 +323,44 @@ class Porthole:
         return d * (hull_dist(d)[..., None] - inset)
 
     def shell(self, name="Hull", nt=256, ns=64):
+        """The hull. Its UV map is split along lines of the grid: the band around the window that
+        the art shows (along the window x away from it, in metres; in pieces that pack well) and
+        the cap behind it (polar, at HIDDEN_DENSITY)."""
         tt = np.linspace(0, 2 * np.pi, nt, endpoint=False)
         ss = np.linspace(0, 1, ns) ** 1.35 * 0.985
-        V = self.point(tt[:, None], ss[None, :]).reshape(-1, 3)
+        G = self.point(tt[:, None], ss[None, :])
+        V = G.reshape(-1, 3)
         a0 = unit(ray_np(*self.center))
         pole = -a0 * hull_dist(-a0)
-        faces = []
+        pxy = to_px(np.where(G[..., 1:2] > 0.05, G, (0, 1, 0)))
+        shown = (G[..., 1] > 0.05) & (pxy[..., 0] > -20) & (pxy[..., 0] < 660) & \
+                (pxy[..., 1] > -20) & (pxy[..., 1] < 500)
+        jc = min(int(np.nonzero(shown.any(0))[0].max()) + 2, ns - 2)
+        s_len = np.concatenate([[0], np.cumsum(np.linalg.norm(G[:, 1:] - G[:, :-1], axis=-1).mean(0))])
+        to_pole = s_len[-1] - s_len + np.linalg.norm(G[:, -1] - pole, axis=-1).mean()
+        rim = np.linalg.norm(np.roll(G[:, 0], -1, 0) - G[:, 0], axis=-1).sum()
+        k = max(1, round(rim / (2 * s_len[jc])))   # the band in k pieces of about 2:1 (packing)
+
+        def ring_uv(i, j, t):
+            return ((t / (2 * np.pi) - min(i * k // nt, k - 1) / k) * rim, s_len[j])
+
+        def cap_uv(i, j, t):
+            return tuple(to_pole[j] * HIDDEN_DENSITY * np.array([np.cos(t), np.sin(t)]))
+
+        log(f"hull: band around the window in {k} UV pieces, cap from row {jc}")
+
+        faces, loop_uv = [], []
         for i in range(nt):
             i2 = (i + 1) % nt
+            t1, t2 = tt[i], (tt[i2] if i2 else 2 * np.pi)
             for j in range(ns - 1):
                 faces.append((i * ns + j, i2 * ns + j, i2 * ns + j + 1, i * ns + j + 1))
+                f = ring_uv if j < jc else cap_uv     # (i: the face's piece of the band)
+                loop_uv.append(np.array([f(i, j, t1), f(i, j, t2), f(i, j + 1, t2), f(i, j + 1, t1)]))
             faces.append((i * ns + ns - 1, i2 * ns + ns - 1, nt * ns))
-        uv = np.column_stack([np.repeat(tt / (2 * np.pi), ns), np.tile(ss, nt)])
+            loop_uv.append(np.array([cap_uv(i, ns - 1, t1), cap_uv(i2, ns - 1, t2), (0.0, 0.0)]))
         return mesh_obj(name, np.vstack([V, pole]), faces, M["hull"], COLL["Hull"], inward=True,
-                        uv=np.vstack([uv, [0.5, 1.0]]))
+                        loop_uv=loop_uv)
 
     def glass(self, name="Window_Glass", nt=256, ng=10):
         tt = np.linspace(0, 2 * np.pi, nt, endpoint=False)
@@ -432,17 +381,20 @@ class Porthole:
 
 def masked_hull(step_deg=0.35, coarse_deg=4.0, extend_az=None, extend_el=None, glass_fn=None,
                 grow_px=0):
-    """Generic hull for open canopies: a latitude/longitude shell around the eye whose faces become
+    """Generic hull for open canopies: a latitude/longitude shell around the eye that turns into
     window glass wherever the original art is see-through (so every opaque pixel of the art lands
-    on some surface). Outside the 640x480 frame the mask is extended from the nearest frame pixel
-    up to |azimuth| <= extend_az and elevation within extend_el = (min, max) degrees; beyond that the
-    hull is closed. glass_fn(az_deg, el_deg) -> bool can force extra glass. grow_px > 0 grows the
-    opaque area (shrinks the glass) by that many pixels. Returns (hull, glass) objects."""
+    on some surface). The faces are cut along the smooth outline of the see-through area
+    (window_field), so the window's edge is a curve, not the faces' staircase. Outside the 640x480
+    frame the mask is extended from the nearest frame pixel up to |azimuth| <= extend_az and
+    elevation within extend_el = (min, max) degrees; beyond that the hull is closed.
+    glass_fn(az_deg, el_deg) -> bool or 0..1 can force extra glass (0.5 is the edge). grow_px > 0
+    grows the opaque area (shrinks the glass) by that many pixels. Returns (hull, glass) objects."""
     see = SEE.copy()
     for _ in range(grow_px):
         s = see.copy()
         s[1:] &= see[:-1]; s[:-1] &= see[1:]; s[:, 1:] &= see[:, :-1]; s[:, :-1] &= see[:, 1:]
         see = s
+    field = window_field(see)
     # dense sampling where the image is, coarse elsewhere
     az0, az1 = math.degrees(math.atan2(-CX, F)) - 3, math.degrees(math.atan2(640 - CX, F)) + 3
     el0 = math.degrees(math.atan2(CY - 480, F)) - 3
@@ -459,51 +411,96 @@ def masked_hull(step_deg=0.35, coarse_deg=4.0, extend_az=None, extend_el=None, g
     el = axis(el0, el1, -89.0, 89.0)
     A, E = np.meshgrid(np.radians(az), np.radians(el), indexing="ij")
     D = np.stack([np.sin(A) * np.cos(E), np.cos(A) * np.cos(E), np.sin(E)], -1)
-    V = D * hull_dist(D)[..., None]
     na, ne = len(az), len(el)
-    # classify faces by their centre direction
-    ac = np.radians((az + np.roll(az, -1) + np.where(np.arange(na) == na - 1, 360, 0)) / 2)
-    ec = np.radians((el[:-1] + el[1:]) / 2)
-    AC, EC = np.meshgrid(ac, ec, indexing="ij")
-    DC = np.stack([np.sin(AC) * np.cos(EC), np.cos(AC) * np.cos(EC), np.sin(EC)], -1)
-    is_glass = np.zeros(AC.shape, bool)
-    front = DC[..., 1] > 0.02
-    pxy = to_px(np.where(front[..., None], DC, (0, 1, 0)))
+    # how see-through the art is at every vertex (0.5 = the window's edge)
+    front = D[..., 1] > 0.02
+    pxy = to_px(np.where(front[..., None], D, (0, 1, 0)))
     inside = front & (pxy[..., 0] >= 0) & (pxy[..., 0] < 640) & (pxy[..., 1] >= 0) & (pxy[..., 1] < 480)
-    xi = np.clip(pxy[..., 0].astype(int), 0, 639)
-    yi = np.clip(pxy[..., 1].astype(int), 0, 479)
-    is_glass[inside] = see[yi[inside], xi[inside]]
+    open_ = np.zeros((na, ne))
+    open_[inside] = sample_field(field, pxy[..., 0][inside], pxy[..., 1][inside])
     if extend_az is not None:
-        ad, ed = np.degrees(AC), np.degrees(EC)
+        ad, ed = np.degrees(A), np.degrees(E)
         lo, hi = extend_el if extend_el is not None else (-60, 70)
         ext = ~inside & (np.abs(ad) <= extend_az) & (ed >= lo) & (ed <= hi)
         # nearest frame pixel along the same azimuth/elevation (clamped projection)
-        tx = np.clip(np.where(np.abs(ad) < 89, CX + F * np.tan(np.radians(ad)), np.sign(ad) * 1e4), 0, 639)
-        ty = np.clip(CY - F * np.tan(np.radians(ed)) / np.maximum(np.cos(np.radians(np.clip(ad, -89, 89))), 1e-3), 0, 479)
-        is_glass[ext] = see[ty[ext].astype(int), tx[ext].astype(int)]
+        tx = np.clip(np.where(np.abs(ad) < 89, CX + F * np.tan(np.radians(ad)), np.sign(ad) * 1e4), 0, 639.99)
+        ty = np.clip(CY - F * np.tan(np.radians(ed)) / np.maximum(np.cos(np.radians(np.clip(ad, -89, 89))), 1e-3), 0, 479.99)
+        open_[ext] = sample_field(field, tx[ext], ty[ext])
     if glass_fn is not None:
-        is_glass |= np.vectorize(glass_fn)(np.degrees(AC), np.degrees(EC))
+        forced = np.vectorize(lambda a, e: float(glass_fn(a, e)))(np.degrees(A), np.degrees(E))
+        open_ = np.maximum(open_, forced)
+    V = list((D * hull_dist(D)[..., None]).reshape(-1, 3))
+    AE = list(np.column_stack([np.repeat(az, ne), np.tile(el, na)]))   # degrees, for the UVs
+    val = open_.ravel()
     idx = np.arange(na * ne).reshape(na, ne)
-    quads = np.stack([idx, np.roll(idx, -1, 0), np.roll(idx, -1, 0)[:, [*range(1, ne)] + [0]],
-                      idx[:, [*range(1, ne)] + [0]]], -1)[:, :-1]
-    flat_V = V.reshape(-1, 3)
-    uv = np.column_stack([(np.repeat(az, ne) + 180) / 360, np.tile((el + 90) / 180, na)])
+    cut = {}
+
+    def crossing(i, j):
+        """Vertex where the window's edge crosses the edge i-j (shared by both faces)."""
+        key = (min(i, j), max(i, j))
+        if key not in cut:
+            t = (0.5 - val[i]) / (val[j] - val[i])
+            d = unit(D.reshape(-1, 3)[i] * (1 - t) + D.reshape(-1, 3)[j] * t)
+            V.append(d * hull_dist(d))
+            a, b = AE[i].copy(), AE[j].copy()
+            if abs(a[0] - b[0]) > 180:
+                b[0] += 360 * np.sign(a[0] - b[0])
+            AE.append(a * (1 - t) + b * t)
+            cut[key] = len(V) - 1
+        return cut[key]
+
+    hull_f, glass_f = [], []
+    for i in range(na):
+        i2 = (i + 1) % na
+        for j in range(ne - 1):
+            q = (idx[i, j], idx[i2, j], idx[i2, j + 1], idx[i, j + 1])
+            g = [bool(val[k] >= 0.5) for k in q]
+            if all(g) or not any(g):
+                (glass_f if g[0] else hull_f).append(q)
+                continue
+            # marching squares: walk around the quad, a crossing on every edge that changes side
+            ring = []
+            for k in range(4):
+                ring.append((q[k], g[k]))
+                if g[k] != g[(k + 1) % 4]:
+                    ring.append((crossing(q[k], q[(k + 1) % 4]), None))
+            centre = bool(np.mean([val[k] for k in q]) >= 0.5)
+            if g[0] == g[2] and g[1] == g[3]:     # saddle: the centre's side stays connected
+                start = next(n for n, (v, s) in enumerate(ring) if s is (not centre))
+                ring = ring[start:] + ring[:start]
+                corners = []
+                for n, (v, s) in enumerate(ring):
+                    if s is (not centre):
+                        corners.append((ring[n - 1][0], v, ring[(n + 1) % len(ring)][0]))
+                (glass_f if not centre else hull_f).extend(corners)
+                (glass_f if centre else hull_f).append(tuple(v for v, s in ring if s is not (not centre)))
+            else:
+                glass_f.append(tuple(v for v, s in ring if s is not False))
+                hull_f.append(tuple(v for v, s in ring if s is not True))
+    # close the poles
+    top, bot = len(V), len(V) + 1
+    hull_f += [(idx[i, ne - 1], idx[(i + 1) % na, ne - 1], top) for i in range(na)]
+    hull_f += [(idx[(i + 1) % na, 0], idx[i, 0], bot) for i in range(na)]
+    up, down = np.array([0, 0, 1.0]), np.array([0, 0, -1.0])
+    V = np.vstack([V, [up * hull_dist(up), down * hull_dist(down)]])
+    AE = np.vstack([AE, [[np.nan, 90.0], [np.nan, -90.0]]])
+    # UV islands, split along grid lines: the dense part that the art shows, in azimuth and
+    # elevation (radians), and the rest around it at HIDDEN_DENSITY
+    def face_uv(f):
+        ae = AE[list(f)].copy()
+        pole = np.isnan(ae[:, 0])
+        if (ae[~pole, 0].max() - ae[~pole, 0].min()) > 180:     # across the seam behind
+            ae[~pole & (ae[:, 0] < 0), 0] += 360
+        ae[pole, 0] = ae[~pole, 0].mean()
+        c = ae.mean(0)
+        k = 1.0 if az0 <= c[0] <= az1 and el0 <= c[1] <= el1 else HIDDEN_DENSITY
+        return np.radians(ae) * k
+
     objs = []
-    for name, sel, mat in (("Hull", ~is_glass, M["hull"]), ("Window_Glass", is_glass, M["glass"])):
-        q = quads[sel]
-        faces = [tuple(f) for f in q]
-        if name == "Hull":  # close the poles
-            top, bot = len(flat_V), len(flat_V) + 1
-            faces += [(idx[i, ne - 1], idx[(i + 1) % na, ne - 1], top) for i in range(na)]
-            faces += [(idx[(i + 1) % na, 0], idx[i, 0], bot) for i in range(na)]
-            up, down = np.array([0, 0, 1.0]), np.array([0, 0, -1.0])
-            verts = np.vstack([flat_V, [up * hull_dist(up), down * hull_dist(down)]])
-            uvs = np.vstack([uv, [[0.5, 1.0], [0.5, 0.0]]])
-        else:
-            verts, uvs = flat_V, uv
-        objs.append(mesh_obj(name, verts, faces, mat, COLL["Hull"], inward=True, uv=uvs,
-                             compact=True))
-    log(f"masked hull: {int((~is_glass).sum())} hull faces, {int(is_glass.sum())} glass faces")
+    for name, faces, mat in (("Hull", hull_f, M["hull"]), ("Window_Glass", glass_f, M["glass"])):
+        objs.append(mesh_obj(name, V, faces, mat, COLL["Hull"], inward=True, compact=True,
+                             loop_uv=[face_uv(f) for f in faces]))
+    log(f"masked hull: {len(hull_f)} hull faces, {len(glass_f)} glass faces, {len(cut)} cut edges")
     return objs
 
 
@@ -511,7 +508,9 @@ def masked_hull(step_deg=0.35, coarse_deg=4.0, extend_az=None, extend_el=None, g
 # Mesh helpers
 # ------------------------------------------------------------------------------------------------
 def mesh_obj(name, V, faces, mat, coll, smooth=True, sharp=None, uv=None, inward=False,
-             compact=False):
+             compact=False, loop_uv=None):
+    """Mesh object from vertices and faces; uv per vertex, or loop_uv per face corner (a list of
+    (n, 2) per face, for UV maps with seams)."""
     V = np.asarray(V, float)
     if compact:  # drop unused vertices
         used = np.unique(np.array([i for f in faces for i in f], int))
@@ -529,6 +528,11 @@ def mesh_obj(name, V, faces, mat, coll, smooth=True, sharp=None, uv=None, inward
         lv = np.empty(len(me.loops), dtype=np.int32)
         me.loops.foreach_get("vertex_index", lv)
         lay.data.foreach_set("uv", np.asarray(uv, np.float32)[lv].ravel())
+    elif loop_uv is not None:  # (validate() keeps the faces and their order)
+        lay = me.uv_layers.new(name="UVMap")
+        if len(me.loops) != sum(len(f) for f in faces):
+            raise ValueError(f"{name}: validate() changed the faces, loop_uv doesn't fit")
+        lay.data.foreach_set("uv", np.concatenate(loop_uv).astype(np.float32).ravel())
     if inward:  # surfaces seen from the eye: normals must face the origin
         bm = bmesh.new()
         bm.from_mesh(me)
