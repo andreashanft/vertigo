@@ -40,7 +40,8 @@ ARGV = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 DES = {}                    # parsed DES file: {section_lower: {key_lower: value_str}}
 F, CX, CY = 245.55, 320.0, 240.0
 ART = None                  # (480, 640, 3) float sRGB colours of COCKPIT.R16
-SEE = None                  # (480, 640) bool: see-through (window) pixels of COCKPIT.R16
+SEE = None                  # (480, 640) bool: see-through (window) pixels, from the layout's outline
+SEE_ART = None              # the same from COCKPIT.R16 itself (for the alignment check)
 WINDOW = None               # the window's outline from the layout: polygons in pixels
 MIRROR_X = 319.5            # vertical symmetry axis of the art (see mirror())
 HC = np.array([0.0, 0.05, -0.22])     # hull ellipsoid centre
@@ -67,9 +68,9 @@ def des_int(section, key, default=0):
 def load(cid):
     """The cockpit `cid`'s camera, DES sections and window: from layouts/cockpit_NNN.json if there
     is one (tools/extract_layout.py; then the game data is only needed for the alignment check),
-    else from the DES file and COCKPIT.R16. ART and SEE are the art and its see-through mask, None
-    without the game data."""
-    global CID, DATA, OUT, F, CX, CY, ART, SEE, MIRROR_X, WINDOW
+    else from the DES file and COCKPIT.R16. SEE is the see-through mask the model is built from (the
+    layout's window filled), ART and SEE_ART the art and its own mask, None without the game data."""
+    global CID, DATA, OUT, F, CX, CY, ART, SEE, SEE_ART, MIRROR_X, WINDOW
     CID = cid
     OUT = arg("--out") or os.path.join(HERE, "out", cid)
     os.makedirs(os.path.join(OUT, "renders"), exist_ok=True)
@@ -78,11 +79,11 @@ def load(cid):
     try:
         DATA = CD.data_dir(arg("--data"))
         raw, ART = CD.load_r16(find_ci(DATA, "VFX", "COCKPIT", cid, "COCKPIT.R16"))
-        SEE = CD.see_through_mask(raw)
+        SEE = SEE_ART = CD.see_through_mask(raw)
     except (SystemExit, OSError):
         if not os.path.exists(layout):
             raise
-        DATA = ART = SEE = None
+        DATA = ART = SEE = SEE_ART = None
     if os.path.exists(layout):
         with open(layout) as f:
             lay = json.load(f)
@@ -91,6 +92,7 @@ def load(cid):
         DES.update(lay["sections"])
         MIRROR_X = lay["mirror_x"]
         WINDOW = [np.array(loop) for loop in lay["window"]]
+        SEE = VZ.coverage(WINDOW, (480, 640), rule="evenodd") >= 0.5
         source = os.path.relpath(layout, HERE) + (", game data for the checks" if DATA else "")
     else:
         DES.update(CD.parse_des(find_ci(DATA, "VFX", "COCKPIT", f"{cid}.DES")))
@@ -1288,15 +1290,15 @@ def alignment_check(cam, hide):
     render(path, cam, (640, 480), engine='BLENDER_WORKBENCH', transparent=True, hide=hide)
     ours = load_rgba(path)
     ours_win = ours[..., 3] < 0.5
-    iou = (SEE & ours_win).sum() / max((SEE | ours_win).sum(), 1)
+    iou = (SEE_ART & ours_win).sum() / max((SEE_ART | ours_win).sum(), 1)
     log(f"window IoU vs original: {iou:.3f}")
     mag = np.array([0.35, 0.0, 0.35], np.float32)
-    o_rgb = np.where(SEE[..., None], mag, np.clip(ART * 1.6, 0, 1))
+    o_rgb = np.where(SEE_ART[..., None], mag, np.clip(ART * 1.6, 0, 1))
     r_rgb = np.where(ours_win[..., None], mag, ours[..., :3])
     diff = np.zeros_like(o_rgb)  # red = only the original is opaque, cyan = only ours
-    diff[~SEE & ours_win] = (1, 0.15, 0.15)
-    diff[SEE & ~ours_win] = (0.1, 0.9, 1)
-    both = ~SEE & ~ours_win
+    diff[~SEE_ART & ours_win] = (1, 0.15, 0.15)
+    diff[SEE_ART & ~ours_win] = (0.1, 0.9, 1)
+    both = ~SEE_ART & ~ours_win
     diff[both] = np.clip(ART * 1.2, 0, 1)[both] * 0.6
     blend = 0.5 * o_rgb + 0.5 * r_rgb
     sheet = np.concatenate([np.concatenate([o_rgb, r_rgb], 1), np.concatenate([blend, diff], 1)], 0)
@@ -1334,7 +1336,7 @@ def finish():
         return
     use_metal()
     hide = [o for o in (glass, hud) if o]
-    if SEE is not None:
+    if SEE_ART is not None:
         alignment_check(cam_eye, hide)
     else:
         log("no game data: no alignment check")
