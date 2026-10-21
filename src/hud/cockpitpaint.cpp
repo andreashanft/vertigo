@@ -19,6 +19,7 @@
 #include "gfx/glbmodel.h"
 
 #include <glm/geometric.hpp>
+#include <glm/gtc/constants.hpp>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -334,7 +335,7 @@ bool edgeDetail(const Grid &rgb, Grid &lo, Grid &hi, Grid &edge)
             std::copy_n(rgb.clamped(x + brightest%3 - 1, y + brightest/3 - 1), 3, hi.at(x, y));
             const float *g = grad.at(x, y);
             const float magnitude = std::hypot(g[0], g[1]);
-            const int direction = ((int(std::nearbyint(std::atan2(g[1], g[0])/(float(M_PI)/4))) % 4) + 4) % 4;
+            const int direction = ((int(std::nearbyint(std::atan2(g[1], g[0])/(glm::pi<float>()/4))) % 4) + 4) % 4;
             auto neighbour = [&](int sign) {
                 const int nx = x + sign*offsets[direction][0], ny = y + sign*offsets[direction][1];
                 if (nx < 0 || ny < 0 || nx >= w || ny >= h)
