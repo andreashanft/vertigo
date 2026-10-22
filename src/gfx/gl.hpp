@@ -168,6 +168,8 @@ bool load(std::string *missing = nullptr);
 // OpenGL ES rather than OpenGL
 bool isES();
 bool hasExtension(const char *name);
+// the bound texture filtered anisotropically, up to 8 samples, where the context can
+void setAnisotropy();
 // whether a context is current (without one, the GL objects have gone with it)
 bool hasContext();
 

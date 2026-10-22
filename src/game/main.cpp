@@ -576,8 +576,9 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     const int code = g_vertigo->start();
     if (code >= 0)
         return end(code);
-    // a frame every 20 ms with a window; without one as fast as it goes
-    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, options.headless && !options.scenario.isEmpty() ? "0" : "50");
+    // without a window as fast as it goes; with one the window sets the rate by its display
+    if (options.headless && !options.scenario.isEmpty())
+        SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "0");
     return SDL_APP_CONTINUE;
 }
 
