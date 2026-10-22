@@ -253,6 +253,45 @@ the depot, which sells every item and leaves you $10,000,000 to spend, then pick
 the mission. When it is over, or aborted, the list of missions comes back with
 the boat as it was fitted out; DEPOT there changes the fittings again.
 
+## Upscaled graphics
+
+The main menu's Options can make the game's graphics four times as large with
+[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), an image upscaler based
+on machine learning, and use them in their place:
+
+- the full-screen pictures: stations, rooms, backgrounds, the main menu's
+  title, the notebook and the 2D cockpits' art;
+- the textures of the models and the effects' sprites;
+- the pictures that are mostly text (the sea and area maps, the autopilot's
+  destinations, the credits) and the cursor, with Real-ESRGAN's model for
+  animation, which keeps letters whole and edges crisp where the general model
+  garbles and smears them.
+
+The fonts, the HUD's own art and the terrain keep their pixels (the upscaler
+breaks up the letters, and the terrain's tiles stop meeting seamlessly), and
+the movies stay as they are. Small lettering on models and buildings is
+upscaled with them by the general model and can come out garbled.
+
+The first click on *Upscaled graphics: PREPARE* asks before downloading
+Real-ESRGAN (its official release, about 52 MB, checked against the checksum
+it must have) into `Real-ESRGAN` next to the saved games. Upscaling then takes
+about 15 minutes on an Apple silicon Mac, in the background: the line shows the
+percentage, the game can be played meanwhile, and clicking the line again
+stops it, keeping what is done for the next time. Once it is finished the
+upscaled graphics are switched on and used from the next screen on; the line
+switches them off and on. When the game data changes, the line offers to
+*UPDATE* the set.
+
+The set is kept in `Game Data Upscaled` next to the saved games (about
+165 MB), a JPEG per picture or a PNG where it has transparency, named after a
+hash of the image the game decodes, so it doesn't
+depend on file names or the game's language. On the iPad, where the upscaler
+can't run, copy that folder from a computer into Vertigo's folder (On My iPad
+› Vertigo in the Files app) and switch it on in Options. `vertigo --upscale` makes the set in a
+terminal, printing the progress. The download is checked for macOS so far;
+Windows and Linux need their checksums before Vertigo fetches it there (a
+copy put into the `Real-ESRGAN` folder by hand is used anyway).
+
 ## Testing
 
 Vertigo can start a mission directly, which is meant for testing:

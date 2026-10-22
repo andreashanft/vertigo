@@ -145,6 +145,8 @@ set(SOURCES
     game/task.h
     game/training.cpp
     game/training.h
+    game/upscaler.cpp
+    game/upscaler.h
     game/vertigo.cpp
     game/vertigo.h
     game/window.cpp
@@ -174,6 +176,8 @@ set(SOURCES
     gfx/texture.h
     gfx/texturemanager.cpp
     gfx/texturemanager.h
+    gfx/upscaled.cpp
+    gfx/upscaled.h
     gfx/video.cpp
     gfx/video.h
     gfx/cliprect.cpp
@@ -293,8 +297,12 @@ set(SOURCES
     util/json.hpp
     util/path.cpp
     util/path.hpp
+    util/process.cpp
+    util/process.hpp
     util/random.cpp
     util/random.h
+    util/sha256.cpp
+    util/sha256.hpp
     util/settings.cpp
     util/settings.hpp
     util/rect.hpp
