@@ -57,8 +57,8 @@ EffectManager::EffectManager(Scenario *scenario) :
 {
     txt::DesFile file;
 
-    // the explosions, the shots and the torpedo bubbles (21-23) are additive; the ground dust (18-20,
-    // 24-26), the debris, the trash and the ambient bubbles (BUBBLE.DES) cover what is behind them
+    // the explosions, the shots and the bubbles (the torpedo trails' 21-23 and BUBBLE.DES) are
+    // additive; the ground dust (18-20, 24-26), the debris and the trash cover what is behind them
     file.load("vfx:sobjects/explosio.des");
     for (int i = 0; i < 27; i++)
         m_billboards.emplace(std::piecewise_construct,
@@ -81,9 +81,12 @@ EffectManager::EffectManager(Scenario *scenario) :
             std::forward_as_tuple(m_scenario->textureManager(), file, i, false));
     file.load("vfx:sobjects/bubble.des");
     for (int i = 0; i < 3; i++)
-        m_billboards.emplace(std::piecewise_construct,
+    {
+        Billboard &bubble = m_billboards.emplace(std::piecewise_construct,
             std::forward_as_tuple((Effects)((int)Effects::Bubble_0 + i)),
-            std::forward_as_tuple(m_scenario->textureManager(), file, i, false));
+            std::forward_as_tuple(m_scenario->textureManager(), file, i, true)).first->second;
+        bubble.setInFront(0);
+    }
 }
 
 
@@ -210,15 +213,15 @@ void EffectManager::update(float elapsedTime)
     m_effects.remove_if([elapsedTime](const std::unique_ptr<Effect> &effect) { return effect->update(elapsedTime); });
     m_particles.update(elapsedTime);
 
-    // bubbles around the player, each at its own height of a rise from 50 m below
+    // bubbles around the eye, each at its own height of a rise from 50 m below
     Billboard *bubble = getBillboard(Effects::Bubble_0);
     for (int i = m_particles.count(Particles::Motion::Bubble); i < Bubbles; i++)
     {
-        Vector3D position = m_scenario->position() + Vector3D(util::random()%100 - 50, util::random()%100 - 50, -50);
-        const float time = glm::distance2(m_scenario->position(), position)/200.0f*random();
+        Vector3D position = m_scenario->eye() + Vector3D(util::random()%100 - 50, util::random()%100 - 50, -50);
+        const float time = glm::distance2(m_scenario->eye(), position)/200.0f*random();
         position.z += time*bubble->velocity();
-        if (glm::distance2(m_scenario->position(), position) <= 50.0f*50.0f &&
-            !m_particles.add(bubble, Particles::Motion::Bubble, position, Vector3D(0), 0, 2, time))
+        if (glm::distance2(m_scenario->eye(), position) <= 50.0f*50.0f &&
+            !m_particles.add(bubble, Particles::Motion::Bubble, position, Vector3D(0), 0, 1, time))
             break;
     }
 }

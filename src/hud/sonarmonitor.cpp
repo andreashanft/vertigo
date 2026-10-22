@@ -59,8 +59,14 @@ void SonarMonitor::draw()
     if (m_hud->scenario()->monitorBlanked(m_monitor))
         return;
     m_lamp.draw(m_hud->scenario()->sonar().isActive());
-    Point point = m_hud->project(m_point);
-    int radius = (m_hud->project(m_point + Point(0, m_radius)) - point).y;
+    drawAt(m_point, m_radius);
+}
+
+
+void SonarMonitor::drawAt(const Point &at, int viewRadius)
+{
+    Point point = m_hud->project(at);
+    int radius = (m_hud->project(at + Point(0, viewRadius)) - point).y;
     float scale = static_cast<float>(radius)/m_scale;
     PointF center = PointF(point) - PointF(1.5f);
     RectF rect = RectF(center, SizeF(4, 4));

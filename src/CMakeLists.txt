@@ -25,6 +25,8 @@ set(SOURCES
     fight/module.h
     fight/modulemanager.cpp
     fight/modulemanager.h
+    fight/outsideview.cpp
+    fight/outsideview.h
     fight/scenario.cpp
     fight/scenario.h
     fight/sonar.cpp

@@ -143,6 +143,7 @@ protected:
 
     Vector3D m_angleVelocity;
     Vector3D m_turnVelocity;
+    float m_bank = 0;           // the hull's roll into its turn, as it is drawn
     Vector3D m_spin;            // the paralysed drift's angular velocity
     float m_tumbleEnd = 0;      // and when its way has run out
 

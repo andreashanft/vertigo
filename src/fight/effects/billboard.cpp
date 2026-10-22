@@ -152,9 +152,9 @@ void Billboard::quad(const Vector3D &position, float angle, float scale, float t
     const float size = m_scale*scale;
     for (int i = 0; i < 4; i++)
     {
-        // the frame's offset and size, turned by the angle, 2 m in front of the position
+        // the frame's offset and size, turned by the angle, in front of the position
         const Vector2D v = (Vector2D(square[i]) + stage.offset)*stage.scale;
-        corners[i] = position + (camera[0]*(c*v.x - s*v.y) + camera[1]*(s*v.x + c*v.y))*size + camera[2]*2.0f;
+        corners[i] = position + (camera[0]*(c*v.x - s*v.y) + camera[1]*(s*v.x + c*v.y))*size + camera[2]*m_inFront;
     }
     texCoords = stage.texCoords;
     texture = &stage.texture;

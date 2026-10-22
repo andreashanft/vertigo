@@ -307,6 +307,7 @@ Scenario::Scenario(const String &name) :
 
         case TypePlayer:
             m_position = getPosition();
+            m_eye = m_position;
             m_yaw = quarterHeading(m_file.value("card").toInt());
             m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
             entry.condTrigger = m_conditionManager.addCondition(0);
@@ -706,16 +707,14 @@ void Scenario::update(float elapsedTime)
     m_pitch = dir.z < -1.0f ? -glm::half_pi<float>() : dir.z > 1.0f ? glm::half_pi<float>() : glm::asin(dir.z);
     m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
 
-    if (playerDestroyed())
-    {
-        updateDeathView(elapsedTime);
-    }
-    else
+    if (!playerDestroyed())
     {
         m_cameraMatrixInverted = Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_position, 1));
         m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
         m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
     }
+    m_outsideView.update(elapsedTime);
+    setEye(outside() ? m_outsideView.matrixInverted() : m_cameraMatrixInverted);
 
     m_conditionManager.update(elapsedTime);
     if (m_failTime < 0 && m_conditionManager.failed())
@@ -775,10 +774,11 @@ void Scenario::update(float elapsedTime)
 
     m_sonar.update(elapsedTime);
 
-    // positional sounds are heard from the player
-    sfx::SoundSystem::get()->setListener(m_position.x, m_position.y, m_position.z,
-                                         m_player->dir().x, m_player->dir().y, m_player->dir().z,
-                                         m_player->up().x, m_player->up().y, m_player->up().z);
+    // positional sounds are heard where the camera is, also outside the boat
+    const Vector3D forward = -m_eyeAxes[2];
+    sfx::SoundSystem::get()->setListener(m_eye.x, m_eye.y, m_eye.z,
+                                         forward.x, forward.y, forward.z,
+                                         m_eyeAxes[1].x, m_eyeAxes[1].y, m_eyeAxes[1].z);
     if (!m_engineSounds)
         m_engineSounds.reset(new EngineSounds(this));
     m_engineSounds->update();
@@ -843,40 +843,14 @@ void Scenario::destroyPlayer()
     if (playerDestroyed())
         return;
     m_eventPlayerDestroyed.complete();
-    // the camera starts in the hull and moves out to its place beside it
-    m_deathCamera = m_player->position();
-    m_deathYaw = -glm::half_pi<float>();
-    m_deathPitch = glm::quarter_pi<float>();
-    m_deathDistance = 3.0f;
+    m_outsideView.startDeath();
 }
 
 
-// The death view (docs/ROADMAP.md, appendix R): the camera circles the hull at 45° a second, 45°
-// above it and three hull radii away, in the hull's own frame, moving a tenth of a second's worth
-// towards that place every frame and always looking at the hull. Once the hull is gone it comes
-// down level and closes in to half a radius.
-void Scenario::updateDeathView(float elapsedTime)
+void Scenario::setEye(const Matrix &cameraInverted)
 {
-    m_deathYaw += glm::quarter_pi<float>()*elapsedTime;
-    if (m_player->wreckGone())
-    {
-        m_deathPitch -= m_deathPitch*std::min(1.0f, 1.5f*elapsedTime);
-        if (m_deathDistance > 0.5f)
-            m_deathDistance -= 1.25f*elapsedTime;
-    }
-    const float d = m_deathDistance*m_player->hullRadius();
-    const Vector3D offset(-d*std::cos(m_deathPitch)*std::sin(m_deathYaw), d*std::cos(m_deathPitch)*std::cos(m_deathYaw), d*std::sin(m_deathPitch));
-    const Vector3D target = m_player->position();
-    const Vector3D place = target + glm::transpose(m_player->orientation())*offset;
-    m_deathCamera += (place - m_deathCamera)*std::min(1.0f, 10.0f*elapsedTime);
-
-    Vector3D forward = target - m_deathCamera;
-    forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : m_player->dir();
-    Vector3D right = glm::cross(forward, Vector3D(0, 0, 1));
-    right = glm::length(right) > 1e-3f ? glm::normalize(right) : m_player->right();
-    const Vector3D up = glm::cross(right, forward);
-    m_cameraMatrixInverted = Matrix(Vector4D(right, 0), Vector4D(up, 0), Vector4D(-forward, 0), Vector4D(m_deathCamera, 1));
-    m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
+    m_eyeAxes = glm::mat3(cameraInverted);
+    m_eye = Vector3D(cameraInverted[3]);
 }
 
 
@@ -892,11 +866,12 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
 
     gfx::Pipeline::setProjection(projection);
     gfx::Pipeline::setModelView(camera);
+    setEye(glm::inverse(camera));
 
     // the nearest energy shots light the ground and the objects around them,
     // so they are set before the terrain is drawn
     gfx::Pipeline::PointLight shots[gfx::Pipeline::MaxPointLights];
-    const int shotLights = m_effectManager.pointLights(m_position, shots, gfx::Pipeline::MaxPointLights);
+    const int shotLights = m_effectManager.pointLights(m_eye, shots, gfx::Pipeline::MaxPointLights);
     for (int i = 0; i < shotLights; i++)
         shots[i].position = Vector3D(camera*Vector4D(shots[i].position, 1));
     gfx::Pipeline::setPointLights(shots, shotLights);
@@ -906,7 +881,7 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     gfx::Pipeline::setFog(m_surface.fog());
 
     const float brightness = this->brightness();
-    m_surface.draw(m_position, m_player->dir(), brightness);
+    m_surface.draw(m_eye, -m_eyeAxes[2], brightness);
 
     // the models take their rows of the shading tables by the terrain's rule, from the same
     // light at the eye, without any light of their own; their tables hold the palette itself
@@ -919,8 +894,8 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
             object->draw();
     for (const auto &torpedo : m_torpedoes)
         torpedo->draw();
-    // the death view sees the player's hull until it is gone
-    if (playerDestroyed() && !m_player->wreckGone())
+    // the views from outside see the player's hull (the death view until it is gone)
+    if (outside() && !m_player->wreckGone())
         m_player->draw();
     gfx::Pipeline::setTableShading(false);
 
@@ -932,13 +907,13 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
 static float pitch = 1.0f;
 void Scenario::keyPressEvent(input::KeyEvent *e)
 {
-    if (e->key() == input::Key_Left || e->key() == input::Key_4)
+    if (e->key() == input::Key_Left)
         m_left = 1.0f;
-    if (e->key() == input::Key_Right || e->key() == input::Key_6)
+    if (e->key() == input::Key_Right)
         m_right = 1.0f;
-    if (e->key() == input::Key_Up || e->key() == input::Key_8)
+    if (e->key() == input::Key_Up)
         m_up = 1.0f;
-    if (e->key() == input::Key_Down || e->key() == input::Key_5)
+    if (e->key() == input::Key_Down)
         m_down = 1.0f;
     if (e->key() == input::Key_Q)
         m_player->setBoostKey(true);
@@ -1025,13 +1000,13 @@ void Scenario::keyPressEvent(input::KeyEvent *e)
 
 void Scenario::keyReleaseEvent(input::KeyEvent *e)
 {
-    if (e->key() == input::Key_Left || e->key() == input::Key_4)
+    if (e->key() == input::Key_Left)
         m_left = 0.0f;
-    if (e->key() == input::Key_Right || e->key() == input::Key_6)
+    if (e->key() == input::Key_Right)
         m_right = 0.0f;
-    if (e->key() == input::Key_Up || e->key() == input::Key_8)
+    if (e->key() == input::Key_Up)
         m_up = 0.0f;
-    if (e->key() == input::Key_Down || e->key() == input::Key_5)
+    if (e->key() == input::Key_Down)
         m_down = 0.0f;
     if (e->key() == input::Key_Q)
         m_player->setBoostKey(false);

@@ -44,6 +44,8 @@ public:
 public:
     int scale() const { return m_scale; }
     void setScale(int scale) { m_scale = scale; }
+    // the contacts round another point of the 640x480 view, without the lamp (the chase view's)
+    void drawAt(const Point &center, int radius);
 
 protected:
     void draw();

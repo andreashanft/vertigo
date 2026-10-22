@@ -159,6 +159,23 @@ version lacks them: delete `Game Data` and build it again. The notebook's
 Options › Sound, or the main menu's Options, turns the music off and on, as
 the original's "CD Musik" did.
 
+## Views from outside
+
+As in the original, the number pad shows the boat from outside while the
+mission goes on: 0 the chase view behind the boat, with a few instruments
+over it (the weapons, the system state, the sonar and THREAT), 5 the look-at
+view round the boat, and 1 and 7 the same of the locked target until it is
+destroyed. The same key again goes back to the cockpit. 9 and 3 zoom in and
+out, 4, 6, 8 and 2 move the look-at view's camera round the boat, a step at
+a time; the zoom and the place round the boat are kept for the whole run.
+The sounds are heard where the camera is.
+
+V steps through the 2D cockpit, the 3D one, and the chase and look-at views
+of the boat and of the target (as LB+Back on a game controller and VIEW on
+the touch screen). In the views a drag with the mouse or a finger moves the
+look-at view's camera round the boat, and the mouse wheel (two fingers on a
+trackpad) or a pinch zooms.
+
 ## Game controllers
 
 Missions can be played with a game controller (Xbox, PlayStation, Switch Pro
@@ -170,7 +187,7 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 | Control | In a mission | With LB held |
 |---|---|---|
 | Left stick | steer | |
-| Right stick | look around in the 3D cockpit | |
+| Right stick | look around in the 3D cockpit; in the look-at view move the camera round the boat | zoom the view from outside (up and down) |
 | RT | fire the gun (Space) | |
 | LT | fire a torpedo (Tab) | |
 | RB | lock the target in the reticle (L) | |
@@ -184,7 +201,7 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 | D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
 | L3, R3 (press a stick) | full ahead, full astern while held (A, Z) | |
 | Start | mission menu (Esc) | pause (P) |
-| Back | turret menu (O) | 2D or 3D cockpit (Alt+V) |
+| Back | turret menu (O) | the next cockpit or view from outside (V) |
 
 In the mission and turret menus the d-pad highlights an option, A takes it and
 B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a
@@ -210,14 +227,16 @@ button hides them again.
 - In the corners: MENU (the mission menu, when the finger is lifted; held for
   a second it shows or hides the debug overlay instead), NAV (the next nav
   point), AUTO (autopilot), SONAR (on or off), TURR (turret menu) and VIEW
-  (2D or 3D cockpit).
+  (the next cockpit or view from outside, as V).
 - A tap on an option of the mission and turret menus takes it.
 - A tap on a status monitor changes its page: the weapon monitor steps
   through the gun, the magazine and the turrets to the overview (as F1-F4),
   the armor monitor switches to the system state and back (as I); Hiob's
   single monitor goes through all of them. In the 3D cockpit only with the
   head facing forward.
-- In the 3D cockpit a finger dragged elsewhere turns the head.
+- In the 3D cockpit a finger dragged elsewhere turns the head; in the
+  look-at view it moves the camera round the boat, and two fingers zoom the
+  views from outside.
 
 The controls keep the size they have on an 11-inch iPad, in the corners of a
 larger screen. The main menu's Options, and the notebook's Options › Input
@@ -330,7 +349,8 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   without a Dock icon and without keyboard input other than `--keys`.
 - `--keys 2=Esc,3=2,4=1` presses keys at the given seconds, e.g. to drive the
   Esc menu (here: restart the mission). `5=Space/0.1` holds a key for 0.1 s;
-  keys like Space (fire) or the arrows need that to have an effect.
+  keys like Space (fire) or the arrows need that to have an effect. `Num+0`
+  is the number pad's 0.
 - `--pad 2=Start,3=A,4=RT/1,5=LB+A,6=LeftY:-0.5/2` works a virtual game
   controller at the given seconds: buttons by the names above (A, B, X, Y, LB,
   RB, LT, RT, L3, R3, Start, Back, Up, Down, Left, Right), held for 0.1 s or

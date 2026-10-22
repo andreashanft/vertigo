@@ -457,6 +457,10 @@ void Window::handle(const SDL_Event &event)
                        event.type == SDL_EVENT_FINGER_MOTION ? EventType::TouchMove : EventType::TouchRelease, &touch);
         }
         break;
+    case SDL_EVENT_MOUSE_WHEEL:
+        if (m_renderer)
+            m_renderer->wheelEvent(event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -event.wheel.y : event.wheel.y);
+        break;
     case SDL_EVENT_MOUSE_MOTION: {
         input::MouseEvent mouse(PointD(event.motion.x, event.motion.y), input::NoButton, m_buttons, event.motion.which == SDL_TOUCH_MOUSEID);
         if (m_renderer)

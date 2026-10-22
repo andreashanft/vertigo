@@ -39,6 +39,7 @@
 #include "sonar.h"
 #include "target.h"
 #include "headmotion.h"
+#include "outsideview.h"
 #include "util/string.hpp"
 
 namespace game { class Boat; }
@@ -84,8 +85,17 @@ public:
 
     const Matrix& projectionMatrix() const { return m_projectionMatrix; }
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
+    // the boat's camera, the pilot's eye: the reticle and the HUD's symbols go by it, also while
+    // the world is seen from outside
     const Matrix& cameraMatrix() const { return m_cameraMatrix; }
     const Matrix& cameraMatrixInverted() const { return m_cameraMatrixInverted; }
+    // the camera the world is seen from: the boat's, or an outside view's
+    const Matrix& viewMatrix() const { return m_outsideView.mode() == OutsideView::Mode::Cockpit ? m_cameraMatrix : m_outsideView.matrix(); }
+    // the eye of the picture (the boat's camera, an outside view's, the pilot's head moved in the
+    // 3D cockpit) and its axes (right, up, back): the sprites face it, the particles and the
+    // ground around it are drawn and the sounds are heard there
+    const Vector3D& eye() const { return m_eye; }
+    const glm::mat3& eyeAxes() const { return m_eyeAxes; }
     const Vector3D& position() const { return m_position; }
     float yaw() const { return m_yaw; }
     float pitch() const { return m_pitch; }
@@ -126,6 +136,9 @@ public:
     // the player's boat is destroyed: the death view watches its destruction sequence from
     // outside (docs/ROADMAP.md, appendix R)
     void destroyPlayer();
+    // the views from outside the boat (appendix V), and the death view
+    OutsideView& outsideView() { return m_outsideView; }
+    bool outside() const { return m_outsideView.mode() != OutsideView::Mode::Cockpit; }
     bool playerDestroyed() const { return m_eventPlayerDestroyed.isCompleted(); }
 
     Player* player() const { return m_player.get(); }
@@ -284,14 +297,11 @@ private:
 
     float m_time;
     float m_failTime = -1;      // when the mission failed, -1 while it hasn't
-    // the death view: the camera's place, its heading and elevation round the hull and its
-    // distance in hull radii
-    void updateDeathView(float elapsedTime);
     void updateDecoyContacts();
-    Vector3D m_deathCamera;
-    float m_deathYaw = 0;
-    float m_deathPitch = 0;
-    float m_deathDistance = 0;
+    void setEye(const Matrix &cameraInverted);
+    OutsideView m_outsideView{this};
+    Vector3D m_eye = Vector3D(0);
+    glm::mat3 m_eyeAxes = glm::mat3(1);
     float m_dimming = 1;
 
     float m_left;

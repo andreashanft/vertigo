@@ -40,6 +40,15 @@ RadioMessage::RadioMessage(HUD *hud, Rect rect) :
 }
 
 
+void RadioMessage::drawAt(const Rect &rect)
+{
+    const Rect cockpit = m_rect;
+    m_rect = rect;
+    doDraw();
+    m_rect = cockpit;
+}
+
+
 void RadioMessage::draw()
 {
     int i = m_hud->scenario()->radio().size() - 1;

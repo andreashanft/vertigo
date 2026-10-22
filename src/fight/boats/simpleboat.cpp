@@ -44,6 +44,10 @@ namespace fight {
 const float ParalysedSpin = 0.227f;
 const float ParalysedCoast = 3.0f;
 const float ParalysedBrake = 1.5f;
+// a boat's hull banks into its turn as it is drawn, up to this much at its full turn rate, and
+// follows the turn by this share of the way a second (docs/ROADMAP.md, appendix V)
+const float MaxBank = glm::radians(40.0f);
+const float BankFollow = 4.0f;
 
 
 SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float yaw) :
@@ -317,6 +321,8 @@ void SimpleBoat::draw()
     gfx::Pipeline::pushMatrix();
     gfx::Pipeline::translate(m_position);
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
+    if (m_bank != 0)
+        gfx::Pipeline::rotate(glm::degrees(m_bank), Vector3D(0, 1, 0));
     gfx::Pipeline::scale(m_scale);
     m_base->draw();
     gfx::Pipeline::popMatrix();
@@ -404,6 +410,10 @@ void SimpleBoat::updateOrientation(float elapsedTime)
 
     m_orientation *= glm::mat3(glm::rotate(m_angleVelocity.x*elapsedTime, right())) * glm::mat3(glm::rotate(m_angleVelocity.z*elapsedTime, Vector3D(0, 0, 1)));
     m_orientationInverted = glm::transpose(m_orientation);
+
+    // (the boat itself stays level: it steers, aims and is hit as before)
+    const float turning = m_maxAngleVelocity.z != 0 ? glm::clamp(m_angleVelocity.z/std::abs(m_maxAngleVelocity.z), -1.0f, 1.0f) : 0.0f;
+    m_bank += (MaxBank*turning - m_bank)*std::min(1.0f, BankFollow*elapsedTime);
 }
 
 

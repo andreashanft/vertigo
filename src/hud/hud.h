@@ -26,6 +26,7 @@
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "sfx/music.hpp"
+#include "fight/outsideview.h"
 
 #include <chrono>
 #include <map>
@@ -48,6 +49,8 @@ class SonarMonitor;
 class MissionMenu;
 class Pages;
 class SlaveMonitor;
+class Threat;
+class RadioMessage;
 class Cockpit3D;
 class TouchControls;
 
@@ -143,6 +146,8 @@ protected:
     void mousePressEvent(input::MouseEvent *);
     void mouseReleaseEvent(input::MouseEvent *);
     void mouseMoveEvent(input::MouseEvent *);
+    // the mouse wheel zooms the views from outside
+    void wheelEvent(float notches);
     // a game controller: the buttons stand for keys (a second set with LB held), the d-pad and A
     // and B work the menus; the left stick steers, the right one turns the head in the 3D cockpit
     void buttonPressEvent(input::Button button);
@@ -161,8 +166,16 @@ private:
     // leaves with success, through the destination menu if there are destinations
     void engageAutopilot();
     bool drawModel(double pixelRatio);
-    void drawDeathView(double pixelRatio);
+    void drawOutsideView(double pixelRatio);
+    void drawChaseInstruments();
     void updateLook(float elapsedTime);
+    // the views from outside (docs/ROADMAP.md, appendix V): a view's key shows it or, if it is
+    // showing, the cockpit again; V steps through the cockpits and the views
+    void toggleView(fight::OutsideView::Mode mode, bool target);
+    void nextView();
+    void setCockpit(CockpitMode mode);
+    void updateViewStick(float elapsedTime);
+    void pinch(double distance);
     void menuAction(int action);
     input::KeyEvent buttonKey(input::Button button);
     // keys from any source; the keyboard's also hide the touch controls
@@ -217,6 +230,11 @@ private:
     bool m_looking;         // a mouse button is held
     PointD m_lookStart;     // where the drag started
     Vector2D m_lookFrom;    // and the look direction then
+    glm::ivec2 m_dragSteps = glm::ivec2(0);    // the steps an outside view's camera was dragged
+    float m_viewStickWait = -1;            // until the right stick's next step, -1 while it is let go
+    double m_pinchStart = -1;              // how far apart two fingers were, -1 while there is no pinch
+    int m_pinchSteps = 0;                  // the zoom's steps they made since
+    float m_wheel = 0;                     // the mouse wheel's notches short of a step
     Vector2D m_lookStick = Vector2D(0);    // the right stick
     Vector2D m_padStick = Vector2D(0);     // the left stick
     Vector2D m_touchStick = Vector2D(0);   // the touch screen's
@@ -248,6 +266,10 @@ private:
     MissionMenu* m_menu;
     Pages* m_pages;
     std::vector<SlaveMonitor*> m_slaveMonitors;
+    Threat* m_threat;
+    RadioMessage* m_radioMessage;
+    ui::Widget* m_pause;
+    gfx::Texture m_shade;   // half dark, under the chase view's sonar
 
     bool m_paused;
     bool m_frozen;          // mission time and sounds stopped (pause or menu)

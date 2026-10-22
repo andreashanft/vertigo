@@ -63,6 +63,10 @@ public:
     void tap(bool alone);
     // whether a point of the 640x480 view is on the monitor
     bool contains(const Point &point) const;
+    // the table of all weapons or the system state in a rect of the 640x480 view, without the
+    // monitor's lamp (the chase view's)
+    void drawOverviewAt(const Rect &rect);
+    void drawSystemsAt(const Rect &rect);
 
 protected:
     void draw();
