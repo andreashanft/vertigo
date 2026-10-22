@@ -85,6 +85,51 @@ Vector3D Tesselator::shadingNormal(const Vector3D &normal, const Vector3D &posit
 }
 
 
+// Bilinear between the cell's corners, so a cell with its corners at one height is flat and its
+// neighbours slope straight off it; the share of that against the spline is bilinear between the
+// corners' straightness, eased, so it is all straight in a cell with straight corners and blends
+// over the next one
+void Tesselator::straighten(int x, int y, float u, float v, float &z, Vector3D &normal) const
+{
+    const float s00 = m_surface->straightness(x, y), s10 = m_surface->straightness(x + 1, y);
+    const float s01 = m_surface->straightness(x, y + 1), s11 = m_surface->straightness(x + 1, y + 1);
+    if (s00 == 0 && s10 == 0 && s01 == 0 && s11 == 0)
+        return;
+    auto bilinear = [u, v](float a00, float a10, float a01, float a11, float &du, float &dv) {
+        du = (a10 - a00)*(1 - v) + (a11 - a01)*v;
+        dv = (a01 - a00)*(1 - u) + (a11 - a10)*u;
+        return a00*(1 - u)*(1 - v) + a10*u*(1 - v) + a01*(1 - u)*v + a11*u*v;
+    };
+    float su, sv, hu, hv;
+    const float s = bilinear(s00, s10, s01, s11, su, sv);
+    const float h = bilinear(m_surface->height(x, y), m_surface->height(x + 1, y), m_surface->height(x, y + 1), m_surface->height(x + 1, y + 1), hu, hv);
+    const float w = s*s*(3 - 2*s), dw = 6*s*(1 - s);
+    // the spline's slopes from its normal (-dz/du, -dz/dv, 1)
+    const float zu = normal.z != 0 ? -normal.x/normal.z : 0, zv = normal.z != 0 ? -normal.y/normal.z : 0;
+    const float gu = zu + w*(hu - zu) + dw*su*(h - z), gv = zv + w*(hv - zv) + dw*sv*(h - z);
+    z += w*(h - z);
+    normal = Vector3D(-gu, -gv, 1);
+}
+
+
+float Tesselator::groundZ(BetaSpline &spline, int x, int y, float u, float v) const
+{
+    float z = spline.Beta_3_3(u, v).z;
+    Vector3D normal = spline.Beta_norm(u, v);
+    straighten(x, y, u, v, z, normal);
+    return z;
+}
+
+
+Vector3D Tesselator::groundNormal(BetaSpline &spline, int x, int y, float u, float v) const
+{
+    float z = spline.Beta_3_3(u, v).z;
+    Vector3D normal = spline.Beta_norm(u, v);
+    straighten(x, y, u, v, z, normal);
+    return normal;
+}
+
+
 void Tesselator::PrepareElementSubset(Element &element, int level, const Vector3D &scale, int x, int y, int textureId, const Vector2D &t0, const Vector2D &tu, const Vector2D &tv)
 {
 	int i, j, k, l;
@@ -101,6 +146,7 @@ void Tesselator::PrepareElementSubset(Element &element, int level, const Vector3
 
 	Vector3D o = spline.Beta_3_3(u, v);
 	Vector3D n = spline.Beta_norm(u, v);
+    straighten(x, y, u*dt, v*dt, o.z, n);
     element.addVertex(textureId, (o + trans)*scale, shadingNormal(n, o + trans, scale), t0 + tu*(u*dt) + tv*(v*dt));
     float z = o.z;
 
@@ -117,6 +163,7 @@ void Tesselator::PrepareElementSubset(Element &element, int level, const Vector3
 			{
 				o = spline.Beta_3_3(u, v);
                 n = spline.Beta_norm(u, v);
+                straighten(x, y, u*dt, v*dt, o.z, n);
                 element.addVertex(textureId, (o + trans)*scale, shadingNormal(n, o + trans, scale), t0 + tu*(u*dt) + tv*(v*dt));
 			}
 			int tmp = du;
@@ -141,7 +188,7 @@ float Tesselator::heightAt(const Vector2D &pos)
     BetaSpline &spline = m_splines[2];
 	spline.InitFrame(x, y);
 
-    return spline.Beta_3_3(dx, dy).z;
+    return groundZ(spline, x, y, dx, dy);
 }
 
 
@@ -155,8 +202,10 @@ float Tesselator::heightAt(const Vector2D &pos, Vector3D &normal)
     BetaSpline &spline = m_splines[2];
 	spline.InitFrame(x, y);
 
+    float z = spline.Beta_3_3(dx, dy).z;
     normal = spline.Beta_norm(dx, dy);
-    return spline.Beta_3_3(dx, dy).z;
+    straighten(x, y, dx, dy, z, normal);
+    return z;
 }
 
 
@@ -170,11 +219,11 @@ bool Tesselator::intersect(const Vector3D &start, const Vector3D &end, float rad
     float dx = start.x - x;
     float dy = start.y - y;
 
-    float z = spline.Beta_3_3(dx, dy).z;
+    float z = groundZ(spline, x, y, dx, dy);
     position = Vector3D(start.x, start.y, z + radius + 1e-5);
     if (z > start.z - radius)
     {
-        normal = spline.Beta_norm(dx, dy);
+        normal = groundNormal(spline, x, y, dx, dy);
 		return true;
     }
 
@@ -187,7 +236,7 @@ bool Tesselator::intersect(const Vector3D &start, const Vector3D &end, float rad
     dx = end.x - x;
     dy = end.y - y;
 
-    z = spline.Beta_3_3(dx, dy).z;
+    z = groundZ(spline, x, y, dx, dy);
     if (z <= end.z - radius)
         return false;
 
@@ -207,7 +256,7 @@ bool Tesselator::intersect(const Vector3D &start, const Vector3D &end, float rad
         dx = m.x - x;
         dy = m.y - y;
 
-        z = spline.Beta_3_3(dx, dy).z;
+        z = groundZ(spline, x, y, dx, dy);
         if (z > m.z - radius)
             r = m;
         else
@@ -215,7 +264,7 @@ bool Tesselator::intersect(const Vector3D &start, const Vector3D &end, float rad
     }
 
     position = l;
-    normal = spline.Beta_norm(dx, dy);
+    normal = groundNormal(spline, x, y, dx, dy);
 	return true;
 }
 

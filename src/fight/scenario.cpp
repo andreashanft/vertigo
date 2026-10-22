@@ -552,6 +552,24 @@ Scenario::Scenario(const String &name) :
         }
     }
 
+    // the ground meets the lifted clusters now (Surface::settle); what stands on it keeps its
+    // height over it
+    {
+        std::vector<std::pair<Object *, float>> grounds;
+        for (const auto &object : m_objects)
+            if (!dynamic_cast<Building *>(object.get()))
+                grounds.emplace_back(object.get(), m_surface.heightAt(object->position().x, object->position().y));
+        const float playerGround = m_surface.heightAt(m_position.x, m_position.y);
+        m_surface.settle();
+        for (const auto &[object, ground] : grounds)
+        {
+            const float rise = m_surface.heightAt(object->position().x, object->position().y) - ground;
+            if (rise != 0)
+                object->setPosition(object->position() + Vector3D(0, 0, rise));
+        }
+        m_position.z += m_surface.heightAt(m_position.x, m_position.y) - playerGround;
+    }
+
     // currents: each cell covers a 2x2 block of map cells; their strength isn't in the data (docs/ROADMAP.md, appendix D)
     for (const String &section : m_file.sections().withPrefix("current")) {
         m_file.setSection(section);

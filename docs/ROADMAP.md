@@ -869,10 +869,18 @@ Read off in October 2026.
   appears: a tower that waits for its enable condition leaves the ground as
   it is until then. In STRAI3 this darkens 449 corners.
 
-Vertigo does all of it. A lifting cluster rests on Vertigo's smoothed
-ground, the others at the height map's value. The darkening scales each
-terrain vertex's normal, interpolated between the map's corners, and the
-shading's light part follows the normal's length.
+Vertigo does all of it, every cluster at the height map's value, so the
+pipelines run level into their elbows. Vertigo smooths the ground with a
+spline that runs near the map's points rather than through them, which
+would leave a flattened cell's ground up to 9 m off its corners and round
+the original's straight slopes off it into long curves; in a lifted cell
+and its eight neighbours the ground runs straight between the corners as in
+the original, blending back into the spline over the next cell, and what
+stands on the ground keeps its height over it. Where lifted cells next to
+each other differ (pipes stepping up a slope) they share corners, so their
+ground slopes, in both.
+The darkening scales each terrain vertex's normal, interpolated between the
+map's corners, and the shading's light part follows the normal's length.
 
 ### O. What the original's Fixer does
 
