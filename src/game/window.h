@@ -85,6 +85,7 @@ private:
     void saveSettings();
     void loadSettings();
     void toggleFullScreen();
+    void updateFrameRate();
 
 private:
     struct Posted

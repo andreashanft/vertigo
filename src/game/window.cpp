@@ -27,8 +27,10 @@
 #include <SDL3/SDL.h>
 #include <glm/geometric.hpp>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 namespace game {
 
@@ -184,6 +186,7 @@ Window::Window(bool focusable)
     if (!gfx::gl::load(&missing))
         util::fatal(("The OpenGL context lacks " + missing).c_str());
     SDL_GL_SetSwapInterval(1);
+    updateFrameRate();
 
     const gfx::ColorTable colorTable("gfx:pal/gui/cursor.pal");
     gfx::Image cursor = gfx::Image::loadCursor("gfx:img/desktop/gui/cur_norm.img", colorTable).convertToFormat(gfx::Image::RGBA8888);
@@ -330,6 +333,16 @@ void Window::saveScreenshot(const std::string &fileName)
     m_screenshots.push_back(fileName);
 }
 
+// A frame per refresh of the window's display: the swap waits for it. The main loop's own limit,
+// at twice that, only holds where the swap doesn't wait (no vsync, a hidden window); on iOS the
+// display drives the loop anyway
+void Window::updateFrameRate()
+{
+    const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(m_window));
+    const float refresh = mode && mode->refresh_rate > 0 ? mode->refresh_rate : 60.0f;
+    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, std::to_string(std::lround(2*refresh)).c_str());
+}
+
 void Window::handle(const SDL_Event &event)
 {
     switch (event.type) {
@@ -349,6 +362,9 @@ void Window::handle(const SDL_Event &event)
         break;
     case SDL_EVENT_WILL_ENTER_FOREGROUND:
         m_background = false;
+        break;
+    case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+        updateFrameRate();
         break;
     case SDL_EVENT_WINDOW_MOVED:
     case SDL_EVENT_WINDOW_RESIZED:

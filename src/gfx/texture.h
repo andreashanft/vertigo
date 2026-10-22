@@ -53,6 +53,10 @@ public:
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
     void createEmpty(const Size &size, Texture::Format format, bool smooth = true);
     void update(int x, int y, const Image &image);
+    // trilinear with mipmaps and filtered anisotropically, for the world's textures seen far off
+    // and at an angle; the image fills the texture (sides powers of two), else the padding
+    // bleeds into the smaller levels
+    void generateMipmaps();
     RectF draw(const ClipRect *clipRect = nullptr);
     RectF draw(float x, float y, const ClipRect *clipRect = nullptr);
     RectF draw(const PointF &dstPos, const ClipRect *clipRect = nullptr);
@@ -84,6 +88,7 @@ public:
     void fromImage(const Image &image, bool smooth);
     void createEmpty(int w, int h, Texture::Format format, bool smooth);
     void update(int x, int y, const Image &image);
+    void generateMipmaps();
     RectF draw(const RectF &dstRect, const RectF &srcRect, const ClipRect *clipRect);
 
 private:
@@ -170,6 +175,12 @@ inline void Texture::createEmpty(const Size &size, Texture::Format format, bool 
 inline void Texture::update(int x, int y, const Image &image)
 {
     d->update(x, y, image);
+}
+
+
+inline void Texture::generateMipmaps()
+{
+    d->generateMipmaps();
 }
 
 

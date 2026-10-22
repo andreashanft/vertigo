@@ -31,13 +31,9 @@
 #include <iostream>
 #include <map>
 
-// OpenGL 1.2 and EXT_texture_filter_anisotropic, missing from some gl.h
+// OpenGL 1.2, missing from some gl.h
 #ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE 0x812F
-#endif
-#ifndef GL_TEXTURE_MAX_ANISOTROPY_EXT
-#define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
-#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 #endif
 
 
@@ -380,12 +376,7 @@ bool Cockpit3D::create(const gfx::Image &painted)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (gfx::gl::hasExtension("GL_EXT_texture_filter_anisotropic") || gfx::gl::hasExtension("GL_ARB_texture_filter_anisotropic"))
-    {
-        GLfloat anisotropy = 1;
-        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(8.0f, anisotropy));
-    }
+    gfx::gl::setAnisotropy();
     // the rows follow each other without padding to 4 bytes, GL's default
     // (errors from before, at most a few)
     for (int i = 0; i < 8 && glGetError() != GL_NO_ERROR; i++)

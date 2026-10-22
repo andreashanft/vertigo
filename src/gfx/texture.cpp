@@ -134,6 +134,22 @@ void TexturePrivate::update(int x, int y, const Image &source)
 }
 
 
+// OpenGL 1.4
+#ifndef GL_LINEAR_MIPMAP_LINEAR
+#define GL_LINEAR_MIPMAP_LINEAR 0x2703
+#endif
+
+void TexturePrivate::generateMipmaps()
+{
+    if (!isValid())
+        return;
+    bind();
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    gl::setAnisotropy();
+}
+
+
 void TexturePrivate::bind()
 {
     glBindTexture(GL_TEXTURE_2D, m_texture);

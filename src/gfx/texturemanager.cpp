@@ -40,6 +40,10 @@ Texture TextureManager::getModule(const String &filename, bool colorKey)
     if (colorKey)
         colorTable[0] = rgba(0, 0, 0, 0);
     Texture texture = Image::load(basename + ".imb", colorTable);
+    // the models' textures (256x256) with mipmaps; the effects' pictures with their transparent
+    // colour without, whose black would darken the edges in the smaller levels
+    if (!colorKey)
+        texture.generateMipmaps();
     m_textures[basename] = texture;
     return texture;
 }
