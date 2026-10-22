@@ -43,7 +43,7 @@ namespace {
 namespace fs = std::filesystem;
 
 // The upscaler's official release (Real-ESRGAN 0.2.5.0, ncnn/Vulkan build of 2022-04-24) and the
-// SHA-256 its download must have; without a hash it isn't fetched on that system
+// SHA-256 its download must have
 struct Download
 {
     const char *url;
@@ -57,11 +57,11 @@ const Download ToolDownload = { "https://github.com/xinntao/Real-ESRGAN/releases
 const char *const ToolName = "realesrgan-ncnn-vulkan";
 #elif defined(_WIN32)
 const Download ToolDownload = { "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip",
-                                45474481, "" };
+                                45474481, "abc02804e17982a3be33675e4d471e91ea374e65b70167abc09e31acb412802d" };
 const char *const ToolName = "realesrgan-ncnn-vulkan.exe";
 #else
 const Download ToolDownload = { "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-ubuntu.zip",
-                                46931474, "" };
+                                46931474, "e5aa6eb131234b87c0c51f82b89390f5e3e642b7b70f2b9bbe95b6a285a40c96" };
 const char *const ToolName = "realesrgan-ncnn-vulkan";
 #endif
 

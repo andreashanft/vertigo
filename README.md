@@ -288,9 +288,9 @@ hash of the image the game decodes, so it doesn't
 depend on file names or the game's language. On the iPad, where the upscaler
 can't run, copy that folder from a computer into Vertigo's folder (On My iPad
 › Vertigo in the Files app) and switch it on in Options. `vertigo --upscale` makes the set in a
-terminal, printing the progress. The download is checked for macOS so far;
-Windows and Linux need their checksums before Vertigo fetches it there (a
-copy put into the `Real-ESRGAN` folder by hand is used anyway).
+terminal, printing the progress. The download is fetched with curl and
+unpacked with the system's own tools (ditto on macOS, tar on Windows 10 and
+later, unzip on Linux); the upscaler needs Vulkan (on macOS through Metal).
 
 ## Testing
 
