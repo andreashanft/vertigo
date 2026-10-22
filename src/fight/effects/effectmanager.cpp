@@ -57,8 +57,8 @@ EffectManager::EffectManager(Scenario *scenario) :
 {
     txt::DesFile file;
 
-    // the explosions, the shots and the torpedo bubbles (21-23) are additive; the ground dust (18-20,
-    // 24-26), the debris, the trash and the ambient bubbles (BUBBLE.DES) cover what is behind them
+    // the explosions, the shots and the bubbles (the torpedo trails' 21-23 and BUBBLE.DES) are
+    // additive; the ground dust (18-20, 24-26), the debris and the trash cover what is behind them
     file.load("vfx:sobjects/explosio.des");
     for (int i = 0; i < 27; i++)
         m_billboards.emplace(std::piecewise_construct,
@@ -81,9 +81,12 @@ EffectManager::EffectManager(Scenario *scenario) :
             std::forward_as_tuple(m_scenario->textureManager(), file, i, false));
     file.load("vfx:sobjects/bubble.des");
     for (int i = 0; i < 3; i++)
-        m_billboards.emplace(std::piecewise_construct,
+    {
+        Billboard &bubble = m_billboards.emplace(std::piecewise_construct,
             std::forward_as_tuple((Effects)((int)Effects::Bubble_0 + i)),
-            std::forward_as_tuple(m_scenario->textureManager(), file, i, false));
+            std::forward_as_tuple(m_scenario->textureManager(), file, i, true)).first->second;
+        bubble.setInFront(0);
+    }
 }
 
 
@@ -218,7 +221,7 @@ void EffectManager::update(float elapsedTime)
         const float time = glm::distance2(m_scenario->eye(), position)/200.0f*random();
         position.z += time*bubble->velocity();
         if (glm::distance2(m_scenario->eye(), position) <= 50.0f*50.0f &&
-            !m_particles.add(bubble, Particles::Motion::Bubble, position, Vector3D(0), 0, 2, time))
+            !m_particles.add(bubble, Particles::Motion::Bubble, position, Vector3D(0), 0, 1, time))
             break;
     }
 }

@@ -126,20 +126,21 @@ void OutsideView::aim(Vector3D &place, Vector3D &at) const
     if (glm::length(heading) > 1e-3f)
         m_heading = glm::normalize(heading);
 
+    // the boat's up as if it didn't roll; past straight up (looping) "above" is the other side
+    Vector3D up = Vector3D(0, 0, 1) - dir*dir.z;
+    up = glm::length(up) > 1e-3f ? glm::normalize(up) : -m_heading*glm::sign(dir.z);
     if (m_mode == Mode::Chase)
     {
-        // behind the boat on its course and above it, as if it didn't roll: past straight up
-        // (looping) "above" is the other side
-        Vector3D up = Vector3D(0, 0, 1) - dir*dir.z;
-        up = glm::length(up) > 1e-3f ? glm::normalize(up) : -m_heading*glm::sign(dir.z);
+        // behind the boat on its course and above it
         place = middle + distance*(std::sin(ChaseElevation)*up - std::cos(ChaseElevation)*dir);
         at = middle + dir*ChaseAhead*radius;
         return;
     }
-    const Vector3D right(m_heading.y, -m_heading.x, 0);
+    // round the boat from its front, pitching with it
+    const Vector3D right = glm::cross(dir, up);
     const float yaw = g_left*TurnStep;
     const float pitch = g_up*TurnStep;
-    place = middle + LookAtNearer*distance*(std::cos(pitch)*(std::cos(yaw)*m_heading + std::sin(yaw)*right) + std::sin(pitch)*Vector3D(0, 0, 1));
+    place = middle + LookAtNearer*distance*(std::cos(pitch)*(std::cos(yaw)*dir + std::sin(yaw)*right) + std::sin(pitch)*up);
     at = middle;
 }
 

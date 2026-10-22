@@ -47,6 +47,9 @@ public:
     // the sprite adds its colour to what is behind it, so overlapping sprites get brighter, up to
     // white; otherwise it covers it, with palette entry 0 left out (docs/ROADMAP.md, appendix H)
     bool additive() const { return m_additive; }
+    // drawn this far towards the camera (metres), so that an explosion doesn't vanish in the hull
+    // it bursts on; 2 unless set
+    void setInFront(float metres) { m_inFront = metres; }
     // the colour of the light a glowing sprite gives off: its first frame's pixels averaged by
     // brightness, at full brightness; read from the image on the first call
     Vector3D lightColor();
@@ -85,6 +88,7 @@ private:
     String m_imageName;     // of the first stage
     float m_scale;
     bool m_additive;
+    float m_inFront = 2;
     bool m_lightColorKnown = false;
     Vector3D m_lightColor = Vector3D(0);
 

@@ -483,26 +483,32 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   is not used. Each explosion gets 0.7 to 1.3 of that at random, its frames
   last 0.75 to 1.25 of `DisplayTime`, and all but the ground impacts and the
   ground dust are rolled at random; the torpedo bubbles (21–23) keep their
-  frames' size, whatever their scale. The shots are exact, a piece of trash
-  is between half and the full size, and the debris varies by type (10 to
-  40 %). So the small explosion is 3.6 m across, the large one 14.5 m, a
+  frames' size, whatever their scale, and so do the ambient bubbles (0.5 m
+  for `BUBBLE.DES` 0; Vertigo had them twice that until October 2026). The
+  shots are exact, a piece of trash is between half and the full size, and
+  the debris varies by type (10 to 40 %). So the small explosion is 3.6 m across, the large one 14.5 m, a
   plasma shot 1 m, and the sparks of a hit 0.8 to 2.4 m. Vertigo had the
   sprites at the `[Anim] Scale` times 4/255 of the frame, about two thirds
   of that for the explosions and half for the shots.
 - Sprite blending (read off in October 2026): `Transparency` is a toggle
   in the desktop's options, read from `CONFIG.DES` (1 there) and handed to
   the fight in `FIGHTIN.DES`; the GOG installation's last `FIGHTIN.DES`
-  has 0, and Vertigo always blends as with 1. With 1 the explosions, the shots and the torpedo
-  trails' bubbles (entries 21–23) are additive: each
-  channel becomes about what was behind plus the sprite's colour, clipped at
-  full, so overlapping sprites get brighter up to white. Exactly, in RGB565,
+  has 0, and Vertigo always blends as with 1. With 1 the explosions, the
+  shots and the bubbles, the torpedo trails' (entries 21–23) and the ambient
+  ones (`BUBBLE.DES`: dark blue over the water, lighter over the ground), are
+  additive: each channel becomes about what was behind plus the sprite's
+  colour, clipped at full, so overlapping sprites get brighter up to white. Exactly, in RGB565,
   twice (half the colour behind + 0.5125 of the sprite's colour from its
   `MOD_nnn.S16` table, as the models take theirs). Palette entry 0 is left
-  out. The ground dust (18–20 and 24–26), the ambient bubbles
-  (`BUBBLE.DES`), the debris and the trash cover what is behind them at
-  their full colour (the original's pictures: dark blue ambient bubbles
-  over bright ground, brown dust over the water), as all sprites do with `Transparency = 0`. Vertigo had only the
-  explosions 0–11 and the shots blending, darker than additive.
+  out. The ground dust (18–20 and 24–26), the debris and the trash cover
+  what is behind them at their full colour (the original's pictures: brown
+  dust over the water), as all sprites do with `Transparency = 0`; the
+  pictures with dark blue ambient bubbles over bright ground likely had it
+  off, and so may those of the dust, which isn't compared with 1. Vertigo
+  had only the explosions 0–11 and the shots blending, darker than additive,
+  and the ambient bubbles covering until October 2026. It draws the sprites
+  2 m towards the camera, so that an explosion doesn't vanish in the hull it
+  bursts on, but the ambient bubbles where they are.
 - Tank dust (read off in October 2026): while a tank drives, one puff every
   0.2 to 0.3 s behind one of its tracks, picked at random, 0.6 to 1.1 of
   its half width out from the middle; explosion 20 (upright) or 26 (rolled)
@@ -1398,8 +1404,8 @@ Read off in October 2026 with the Gator. The keys are in the in-mission help
   goes straight to its view. 9 and 3 zoom in and out in 19 steps evenly
   apart, from the first zoom 4 nearer and 14 further; 4, 6, 8 and 2 move
   the look-at view's camera left, right, up and down round the boat in
-  steps of 22.5° (16 for a full turn either way), in the chase view they do
-  nothing. The zoom and the place round the boat are kept, the same for
+  steps of 22.5° (16 for a full turn either way), and it pitches with the
+  boat; in the chase view they do nothing. The zoom and the place round the boat are kept, the same for
   the player's boat and the target. The help's torpedo camera (Entf) does
   nothing, and the fly-around, pass-by and look views (15–17) can't be
   called up.
