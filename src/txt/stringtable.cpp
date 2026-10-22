@@ -87,6 +87,11 @@ String StringTable::get(StringVertigo string)
         { "Neuer Speicherstand", "New saved game" },
         { "Autosave", "Autosave" },
         { "Auto", "Auto" },
+        { "Hochskalierte Grafik: AN", "Upscaled graphics: ON" },
+        { "Hochskalierte Grafik: AUS", "Upscaled graphics: OFF" },
+        { "Hochskalierte Grafik: VORBEREITEN", "Upscaled graphics: PREPARE" },
+        { "Hochskalierte Grafik: AKTUALISIEREN", "Upscaled graphics: UPDATE" },
+        { "Grafik wird hochskaliert: %1 %", "Upscaling graphics: %1 %" },
     };
     return texts[string][m_language == "English" ? 1 : 0];
 }

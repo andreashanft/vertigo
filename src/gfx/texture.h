@@ -52,6 +52,8 @@ public:
     void fromImage(const Image &image, bool smooth = true);
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
     void createEmpty(const Size &size, Texture::Format format, bool smooth = true);
+    // (on a texture made from an upscaled copy, at the position the image stands for: the image
+    // is scaled up with it)
     void update(int x, int y, const Image &image);
     // trilinear with mipmaps and filtered anisotropically, for the world's textures seen far off
     // and at an angle; the image fills the texture (sides powers of two), else the padding
@@ -88,6 +90,10 @@ public:
     void fromImage(const Image &image, bool smooth);
     void createEmpty(int w, int h, Texture::Format format, bool smooth);
     void update(int x, int y, const Image &image);
+    // an empty texture of a size that holds images scale times as large (an upscaled copy), and
+    // such an image at a position of the size it stands for
+    void createEmptyScaled(int w, int h, Texture::Format format, int scale);
+    void updateScaled(int x, int y, const Image &image);
     void generateMipmaps();
     RectF draw(const RectF &dstRect, const RectF &srcRect, const ClipRect *clipRect);
 
@@ -101,6 +107,9 @@ private:
     std::uint32_t m_height;
     std::uint32_t m_textureWidth;
     std::uint32_t m_textureHeight;
+    // the texels per pixel of the size the texture stands for (an upscaled copy's)
+    int m_scale = 1;
+    bool m_mipmaps = false;
 };
 
 
@@ -182,6 +191,7 @@ inline void Texture::generateMipmaps()
 {
     d->generateMipmaps();
 }
+
 
 
 inline RectF Texture::draw(const ClipRect *clipRect)

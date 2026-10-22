@@ -21,6 +21,7 @@
 #include "gfx/colortable.h"
 #include "gfx/gl.hpp"
 #include "gfx/image.h"
+#include "gfx/upscaled.h"
 #include "util/error.h"
 #include "util/settings.hpp"
 
@@ -188,18 +189,35 @@ Window::Window(bool focusable)
     SDL_GL_SetSwapInterval(1);
     updateFrameRate();
 
-    const gfx::ColorTable colorTable("gfx:pal/gui/cursor.pal");
-    gfx::Image cursor = gfx::Image::loadCursor("gfx:img/desktop/gui/cur_norm.img", colorTable).convertToFormat(gfx::Image::RGBA8888);
-    if (SDL_Surface *surface = SDL_CreateSurfaceFrom(cursor.width(), cursor.height(), SDL_PIXELFORMAT_RGBA32, cursor.bits(), cursor.bytesPerLine())) {
-        m_cursor = SDL_CreateColorCursor(surface, 3, 4);
-        SDL_DestroySurface(surface);
-    }
-    if (m_cursor)
-        SDL_SetCursor(m_cursor);
+    updateCursor();
 #if !defined(SDL_PLATFORM_IOS)
     // (on iOS the window is the screen)
     loadSettings();
 #endif
+}
+
+// the game's arrow; its upscaled copy (gfx::Upscaled) is the version for high-density displays
+void Window::updateCursor()
+{
+    const gfx::ColorTable colorTable("gfx:pal/gui/cursor.pal");
+    gfx::Image cursor = gfx::Image::loadCursor("gfx:img/desktop/gui/cur_norm.img", colorTable).convertToFormat(gfx::Image::RGBA8888);
+    gfx::Image copy = gfx::Upscaled::find(gfx::Upscaled::key(cursor)).convertToFormat(gfx::Image::RGBA8888);
+    SDL_Cursor *previous = m_cursor;
+    m_cursor = nullptr;
+    if (SDL_Surface *surface = SDL_CreateSurfaceFrom(cursor.width(), cursor.height(), SDL_PIXELFORMAT_RGBA32, cursor.bits(), cursor.bytesPerLine())) {
+        SDL_Surface *large = copy.isNull() ? nullptr
+                           : SDL_CreateSurfaceFrom(copy.width(), copy.height(), SDL_PIXELFORMAT_RGBA32, copy.bits(), copy.bytesPerLine());
+        if (large)
+            SDL_AddSurfaceAlternateImage(surface, large);
+        m_cursor = SDL_CreateColorCursor(surface, 3, 4);
+        if (large)
+            SDL_DestroySurface(large);
+        SDL_DestroySurface(surface);
+    }
+    if (m_cursor)
+        SDL_SetCursor(m_cursor);
+    if (previous)
+        SDL_DestroyCursor(previous);
 }
 
 Window::~Window()

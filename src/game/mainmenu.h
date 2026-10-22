@@ -52,6 +52,8 @@ private:
     void showCredits(int page);
     void updateDifficulty();
     void updateOptions();
+    void updateUpscaled();
+    void clickUpscaled();
 
     void draw();
     void activate();
@@ -112,6 +114,11 @@ private:
     ui::Label m_lblOptionsTitle;
     ui::Button m_btnOptionsBack;
     ui::Button m_btnOptionsDifficulty;
+    // the upscaled graphics: prepared, updated, switched on and off (gfx::Upscaled, Upscaler)
+    ui::Button m_btnOptionsUpscaled;
+    std::string m_upscaledSource;   // the game data's fingerprint, taken when the page opens
+    util::ElapsedTimer m_upscaledTime;
+    bool m_upscaledErrorShown = true;
     // the notebook's options and the touch screen's, each a button that switches it
     struct Option
     {

@@ -75,6 +75,8 @@ public:
     void saveScreenshot(const std::string &fileName);
     // shows what has been drawn so far, e.g. a loading screen before a long load
     void swapBuffers();
+    // the cursor anew, e.g. with the upscaled graphics switched
+    void updateCursor();
 
 private:
     void keyPressEvent(input::KeyEvent *event);

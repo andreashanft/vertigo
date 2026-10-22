@@ -18,6 +18,7 @@
 #include "texture.h"
 #include "pipeline.h"
 #include "gfx/gl.hpp"
+#include "upscaled.h"
 #include <vector>
 
 
@@ -88,6 +89,18 @@ void TexturePrivate::fromImage(const Image &image, bool smooth)
     if (image.format() != Image::RGB888)
         format = Texture::RGBA;
 
+    // an upscaled copy of the image takes its place, smoothed and with mipmaps, as the window
+    // shows it at any size
+    if (Upscaled::isActive()) {
+        const Image copy = Upscaled::find(Upscaled::key(image));
+        if (copy.width() == image.width()*Upscaled::Scale && copy.height() == image.height()*Upscaled::Scale) {
+            createEmptyScaled(image.width(), image.height(), format, Upscaled::Scale);
+            updateScaled(0, 0, copy);
+            generateMipmaps();
+            return;
+        }
+    }
+
     createEmpty(image.width(), image.height(), format, smooth);
     update(0, 0, image);
 }
@@ -96,6 +109,8 @@ void TexturePrivate::fromImage(const Image &image, bool smooth)
 void TexturePrivate::createEmpty(int w, int h, Texture::Format format, bool smooth)
 {
     clear();
+    m_scale = 1;
+    m_mipmaps = false;
 
     glGenTextures(1, &m_texture);
     bind();
@@ -117,8 +132,32 @@ void TexturePrivate::createEmpty(int w, int h, Texture::Format format, bool smoo
 }
 
 
+void TexturePrivate::createEmptyScaled(int w, int h, Texture::Format format, int scale)
+{
+    createEmpty(w*scale, h*scale, format, true);
+    m_scale = scale;
+    m_width = w;
+    m_height = h;
+    m_textureWidth /= scale;
+    m_textureHeight /= scale;
+}
+
+
+void TexturePrivate::updateScaled(int x, int y, const Image &image)
+{
+    const int scale = m_scale;
+    m_scale = 1;
+    update(x*scale, y*scale, image);
+    m_scale = scale;
+}
+
+
 void TexturePrivate::update(int x, int y, const Image &source)
 {
+    if (m_scale > 1) {
+        updateScaled(x, y, source.scaled(source.width()*m_scale, source.height()*m_scale));
+        return;
+    }
     Image image = source.convertToFormat(Image::RGBA8888);
     // an alpha texture only takes the alpha (the colour is the pipeline's)
     if (m_format == Texture::Alpha) {
@@ -131,6 +170,9 @@ void TexturePrivate::update(int x, int y, const Image &source)
 
     bind();
     glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, image.width(), image.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.constBits());
+    // the smaller levels follow (a movie drawn into a picture)
+    if (m_mipmaps)
+        glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 
@@ -145,6 +187,7 @@ void TexturePrivate::generateMipmaps()
         return;
     bind();
     glGenerateMipmap(GL_TEXTURE_2D);
+    m_mipmaps = true;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     gl::setAnisotropy();
 }
