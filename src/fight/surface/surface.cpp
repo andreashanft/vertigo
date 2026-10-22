@@ -104,6 +104,8 @@ void Surface::load(const String &name, int maxheightscale, int mapping)
         if (i == 0)
             m_fog.color = fogColor(colorTable, gfx::ColorTable::loadShading(shading));
         m_textures.push_back(gfx::Image::load(String("vfx:texture/%1_%2.imb").arg(tName).arg(i, 3, 10, '0'), colorTable));
+        // (256x256, the ground mostly seen far off and at a flat angle)
+        m_textures.back().generateMipmaps();
     }
 }
 

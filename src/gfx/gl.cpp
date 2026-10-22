@@ -18,6 +18,7 @@
 #include "gl.hpp"
 
 #include <SDL3/SDL_video.h>
+#include <algorithm>
 #include <cstring>
 #include <type_traits>
 
@@ -78,6 +79,27 @@ bool isES()
 bool hasContext()
 {
     return SDL_GL_GetCurrentContext() != nullptr;
+}
+
+
+// EXT_texture_filter_anisotropic, missing from some gl.h
+#ifndef GL_TEXTURE_MAX_ANISOTROPY_EXT
+#define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
+#endif
+
+void setAnisotropy()
+{
+    // (0 without the extension)
+    static GLfloat anisotropy = -1;
+    if (anisotropy < 0) {
+        anisotropy = 0;
+        if (hasExtension("GL_EXT_texture_filter_anisotropic") || hasExtension("GL_ARB_texture_filter_anisotropic"))
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy);
+        anisotropy = std::min(8.0f, anisotropy);
+    }
+    if (anisotropy > 1)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
 }
 
 
