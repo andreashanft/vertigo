@@ -1,5 +1,5 @@
 # Tests of the game's own types: strings, data values and dates, images and colours, the parsers
-# of the text formats, JSON and CD images
+# of the text formats, JSON, CD images and the hash that checks downloads
 
 # util::String, txt::Value and util::DateTime
 add_executable(stringtest
@@ -26,6 +26,15 @@ add_executable(imagetest
 target_include_directories(imagetest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(imagetest SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/3rdparty/stb)
 add_test(NAME image COMMAND imagetest)
+
+# util::Sha256
+add_executable(sha256test
+    sha256test.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/sha256.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/path.cpp
+)
+target_include_directories(sha256test PRIVATE ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME sha256 COMMAND sha256test)
 
 # the parsers of txt/parse.hpp
 add_executable(parsetest

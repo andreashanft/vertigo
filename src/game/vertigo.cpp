@@ -22,6 +22,8 @@
 #include "game/boat.h"
 #include "game/items.h"
 #include "game/mission.h"
+#include "game/upscaler.h"
+#include "gfx/upscaled.h"
 #include "fight/scenario.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/simpleboat.h"
@@ -287,6 +289,12 @@ void Vertigo::event(const SDL_Event &event)
 
 int Vertigo::iterate()
 {
+    // a finished run of the upscaler is used from the next screen on
+    if (Upscaler::get().takeFinished()) {
+        gfx::Upscaled::reload();
+        gfx::Upscaled::setEnabled(true);
+        m_window.updateCursor();
+    }
     // what test runs make up comes first, as the platform's input would
     m_window.deliverPosted();
     if (m_headless) {

@@ -25,6 +25,8 @@
 #include "util/settings.hpp"
 
 #include "items.h"
+#include "upscaler.h"
+#include "gfx/upscaled.h"
 #include "fight/scenario.h"
 #include "hud/cockpit3d.h"
 #include "hud/hud.h"
@@ -274,6 +276,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
     parser.addOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     parser.addOption("list-items", "List the item models for --equip.");
+    parser.addOption("upscale", "Make the upscaled graphics (as Options in the main menu does), printing the progress, and switch them on; downloads the Real-ESRGAN upscaler first if it isn't there.");
     parser.addOption("difficulty", "Difficulty in test mode: 0 easy, 1 normal (default), 2 hard.", "level");
     parser.addOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
     parser.addOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
@@ -564,6 +567,30 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     if (chosen)
         util::Settings::setValue("datadir", util::DataPath::directory());
 #endif
+
+    if (parser.isSet("upscale")) {
+        game::Upscaler &upscaler = game::Upscaler::get();
+        if (!game::Upscaler::isSupported()) {
+            std::cerr << "The upscaler isn't available on this system." << std::endl;
+            return end(game::Vertigo::ExitFailed);
+        }
+        if (!game::Upscaler::hasTool())
+            std::cout << "Downloading the Real-ESRGAN upscaler (" << game::Upscaler::downloadMegabytes() << " MB) from github.com" << std::endl;
+        upscaler.start();
+        int shown = -1;
+        while (upscaler.isRunning()) {
+            if (upscaler.percent() != shown)
+                std::cout << "Upscaling: " << (shown = upscaler.percent()) << " %" << std::endl;
+            SDL_Delay(500);
+        }
+        if (upscaler.state() != game::Upscaler::State::Finished) {
+            std::cerr << upscaler.error() << std::endl;
+            return end(game::Vertigo::ExitFailed);
+        }
+        gfx::Upscaled::setEnabled(true);
+        std::cout << "Upscaled graphics in " << gfx::Upscaled::directory() << ", switched on" << std::endl;
+        return end(game::Vertigo::ExitSuccess);
+    }
 
     if (parser.isSet("list-items")) {
         static const char *types[] = { "torpedo", "magazine", "gun", "engine", "booster", "silator", "armor", "nrskin", "sensor", "software", "buzzer", "fixer" };

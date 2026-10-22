@@ -327,6 +327,11 @@ enum StringVertigo
     NewSave,
     Autosave,
     AutosaveShort,      // in the notebook's busier rows
+    Upscaled_On,
+    Upscaled_Off,
+    Upscaled_Prepare,
+    Upscaled_Update,
+    Upscaled_Running,   // with the percentage as %1
 };
 
 

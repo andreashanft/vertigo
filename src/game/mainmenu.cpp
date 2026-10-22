@@ -22,6 +22,8 @@
 #include "mainmenu.h"
 #include "openmission.h"
 #include "training.h"
+#include "upscaler.h"
+#include "gfx/upscaled.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "txt/stringtable.h"
@@ -31,6 +33,7 @@
 #include "gfx/gl.hpp"
 #include "util/datetimetext.hpp"
 #include "util/settings.hpp"
+#include <SDL3/SDL_messagebox.h>
 #include <algorithm>
 
 namespace game {
@@ -74,6 +77,7 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_lblOptionsTitle(&m_lblOptions),
     m_btnOptionsBack([this]() { showMain(); }, &m_lblOptions),
     m_btnOptionsDifficulty([this]() { fight::Scenario::setDifficulty((fight::Scenario::difficulty() + 1)%3); updateDifficulty(); }, &m_lblOptions),
+    m_btnOptionsUpscaled([this]() { clickUpscaled(); }, &m_lblOptions),
     m_lblLoading(&m_title, false),
     m_lblLoadingTitle(&m_lblLoading),
     m_lblLoadingWait(&m_lblLoading),
@@ -224,6 +228,10 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
         button.setWidth(640);
         button.setAlignment(ui::Label::AlignHCenter);
     }
+    m_btnOptionsUpscaled.setFont(fontMedium);
+    m_btnOptionsUpscaled.setPosition(0, 308 + 15*int(m_options.size()));
+    m_btnOptionsUpscaled.setWidth(640);
+    m_btnOptionsUpscaled.setAlignment(ui::Label::AlignHCenter);
     m_btnOptionsBack.setPosition(0, 428);
     m_btnOptionsBack.setWidth(640);
     m_btnOptionsBack.setAlignment(ui::Button::AlignHCenter);
@@ -303,6 +311,9 @@ void MainMenu::draw()
         else
             changeState(Title);
     }
+    // the upscaler's progress, twice a second
+    if (m_lblOptions.isVisible() && m_upscaledTime.elapsed() >= 500)
+        updateUpscaled();
     Menu::draw();
 
     if (m_lblNew.isVisible()) {
@@ -549,6 +560,7 @@ void MainMenu::showOptions()
 {
     m_lblMain.hide();
     m_lblOptions.show();
+    m_upscaledSource = gfx::Upscaled::fingerprint();
     updateOptions();
 }
 
@@ -558,6 +570,73 @@ void MainMenu::updateOptions()
     auto button = m_btnOptions.begin();
     for (const Option &option : m_options)
         (button++)->setText(option.value() ? option.on : option.off);
+    updateUpscaled();
+}
+
+
+// The upscaled graphics' line: while they are made the percentage, then on or off; to be made
+// where the upscaler runs, or made again when the game data has changed since. Without a set on
+// a system that can't make one (the iPad, until one is copied there) the line isn't shown.
+void MainMenu::updateUpscaled()
+{
+    using game::Upscaler;
+    Upscaler &upscaler = Upscaler::get();
+    m_upscaledTime.start();
+    const bool available = gfx::Upscaled::isAvailable();
+    if (upscaler.state() == Upscaler::State::Failed && !m_upscaledErrorShown) {
+        m_upscaledErrorShown = true;
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Upscaling failed", upscaler.error().c_str(), nullptr);
+    }
+    if (!available && !Upscaler::isSupported()) {
+        m_btnOptionsUpscaled.hide();
+        return;
+    }
+    m_btnOptionsUpscaled.show();
+    if (upscaler.isRunning())
+        m_btnOptionsUpscaled.setText(txt::StringTable::get(txt::Upscaled_Running).arg(upscaler.percent()));
+    else if (!available)
+        m_btnOptionsUpscaled.setText(txt::StringTable::get(gfx::Upscaled::isOutdated() ? txt::Upscaled_Update : txt::Upscaled_Prepare));
+    else if (Upscaler::isSupported() && gfx::Upscaled::source() != m_upscaledSource)
+        m_btnOptionsUpscaled.setText(txt::StringTable::get(txt::Upscaled_Update));
+    else
+        m_btnOptionsUpscaled.setText(txt::StringTable::get(gfx::Upscaled::isEnabled() ? txt::Upscaled_On : txt::Upscaled_Off));
+}
+
+
+void MainMenu::clickUpscaled()
+{
+    using game::Upscaler;
+    Upscaler &upscaler = Upscaler::get();
+    auto ask = [](const char *title, const std::string &message, const char *no, const char *yes) {
+        const SDL_MessageBoxButtonData buttons[] = {
+            { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, no },
+            { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, yes },
+        };
+        const SDL_MessageBoxData data = { SDL_MESSAGEBOX_INFORMATION, nullptr, title, message.c_str(), 2, buttons, nullptr };
+        int button = 0;
+        return SDL_ShowMessageBox(&data, &button) && button == 1;
+    };
+    if (upscaler.isRunning()) {
+        if (ask("Stop upscaling?", "The graphics upscaled so far are kept: preparing them again goes on from there.", "Continue", "Stop"))
+            upscaler.stop();
+    } else if (gfx::Upscaled::isAvailable() && (!Upscaler::isSupported() || gfx::Upscaled::source() == m_upscaledSource)) {
+        gfx::Upscaled::setEnabled(!gfx::Upscaled::isEnabled());
+        if (window())
+            window()->updateCursor();
+    } else {
+        const std::string upscaling = "Upscaling takes about a quarter of an hour, in the background: you can go on playing "
+            "meanwhile, and the upscaled graphics are used once they are done. They are kept in " + gfx::Upscaled::directory() + ".";
+        if (!Upscaler::hasTool()) {
+            const std::string message = "Vertigo makes the game's pictures, the textures of its models and effects and the cursor "
+                "four times as large with Real-ESRGAN, an image upscaler based on machine learning. It downloads Real-ESRGAN once from github.com "
+                "(about " + std::to_string(Upscaler::downloadMegabytes()) + " MB).\n\n" + upscaling;
+            if (!ask("Download the upscaler?", message, "Cancel", "Download"))
+                return;
+        }
+        m_upscaledErrorShown = false;
+        upscaler.start();
+    }
+    updateUpscaled();
 }
 
 
