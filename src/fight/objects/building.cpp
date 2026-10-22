@@ -80,18 +80,14 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, int card, i
         {
             // the cluster stands at the height map's value of the building's reference cell, with
             // HeightReference -1 of its own cell; with SurfaceLifting p the ground under it is
-            // flattened to that value and it rests on it, without it keeps the height over lower or
-            // higher ground, so the pipes run level; p and l darken the cell's ground
+            // flattened to that value, without it keeps the height over lower or higher ground, so
+            // the pipes run level into the elbows; p and l darken the cell's ground
             // (docs/ROADMAP.md, appendix N)
             const String lifting = file.value("SurfaceLifting").toString();
             const int heightX = heightRef < 0 ? clusterX : refx, heightY = heightRef < 0 ? clusterY : refy;
             if (lifting == "p" || heightRef < 0)
-            {
-                scenario->surface().setHeight(clusterX, clusterY, heightX, heightY);
-                cluster.offset.z = scenario->surface().heightAt((clusterX + 0.5f)*scale.x, (clusterY + 0.5f)*scale.y);
-            }
-            else
-                cluster.offset.z = scenario->surface().height(heightX, heightY)*scale.z;
+                scenario->surface().lift(clusterX, clusterY, heightX, heightY);
+            cluster.offset.z = scenario->surface().height(heightX, heightY)*scale.z;
             if (lifting == "p" || lifting == "l")
                 scenario->surface().darken(clusterX, clusterY, BuildingShade);
         }

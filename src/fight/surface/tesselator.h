@@ -42,6 +42,11 @@ public:
 private:
     void InitIndices(int MaxLevel);
     Vector3D shadingNormal(const Vector3D &normal, const Vector3D &position, const Vector3D &scale) const;
+    // the spline's height and normal (in the map's units) at u, v of cell x, y, where the ground
+    // runs straight between the corners turned into that (Surface::settle)
+    void straighten(int x, int y, float u, float v, float &z, Vector3D &normal) const;
+    float groundZ(BetaSpline &spline, int x, int y, float u, float v) const;
+    Vector3D groundNormal(BetaSpline &spline, int x, int y, float u, float v) const;
     void PrepareElementSubset(Element &element, int level, const Vector3D &scale, int x, int y, int textureId, const Vector2D &t0, const Vector2D &tu, const Vector2D &tv);
 
 private:

@@ -65,6 +65,7 @@ void Surface::load(const String &name, int maxheightscale, int mapping)
     file.setSection("height");
     m_heightMap = gfx::Image::loadPCX(String("vfx:surface/%2").arg(file.value("name").toString().replace("\\", "/")));
     m_lightFactors.assign(256*256, 1.0f);
+    m_straightness.assign(256*256, 0.0f);
 
     // three floats, from which the 32 heights of the map are scaled
     auto load = [](const String &name, std::size_t offset) {
@@ -230,6 +231,31 @@ void Surface::setHeight(int x, int y, int refx, int refy)
             m_heightMap.setPixel(x + dx, y + dy, i);
         }
     }
+}
+
+
+void Surface::lift(int x, int y, int refx, int refy)
+{
+    if (!m_heightMap.valid(refx, refy))
+        return;
+    setHeight(x, y, refx, refy);
+    m_lifts.push_back(Point(x, y));
+}
+
+
+// The original's ground runs straight between the map's corners: a lifted cell is flat and falls
+// off to the next corners in straight slopes. Vertigo's ground is a spline that only runs near
+// its points, smoothing that edge into a long curve that leaves the cluster's foot floating or
+// sunk and narrows the valleys between pipes; around a lifted cell it runs straight as well, and
+// over the next cell back into the spline (Tesselator::straighten)
+void Surface::settle()
+{
+    for (const Point &lift : m_lifts)
+        for (int dy = -1; dy < 3; dy++)
+            for (int dx = -1; dx < 3; dx++)
+                m_straightness[(((lift.y + dy) & 0xff) << 8) + ((lift.x + dx) & 0xff)] = 1;
+    m_lifts.clear();
+    m_elements.clear();
 }
 
 

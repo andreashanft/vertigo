@@ -58,6 +58,12 @@ public:
     // a building's cluster flattens the ground: the cell and its neighbours to the east, south and
     // south-east take the reference cell's height (docs/ROADMAP.md, appendix M)
     void setHeight(int x, int y, int refx, int refy);
+    // the same for a cluster that stands at the reference cell's height: once settle() has run,
+    // the ground runs straight between the map's corners in the cell and its eight neighbours
+    void lift(int x, int y, int refx, int refy);
+    void settle();
+    // 1 at the corners of cells where the ground runs straight, 0 elsewhere
+    float straightness(int x, int y) const { return m_straightness[((y & 0xff) << 8) + (x & 0xff)]; }
     // a building or tower darkens the ground it stands on: the light part of the shading at the
     // cell's four corners is this share of its own (docs/ROADMAP.md, appendix N)
     void darken(int x, int y, float factor);
@@ -79,6 +85,8 @@ private:
     std::map<int, Element> m_elements;
     gfx::Image m_heightMap;
     std::vector<float> m_lightFactors; // per corner of the map's cells
+    std::vector<float> m_straightness; // the same
+    std::vector<Point> m_lifts;
     std::vector<char> m_textureMap;
     std::vector<char> m_textureDir;
     Vector3D m_scale;
