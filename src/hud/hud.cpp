@@ -94,6 +94,8 @@ const Vector2D LookMax(glm::radians(105.0f), glm::radians(65.0f));
 const Vector3D Neck(0, -0.10f, 0.08f);
 // after the drag the head turns back to the front, about two thirds of the way in this time
 const float LookReturn = 0.18f;
+// the head counts as in its place when turned less than this
+const float LookCentred = glm::radians(1.0f);
 // the head follows the right stick of a game controller, two thirds of the way in this time
 const float LookFollow = 0.08f;
 // the d-pad changes the speed again and again while held: after this long, then at this interval
@@ -209,6 +211,7 @@ HUD::HUD() :
     handlers.lookStart = [this](const PointD &position) { startLook(position); };
     handlers.lookMove = [this](const PointD &position) { moveLook(position); };
     handlers.lookEnd = [this]() { m_looking = false; };
+    handlers.tap = [this](const PointD &position) { tapMonitor(position); };
     m_touch.reset(new TouchControls(m_fontGreen, m_fontYellow, handlers));
 
 }
@@ -611,8 +614,9 @@ void HUD::setRect(const Rect &rect)
     {
         Renderer::setRect(Rect(glm::round(m_rectHUD.x), glm::round(m_rectHUD.y), glm::round(m_rectHUD.width), glm::round(m_rectHUD.height)));
         m_centerNDC = Vector2D(m_projectionMatrix * Vector4D(m_center, 0, 1));
-        // the 3D cockpit needs the world in the perspective of the cockpit art
-        m_scenario->setRect(m_rectHUD, m_centerNDC, showsModel() ? glm::degrees(2*std::atan(240/m_focal)) : 60.0f);
+        // the world at 60° over the 480 rows in either cockpit; the 3D cockpit's model gets the
+        // art's own camera in drawModel()
+        m_scenario->setRect(m_rectHUD, m_centerNDC);
     }
 
     int w = 640;
@@ -846,7 +850,7 @@ bool HUD::drawModel(double pixelRatio)
                                  * glm::perspective(2*std::atan(240/m_focal), m_rectHUD.width/m_rectHUD.height, 0.02f, 20.0f);
     if (!m_model->draw(modelProjection, headInverse))
     {
-        // the 2D cockpit from now on, with its view angle
+        // the 2D cockpit from now on
         m_rectGL = Rect();
         return false;
     }
@@ -1253,6 +1257,27 @@ void HUD::touchPressEvent(input::TouchEvent *e)
 }
 
 
+// a tap on a status monitor changes its page, as I or F1-F4 do; in the 3D cockpit only while the
+// head is in its place, where the monitors are those of the 2D cockpit
+void HUD::tapMonitor(const PointD &position)
+{
+    if (!m_scenario || m_scenario->playerDestroyed() || m_menu->page() != MissionMenu::Page::None || m_paused)
+        return;
+    if (showsModel() && glm::length(m_look) > LookCentred)
+        return;
+    const Point point = viewPoint(position);
+    m_integerScale = true;
+    for (SlaveMonitor *monitor : m_slaveMonitors)
+        if (monitor->contains(point))
+        {
+            monitor->tap(m_slaveMonitors.size() == 1);
+            sfx::SampleMap::get(sfx::Sample::Click).play();
+            break;
+        }
+    m_integerScale = false;
+}
+
+
 void HUD::touchMoveEvent(input::TouchEvent *e)
 {
     if (m_scenario)
@@ -1267,14 +1292,21 @@ void HUD::touchReleaseEvent(input::TouchEvent *e)
 }
 
 
+Point HUD::viewPoint(const PointD &position)
+{
+    // drawn in the HUD's rect, scaled by whole numbers
+    const Vector4D ndc(2*(position.x - rect().x)/rect().width - 1, 1 - 2*(position.y - rect().y)/rect().height, 0, 1);
+    const Vector4D point = m_integerScaleProjectionMatrixInverted*ndc;
+    return Point(int(std::floor(point.x)), int(std::floor(point.y)));
+}
+
+
 // the option of the menu at a point of the window, or -1
 int HUD::menuOption(const PointD &position)
 {
-    // the menu is drawn in the HUD's rect, scaled by whole numbers
-    const Vector4D ndc(2*(position.x - rect().x)/rect().width - 1, 1 - 2*(position.y - rect().y)/rect().height, 0, 1);
-    const Vector4D point = m_integerScaleProjectionMatrixInverted*ndc;
+    const Point point = viewPoint(position);
     m_integerScale = true;
-    const int option = m_menu->optionAt(Point(int(std::floor(point.x)), int(std::floor(point.y))));
+    const int option = m_menu->optionAt(point);
     m_integerScale = false;
     return option;
 }

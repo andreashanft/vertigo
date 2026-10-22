@@ -116,6 +116,52 @@ void SlaveMonitor::pressWeaponKey(Weapon weapon)
 }
 
 
+void SlaveMonitor::tap(bool alone)
+{
+    switch (m_page)
+    {
+    case Page::Weapon:
+        if (m_overview)
+        {
+            m_overview = false;
+            if (alone)
+                m_page = Page::Armor;
+            else
+                m_weapon = Weapon::Gun;
+            return;
+        }
+        // the next weapon the boat has, after the turrets the overview
+        for (int next = int(m_weapon) + 1; next <= int(Weapon::Turret2); next++)
+            if (next < int(Weapon::Turret1) || m_hud->scenario()->player()->turret(next - int(Weapon::Turret1)))
+            {
+                m_weapon = Weapon(next);
+                return;
+            }
+        m_overview = true;
+        break;
+    case Page::Armor:
+        m_page = Page::Systems;
+        break;
+    case Page::Systems:
+        if (alone)
+        {
+            m_page = Page::Weapon;
+            m_weapon = Weapon::Gun;
+            m_overview = false;
+        }
+        else
+            m_page = Page::Armor;
+        break;
+    }
+}
+
+
+bool SlaveMonitor::contains(const Point &point) const
+{
+    return m_hud->projectCenter(m_rect).contains(point);
+}
+
+
 namespace {
 
 // GLOBWEAP [TorpedoMagazineN] shortname for the magazine items 1025-1032

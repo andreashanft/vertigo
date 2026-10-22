@@ -45,6 +45,9 @@ const Vector2D StickHint(100, -110);
 const float ButtonSlop = 1.2f;
 // how long a button with a second key has to be held for it
 const float HoldTime = 0.8f;
+// a tap: lifted within this time (seconds), having moved less than this
+const float TapTime = 0.3f;
+const float TapSlop = 8;
 // window coordinates (points) per view unit at most: an 11-inch iPad's, 834 high
 const float MaxScale = 834/480.0f;
 
@@ -170,6 +173,11 @@ void TouchControls::press(long long finger, const PointD &position)
             m_handlers.press(pressed->key, int(pressed - m_buttons.data()));
         return;
     }
+    if (m_tapFinger < 0) {
+        m_tapFinger = finger;
+        m_tapPosition = position;
+        m_tapTime = 0;
+    }
     if (m_stickFinger < 0 && (m_mirrored ? at.x > m_width*(1 - StickArea) : at.x < m_width*StickArea)) {
         m_stickFinger = finger;
         m_stickBase = m_stickAt = at;
@@ -185,6 +193,8 @@ void TouchControls::press(long long finger, const PointD &position)
 
 void TouchControls::move(long long finger, const PointD &position)
 {
+    if (finger == m_tapFinger && glm::distance(toView(position), toView(m_tapPosition)) > TapSlop)
+        m_tapFinger = -1;
     // a finger that slides off its button keeps it pressed until it is lifted
     if (finger == m_stickFinger) {
         m_stickAt = toView(position);
@@ -219,11 +229,18 @@ void TouchControls::release(long long finger)
         m_lookFinger = -1;
         m_handlers.lookEnd();
     }
+    if (finger == m_tapFinger) {
+        m_tapFinger = -1;
+        m_handlers.tap(m_tapPosition);
+    }
 }
 
 
 void TouchControls::update(float seconds)
 {
+    m_tapTime += seconds;
+    if (m_tapTime > TapTime)
+        m_tapFinger = -1;
     for (Button &button : m_buttons) {
         if (button.finger < 0 || button.held < 0)
             continue;
@@ -246,6 +263,7 @@ void TouchControls::reset()
     }
     m_stickFinger = -1;
     m_lookFinger = -1;
+    m_tapFinger = -1;
     m_mirrored = isMirrored();
     m_stickInverted = isStickInverted();
 }
