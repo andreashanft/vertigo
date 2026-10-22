@@ -55,6 +55,10 @@ public:
         std::function<void(const PointD &position)> lookStart;
         std::function<void(const PointD &position)> lookMove;
         std::function<void()> lookEnd;
+        // a second finger beside the dragging one: how far apart they are (window coordinates),
+        // until either is lifted
+        std::function<void(double distance)> pinch;
+        std::function<void()> pinchEnd;
         // a finger off the buttons lifted soon near where it came down (it may have worked the
         // stick or the head meanwhile), in the window's coordinates
         std::function<void(const PointD &position)> tap;
@@ -121,6 +125,9 @@ private:
     Vector2D m_stickBase = Vector2D(0);
     Vector2D m_stickAt = Vector2D(0);
     long long m_lookFinger = -1;
+    PointD m_lookAt;
+    long long m_pinchFinger = -1;
+    PointD m_pinchAt;
     long long m_tapFinger = -1;  // a finger that may still be a tap
     PointD m_tapPosition;
     float m_tapTime = 0;

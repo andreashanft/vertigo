@@ -36,6 +36,10 @@ class RadioMessage : public ui::Widget
 public:
     RadioMessage(HUD *hud, Rect rect);
 
+public:
+    // in another place of the 640x480 view (the views' from outside)
+    void drawAt(const Rect &rect);
+
 protected:
     void draw();
 

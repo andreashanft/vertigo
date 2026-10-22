@@ -80,7 +80,7 @@ void EngineSounds::update()
             sample = sfx::Sample::Engine_Enemy1;
         else
             sample = sfx::Sample::Engine_Enemy2; // bombers, tanks, crawlers
-        const float distance = glm::length(object->position() - m_scenario->position());
+        const float distance = glm::length(object->position() - m_scenario->eye());
         if (distance < MaxDistance)
             candidates.push_back({ object, sample, distance });
     }

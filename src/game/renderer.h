@@ -65,6 +65,9 @@ public:
     virtual void mousePressEvent(input::MouseEvent *) {}
     virtual void mouseReleaseEvent(input::MouseEvent *) {}
     virtual void mouseMoveEvent(input::MouseEvent *) {}
+    // the mouse wheel, or two fingers on a trackpad, turned by this many notches (away from the
+    // user positive, fractions from a trackpad)
+    virtual void wheelEvent(float) {}
     // a game controller's buttons, by default the keys of input::menuKey(); and a stick, where it
     // is now (beyond its dead zone, else 0)
     virtual void buttonPressEvent(input::Button button);

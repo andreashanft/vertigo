@@ -210,14 +210,14 @@ void EffectManager::update(float elapsedTime)
     m_effects.remove_if([elapsedTime](const std::unique_ptr<Effect> &effect) { return effect->update(elapsedTime); });
     m_particles.update(elapsedTime);
 
-    // bubbles around the player, each at its own height of a rise from 50 m below
+    // bubbles around the eye, each at its own height of a rise from 50 m below
     Billboard *bubble = getBillboard(Effects::Bubble_0);
     for (int i = m_particles.count(Particles::Motion::Bubble); i < Bubbles; i++)
     {
-        Vector3D position = m_scenario->position() + Vector3D(util::random()%100 - 50, util::random()%100 - 50, -50);
-        const float time = glm::distance2(m_scenario->position(), position)/200.0f*random();
+        Vector3D position = m_scenario->eye() + Vector3D(util::random()%100 - 50, util::random()%100 - 50, -50);
+        const float time = glm::distance2(m_scenario->eye(), position)/200.0f*random();
         position.z += time*bubble->velocity();
-        if (glm::distance2(m_scenario->position(), position) <= 50.0f*50.0f &&
+        if (glm::distance2(m_scenario->eye(), position) <= 50.0f*50.0f &&
             !m_particles.add(bubble, Particles::Motion::Bubble, position, Vector3D(0), 0, 2, time))
             break;
     }

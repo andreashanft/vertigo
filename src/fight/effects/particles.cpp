@@ -71,7 +71,7 @@ bool Particles::add(Billboard *billboard, Motion motion, const Vector3D &positio
     const bool ambient = motion == Motion::Bubble || motion == Motion::Dust;
     if (int(m_particles.size()) >= (ambient ? AmbientCapacity : Capacity))
         return false;
-    if (glm::distance2(position, m_scenario->position()) > Range*Range)
+    if (glm::distance2(position, m_scenario->eye()) > Range*Range)
         return false;
     const float life = motion == Motion::Debris || motion == Motion::Body ? billboard->lifeTime()*(1 + 0.6f*util::random()/float(RAND_MAX)) : 0;
     m_particles.push_back(Particle{ billboard, motion, position, velocity, angle, scale, time, rate, billboard->kineticShield(), life });
@@ -196,7 +196,7 @@ bool Particles::update(Particle &particle, float elapsedTime)
     case Motion::Bubble:
         particle.time += elapsedTime;
         particle.position.z += billboard->velocity()*elapsedTime;
-        return glm::distance2(m_scenario->position(), particle.position) <= BubbleRange2;
+        return glm::distance2(m_scenario->eye(), particle.position) <= BubbleRange2;
 
     case Motion::Dust:
         particle.time += elapsedTime*particle.rate;
@@ -265,8 +265,8 @@ void Particles::draw()
     if (m_particles.empty())
         return;
 
-    const glm::mat3 camera(m_scenario->cameraMatrixInverted());
-    const Vector3D eye = m_scenario->position();
+    const glm::mat3 camera = m_scenario->eyeAxes();
+    const Vector3D eye = m_scenario->eye();
     const Vector3D forward = -camera[2];
 
     // culled beyond the fog and behind the camera, the rest from the farthest to the nearest

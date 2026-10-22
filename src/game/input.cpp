@@ -39,6 +39,8 @@ Key parseKey(const String &text, int &modifiers)
             modifiers |= ShiftModifier;
         else if (modifier == "meta")
             modifiers |= MetaModifier;
+        else if (modifier == "num")
+            modifiers |= KeypadModifier;
         else
             return Key_None;
     }

@@ -99,7 +99,7 @@ TouchControls::TouchControls(gfx::Font &font, gfx::Font &fontPressed, const Hand
         { "AUTO", KeyEvent(Key_A, AltModifier), Vector2D(30, 134), 22, -1 },
         { "SONAR", KeyEvent(Key_R), Vector2D(-30, 30), 22, -1 },
         { "TURR", KeyEvent(Key_O), Vector2D(-30, 82), 22, -1 },
-        { "VIEW", KeyEvent(Key_V, AltModifier), Vector2D(-30, 134), 22, -1 },
+        { "VIEW", KeyEvent(Key_V), Vector2D(-30, 134), 22, -1 },
     };
 }
 
@@ -186,7 +186,12 @@ void TouchControls::press(long long finger, const PointD &position)
     }
     if (m_lookFinger < 0) {
         m_lookFinger = finger;
+        m_lookAt = position;
         m_handlers.lookStart(position);
+    } else if (m_pinchFinger < 0) {
+        m_pinchFinger = finger;
+        m_pinchAt = position;
+        m_handlers.pinch(glm::distance(Vector2D(m_lookAt), Vector2D(m_pinchAt)));
     }
 }
 
@@ -199,8 +204,12 @@ void TouchControls::move(long long finger, const PointD &position)
     if (finger == m_stickFinger) {
         m_stickAt = toView(position);
         m_handlers.stick(stick());
-    } else if (finger == m_lookFinger) {
-        m_handlers.lookMove(position);
+    } else if (finger == m_lookFinger || finger == m_pinchFinger) {
+        (finger == m_lookFinger ? m_lookAt : m_pinchAt) = position;
+        if (m_pinchFinger >= 0)
+            m_handlers.pinch(glm::distance(Vector2D(m_lookAt), Vector2D(m_pinchAt)));
+        else
+            m_handlers.lookMove(position);
     }
 }
 
@@ -225,7 +234,17 @@ void TouchControls::release(long long finger)
         m_stickFinger = -1;
         m_handlers.stick(Vector2D(0));
     }
-    if (finger == m_lookFinger) {
+    if ((finger == m_lookFinger || finger == m_pinchFinger) && m_pinchFinger >= 0) {
+        // the pinch ends with either finger; the one left drags anew
+        if (finger == m_lookFinger) {
+            m_lookFinger = m_pinchFinger;
+            m_lookAt = m_pinchAt;
+        }
+        m_pinchFinger = -1;
+        m_handlers.pinchEnd();
+        m_handlers.lookEnd();
+        m_handlers.lookStart(m_lookAt);
+    } else if (finger == m_lookFinger) {
         m_lookFinger = -1;
         m_handlers.lookEnd();
     }
@@ -263,6 +282,7 @@ void TouchControls::reset()
     }
     m_stickFinger = -1;
     m_lookFinger = -1;
+    m_pinchFinger = -1;
     m_tapFinger = -1;
     m_mirrored = isMirrored();
     m_stickInverted = isStickInverted();

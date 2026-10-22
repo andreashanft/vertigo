@@ -130,7 +130,8 @@ private:
     PointD m_position;
 };
 
-// "Esc", "Alt+A", "Down", "F5", "2" (as --keys takes them; any case); Key_None if it isn't one
+// "Esc", "Alt+A", "Down", "F5", "2", "Num+0" (the number pad's; as --keys takes them; any case);
+// Key_None if it isn't one
 Key parseKey(const String &text, int &modifiers);
 
 // The key a second binding stands for, for keyboards without Esc and function keys (an iPad's):

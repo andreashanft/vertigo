@@ -92,6 +92,13 @@ const float LookSpeed = glm::radians(0.18f);
 const Vector2D LookMin(glm::radians(-105.0f), glm::radians(-55.0f));
 const Vector2D LookMax(glm::radians(105.0f), glm::radians(65.0f));
 const Vector3D Neck(0, -0.10f, 0.08f);
+// a step of an outside view's camera for every sixteenth of the window's width a finger or the
+// mouse drags, so that a drag across it goes once round the boat; a step of the zoom for every
+// 24th two fingers move apart or together
+const double ViewDragSteps = fight::OutsideView::TurnSteps;
+const double ViewPinchSteps = 24;
+// the right stick moves an outside view's camera a step at a time while held, at this interval
+const float ViewStickRepeat = 0.2f;
 // after the drag the head turns back to the front, about two thirds of the way in this time
 const float LookReturn = 0.18f;
 // the head counts as in its place when turned less than this
@@ -211,8 +218,13 @@ HUD::HUD() :
     handlers.lookStart = [this](const PointD &position) { startLook(position); };
     handlers.lookMove = [this](const PointD &position) { moveLook(position); };
     handlers.lookEnd = [this]() { m_looking = false; };
+    handlers.pinch = [this](double distance) { pinch(distance); };
+    handlers.pinchEnd = [this]() { m_pinchStart = -1; };
     handlers.tap = [this](const PointD &position) { tapMonitor(position); };
     m_touch.reset(new TouchControls(m_fontGreen, m_fontYellow, handlers));
+    gfx::Image shade(1, 1, gfx::Image::ARGB32);
+    shade.setPixel(0, 0, gfx::rgba(0, 0, 0, 128));
+    m_shade = gfx::Texture(shade, false);
 
 }
 
@@ -304,6 +316,7 @@ void HUD::load(game::Boat *boat)
     file.setSection("hudthreatblock");
     Threat *threat = new Threat(this, readRect(file));
     m_children.emplace_back(threat);
+    m_threat = threat;
 
     file.setSection("hudsymbolblock1");
     Symbols *symbols = new Symbols(this, readRect(file));
@@ -312,6 +325,7 @@ void HUD::load(game::Boat *boat)
     file.setSection("hudpauseblock");
     Pause *pause = new Pause(this, readRect(file));
     m_children.emplace_back(pause);
+    m_pause = pause;
 
     m_menu = new MissionMenu(this, m_center);
     m_children.emplace_back(m_menu);
@@ -362,6 +376,7 @@ void HUD::load(game::Boat *boat)
     file.setSection("radiomessage");
     RadioMessage *radioMessage = new RadioMessage(this, Rect(file.value("X").toInt(), file.value("Y").toInt(), 640 - file.value("X").toInt()*2, 12));
     m_children.emplace_back(radioMessage);
+    m_radioMessage = radioMessage;
 
     m_integerScale = false;
 
@@ -417,6 +432,9 @@ void HUD::start(fight::Scenario *scenario)
     m_deathTime = -1;
     m_menu->setOverView(false);
     m_menu->open(MissionMenu::Page::None);
+    m_viewStickWait = -1;
+    m_pinchStart = -1;
+    m_wheel = 0;
     m_pages->close();
     m_scenario->headMotion().setStrength(headMotion());
     // the CD's audio tracks, as the game data import copies them out of the CD image, at half
@@ -703,6 +721,8 @@ void HUD::drawFrame()
     m_frames++;
     step(elapsed);
     updateLook(g_fixedStep > 0 ? g_fixedStep : (ticks - m_lastTicks)/1000.0f);
+    if (m_scenario)
+        updateViewStick(g_fixedStep > 0 ? g_fixedStep : (ticks - m_lastTicks)/1000.0f);
     m_lastTicks = ticks;
     // a handler of the events in step() may have ended the mission
     if (!m_scenario)
@@ -714,9 +734,12 @@ void HUD::drawFrame()
 
     // the GL viewport is in device pixels, the rects in logical pixels
     const double pixelRatio = window() ? window()->devicePixelRatio() : 1.0;
-    if (m_scenario->playerDestroyed())
+    if (m_scenario->outside())
     {
-        drawDeathView(pixelRatio);
+        drawOutsideView(pixelRatio);
+        // the boat is still flown from outside, but not in the death view
+        if (!m_scenario->playerDestroyed())
+            drawTouchControls(pixelRatio);
         return;
     }
     // the 3D cockpit is loaded (a kit's texture painted) while the 2D one is shown; with a fixed
@@ -761,18 +784,25 @@ void HUD::drawFrame()
 }
 
 
-// The death view (docs/ROADMAP.md, appendix R): the world from outside the boat, without the
-// cockpit and its instruments, in rows 64 to 415 and columns 23 to 612 of the view, the rest of
-// those rows in the water's blue, black bars above and below with a grey line in rows 60 and
-// 419, "DEATH VIEW" (FIGHTEXT 18) at the bottom left and the menu over the world
-void HUD::drawDeathView(double pixelRatio)
+// The views from outside (docs/ROADMAP.md, appendices R and V): the world without the cockpit,
+// black bars above and below with a grey line in rows 60 and 419 of the view, the view's name
+// (FIGHTEXT 14, 18 or 19) at the bottom left, and the menu and the pages over the world. The
+// death view's world is in rows 64 to 415 and columns 23 to 612, the rest of those rows in the
+// water's blue; the other views' in rows 64 to 418 across the whole window, with the radio
+// message in the bar below
+void HUD::drawOutsideView(double pixelRatio)
 {
-    const Point topLeft(23, 64), bottomRight(613, 416);
+    using Mode = fight::OutsideView::Mode;
+    const fight::OutsideView &view = m_scenario->outsideView();
+    const bool death = view.mode() == Mode::Death;
+    const Point topLeft = death ? Point(23, 64) : Point(0, 64);
+    const Point bottomRight = death ? Point(613, 416) : Point(640, 419);
     m_integerScale = true;
     const Point a = project(topLeft), b = project(bottomRight);
     // the HUD's integer scale in window pixels
     const float scale = rect().width*m_integerScaleProjectionMatrix[0][0]/2;
-    const float x0 = rect().x + a.x*scale, x1 = rect().x + b.x*scale;
+    const float x0 = death ? rect().x + a.x*scale : m_rectGL.x;
+    const float x1 = death ? rect().x + b.x*scale : m_rectGL.x + m_rectGL.width;
     const float y0 = a.y*scale, y1 = b.y*scale;
     // window rows (from the bottom, in device pixels) of the view's rows
     auto rowGL = [&](int row) { return int(std::lround((rect().y + rect().height - project(Point(0, row)).y*scale)*pixelRatio)); };
@@ -787,23 +817,53 @@ void HUD::drawDeathView(double pixelRatio)
     const int wide = 1 << 20;
     fill(0, rowGL(61), wide, rowGL(60) - rowGL(61), 0.3f, 0);
     fill(0, rowGL(420), wide, rowGL(419) - rowGL(420), 0.3f, 0);
-    fill(0, rowGL(416), wide, rowGL(64) - rowGL(416), 0, 0.15f);
+    if (death)
+        fill(0, rowGL(bottomRight.y), wide, rowGL(topLeft.y) - rowGL(bottomRight.y), 0, 0.15f);
     const int left = int(std::lround(x0*pixelRatio)), width = int(std::lround((x1 - x0)*pixelRatio));
-    glScissor(left, rowGL(416), width, rowGL(64) - rowGL(416));
-    glViewport(left, rowGL(416), width, rowGL(64) - rowGL(416));
+    glScissor(left, rowGL(bottomRight.y), width, rowGL(topLeft.y) - rowGL(bottomRight.y));
+    glViewport(left, rowGL(bottomRight.y), width, rowGL(topLeft.y) - rowGL(bottomRight.y));
     // the cockpit view's scale (60° over the 480 rows), cut to the picture
     const float fovY = 2*std::atan(std::tan(glm::radians(30.0f))*(bottomRight.y - topLeft.y)/480);
-    m_scenario->draw(glm::perspective(fovY, (x1 - x0)/(y1 - y0), 0.1f, 500.0f), m_scenario->cameraMatrix());
+    m_scenario->draw(glm::perspective(fovY, (x1 - x0)/(y1 - y0), 0.1f, 500.0f), m_scenario->viewMatrix());
     glDisable(GL_SCISSOR_TEST);
 
     glViewport(rect().x*pixelRatio, rect().y*pixelRatio, rect().width*pixelRatio, rect().height*pixelRatio);
     setupGL(false);
     gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
-    fontGreen().draw(txt::StringTable::get(txt::StringFight(18)), project(Point(8, 405)));
+    const int name = death ? 18 : view.mode() == Mode::Chase ? 14 : 19;
+    fontGreen().draw(txt::StringTable::get(txt::StringFight(name)), project(Point(8, 405)));
+    if (view.mode() == Mode::Chase && !view.watchesTarget())
+        drawChaseInstruments();
+    if (!death)
+        m_radioMessage->drawAt(Rect(64, 460, 512, 12));
+    // (where the cockpit has it)
+    m_pause->doDraw();
     m_menu->doDraw();
+    m_pages->doDraw();
     m_integerScale = false;
 
     glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
+}
+
+
+// The instruments over the chase view of the player's boat (docs/ROADMAP.md, appendix V), where
+// the original has them: the table of all weapons at the top left and the system state at the top
+// right (where the cockpits' SMALL layouts have their status monitors, the right one from the
+// right edge), THREAT between them and the sonar's first range in a half dark square at the
+// bottom right
+void HUD::drawChaseInstruments()
+{
+    if (!m_slaveMonitors.empty())
+    {
+        m_slaveMonitors.front()->drawOverviewAt(Rect(8, 72, 96, 71));
+        m_slaveMonitors.front()->drawSystemsAt(Rect(536, 72, 96, 71));
+    }
+    m_threat->drawAt(Rect(292, 80, 56, 18));
+    const Point center(601, 376);
+    const int radius = 32;
+    const Point a = project(center - Point(radius)), b = project(center + Point(radius));
+    m_shade.draw(RectF(a.x, a.y, b.x - a.x, b.y - a.y));
+    m_sonar1->drawAt(center, radius);
 }
 
 
@@ -947,14 +1007,7 @@ void HUD::press(input::KeyEvent *e)
     // Alt+V switches between the 2D and the 3D cockpit
     if (e->key() == input::Key_V && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
     {
-        setCockpitMode(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model, true);
-        const bool model = cockpitMode() == CockpitMode::Model && m_model && m_model->isValid();
-        if (cockpitMode() == CockpitMode::Model && !model)
-            std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit() << " in "
-                      << Cockpit3D::directory() << " or " << Cockpit3D::kitDirectory() << std::endl;
-        m_menu->notice({ model ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
-        // the view angle changes with it
-        m_rectGL = Rect();
+        setCockpit(cockpitMode() == CockpitMode::Model ? CockpitMode::Art : CockpitMode::Model);
         return;
     }
     // Ctrl+D, Cmd+D on macOS
@@ -976,6 +1029,44 @@ void HUD::press(input::KeyEvent *e)
     }
     if (m_paused || m_scenario->playerDestroyed())
         return;
+    if (e->key() == input::Key_V && !(e->modifiers() & ~input::KeypadModifier))
+    {
+        nextView();
+        return;
+    }
+    // the views from outside by the number pad (docs/ROADMAP.md, appendix V): 0 the chase view of
+    // the boat, 5 its look-at view, 1 and 7 the same of the target, the same key again the
+    // cockpit; 9 and 3 zoom in and out, 4, 6, 8 and 2 move the look-at view's camera round the
+    // boat to the left and right, up and down
+    if (e->modifiers() & input::KeypadModifier)
+    {
+        using Mode = fight::OutsideView::Mode;
+        const Mode mode = m_scenario->outsideView().mode();
+        switch (e->key())
+        {
+        case input::Key_0: toggleView(Mode::Chase, false); return;
+        case input::Key_1: toggleView(Mode::Chase, true); return;
+        case input::Key_5: toggleView(Mode::LookAt, false); return;
+        case input::Key_7: toggleView(Mode::LookAt, true); return;
+        default: break;
+        }
+        if (mode != Mode::Cockpit)
+            switch (e->key())
+            {
+            case input::Key_9: fight::OutsideView::zoom(1); return;
+            case input::Key_3: fight::OutsideView::zoom(-1); return;
+            default: break;
+            }
+        if (mode == Mode::LookAt)
+            switch (e->key())
+            {
+            case input::Key_4: fight::OutsideView::turn(1, 0); return;
+            case input::Key_6: fight::OutsideView::turn(-1, 0); return;
+            case input::Key_8: fight::OutsideView::turn(0, 1); return;
+            case input::Key_2: fight::OutsideView::turn(0, -1); return;
+            default: break;
+            }
+    }
     if (e->key() == input::Key_N)
     {
         if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
@@ -1044,6 +1135,82 @@ void HUD::press(input::KeyEvent *e)
 }
 
 
+void HUD::toggleView(fight::OutsideView::Mode mode, bool target)
+{
+    fight::OutsideView &view = m_scenario->outsideView();
+    if (view.mode() == mode && view.watchesTarget() == target)
+        view.show(fight::OutsideView::Mode::Cockpit, false);
+    else
+        view.show(mode, target);
+}
+
+
+// V, the VIEW button and LB+Back: the 2D cockpit, the 3D one (if there is a model), the chase and
+// look-at views of the boat and, with a locked unit, of the target, and the 2D cockpit again
+void HUD::nextView()
+{
+    using Mode = fight::OutsideView::Mode;
+    fight::OutsideView &view = m_scenario->outsideView();
+    if (view.mode() == Mode::Cockpit)
+    {
+        if (cockpitMode() == CockpitMode::Art && m_model && m_model->isValid())
+            setCockpit(CockpitMode::Model);
+        else
+            view.show(Mode::Chase, false);
+        return;
+    }
+    const bool target = view.watchesTarget();
+    if (view.mode() == Mode::Chase)
+        view.show(Mode::LookAt, target);
+    else if (target || !view.show(Mode::Chase, true))
+    {
+        view.show(Mode::Cockpit, false);
+        if (cockpitMode() == CockpitMode::Model)
+            setCockpit(CockpitMode::Art);
+    }
+}
+
+
+void HUD::setCockpit(CockpitMode mode)
+{
+    setCockpitMode(mode, true);
+    const bool model = cockpitMode() == CockpitMode::Model && m_model && m_model->isValid();
+    if (cockpitMode() == CockpitMode::Model && !model)
+        std::cerr << "No 3D cockpit for cockpit " << m_boat->cockpit() << " in "
+                  << Cockpit3D::directory() << " or " << Cockpit3D::kitDirectory() << std::endl;
+    m_menu->notice({ model ? "COCKPIT 3D" : "COCKPIT 2D" }, 1.5f);
+    // the view angle changes with it
+    m_rectGL = Rect();
+}
+
+
+// In the views from outside the right stick moves the camera a step at a time, again and again
+// while it is held: round the boat (the look-at view's), with LB held up and down zooms
+void HUD::updateViewStick(float elapsedTime)
+{
+    using Mode = fight::OutsideView::Mode;
+    const Mode mode = m_scenario->outsideView().mode();
+    const int x = m_lookStick.x > 0.5f ? 1 : m_lookStick.x < -0.5f ? -1 : 0;
+    const int y = m_lookStick.y > 0.5f ? 1 : m_lookStick.y < -0.5f ? -1 : 0;
+    if ((mode != Mode::Chase && mode != Mode::LookAt) || (x == 0 && y == 0))
+    {
+        m_viewStickWait = -1;
+        return;
+    }
+    // the first step at once
+    if (m_viewStickWait < 0)
+        m_viewStickWait = RepeatDelay;
+    else if ((m_viewStickWait -= elapsedTime) > 0)
+        return;
+    else
+        m_viewStickWait += ViewStickRepeat;
+    if (m_shoulder)
+        fight::OutsideView::zoom(-y);
+    else if (mode == Mode::LookAt)
+        fight::OutsideView::turn(-x, -y);
+}
+
+
 void HUD::menuAction(int action)
 {
     switch (MissionMenu::Action(action))
@@ -1102,7 +1269,7 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_LeftStick: return KeyEvent(Key_A);
     case Button_RightStick: return KeyEvent(Key_Z);
     case Button_Start: return second ? KeyEvent(Key_P) : KeyEvent(Key_Escape);
-    case Button_Back: return second ? KeyEvent(Key_V, AltModifier) : KeyEvent(Key_O);
+    case Button_Back: return second ? KeyEvent(Key_V) : KeyEvent(Key_O);
     default: return KeyEvent();
     }
 }
@@ -1261,7 +1428,7 @@ void HUD::touchPressEvent(input::TouchEvent *e)
 // head is in its place, where the monitors are those of the 2D cockpit
 void HUD::tapMonitor(const PointD &position)
 {
-    if (!m_scenario || m_scenario->playerDestroyed() || m_menu->page() != MissionMenu::Page::None || m_paused)
+    if (!m_scenario || m_scenario->outside() || m_menu->page() != MissionMenu::Page::None || m_paused)
         return;
     if (showsModel() && glm::length(m_look) > LookCentred)
         return;
@@ -1325,16 +1492,18 @@ void HUD::drawTouchControls(double pixelRatio)
 
 void HUD::updateLook(float elapsedTime)
 {
+    // (in the views from outside the head turns back)
+    const bool head = showsModel() && !(m_scenario && m_scenario->outside());
     if (g_lookFixed)
         m_look = g_look;
-    else if (m_lookStick != Vector2D(0) && showsModel())
+    else if (m_lookStick != Vector2D(0) && head)
     {
         // the right stick turns the head as far as it is pushed, and the head follows it smoothly
         const Vector2D to(m_lookStick.x > 0 ? m_lookStick.x*LookMin.x : -m_lookStick.x*LookMax.x,
                           m_lookStick.y > 0 ? m_lookStick.y*LookMin.y : -m_lookStick.y*LookMax.y);
         m_look += (to - m_look)*(1 - std::exp(-std::max(0.0f, elapsedTime)/LookFollow));
     }
-    else if (!m_looking || !showsModel())
+    else if (!m_looking || !head)
         m_look *= std::exp(-std::max(0.0f, elapsedTime)/LookReturn);
 }
 
@@ -1367,13 +1536,18 @@ void HUD::mouseReleaseEvent(input::MouseEvent *e)
 }
 
 
+// a drag turns the pilot's head in the 3D cockpit, and moves the camera of a view from outside
 void HUD::startLook(const PointD &position)
 {
-    if (!m_scenario || !showsModel() || g_lookFixed || m_looking)
+    if (!m_scenario || m_looking)
+        return;
+    const bool outside = m_scenario->outside() && !m_scenario->playerDestroyed();
+    if (!outside && (!showsModel() || g_lookFixed))
         return;
     m_looking = true;
     m_lookStart = position;
     m_lookFrom = m_look;
+    m_dragSteps = glm::ivec2(0);
 }
 
 
@@ -1381,9 +1555,51 @@ void HUD::moveLook(const PointD &position)
 {
     if (!m_looking)
         return;
-    // drag right to look right, up to look up
     const PointD drag = position - m_lookStart;
+    if (m_scenario && m_scenario->outside())
+    {
+        // the look-at view's boat turns with the drag, its camera going round the other way,
+        // and a drag down takes the camera up
+        if (m_scenario->outsideView().mode() != fight::OutsideView::Mode::LookAt || m_pinchStart >= 0)
+            return;
+        const double step = std::max(1.0, m_rectGL.width/ViewDragSteps);
+        const glm::ivec2 steps(int(drag.x/step), int(drag.y/step));
+        fight::OutsideView::turn(steps.x - m_dragSteps.x, steps.y - m_dragSteps.y);
+        m_dragSteps = steps;
+        return;
+    }
+    // drag right to look right, up to look up
     m_look = glm::clamp(m_lookFrom - LookSpeed*Vector2D(drag), LookMin, LookMax);
+}
+
+
+void HUD::wheelEvent(float notches)
+{
+    if (!m_scenario || !m_scenario->outside() || m_scenario->playerDestroyed())
+        return;
+    // away from the user nearer
+    m_wheel += notches;
+    const int steps = int(m_wheel);
+    m_wheel -= steps;
+    fight::OutsideView::zoom(steps);
+}
+
+
+// two fingers moved apart zoom a view from outside in, together out
+void HUD::pinch(double distance)
+{
+    if (!m_scenario || !m_scenario->outside() || m_scenario->playerDestroyed())
+        return;
+    if (m_pinchStart < 0)
+    {
+        m_pinchStart = distance;
+        m_pinchSteps = 0;
+        return;
+    }
+    const double step = std::max(1.0, m_rectGL.width/ViewPinchSteps);
+    const int steps = int((distance - m_pinchStart)/step);
+    fight::OutsideView::zoom(steps - m_pinchSteps);
+    m_pinchSteps = steps;
 }
 
 

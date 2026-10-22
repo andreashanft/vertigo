@@ -53,11 +53,17 @@ Threat::Threat(HUD *hud, Rect rect) :
 // red for the others (docs/ROADMAP.md, appendix S)
 void Threat::draw()
 {
+    drawAt(m_rect);
+}
+
+
+void Threat::drawAt(const Rect &at)
+{
     fight::Scenario *scenario = m_hud->scenario();
     const fight::Torpedo *threat = scenario->nearestThreatTo(scenario->player());
     if (threat && scenario->blink())
     {
-        const Rect rect = m_hud->projectCenter(m_rect);
+        const Rect rect = m_hud->projectCenter(at);
         const int sensor = threat->type().sensor;
         (sensor == 3 || sensor == 4 ? m_yellow : m_red).draw(rect.x, rect.y);
     }

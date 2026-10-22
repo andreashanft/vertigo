@@ -62,7 +62,8 @@ and countdown (green, after the target's distance on its line: "72M  0:5S",
 seconds to one decimal with a colon), the turret menu and brackets, the armor symbol, the aim help,
 the master monitor's activity and weapon lines, `u` to lock the nearest
 enemy. The 3D cockpit (glTF models) shows the instruments on its screens
-and moves the pilot's head with the boat.
+and moves the pilot's head with the boat. The number pad shows the boat or
+the target from outside, chasing or circling it (appendix V).
 
 **Effects and sound (phases 5 and 6).** One particle pool for explosions,
 debris, bubbles, torpedo trails and dust; 3D audio with the four nearest
@@ -110,7 +111,7 @@ which takes playing them. Most important first:
 | B3 | Campaign playthrough | L | The story from a new game to the ending on the desktop, saving after each mission. Per mission: won at the first try or not, the time it took, damage and money afterwards, and anything off (triggers, radio messages, stuck units, the station afterwards). Besides: the chapter changes, dialogues and tasks, the depot, loading a save, the death and failure menus, the ending's movie. The open mission (training) starts any single mission again with a fully fitted boat |
 | B4 | Difficulty and feel | M | From B3's notes and side by side with the original on a few missions; S00101, S00201, S00402, S00903, S01202 and S02001 have escorts, ambushes, towers, bombers and big fights between them. A measure both games give without any tooling: how long a boat that does nothing lasts at a mission's start, on each difficulty, and how many units attack it at once. In Vertigo's seeded idle runs (normal, 60 s) the idle boat is destroyed in 15 of the 71 missions, in 12 of them with every seed: in S02001 after 15–23 s, in S00201, S00402, S00903, S01202 and S01302 after 19–28 s. The levers, each recorded in appendix J or H: the attacker lists per difficulty, the sensor ranges, the attack settings, the hit spheres, the guns' damage and the player's armour |
 | B5 | Music with a GOG installation | S | The mission music is the CD's audio tracks, copied out only when the game data is built from a CD image (G1). Check what a GOG installation has instead (the tracks as files?) and use it |
-| B6 | Outside views | M | The original's views from outside the boat during a mission (FIGHTEXT 14–19, appendix R) are missing; Vertigo has only the death view |
+| B6 | Outside views | M | Done. The chase and look-at views of the boat and of the target by the number pad, with the chase view's few instruments, as in the original (appendix V); V, LB+Back and the VIEW button step through them. The AI boats bank into their turns |
 | B7 | Platforms | M | macOS and the iPad are played; Linux is built and tested by CI but not played; Windows is neither. A Windows build in CI (SDL 3 and OpenAL Soft) and a few missions played on Linux and Windows |
 | B8 | S00705 | S | Schwartz's infiltration (O3) |
 
@@ -118,7 +119,8 @@ Approximations the appendices record and a player may notice: the
 magazine's condition never wears down (O); the currents push steadily (D);
 some explosions' sizes (H, R, S); the turn ticks (L); the escort's distance
 from the hull's box (J); the death menu always offers to load (R); the
-turret cross for a target behind the boat (T).
+turret cross for a target behind the boat (T); the outside views' camera and
+the boats' bank (V).
 
 ## What is open
 
@@ -183,7 +185,7 @@ sensors and the boats' and tanks' fighting (J), the energy pool, the energy
 guns, the booster and the jams (K), the boat's turning (L), the terrain's
 shading (M), the ground under buildings (N), the Fixer (O), the sonars'
 abilities (P), the mines (Q), the destruction sequence (R), the torpedoes (S)
-and the player turrets (T).
+the player turrets (T) and the views from outside (V).
 
 ## Appendix: reference data
 
@@ -1073,7 +1075,8 @@ and it always looks at the hull. Once the hull is gone it comes down level
 radius at 1.25 radii a second. Eight seconds after the hull is gone the
 mission ends; Vertigo opens the death menu then, ten seconds after the boat
 was destroyed. The original shows other outside views (chase, fly around,
-pass by, look, look at; FIGHTEXT 14–19) that Vertigo doesn't have.
+pass by, look, look at; FIGHTEXT 14–19), of which the chase and look-at
+views can be called up (appendix V).
 
 Not compared or not followed:
 - The original's death menu showed the options abort and restart (FIGHTEXT
@@ -1382,3 +1385,78 @@ save shows its station and date, and an autosave says so: the notebook
 lists `Name: Station - Date Time (Auto)`, the main menu `Name: Station`
 (the station cut off with "..." before the arrows) over
 `Date Time (Autosave)`.
+
+### V. How the original shows the boat from outside
+
+Read off in October 2026 with the Gator. The keys are in the in-mission help
+(`VFX/COCKPIT/HELP2.TXT`), the views' names are FIGHTEXT 14–19.
+
+- **Keys.** On the number pad: 0 the chase view of the player's boat (CHASE
+  VIEW, 14), 5 its look-at view (LOOK AT VIEW, 19), 1 and 7 the same of the
+  locked target, which do nothing without one and stay on the target until
+  it is destroyed. The same key again goes back to the cockpit, another
+  goes straight to its view. 9 and 3 zoom in and out in 19 steps evenly
+  apart, from the first zoom 4 nearer and 14 further; 4, 6, 8 and 2 move
+  the look-at view's camera left, right, up and down round the boat in
+  steps of 22.5° (16 for a full turn either way), in the chase view they do
+  nothing. The zoom and the place round the boat are kept, the same for
+  the player's boat and the target. The help's torpedo camera (Entf) does
+  nothing, and the fly-around, pass-by and look views (15–17) can't be
+  called up.
+- **The mission goes on.** The boat is flown, fires and locks as from the
+  cockpit, and the help, the radio log and the briefing open over the view.
+  The sounds are heard where the camera is.
+- **The picture.** As the death view's (appendix R): black bars with a grey
+  line in rows 60 and 419 and the view's name at column 8, row 405, but the
+  world fills rows 64 to 418 across the whole width. Nothing marks the
+  contacts or the target in the world. The radio message shows in the bar
+  below the picture; ALERT didn't show as the boat was destroyed.
+- **Instruments.** Only the chase view of the player's boat has a few,
+  without the cockpit's monitors and whatever pages these show: the table
+  of all weapons (the weapon page's overview, appendix T) from column 14,
+  row 78, the system state page (appendix O) centred on column 584 from
+  row 72, THREAT centred on column 320 in rows 82 to 96, and the first sonar
+  range (360 M) in a square of 64 by 64 pixels round column 601, row 376,
+  that darkens the world to half. The two pages are where the cockpits'
+  SMALL layouts (`VFX/COCKPIT/00nSMALL.DES`) have their status monitors, 96
+  by 71 pixels at 8, 8 of the picture, the second 160 pixels further right
+  in the wider picture.
+- **The camera** stays level: the boat rolls about 30° in a turn under it,
+  and in a loop the camera keeps upright while the boat turns over. It
+  follows the boat's movements like a spring, even its rocking at rest, and
+  goes through the ground and buildings. The chase view's camera is behind
+  the boat, 20° above its course, and the boat shows a little below the
+  middle; at the nearest zoom it is just over the rear of the hull, looking
+  along it to the nose. At the first zoom the Gator at rest is 185 pixels
+  wide, at the furthest 49. The look-at view's camera starts in front of the
+  boat, 45° above it, looking at it, the Gator 154 pixels wide.
+- **Other boats** bank into their turns, about 40° at a sharp one. The
+  boats' and tanks' object files have a negative `MaxAngleVelocityC` (−1.0;
+  the torpedoes −1.8) beside their turn rates; what it does is not known.
+
+Vertigo measures the distances in the watched unit's radii (half its
+longest side): the 19 steps go from 1 to 9.7 radii, the first zoom is the
+fifth (2.9 radii). The chase view's camera looks at the course 0.9 radii
+ahead of the boat; the look-at view's is 0.92 times as far as the chase
+view's. Boats are watched about their position, towers and buildings about
+the middle of their box, their front being the way from the player's boat.
+The camera moves 10 times its distance to its place per second, as the
+death view's, and starts at its place when a view opens. The radio message
+is at row 460, where the cockpits' TRANS layouts have it. The other boats'
+hulls bank as they are drawn, by 40° times their share of the full turn
+rate, following it by four times the difference per second; they steer, aim
+and are hit as before. V (LB+Back on a game controller, VIEW on the touch
+screen) steps through the 2D cockpit, the 3D one and the views. A drag with
+the mouse or a finger moves the look-at view's camera a step for every
+sixteenth of the window, the mouse wheel or a pinch zooms; the right stick
+moves the look-at view's camera, with LB held it zooms.
+
+Not compared or not followed:
+- At the furthest zoom Vertigo's boat shows about 10 rows lower than the
+  original's, in the look-at view about 16 rows lower.
+- Where the radio message is in the bar, and whether the pause shows in the
+  views; Vertigo shows the pause where the cockpit has it.
+- What the target's views do when the sonar loses the target (Vertigo goes
+  back to the cockpit), and what the camera does the moment a view opens.
+- How far the other boats bank as they turn more slowly, and whether tanks,
+  bombers and torpedoes roll.

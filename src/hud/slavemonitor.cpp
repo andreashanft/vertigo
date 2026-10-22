@@ -162,6 +162,18 @@ bool SlaveMonitor::contains(const Point &point) const
 }
 
 
+void SlaveMonitor::drawOverviewAt(const Rect &rect)
+{
+    drawOverview(m_hud->projectCenter(rect));
+}
+
+
+void SlaveMonitor::drawSystemsAt(const Rect &rect)
+{
+    drawSystems(m_hud->projectCenter(rect));
+}
+
+
 namespace {
 
 // GLOBWEAP [TorpedoMagazineN] shortname for the magazine items 1025-1032
