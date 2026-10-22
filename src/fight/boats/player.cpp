@@ -172,6 +172,9 @@ namespace {
 const float SystemDamageBelow = 0.45f;
 const float SystemDamageFactor = 2.2f;
 
+// slower into an object (m/s) the boat only touches it
+const float ImpactSpeed = 1.0f;
+
 } // namespace
 
 
@@ -496,7 +499,25 @@ bool Player::update(float elapsedTime)
         Object *colObject = m_scenario->collisionManager().testCollision(m_position, m_position + delta, 1.5f, posObject, normObject, nullptr, this,
                                                                          [](const Object *object) { return !dynamic_cast<const Trash *>(object) && !dynamic_cast<const Torpedo *>(object); });
 
-        if (colObject && (!colSurface || glm::length2(posObject - m_position) < glm::length2(posSurface - m_position)))
+        const bool objectFirst = colObject && (!colSurface || glm::length2(posObject - m_position) < glm::length2(posSurface - m_position));
+        const float intoObject = objectFirst ? -glm::dot(m_velocity, normObject) : 0.0f;
+        if (objectFirst && intoObject < ImpactSpeed)
+        {
+            // pressed against it, or already moving away as the ground's slope turns the step back
+            // into it: no hit, the boat slides along the object as along the ground; a bounce
+            // here would throw it into the object again and hit on every frame
+            if (intoObject > 0)
+                m_velocity += intoObject*normObject;
+            delta -= posObject - m_position;
+            path += glm::length(posObject - m_position);
+            m_position = posObject;
+            const float toward = glm::dot(delta, normObject) - 1e-3f;
+            if (toward < 0)
+                delta -= toward*normObject;
+            count++;
+            continue;
+        }
+        else if (objectFirst)
         {
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(colObject);
             if (activeObject)

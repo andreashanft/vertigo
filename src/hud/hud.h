@@ -175,7 +175,10 @@ private:
     void releaseTouch();
     void startLook(const PointD &position);
     void moveLook(const PointD &position);
+    // a point of the window in the 640x480 view the menu and the instruments are drawn in
+    Point viewPoint(const PointD &position);
     int menuOption(const PointD &position);
+    void tapMonitor(const PointD &position);
     void drawTouchControls(double pixelRatio);
     void countFrame(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
     // the pilot's head turned by the mouse look, in the boat's camera frame

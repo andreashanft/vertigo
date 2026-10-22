@@ -39,7 +39,8 @@ namespace hud {
 // corners (where the cockpit art has its frame and the thumbs reach). A finger elsewhere turns
 // the head in the 3D cockpit. Laid out in units of a view at least 480 high, the size of the
 // HUD's text; on a larger screen they keep the size they have on an 11-inch iPad, in the
-// corners. Mirrored, the stick is on the right and the buttons are the other way round.
+// corners. Mirrored, the stick is on the right and the buttons are the other way round. A short
+// tap off the buttons is also passed on, for what lies behind the controls.
 class TouchControls
 {
 public:
@@ -54,6 +55,9 @@ public:
         std::function<void(const PointD &position)> lookStart;
         std::function<void(const PointD &position)> lookMove;
         std::function<void()> lookEnd;
+        // a finger off the buttons lifted soon near where it came down (it may have worked the
+        // stick or the head meanwhile), in the window's coordinates
+        std::function<void(const PointD &position)> tap;
     };
 
 public:
@@ -117,6 +121,9 @@ private:
     Vector2D m_stickBase = Vector2D(0);
     Vector2D m_stickAt = Vector2D(0);
     long long m_lookFinger = -1;
+    long long m_tapFinger = -1;  // a finger that may still be a tap
+    PointD m_tapPosition;
+    float m_tapTime = 0;
 };
 
 

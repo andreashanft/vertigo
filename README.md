@@ -212,6 +212,11 @@ button hides them again.
   point), AUTO (autopilot), SONAR (on or off), TURR (turret menu) and VIEW
   (2D or 3D cockpit).
 - A tap on an option of the mission and turret menus takes it.
+- A tap on a status monitor changes its page: the weapon monitor steps
+  through the gun, the magazine and the turrets to the overview (as F1-F4),
+  the armor monitor switches to the system state and back (as I); Hiob's
+  single monitor goes through all of them. In the 3D cockpit only with the
+  head facing forward.
 - In the 3D cockpit a finger dragged elsewhere turns the head.
 
 The controls keep the size they have on an 11-inch iPad, in the corners of a

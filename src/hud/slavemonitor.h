@@ -57,6 +57,12 @@ public:
     void setPage(Page page) { m_page = page; }
     // F1-F4: the weapon's page, or the overview if that page is showing, or back
     void pressWeaponKey(Weapon weapon);
+    // a tap on the touch screen: the weapon page steps through the boat's weapons and then the
+    // overview, the armor page switches as I does; a single monitor (alone) goes on from the
+    // overview to the armor page and from the system state back to the gun
+    void tap(bool alone);
+    // whether a point of the 640x480 view is on the monitor
+    bool contains(const Point &point) const;
 
 protected:
     void draw();
