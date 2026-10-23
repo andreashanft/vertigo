@@ -183,7 +183,7 @@ on machine learning, game graphics are automatically upscaled locally:
 ![Screenshot from the main menu comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-Vergleich.jpg)
 
 
-![Screenshot grid showing two follow cam ingame scenes and comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-3rd-Cam Vergleich.jpg)
+![Screenshot grid showing two follow cam ingame scenes and comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-3rd-Cam-Vergleich.jpg)
 
 ### How to enable
 
