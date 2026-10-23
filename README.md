@@ -286,9 +286,11 @@ on machine learning, and use them in their place:
   animation, which keeps letters whole and edges crisp where the general model
   garbles and smears them.
 
-The fonts, the HUD's own art and the terrain keep their pixels (the upscaler
-breaks up the letters, and the terrain's tiles stop meeting seamlessly), and
-the movies stay as they are. Small lettering on models and buildings is
+The large silver font of the menus and screens is drawn from its vector
+version instead (`data/font`, made with the font editor there), sharp at any
+size and with the game's widths. The other fonts, the HUD's own art and the
+terrain keep their pixels (the upscaler breaks up the letters, and the
+terrain's tiles stop meeting seamlessly), and the movies stay as they are. Small lettering on models and buildings is
 upscaled with them by the general model and can come out garbled.
 
 The first click on *Upscaled graphics: PREPARE* asks before downloading

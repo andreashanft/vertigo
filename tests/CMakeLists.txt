@@ -1,5 +1,5 @@
 # Tests of the game's own types: strings, data values and dates, images and colours, the parsers
-# of the text formats, JSON, CD images and the hash that checks downloads
+# of the text formats, JSON, CD images, the hash that checks downloads and the vector font
 
 # util::String, txt::Value and util::DateTime
 add_executable(stringtest
@@ -89,3 +89,21 @@ elseif(TARGET glm::glm)
     target_link_libraries(cockpitpainttest glm::glm)
 endif()
 add_test(NAME cockpitpaint COMMAND cockpitpainttest)
+
+# gfx::VectorFont, the large silver font redrawn as vectors
+add_executable(vectorfonttest
+    vectorfonttest.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/colortable.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/image.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/rgb.cpp
+    ${PROJECT_SOURCE_DIR}/src/gfx/vectorfont.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/datapath.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/error.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/file.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/json.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/path.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/string.cpp
+)
+target_include_directories(vectorfonttest PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(vectorfonttest SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/3rdparty/stb)
+add_test(NAME vectorfont COMMAND vectorfonttest)

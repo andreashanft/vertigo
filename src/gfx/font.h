@@ -23,6 +23,7 @@
 #include "cliprect.h"
 #include "colortable.h"
 #include "texture.h"
+#include "image.h"
 #include <memory>
 #include <vector>
 #include "util/string.hpp"
@@ -51,12 +52,24 @@ private:
         int height;
     };
 
+    // the large silver font's glyphs drawn from the vector font (gfx::VectorFont), made on first
+    // use; false without it
+    bool prepareVector();
+
     Texture m_texture;
     std::vector<Symbol> m_symbols;
     int m_height;
     bool m_alpha;
     Rgb m_colorNormal;
     Rgb m_colorHighlight;
+
+    // the large silver font is drawn from the vector font while the upscaled graphics are on:
+    // its glyphs as the file has them, and a texture of them drawn (the game's scaled where the
+    // vector font has none) with their places in it
+    std::vector<Image> m_images;
+    Texture m_vectorTexture;
+    std::vector<RectF> m_vectorRects;
+    int m_vectorState = 0;  // 0 not tried yet, 1 made, -1 not to be had
 };
 
 

@@ -1,4 +1,4 @@
-# Serves the glyph editor and stores its edits next to it (edited.json, vertigo-mono-edit.svg, vertigo-mono-styled.svg).
+# Serves the glyph editor and stores its edits next to it (vertigo-mono.json, vertigo-mono-edit.svg, vertigo-mono-styled.svg).
 import http.server, json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 class H(http.server.SimpleHTTPRequestHandler):
@@ -8,7 +8,7 @@ class H(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.path != '/save': self.send_error(404); return
         body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-        json.dump(body['data'], open(os.path.join(HERE, 'edited.json'), 'w'), ensure_ascii=False)
+        json.dump(body['data'], open(os.path.join(HERE, 'vertigo-mono.json'), 'w'), ensure_ascii=False)
         open(os.path.join(HERE, 'vertigo-mono-edit.svg'), 'w', encoding='utf-8').write(body['svg'])
         if 'styled' in body: open(os.path.join(HERE, 'vertigo-mono-styled.svg'), 'w', encoding='utf-8').write(body['styled'])
         self.send_response(204); self.end_headers()

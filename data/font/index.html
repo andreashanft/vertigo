@@ -61,7 +61,7 @@ input[type=color] { width:34px; height:22px; padding:0; border:1px solid var(--l
     <button class="b" id="dl">Download SVG</button>
     <button class="b" id="dls">Download styled</button>
   </div>
-  <p class="help">Edits and style save to <code>edited.json</code>, <code>vertigo-mono-edit.svg</code> (shapes) and <code>vertigo-mono-styled.svg</code> as you work.</p>
+  <p class="help">Edits and style save to <code>vertigo-mono.json</code>, <code>vertigo-mono-edit.svg</code> (shapes) and <code>vertigo-mono-styled.svg</code> as you work.</p>
 </aside>
 
 <main>
@@ -252,7 +252,7 @@ async function load() {
   for (const g of glyphs) Object.assign(g, origs[g.id] || { png: blank, ow: ADV, oh: H });
   if (!Object.keys(origs).length) $('status').textContent = 'originals.json missing: run originals.py';
   try {
-    const r = await fetch('edited.json');
+    const r = await fetch('vertigo-mono.json');
     if (r.ok) {
       const e = await r.json(); const by = Object.fromEntries(e.glyphs.map(g => [g.id, g]));
       for (const g of glyphs) if (by[g.id]) Object.assign(g, { rings: by[g.id].rings, ox: by[g.id].ox, oy: by[g.id].oy });

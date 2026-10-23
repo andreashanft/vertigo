@@ -180,6 +180,8 @@ set(SOURCES
     gfx/texturemanager.h
     gfx/upscaled.cpp
     gfx/upscaled.h
+    gfx/vectorfont.cpp
+    gfx/vectorfont.h
     gfx/video.cpp
     gfx/video.h
     gfx/cliprect.cpp
@@ -360,6 +362,20 @@ elseif(VERTIGO_KITS)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${VERTIGO_KITS} $<TARGET_FILE_DIR:vertigo>/cockpits/
         VERBATIM)
     install(FILES ${VERTIGO_KITS} DESTINATION share/vertigo/cockpits)
+endif()
+# the vector font (data/font/vertigo-mono.json), which draws the large silver font with the upscaled
+# graphics: next to the program (in the app's resources on iOS), and in share/vertigo/font when
+# installed; copied again whenever the font editor has changed it
+set(VERTIGO_FONT ${PROJECT_SOURCE_DIR}/data/font/vertigo-mono.json)
+if(IOS)
+    target_sources(vertigo PRIVATE ${VERTIGO_FONT})
+    set_source_files_properties(${VERTIGO_FONT} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/font)
+else()
+    add_custom_target(vertigo-font ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:vertigo>/font
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${VERTIGO_FONT} $<TARGET_FILE_DIR:vertigo>/font/
+        VERBATIM)
+    install(FILES ${VERTIGO_FONT} DESTINATION share/vertigo/font)
 endif()
 # the version, for the main menu and --help
 target_compile_definitions(vertigo PRIVATE VERTIGO_VERSION="${PROJECT_VERSION}")
