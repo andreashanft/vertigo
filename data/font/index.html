@@ -1,0 +1,632 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Glyph Editor</title>
+<style>
+:root { --bg:#1b1d29; --panel:#242738; --line:#34384d; --fg:#d9dae4; --mut:#8b8ea3; --acc:#ffb347; --sel:#4fc3ff; --ink:#e8e6f0; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.4 -apple-system, system-ui, sans-serif;
+       display:grid; grid-template-columns:220px 1fr 380px; height:100vh; overflow:hidden; }
+aside, section { overflow:auto; padding:12px; }
+aside { border-right:1px solid var(--line); }
+section { border-left:1px solid var(--line); }
+h2 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); margin:16px 0 6px; font-weight:600; }
+h2:first-child { margin-top:0; }
+#list { display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; }
+#list button { background:var(--panel); border:1px solid transparent; border-radius:4px; padding:3px; cursor:pointer; position:relative; }
+#list button.cur { border-color:var(--acc); }
+#list button.dirty::after { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:var(--acc); }
+#list canvas { width:100%; image-rendering:pixelated; display:block; }
+main { display:flex; flex-direction:column; gap:8px; padding:12px; min-width:0; }
+.bar { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; }
+.bar label { display:flex; gap:5px; align-items:center; color:var(--mut); }
+.bar .big { font-size:22px; font-weight:600; min-width:28px; color:var(--fg); }
+#ed { flex:1; min-height:0; width:100%; background:#12131b; border-radius:6px; user-select:none; touch-action:none; display:block; }
+button.b { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:3px 9px; cursor:pointer; font:inherit; }
+button.b:hover { border-color:var(--mut); }
+select, input[type=text], input[type=number] { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:2px 5px; font:inherit; }
+input[type=number] { width:52px; }
+input[type=text] { width:100%; }
+input[type=color] { width:34px; height:22px; padding:0; border:1px solid var(--line); border-radius:4px; background:none; }
+.help { color:var(--mut); font-size:12px; }
+.help kbd { background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:0 4px; font:11px ui-monospace, monospace; color:var(--fg); }
+#status { margin-left:auto; color:var(--mut); }
+.sizes { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+.sizes figure { margin:0; display:flex; flex-direction:column; gap:3px; align-items:center; }
+.sizes figcaption { color:var(--mut); font-size:11px; }
+.pair { display:flex; gap:4px; }
+.pair > div { background:#12131b; position:relative; overflow:hidden; }
+.pair img, .strip img { image-rendering:pixelated; display:block; }
+.big2 { display:flex; gap:8px; }
+.big2 > div { background:#12131b; border-radius:4px; position:relative; overflow:hidden; }
+.big2 img { image-rendering:pixelated; position:absolute; }
+#diff { image-rendering:pixelated; width:100%; background:#12131b; border-radius:4px; display:block; }
+.legend { display:flex; gap:10px; font-size:11px; color:var(--mut); margin-top:4px; flex-wrap:wrap; }
+.legend i { display:inline-block; width:9px; height:9px; margin-right:4px; vertical-align:-1px; }
+.strip { background:#12131b; border-radius:4px; padding:8px; overflow-x:auto; display:flex; flex-direction:column; gap:6px; }
+.strip .l { color:var(--mut); font-size:11px; }
+.grp { background:var(--panel); border-radius:6px; padding:8px 10px; margin-bottom:6px; }
+.grp > label.t { display:flex; gap:6px; align-items:center; font-weight:600; margin-bottom:4px; }
+.grp .rows { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; align-items:center; }
+.grp .rows > span { color:var(--mut); font-size:12px; }
+.grp .rows > div { display:flex; gap:6px; align-items:center; }
+.grp .rows input[type=range] { flex:1; }
+.grp .rows output { width:34px; text-align:right; font:11px ui-monospace, monospace; color:var(--mut); }
+.grp.off .rows { opacity:.4; }
+</style></head>
+<body>
+<aside>
+  <h2>Glyphs</h2>
+  <div id="list"></div>
+  <h2>File</h2>
+  <div class="bar">
+    <button class="b" id="dl">Download SVG</button>
+    <button class="b" id="dls">Download styled</button>
+  </div>
+  <p class="help">Edits and style save to <code>edited.json</code>, <code>vertigo-mono-edit.svg</code> (shapes) and <code>vertigo-mono-styled.svg</code> as you work.</p>
+</aside>
+
+<main>
+  <div class="bar">
+    <span class="big" id="cur"></span>
+    <label>View <select id="view"><option value="shape">shape</option><option value="styled" selected>styled</option></select></label>
+    <label>Snap <select id="snap"><option value="1">1</option><option value="0.5">½</option><option value="0.25" selected>¼</option><option value="0.125">⅛</option><option value="0">off</option></select></label>
+    <label>Original <select id="bgmode"><option value="full">full colour</option><option value="core" selected>shape pixels</option><option value="off">off</option></select></label>
+    <label>Opacity <input type="range" id="bgop" min="0" max="1" step="0.05" value="0.7"></label>
+    <label>Fill <input type="range" id="fillop" min="0" max="1" step="0.05" value="0.35"></label>
+    <label>Offset x <input type="number" id="ox" step="1"></label>
+    <label>y <input type="number" id="oy" step="1"></label>
+    <button class="b" id="undo" title="⌘Z">Undo</button>
+    <button class="b" id="redo" title="⇧⌘Z">Redo</button>
+    <button class="b" id="addsq" title="N">Add square</button>
+    <button class="b" id="reset">Reset glyph</button>
+    <span id="status">no changes</span>
+  </div>
+  <svg id="ed" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="help">
+    <kbd>drag</kbd> point or shape · <kbd>⇧</kbd>+click add to selection · drag on empty space to box-select ·
+    <kbd>⌥</kbd> while dragging: no snap · <kbd>double-click</kbd> an edge: new point · <kbd>⌫</kbd> delete points (select a whole shape by its edge) · <kbd>N</kbd> new square at the pointer ·
+    <kbd>←↑→↓</kbd> nudge by snap step · <kbd>⌘A</kbd> all · <kbd>Esc</kbd> none · <kbd>[</kbd> <kbd>]</kbd> previous / next glyph ·
+    <kbd>O</kbd> original on/off · <kbd>T</kbd> shape / styled · hold <kbd>Space</kbd> to see the original instead
+  </div>
+</main>
+
+<section>
+  <h2>Side by side: original | vector</h2>
+  <div class="big2" id="big2"></div>
+  <h2>Actual size</h2>
+  <div class="sizes" id="sizes"></div>
+  <h2>Style <span class="help" style="text-transform:none;letter-spacing:0">(whole font)</span></h2>
+  <div id="style"></div>
+  <div class="bar"><button class="b" id="sreset">Reset style</button></div>
+  <h2>Sample text</h2>
+  <input type="text" id="sample" value="NEUES SPIEL  Größe: 0123456789">
+  <div class="bar" style="margin:6px 0"><label>Scale <input type="range" id="sscale" min="1" max="6" step="0.5" value="3"></label><span id="sv" class="help"></span></div>
+  <div class="strip" id="strip"></div>
+  <h2>Pixel overlap <span id="iou"></span></h2>
+  <canvas id="diff"></canvas>
+  <div class="legend"><span><i style="background:#8fd18f"></i>both</span><span><i style="background:#e5675f"></i>original only</span><span><i style="background:#5fa8e5"></i>vector only</span><span>shape pixels = lum &gt; 50</span></div>
+</section>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const $ = id => document.getElementById(id);
+let ADV = 11, H = 12, glyphs = [], base = {}, cur = 0;
+let sel = new Set();               // "ring:index"
+const hist = {};                   // id -> {undo:[], redo:[]}
+const VB = { x: -2, y: -2, w: ADV + 4, h: H + 4 };
+let peek = false;                  // Space held: the original on top
+
+// ---------- style ----------
+// colours read off the original: its outline, the bright first and the darker second row of a stroke
+const STYLE0 = {
+  outline: { on: true, color: '#25201a', width: 1.25, join: 'bevel' },
+  bevel: { on: true, lit: '#d4d2e4', litBand: 0.75, mid: '#a9a5ad', shade: '#8c8890', shadeBand: 0.75 },
+  grain: { on: true, source: 'random', cell: '1', amount: 0.5, blend: 'overlay', seed: 1, crisp: true },
+  palette: { on: false },
+};
+const SPEC = [
+  ['outline', 'Outline', [['color', 'colour', 'color'], ['width', 'width', 'range', 0, 2.5, 0.05], ['join', 'corners', 'select', ['bevel', 'miter', 'round']]]],
+  ['bevel', 'Light and shade', [['lit', 'lit (top / left)', 'color'], ['litBand', 'lit band', 'range', 0, 2, 0.05],
+                                ['mid', 'body', 'color'], ['shade', 'shade (bottom / right)', 'color'], ['shadeBand', 'shade band', 'range', 0, 2, 0.05]]],
+  ['grain', 'Grain', [['source', 'source', 'select', ['random', 'original']], ['cell', 'cell size', 'select', ['1', '0.5', '0.25']],
+                      ['amount', 'amount', 'range', 0, 1, 0.02], ['blend', 'blend', 'select', ['overlay', 'soft-light', 'hard-light', 'multiply', 'screen', 'normal']],
+                      ['seed', 'seed', 'number'], ['crisp', 'crisp cells', 'check']]],
+  ['palette', 'Snap colours to the original palette', []],
+];
+let style = structuredClone(STYLE0);
+const merge = (a, b) => { for (const k in b) if (k in a) a[k] = typeof a[k] === 'object' ? merge(a[k], b[k]) : b[k]; return a; };
+let PAL = [];                      // the original's colours, [lum, r, g, b]
+
+function buildStyle() {
+  const root = $('style'); root.innerHTML = '';
+  for (const [grp, title, rows] of SPEC) {
+    const box = document.createElement('div'); box.className = 'grp' + (style[grp].on ? '' : ' off');
+    const t = document.createElement('label'); t.className = 't';
+    t.innerHTML = `<input type="checkbox" ${style[grp].on ? 'checked' : ''}> ${title}`;
+    t.firstChild.onchange = e => { style[grp].on = e.target.checked; box.classList.toggle('off', !e.target.checked); styleChanged(); };
+    box.appendChild(t);
+    if (rows.length) {
+      const r = document.createElement('div'); r.className = 'rows'; box.appendChild(r);
+      for (const [key, label, kind, ...a] of rows) {
+        const s = document.createElement('span'); s.textContent = label; r.appendChild(s);
+        const d = document.createElement('div'); r.appendChild(d);
+        const v = style[grp][key];
+        let inp;
+        if (kind === 'select') { inp = document.createElement('select'); inp.innerHTML = a[0].map(o => `<option${o == v ? ' selected' : ''}>${o}</option>`).join(''); }
+        else { inp = document.createElement('input'); inp.type = kind === 'check' ? 'checkbox' : kind; }
+        if (kind === 'range') { inp.min = a[0]; inp.max = a[1]; inp.step = a[2]; }
+        if (kind === 'check') inp.checked = v; else inp.value = v;
+        d.appendChild(inp);
+        let out = null;
+        if (kind === 'range') { out = document.createElement('output'); out.textContent = v; d.appendChild(out); }
+        inp.addEventListener('input', () => {
+          style[grp][key] = kind === 'check' ? inp.checked : kind === 'range' || kind === 'number' ? +inp.value : inp.value;
+          if (out) out.textContent = inp.value;
+          styleChanged();
+        });
+      }
+    }
+    root.appendChild(box);
+  }
+}
+function styleChanged() { render(); side(); scheduleSave(); }
+$('sreset').onclick = () => { style = structuredClone(STYLE0); buildStyle(); styleChanged(); };
+
+// a reproducible random value per glyph and cell, so a letter always carries the same grain
+function rnd(a, b, c, seed) {
+  let x = Math.imul(a, 374761393) ^ Math.imul(b, 668265263) ^ Math.imul(c, 2246822519) ^ Math.imul(seed + 1, 3266489917);
+  x = Math.imul(x ^ (x >>> 13), 1274126177); x ^= x >>> 16;
+  return (x >>> 0) / 4294967295;
+}
+// grey grain image for glyphs placed at items [{g, x, y}] in a W x Hh unit frame; 128 is neutral
+function texture(items, W, Hh) {
+  const gs = style.grain, orig = gs.source === 'original', cell = orig ? 1 : +gs.cell;
+  const cw = Math.ceil(W / cell), chh = Math.ceil(Hh / cell);
+  const c = document.createElement('canvas'); c.width = cw; c.height = chh;
+  const x = c.getContext('2d'), d = x.createImageData(cw, chh);
+  for (let i = 0; i < d.data.length; i += 4) d.data.set([128, 128, 128, 255], i);
+  for (const it of items) {
+    const g = it.g, X0 = Math.round(it.x / cell), Y0 = Math.round(it.y / cell), n = parseInt(g.id, 16);
+    for (let ly = 0; ly < H / cell; ly++) for (let lx = 0; lx < ADV / cell; lx++) {
+      const X = X0 + lx, Y = Y0 + ly;
+      if (X < 0 || Y < 0 || X >= cw || Y >= chh) continue;
+      let v;
+      if (orig) { const px = lx - g.ox, py = ly - g.oy; v = px >= 0 && py >= 0 && px < g.ow && py < g.oh ? g.res[py * g.ow + px] : 0; }
+      else v = rnd(n, lx, ly, gs.seed) * 2 - 1;
+      const k = 128 + Math.max(-1, Math.min(1, v)) * 127 | 0;
+      d.data.set([k, k, k], (Y * cw + X) * 4);
+    }
+  }
+  x.putImageData(d, 0, 0);
+  return { url: c.toDataURL(), w: cw * cell, h: chh * cell };
+}
+// luminance, then a table that maps every level to the nearest original colour
+function paletteFilter(id, box) {
+  const N = 96, ch = [[], [], []];
+  for (let i = 0; i < N; i++) {
+    const l = (i + .5) / N * 255;
+    let best = PAL[0];
+    for (const p of PAL) if (Math.abs(p[0] - l) < Math.abs(best[0] - l)) best = p;
+    for (let k = 0; k < 3; k++) ch[k].push((best[k + 1] / 255).toFixed(3));
+  }
+  return `<filter id="${id}" filterUnits="userSpaceOnUse" ${box} color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values=".3 .59 .11 0 0  .3 .59 .11 0 0  .3 .59 .11 0 0  0 0 0 1 0"/>
+    <feComponentTransfer><feFuncR type="discrete" tableValues="${ch[0].join(' ')}"/><feFuncG type="discrete" tableValues="${ch[1].join(' ')}"/><feFuncB type="discrete" tableValues="${ch[2].join(' ')}"/></feComponentTransfer></filter>`;
+}
+// the styled glyphs as SVG markup in unit coordinates; "@@" is replaced by a unique id prefix per use
+function styled(items, W, Hh) {
+  const d = items.map(it => pathD(it.g.rings, it.x, it.y)).join('');
+  if (!d) return '';
+  const o = style.outline, b = style.bevel, gr = style.grain;
+  const box = `x="-3" y="-3" width="${W + 6}" height="${Hh + 6}"`;
+  let defs = `<clipPath id="@@c"><path d="${d}" clip-rule="evenodd"/></clipPath>`, out = '';
+  if (o.on && o.width > 0) out += `<path d="${d}" fill="${o.color}" fill-rule="evenodd" stroke="${o.color}" stroke-width="${2 * o.width}" stroke-linejoin="${o.join}" stroke-miterlimit="4"/>`;
+  let inner = `<rect ${box} fill="${b.mid}"/>`;
+  const band = (id, dd, col) => {
+    defs += `<mask id="@@${id}" maskUnits="userSpaceOnUse" ${box}><path d="${d}" fill="#fff" fill-rule="evenodd"/><path d="${d}" fill="#000" fill-rule="evenodd" transform="translate(${dd} ${dd})"/></mask>`;
+    inner += `<rect ${box} fill="${col}" mask="url(#@@${id})"/>`;
+  };
+  if (b.on && b.litBand > 0) band('l', b.litBand, b.lit);
+  if (b.on && b.shadeBand > 0) band('s', -b.shadeBand, b.shade);
+  if (gr.on && gr.amount > 0) {
+    const t = texture(items, W, Hh);
+    inner += `<image href="${t.url}" x="0" y="0" width="${t.w}" height="${t.h}" preserveAspectRatio="none" opacity="${gr.amount}" style="mix-blend-mode:${gr.blend};${gr.crisp ? 'image-rendering:pixelated' : ''}"/>`;
+  }
+  out += `<g clip-path="url(#@@c)" style="isolation:isolate">${inner}</g>`;
+  if (style.palette.on && PAL.length) { defs += paletteFilter('@@q', box); out = `<g filter="url(#@@q)">${out}</g>`; }
+  return `<defs>${defs}</defs>${out}`;
+}
+let uid = 0;
+const inst = m => m.replaceAll('@@', 's' + (uid++) + '_');
+const svgWrap = (m, W, Hh, s, extra = '') => `<svg xmlns="${NS}" width="${W * s}" height="${Hh * s}" viewBox="0 0 ${W} ${Hh}" overflow="visible" style="display:block;flex:none;${extra}">${inst(m)}</svg>`;
+
+// ---------- data ----------
+async function load() {
+  const d = await (await fetch('glyphs.json')).json();
+  ADV = d.adv; H = d.h; glyphs = d.glyphs;
+  VB.w = ADV + 4; VB.h = H + 4;
+  for (const g of glyphs) base[g.id] = JSON.stringify({ rings: g.rings, ox: g.ox, oy: g.oy });
+  // the game's glyphs come from originals.json, made locally by originals.py; without it there is nothing to compare
+  let origs = {};
+  try { const r = await fetch('originals.json'); if (r.ok) origs = await r.json(); } catch (_) {}
+  const blank = Object.assign(document.createElement('canvas'), { width: ADV, height: H }).toDataURL().split(',')[1];
+  for (const g of glyphs) Object.assign(g, origs[g.id] || { png: blank, ow: ADV, oh: H });
+  if (!Object.keys(origs).length) $('status').textContent = 'originals.json missing: run originals.py';
+  try {
+    const r = await fetch('edited.json');
+    if (r.ok) {
+      const e = await r.json(); const by = Object.fromEntries(e.glyphs.map(g => [g.id, g]));
+      for (const g of glyphs) if (by[g.id]) Object.assign(g, { rings: by[g.id].rings, ox: by[g.id].ox, oy: by[g.id].oy });
+      if (e.style) merge(style, e.style);
+    }
+  } catch (_) {}
+  await Promise.all(glyphs.map(prepImages));
+  // the original palette: every colour that occurs at least a few times
+  const cnt = {};
+  for (const g of glyphs) for (const [k, n] of Object.entries(g.colours)) cnt[k] = (cnt[k] || 0) + n;
+  PAL = Object.entries(cnt).filter(([, n]) => n >= 8).map(([k]) => { const [r, gg, b] = k.split(',').map(Number); return [(r * 30 + gg * 59 + b * 11) / 100, r, gg, b]; });
+  buildStyle(); buildList(); select(glyphs.findIndex(g => g.ch === 'A'));
+}
+
+// original bitmap, its shape pixels (lum > 50), a coloured mask of them, and its grain
+function prepImages(g) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = g.ow; c.height = g.oh;
+      const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+      const d = x.getImageData(0, 0, g.ow, g.oh), n = g.ow * g.oh, core = new Uint8Array(n), lum = new Float32Array(n);
+      const m = x.createImageData(g.ow, g.oh);
+      g.colours = {};
+      for (let i = 0; i < n; i++) {
+        const [r, gg, b, a] = d.data.slice(i * 4, i * 4 + 4);
+        lum[i] = (r * 30 + gg * 59 + b * 11) / 100;
+        if (a > 0) g.colours[r + ',' + gg + ',' + b] = (g.colours[r + ',' + gg + ',' + b] || 0) + 1;
+        if (a > 0 && lum[i] > 50) { core[i] = 1; m.data.set([255, 179, 71, 255], i * 4); }
+        else if (a > 0) m.data.set([90, 70, 60, 120], i * 4);
+      }
+      x.putImageData(m, 0, 0);
+      // grain from the original: each shape pixel against the glyph's mean, spread a little past the edge
+      let sum = 0, k = 0;
+      for (let i = 0; i < n; i++) if (core[i]) { sum += lum[i]; k++; }
+      const mean = k ? sum / k : 0, resv = new Float32Array(n), have = core.slice();
+      for (let i = 0; i < n; i++) if (core[i]) resv[i] = (lum[i] - mean) / 64;
+      for (let pass = 0; pass < 2; pass++) {
+        const nh = have.slice();
+        for (let y = 0; y < g.oh; y++) for (let xx = 0; xx < g.ow; xx++) {
+          const i = y * g.ow + xx; if (have[i]) continue;
+          let s = 0, c2 = 0;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const X = xx + dx, Y = y + dy;
+            if (X >= 0 && Y >= 0 && X < g.ow && Y < g.oh && have[Y * g.ow + X]) { s += resv[Y * g.ow + X]; c2++; }
+          }
+          if (c2) { resv[i] = s / c2; nh[i] = 1; }
+        }
+        have.set(nh);
+      }
+      g.img = im; g.full = 'data:image/png;base64,' + g.png; g.coreUrl = c.toDataURL(); g.core = core; g.res = resv;
+      res();
+    };
+    im.src = 'data:image/png;base64,' + g.png;
+  });
+}
+
+const G = () => glyphs[cur];
+const snapshot = g => JSON.stringify({ rings: g.rings, ox: g.ox, oy: g.oy });
+function H_(g) { return hist[g.id] || (hist[g.id] = { undo: [], redo: [] }); }
+function pushUndo(s) { const h = H_(G()); h.undo.push(s); h.redo = []; }
+function restore(s) { const g = G(), o = JSON.parse(s); g.rings = o.rings; g.ox = o.ox; g.oy = o.oy; }
+function undo() { const h = H_(G()); if (!h.undo.length) return; h.redo.push(snapshot(G())); restore(h.undo.pop()); sel.clear(); changed(); }
+function redo() { const h = H_(G()); if (!h.redo.length) return; h.undo.push(snapshot(G())); restore(h.redo.pop()); sel.clear(); changed(); }
+
+// ---------- geometry ----------
+const fmt = v => +v.toFixed(4) + '';
+const pathD = (rings, dx = 0, dy = 0) => rings.map(r => 'M' + r.map(p => fmt(p[0] + dx) + ',' + fmt(p[1] + dy)).join(' ') + 'Z').join('');
+function path2d(rings, s, dx = 0, dy = 0) {
+  const p = new Path2D();
+  for (const r of rings) { r.forEach((q, i) => (i ? p.lineTo : p.moveTo).call(p, (q[0] + dx) * s, (q[1] + dy) * s)); p.closePath(); }
+  return p;
+}
+const step = () => +$('snap').value;
+const snapV = (v, s) => s ? Math.round(v / s) * s : Math.round(v * 1000) / 1000;
+
+// ---------- glyph list ----------
+function buildList() {
+  const L = $('list'); L.innerHTML = '';
+  glyphs.forEach((g, i) => {
+    const b = document.createElement('button'); b.title = g.ch;
+    const c = document.createElement('canvas'); c.width = ADV * 4; c.height = H * 4;
+    b.appendChild(c); b.onclick = () => select(i); L.appendChild(b); g.thumb = c; g.btn = b;
+    drawThumb(g);
+  });
+}
+function drawThumb(g) {
+  const c = g.thumb, x = c.getContext('2d'), s = 4;
+  x.clearRect(0, 0, c.width, c.height); x.imageSmoothingEnabled = false;
+  x.globalAlpha = .45; x.drawImage(g.img, g.ox * s, g.oy * s, g.ow * s, g.oh * s); x.globalAlpha = 1;
+  x.fillStyle = 'rgba(232,230,240,.85)'; x.fill(path2d(g.rings, s), 'evenodd');
+  g.btn.classList.toggle('dirty', snapshot(g) !== base[g.id]);
+  g.btn.classList.toggle('cur', g === G());
+}
+function select(i) {
+  if (i < 0 || i >= glyphs.length) return;
+  const prev = G(); cur = i; sel.clear();
+  if (prev && prev.btn) prev.btn.classList.remove('cur');
+  G().btn.classList.add('cur'); G().btn.scrollIntoView({ block: 'nearest' });
+  render(); side();
+}
+
+// ---------- editor ----------
+const ed = $('ed');
+ed.setAttribute('viewBox', `${VB.x} ${VB.y} ${VB.w} ${VB.h}`);
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e); return e;
+}
+function pxSize() { const r = ed.getBoundingClientRect(); return Math.min(r.width / VB.w, r.height / VB.h); }
+let band = null;
+function render() {
+  const g = G(), s = pxSize() || 40, hr = 5 / s, isStyled = $('view').value === 'styled';
+  ed.setAttribute('viewBox', `${VB.x} ${VB.y} ${VB.w} ${VB.h}`);
+  ed.innerHTML = '';
+  $('cur').textContent = g.ch === ' ' ? '␠' : g.ch;
+  $('ox').value = g.ox; $('oy').value = g.oy;
+  el('rect', { x: 0, y: 0, width: ADV, height: H, fill: '#1a1c28' }, ed);
+  const mode = $('bgmode').value;
+  const orig = (href, op) => { const im = el('image', { x: g.ox, y: g.oy, width: g.ow, height: g.oh, opacity: op, preserveAspectRatio: 'none', style: 'image-rendering:pixelated' }, ed); im.setAttribute('href', href); };
+  if (mode !== 'off') orig(mode === 'full' ? g.full : g.coreUrl, $('bgop').value);
+  // grid
+  let d = '';
+  for (let x = VB.x; x <= VB.x + VB.w; x++) d += `M${x},${VB.y}V${VB.y + VB.h}`;
+  for (let y = VB.y; y <= VB.y + VB.h; y++) d += `M${VB.x},${y}H${VB.x + VB.w}`;
+  const st = step();
+  if (st && st < 1 && s * st >= 8) {
+    let f = '';
+    for (let x = VB.x; x <= VB.x + VB.w; x += st) if (x % 1) f += `M${x},${VB.y}V${VB.y + VB.h}`;
+    for (let y = VB.y; y <= VB.y + VB.h; y += st) if (y % 1) f += `M${VB.x},${y}H${VB.x + VB.w}`;
+    el('path', { d: f, stroke: '#ffffff', 'stroke-opacity': .05, 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke', fill: 'none' }, ed);
+  }
+  if (isStyled) {
+    const gg = el('g', {}, ed);
+    gg.innerHTML = inst(styled([{ g, x: 0, y: 0 }], ADV, H));
+    gg.setAttribute('opacity', 1 - $('fillop').value * 0);   // styled view is opaque; the original shows through the outline gaps only
+  }
+  el('path', { d, stroke: '#ffffff', 'stroke-opacity': isStyled ? .07 : .13, 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke', fill: 'none' }, ed);
+  el('rect', { x: 0, y: 0, width: ADV, height: H, fill: 'none', stroke: '#8b8ea3', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, ed);
+  el('rect', { x: 1, y: 1, width: ADV - 2, height: H - 2, fill: 'none', stroke: '#ffb347', 'stroke-opacity': .5, 'stroke-dasharray': '4 4', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, ed);
+  if (!isStyled) el('path', { d: pathD(g.rings), fill: '#e8e6f0', 'fill-opacity': $('fillop').value, 'fill-rule': 'evenodd', 'pointer-events': 'none' }, ed);
+  if (peek) orig(g.full, 1);
+  // one path per ring so a ring can be grabbed
+  g.rings.forEach((r, ri) => {
+    el('path', { d: pathD([r]), fill: 'transparent', stroke: '#4fc3ff', 'stroke-opacity': isStyled || peek ? .55 : 1, 'stroke-width': isStyled ? 1 : 1.5, 'vector-effect': 'non-scaling-stroke', 'data-ring': ri, style: 'cursor:move' }, ed);
+  });
+  g.rings.forEach((r, ri) => r.forEach((p, pi) => {
+    const on = sel.has(ri + ':' + pi);
+    el('circle', { cx: p[0], cy: p[1], r: hr, fill: on ? '#4fc3ff' : '#12131b', 'fill-opacity': on ? 1 : .6, stroke: on ? '#ffffff' : '#4fc3ff', 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke', 'data-pt': ri + ':' + pi, style: 'cursor:pointer' }, ed);
+  }));
+  if (band) el('rect', { x: Math.min(band.x0, band.x1), y: Math.min(band.y0, band.y1), width: Math.abs(band.x1 - band.x0), height: Math.abs(band.y1 - band.y0), fill: 'rgba(79,195,255,.1)', stroke: '#4fc3ff', 'stroke-width': 1, 'stroke-dasharray': '3 3', 'vector-effect': 'non-scaling-stroke' }, ed);
+  $('undo').disabled = !H_(g).undo.length; $('redo').disabled = !H_(g).redo.length;
+}
+function pt(e) { const p = ed.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(ed.getScreenCTM().inverse()); return [q.x, q.y]; }
+
+let drag = null;
+ed.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  const g = G(), p = pt(e), t = e.target;
+  const before = snapshot(g);
+  if (t.dataset.pt) {
+    const k = t.dataset.pt;
+    if (e.shiftKey) { sel.has(k) ? sel.delete(k) : sel.add(k); render(); if (!sel.has(k)) return; }
+    else if (!sel.has(k)) { sel = new Set([k]); }
+    const [ri, pi] = k.split(':').map(Number);
+    drag = { kind: 'pt', p0: p, grab: g.rings[ri][pi].slice(), before };
+  } else if (t.dataset.ring !== undefined) {
+    const ri = +t.dataset.ring, keys = g.rings[ri].map((_, i) => ri + ':' + i);
+    const all = keys.every(k => sel.has(k));
+    if (!e.shiftKey && !all) sel = new Set();
+    keys.forEach(k => sel.add(k));
+    drag = { kind: 'ring', p0: p, before };
+  } else {
+    if (!e.shiftKey) sel = new Set();
+    band = { x0: p[0], y0: p[1], x1: p[0], y1: p[1], keep: new Set(sel) };
+    drag = { kind: 'band' };
+  }
+  if (drag.kind !== 'band') drag.start = [...sel].map(k => { const [ri, pi] = k.split(':').map(Number); return [ri, pi, g.rings[ri][pi].slice()]; });
+  ed.setPointerCapture(e.pointerId); render();
+});
+let lastPt = null;                 // where the pointer last was over the editor, for new squares
+ed.addEventListener('pointerleave', () => { if (!drag) lastPt = null; });
+ed.addEventListener('pointermove', e => {
+  lastPt = pt(e);
+  if (!drag) return;
+  const g = G(), p = pt(e), s = e.altKey ? 0 : step();
+  if (drag.kind === 'band') {
+    band.x1 = p[0]; band.y1 = p[1];
+    const [xa, xb] = [Math.min(band.x0, band.x1), Math.max(band.x0, band.x1)], [ya, yb] = [Math.min(band.y0, band.y1), Math.max(band.y0, band.y1)];
+    sel = new Set(band.keep);
+    g.rings.forEach((r, ri) => r.forEach((q, pi) => { if (q[0] >= xa && q[0] <= xb && q[1] >= ya && q[1] <= yb) sel.add(ri + ':' + pi); }));
+    render(); return;
+  }
+  let dx = p[0] - drag.p0[0], dy = p[1] - drag.p0[1];
+  if (drag.kind === 'pt') { dx = snapV(drag.grab[0] + dx, s) - drag.grab[0]; dy = snapV(drag.grab[1] + dy, s) - drag.grab[1]; }
+  else { dx = snapV(dx, s); dy = snapV(dy, s); }
+  for (const [ri, pi, q] of drag.start) g.rings[ri][pi] = [+(q[0] + dx).toFixed(4), +(q[1] + dy).toFixed(4)];
+  render(); side(true);
+});
+ed.addEventListener('pointerup', () => {
+  if (!drag) return;
+  if (drag.kind === 'band') band = null;
+  else if (snapshot(G()) !== drag.before) { pushUndo(drag.before); changed(); }
+  drag = null; render();
+});
+ed.addEventListener('dblclick', e => {
+  const g = G(), p = pt(e), s = pxSize();
+  let best = null;
+  g.rings.forEach((r, ri) => r.forEach((a, i) => {
+    const b = r[(i + 1) % r.length], vx = b[0] - a[0], vy = b[1] - a[1], L = vx * vx + vy * vy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L));
+    const cx = a[0] + t * vx, cy = a[1] + t * vy, dd = Math.hypot(p[0] - cx, p[1] - cy) * s;
+    if (dd < 8 && (!best || dd < best.dd)) best = { ri, i, dd, cx, cy };
+  }));
+  if (!best) return;
+  pushUndo(snapshot(g));
+  const st = e.altKey ? 0 : step();
+  g.rings[best.ri].splice(best.i + 1, 0, [snapV(best.cx, st), snapV(best.cy, st)]);
+  sel = new Set([best.ri + ':' + (best.i + 1)]); changed();
+});
+
+function deleteSel() {
+  if (!sel.size) return;
+  const g = G(); pushUndo(snapshot(g));
+  g.rings = g.rings.map((r, ri) => r.filter((_, pi) => !sel.has(ri + ':' + pi))).filter(r => r.length >= 3);
+  sel.clear(); changed();
+}
+function nudge(dx, dy) {
+  if (!sel.size) return;
+  const g = G(); pushUndo(snapshot(g));
+  for (const k of sel) { const [ri, pi] = k.split(':').map(Number), q = g.rings[ri][pi]; g.rings[ri][pi] = [+(q[0] + dx).toFixed(4), +(q[1] + dy).toFixed(4)]; }
+  changed();
+}
+// a new 2 x 2 square, centred on the pointer (or the cell) and selected so it can be dragged at once
+function addSquare() {
+  const g = G(), st = step() || 0.25, c = lastPt || [ADV / 2, H / 2];
+  const cx = snapV(c[0], st), cy = snapV(c[1], st);
+  pushUndo(snapshot(g));
+  g.rings.push([[cx - 1, cy - 1], [cx + 1, cy - 1], [cx + 1, cy + 1], [cx - 1, cy + 1]]);
+  const ri = g.rings.length - 1;
+  sel = new Set([0, 1, 2, 3].map(i => ri + ':' + i)); changed();
+}
+const typing = e => e.target.matches('input[type=text], input[type=number]');
+document.addEventListener('keydown', e => {
+  if (typing(e)) return;
+  const m = e.metaKey || e.ctrlKey, st = step() || 0.125;
+  if (e.key === ' ') { e.preventDefault(); if (!peek) { peek = true; render(); } }
+  else if (m && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  else if (m && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
+  else if (m && e.key.toLowerCase() === 'a') { e.preventDefault(); sel = new Set(); G().rings.forEach((r, ri) => r.forEach((_, pi) => sel.add(ri + ':' + pi))); render(); }
+  else if (e.key === 'Escape') { sel.clear(); render(); }
+  else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); deleteSel(); }
+  else if (e.key.startsWith('Arrow')) {
+    e.preventDefault();
+    nudge(e.key === 'ArrowLeft' ? -st : e.key === 'ArrowRight' ? st : 0, e.key === 'ArrowUp' ? -st : e.key === 'ArrowDown' ? st : 0);
+  }
+  else if (e.key === '[') select(cur - 1);
+  else if (e.key === ']') select(cur + 1);
+  else if (e.key === 'o' || e.key === 'O') { const b = $('bgmode'); b.value = b.value === 'off' ? 'core' : 'off'; render(); }
+  else if ((e.key === 'n' || e.key === 'N') && !m) addSquare();
+  else if (e.key === 't' || e.key === 'T') { const v = $('view'); v.value = v.value === 'styled' ? 'shape' : 'styled'; render(); }
+});
+document.addEventListener('keyup', e => { if (e.key === ' ' && peek) { peek = false; render(); } });
+
+['view', 'snap', 'bgmode', 'bgop', 'fillop'].forEach(id => $(id).addEventListener('input', render));
+['ox', 'oy'].forEach(id => $(id).addEventListener('change', () => {
+  const g = G(); pushUndo(snapshot(g)); g[id] = +$(id).value | 0; changed();
+}));
+$('undo').onclick = undo; $('redo').onclick = redo; $('addsq').onclick = addSquare;
+$('reset').onclick = () => { const g = G(); pushUndo(snapshot(g)); restore(base[g.id]); sel.clear(); changed(); };
+window.addEventListener('resize', render);
+
+// ---------- comparison ----------
+function side(quick) {
+  const g = G(), dpr = window.devicePixelRatio || 1, m = styled([{ g, x: 0, y: 0 }], ADV, H);
+  // large, in CSS pixels
+  const Z = 14;
+  $('big2').innerHTML = `<div style="width:${ADV * Z}px;height:${H * Z}px"><img src="${g.full}" style="left:${g.ox * Z}px;top:${g.oy * Z}px;width:${g.ow * Z}px;height:${g.oh * Z}px"></div>
+    <div style="width:${ADV * Z}px;height:${H * Z}px">${svgWrap(m, ADV, H, Z)}</div>`;
+  // actual sizes, device pixels: 1 unit = s device px
+  $('sizes').innerHTML = [1, 2, 3, 4, 6].map(s => {
+    const c = s / dpr;
+    return `<figure><div class="pair">
+      <div style="width:${ADV * c}px;height:${H * c}px"><img src="${g.full}" style="position:absolute;left:${g.ox * c}px;top:${g.oy * c}px;width:${g.ow * c}px;height:${g.oh * c}px"></div>
+      <div style="width:${ADV * c}px;height:${H * c}px">${svgWrap(m, ADV, H, c)}</div></div><figcaption>${s}×</figcaption></figure>`;
+  }).join('');
+  diff(g);
+  drawThumb(g);
+  if (!quick) strip();
+}
+function coverage(g, w, h, ox, oy) {
+  const ss = 8, c = document.createElement('canvas'); c.width = w * ss; c.height = h * ss;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fill(path2d(g.rings, ss, ox, oy), 'evenodd');
+  const d = x.getImageData(0, 0, c.width, c.height).data, out = new Float32Array(w * h);
+  for (let y = 0; y < c.height; y++) for (let xx = 0; xx < c.width; xx++) out[(y / ss | 0) * w + (xx / ss | 0)] += d[(y * c.width + xx) * 4 + 3] / 255 / (ss * ss);
+  return out;
+}
+function diff(g) {
+  // a frame that holds both the cell and the original bitmap
+  const x0 = Math.min(0, g.ox), y0 = Math.min(0, g.oy), x1 = Math.max(ADV, g.ox + g.ow), y1 = Math.max(H, g.oy + g.oh);
+  const w = x1 - x0, h = y1 - y0, cov = coverage(g, w, h, -x0, -y0);
+  const Z = 16, c = $('diff'); c.width = w * Z; c.height = h * Z;
+  const x = c.getContext('2d'); x.fillStyle = '#12131b'; x.fillRect(0, 0, c.width, c.height);
+  let both = 0, uni = 0;
+  for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) {
+    const ox = xx + x0 - g.ox, oy = yy + y0 - g.oy;
+    const o = ox >= 0 && oy >= 0 && ox < g.ow && oy < g.oh && g.core[oy * g.ow + ox];
+    const v = cov[yy * w + xx];
+    both += o ? v : 0; uni += o ? 1 : v;
+    if (!o && v < .02) continue;
+    const col = o ? (v > .5 ? [143, 209, 143] : [229, 103, 95]) : [95, 168, 229];
+    const a = o ? (v > .5 ? .35 + .65 * v : 1 - v * .8) : v;
+    x.fillStyle = `rgba(${col},${a.toFixed(3)})`; x.fillRect(xx * Z, yy * Z, Z, Z);
+  }
+  x.strokeStyle = 'rgba(255,255,255,.08)'; x.beginPath();
+  for (let i = 0; i <= w; i++) { x.moveTo(i * Z + .5, 0); x.lineTo(i * Z + .5, c.height); }
+  for (let i = 0; i <= h; i++) { x.moveTo(0, i * Z + .5); x.lineTo(c.width, i * Z + .5); }
+  x.stroke();
+  x.strokeStyle = '#ffffff'; x.lineWidth = 1.5; x.stroke(path2d(g.rings, Z, -x0, -y0));
+  $('iou').textContent = uni ? `IoU ${(100 * both / uni).toFixed(1)} %` : '';
+}
+const OMAP = { 'ä': 'Ä', 'ö': 'Ö', 'ü': 'Ü' };
+const byCh = ch => glyphs.find(g => g.ch === ch) || glyphs.find(g => g.ch === (OMAP[ch] || ch.toUpperCase())) || glyphs.find(g => g.ch === '?');
+function strip() {
+  const t = $('sample').value, s = +$('sscale').value, dpr = window.devicePixelRatio || 1, c = s / dpr;
+  $('sv').textContent = s + ' device px per unit';
+  // original at its own advances
+  const gl = [...t].map(byCh), W = gl.reduce((a, g) => a + g.ow, 0) || 1;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d'); let px = 0;
+  for (const g of gl) { x.drawImage(g.img, px, 0); px += g.ow; }
+  const items = [...t].map((ch, i) => ({ g: byCh(ch), x: i * ADV, y: 0 })), VW = t.length * ADV;
+  $('strip').innerHTML = `<span class="l">original</span><img src="${cv.toDataURL()}" style="width:${W * c}px;height:${H * c}px">
+    <span class="l">vector, monospaced</span>${svgWrap(styled(items, VW, H), VW, H, c)}`;
+}
+$('sample').addEventListener('input', strip);
+$('sscale').addEventListener('input', strip);
+
+// ---------- saving ----------
+const PER = 16;
+const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function atlasSvg() {
+  const rows = Math.ceil(glyphs.length / PER);
+  const out = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PER * ADV} ${rows * H}" width="${PER * ADV}" height="${rows * H}">`,
+    `<!-- monospaced, ${ADV} x ${H} units per cell; the glyph ink starts one unit in -->`];
+  glyphs.forEach((g, i) => out.push(`<path id="c${g.id}" data-char="${esc(g.ch)}" fill="currentColor" fill-rule="evenodd" d="${pathD(g.rings, (i % PER) * ADV, Math.floor(i / PER) * H)}"/>`));
+  out.push('</svg>'); return out.join('\n');
+}
+function styledAtlasSvg() {
+  const rows = Math.ceil(glyphs.length / PER), W = PER * ADV, Hh = rows * H;
+  const items = glyphs.map((g, i) => ({ g, x: (i % PER) * ADV, y: Math.floor(i / PER) * H }));
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 ${W + 4} ${Hh + 4}" width="${(W + 4) * 4}" height="${(Hh + 4) * 4}">
+<!-- ${esc(JSON.stringify(style))} -->
+<rect x="-2" y="-2" width="${W + 4}" height="${Hh + 4}" fill="#1d2030"/>
+${styled(items, W, Hh).replaceAll('@@', 'a_')}
+</svg>`;
+}
+let saveT = null;
+function scheduleSave() { $('status').textContent = 'unsaved…'; clearTimeout(saveT); saveT = setTimeout(save, 500); }
+function changed() { render(); side(); scheduleSave(); }
+async function save() {
+  const data = { style, glyphs: glyphs.map(g => ({ id: g.id, ch: g.ch, rings: g.rings, ox: g.ox, oy: g.oy })) };
+  try {
+    const r = await fetch('save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data, svg: atlasSvg(), styled: styledAtlasSvg() }) });
+    $('status').textContent = r.ok ? 'saved ' + new Date().toLocaleTimeString() : 'save failed';
+  } catch (_) { $('status').textContent = 'save failed (server down?)'; }
+}
+function download(text, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' })); a.download = name; a.click();
+}
+$('dl').onclick = () => download(atlasSvg(), 'vertigo-mono-edit.svg');
+$('dls').onclick = () => download(styledAtlasSvg(), 'vertigo-mono-styled.svg');
+load();
+</script>
+</body></html>
