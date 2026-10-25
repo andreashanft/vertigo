@@ -7,7 +7,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 endif()
 
 # 1.0.0 will be the feature-complete clone; see CLAUDE.md for the patch number
-project(vertigo VERSION 0.9.19)
+project(vertigo VERSION 0.9.20)
 
 if(IOS)
     enable_language(OBJCXX)

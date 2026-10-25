@@ -204,6 +204,13 @@ does not work well for small letters, and the terrain's tiles stop meeting seaml
 the movies stay as they are. Small lettering on models and buildings is
 still upscaled and can come out garbled.
 
+### AI upscale
+
+A second, optional upscale with a newer AI model (Qwen Image 2.1 in ComfyUI) redraws the
+pictures and textures with more detail and clean lettering. It runs outside the game as a
+script, takes a few hours on a strong graphics card, and makes a set the game uses like the
+Real-ESRGAN one. See [data/AI-upscale](data/AI-upscale/README.md).
+
 
 ## Game controllers
 
