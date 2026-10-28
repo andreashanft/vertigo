@@ -342,7 +342,10 @@
     20,
     187,
     35
-   ]
+   ],
+   "note": "the boat's name, written upside down (turned by 180 degrees)",
+   "turned": true,
+   "zoom": true
   },
   {
    "text": "TRITON",
@@ -590,7 +593,7 @@
    ]
   },
   {
-   "text": "PARTIES",
+   "text": "DOMES",
    "box": [
     223,
     92,
@@ -736,6 +739,67 @@
     123,
     44
    ]
+  }
+ ],
+ "7be8a33168b03f00": [
+  {
+   "text": "X-TREM",
+   "box": [
+    270,
+    24,
+    296,
+    33
+   ],
+   "note": "red letters on a dark sign, cut off by the picture's right edge (the word is X-TREME)"
+  },
+  {
+   "text": "HO",
+   "box": [
+    283,
+    34,
+    296,
+    43
+   ],
+   "note": "red letters under X-TREM, cut off by the picture's right edge (the word is HOT)"
+  }
+ ],
+ "973d75a520f92678": [
+  {
+   "text": "MOLE",
+   "box": [
+    280,
+    209,
+    360,
+    229
+   ],
+   "note": "the boat's name, in dark letters on its hull, seen at a slant",
+   "zoom": true
+  }
+ ],
+ "c975c9bc0345e450": [
+  {
+   "text": "DOC",
+   "box": [
+    247,
+    25,
+    270,
+    36
+   ],
+   "note": "on a sign, cut off by the picture's right edge",
+   "zoom": true
+  }
+ ],
+ "2e0a4b143d92532d": [
+  {
+   "text": "PA",
+   "box": [
+    173,
+    3,
+    186,
+    20
+   ],
+   "note": "in green capitals on the wing, written sideways, reading from bottom to top",
+   "zoom": true
   }
  ]
 }

@@ -7,7 +7,7 @@
   aiupscale.py texts             Qwen3-VL proposes the texts in the pictures, to check by eye
   aiupscale.py run [KEY ...]     the upscale, of all originals or the given ones, into work/out
   aiupscale.py set NAME          a set for the game in work/sets/NAME
-  aiupscale.py review            a page comparing the results with Real-ESRGAN (work/review.html)
+  aiupscale.py review            a page comparing the results with the originals and Real-ESRGAN
   aiupscale.py use NAME|esrgan   switches the game to that set, or back
   aiupscale.py compare KEY X Y W H   a picture of a part of the original next to the result
 """
@@ -208,8 +208,39 @@ def make_set(args):
     build(args.name)
 
 
+REVIEW_PAGE = '''<!doctype html><meta charset="utf-8"><title>AI upscale review</title>
+<style>
+body { background: #111; color: #ddd; font: 14px system-ui; margin: 16px; }
+header { position: sticky; top: 0; background: #111; padding: 8px 0; border-bottom: 1px solid #333; }
+header label { margin-left: 12px; }
+h2 { font-size: 15px; margin: 24px 0 4px; } p { margin: 0 0 8px; color: #999; }
+img { max-width: 100%; height: auto; cursor: pointer; display: block; }
+img.pixels { image-rendering: pixelated; }
+</style>
+<header>Hold the mouse button on an image to see instead:
+<label><input type="radio" name="other" value="original"> the original (enlarged, its pixels kept)</label>
+<label><input type="radio" name="other" value="esrgan"> the Real-ESRGAN copy</label></header>
+ROWS
+<script>
+let other = 'original';
+try { other = localStorage.getItem('other') || other; } catch (e) {}
+for (const radio of document.querySelectorAll('input[name=other]')) {
+  radio.checked = radio.value === other;
+  radio.addEventListener('change', () => { other = radio.value; try { localStorage.setItem('other', other); } catch (e) {} });
+}
+for (const img of document.querySelectorAll('section img')) {
+  const show = (e) => { e.preventDefault(); img.src = img.dataset[other]; img.classList.toggle('pixels', other === 'original'); };
+  const back = () => { img.src = img.dataset.ai; img.classList.remove('pixels'); };
+  img.addEventListener('mousedown', show);
+  img.addEventListener('touchstart', show);
+  for (const e of ['mouseup', 'mouseleave', 'touchend', 'touchcancel']) img.addEventListener(e, back);
+}
+</script>'''
+
+
 def review(args):
-    """A page with each AI copy; holding the mouse button on it shows the Real-ESRGAN copy."""
+    """A page with each AI copy; holding the mouse button on it shows the original instead, enlarged
+    to the same size, or the Real-ESRGAN copy, as chosen at the top."""
     from pipeline import kind
     known = load(NAMES)
     rows = []
@@ -219,19 +250,17 @@ def review(args):
             continue
         report = json.load(open(path))
         ai = os.path.join(OUT, key + '.png')
+        width, height = Image.open(original(key)).size
         title = f'{key} · {report["kind"]} · {known.get(key, "")}'
         said = ', '.join(t.get('text') or t.get('hint', '') for t in report['texts'])
         note = f'{report["seconds"]} s, difference {report["difference"]}' + ('' if report['usable'] else ' · NOT USED (shifted)')
+        files = {name: html.escape('file://' + path) for name, path in (('ai', ai), ('esrgan', esrgan(key)), ('original', original(key)))}
+        # the size the copy has, which the original takes too when it is shown instead
         rows.append(f'<section><h2>{html.escape(title)}</h2><p>{html.escape(note)}{" · text: " + html.escape(said) if said else ""}</p>'
-                    f'<img src="file://{html.escape(ai)}" data-ai="file://{html.escape(ai)}" data-esrgan="file://{html.escape(esrgan(key))}"></section>')
-    page = ('<!doctype html><meta charset="utf-8"><title>AI upscale review</title>'
-            '<style>body { background: #111; color: #ddd; font: 14px system-ui; margin: 16px; } h2 { font-size: 15px; margin: 24px 0 4px; }'
-            ' p { margin: 0 0 8px; color: #999; } img { max-width: 100%; cursor: pointer; display: block; }</style>'
-            '<p>Hold the mouse button on an image to see the Real-ESRGAN copy.</p>' + ''.join(rows) +
-            '<script>for (const img of document.querySelectorAll("img")) { img.addEventListener("mousedown", () => img.src = img.dataset.esrgan);'
-            ' for (const e of ["mouseup", "mouseleave"]) img.addEventListener(e, () => img.src = img.dataset.ai); }</script>')
+                    f'<img src="{files["ai"]}" width="{width*4}" height="{height*4}" data-ai="{files["ai"]}" '
+                    f'data-esrgan="{files["esrgan"]}" data-original="{files["original"]}"></section>')
     out = os.path.join(WORK, 'review.html')
-    open(out, 'w').write(page)
+    open(out, 'w').write(REVIEW_PAGE.replace('ROWS', '\n'.join(rows)))
     print(f'{out}: {len(rows)} images')
 
 

@@ -94,7 +94,8 @@ Run the steps in this order. Each one can be stopped and started again.
    Makes the set `work/sets/ai`: the Real-ESRGAN set with the AI copies in place.
 7. `venv/bin/python aiupscale.py review`
    Makes `work/review.html`. Open it in a browser. Hold the mouse button on an image to see
-   the Real-ESRGAN copy instead.
+   the original instead, enlarged to the same size, or the Real-ESRGAN copy. Choose which at
+   the top of the page.
 8. `venv/bin/python aiupscale.py use ai`
    Switches the game to the set (quit the game first). The Real-ESRGAN set is kept aside.
    `use esrgan` switches back. For the iPad, copy `work/sets/ai` to Vertigo's folder there
