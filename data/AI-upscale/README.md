@@ -117,7 +117,8 @@ Run the steps in this order. Each one can be stopped and started again.
   turned back.
 - Each tile's position is measured against its input. A tile that moved is drawn again.
 - The colours are matched to the original, so that the result keeps its look.
-- Some station pictures have vertical streak artefacts in their open water. They are smoothed away.
+- Some station pictures have vertical streaks or a dotted dithering in their open water. The
+  pipeline finds both and smooths them away.
 - On the sea maps only the terrain is redrawn. Labels, lines and frames stay from Real-ESRGAN.
 - Some images keep the Real-ESRGAN copy: the effects' sprites with transparency, smoke and
   fire (the AI does not improve them), the autopilot's destinations, the credits

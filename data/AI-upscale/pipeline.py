@@ -18,8 +18,8 @@ the prompt of the tiles it is in, and read back by Qwen3-VL; a tile that comes o
 a text that doesn't read right is drawn again with other seeds. Small texts can be drawn again from
 close up, upside-down ones turned upright for it. Afterwards the colours are matched to the
 original's (below 2 pixels of the original, the AI's detail; above, the original's colour), the
-vertical streaks some station pictures have in their open water are smoothed away, and a copy with
-a tile still off by more than half a pixel is not used.
+vertical streaks and the dithering some station pictures have in their open water are smoothed away,
+and a copy with a tile still off by more than half a pixel is not used.
 """
 import difflib
 import glob
@@ -47,6 +47,7 @@ RETRIES = 3
 TEXT_RETRIES = 5  # for tiles with text, which must also read back right
 MIN_CONTRAST = 15
 STREAKY = 1.6  # from this ratio of column to row changes the open water counts as streaked
+DITHERED = 3  # from this change from row to row the open water counts as dithered
 
 
 def load(path):
@@ -259,26 +260,45 @@ def water(source, seeds):
     r, g, b = (np.apply_along_axis(lambda row: np.convolve(row, kernel, mode='same'), 1, pixels[..., c]) for c in range(3))
     rows = np.abs(np.diff(r + g + b, axis=0, append=(r + g + b)[-1:]))
     flat = np.asarray(Image.fromarray(np.clip(rows*16, 0, 255).astype(np.uint8)).filter(ImageFilter.BoxBlur(3)), dtype=np.float64)/16 < 2.5
-    blue = (b - r >= 10) & (b - g >= 5) & (b >= 24) & flat
-    h, w = blue.shape
+    return flood((b - r >= 10) & (b - g >= 5) & (b >= 24) & flat, seeds)
+
+
+def flood(allowed, seeds):
+    """The allowed pixels connected to the given points (x, y)."""
+    h, w = allowed.shape
     mask = np.zeros((h, w), bool)
-    stack = [(y, x) for x, y in seeds if blue[y, x]]
+    stack = [(y, x) for x, y in seeds if allowed[y, x]]
     for y, x in stack:
         mask[y, x] = True
     while stack:
         y, x = stack.pop()
         for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
-            if 0 <= ny < h and 0 <= nx < w and blue[ny, nx] and not mask[ny, nx]:
+            if 0 <= ny < h and 0 <= nx < w and allowed[ny, nx] and not mask[ny, nx]:
                 mask[ny, nx] = True
                 stack.append((ny, nx))
     return mask
 
 
+def edges(size):
+    """Points along the top and side edges of a picture, where its open water is."""
+    w, h = size
+    return [[x, 0] for x in range(0, w, 4)] + [[0, y] for y in range(0, h, 4)] + [[w - 1, y] for y in range(0, h, 4)]
+
+
 def open_water(source):
     """The open water of a picture, reached from its top and side edges."""
-    w, h = source.size
-    seeds = [[x, 0] for x in range(0, w, 4)] + [[0, y] for y in range(0, h, 4)] + [[w - 1, y] for y in range(0, h, 4)]
-    return water(source, seeds)
+    return water(source, edges(source.size))
+
+
+def calm_water(source):
+    """The open water of a picture whatever its fine pattern: the blue or blue-green area reached
+    from its top and side edges that is flat after a blur (which dithering doesn't survive)."""
+    pixels = np.asarray(source.filter(ImageFilter.GaussianBlur(2)), dtype=np.float64)
+    r, g, b = pixels[..., 0], pixels[..., 1], pixels[..., 2]
+    light = r + g + b
+    changes = np.abs(np.diff(light, axis=0, append=light[-1:])) + np.abs(np.diff(light, axis=1, append=light[:, -1:]))
+    flat = np.asarray(Image.fromarray(np.clip(changes*16, 0, 255).astype(np.uint8)).filter(ImageFilter.BoxBlur(3)), dtype=np.float64)/16 < 2.5
+    return flood((b - r >= 10) & (b >= g - 3) & (b >= 20) & flat, edges(source.size))
 
 
 def streaky(source, mask):
@@ -293,24 +313,52 @@ def streaky(source, mask):
     return dx/max(dy, 0.05)
 
 
-def smooth_streaks(result, source, seeds):
-    """The vertical streaks in the water smoothed away: there, a wide horizontal blur of the
-    result's water alone (so nothing of what is in front bleeds in), which keeps its gradient from
-    top to bottom; softly at the water's edge, which stays a pixel off what is in front."""
-    found = open_water(source) if seeds == 'auto' else water(source, seeds)
+def dithered(source, mask):
+    """How much the water changes from row to row, in steps of brightness: 1 or 2 for clear or
+    streaked water, clearly more where it is dithered."""
+    g = np.asarray(source.convert('L'), dtype=np.float64)
+    inner = mask[1:] & mask[:-1]
+    if inner.sum() < 2000:
+        return 0
+    return np.abs(g[1:] - g[:-1])[inner].mean()
+
+
+def smooth_water(result, found, blur):
+    """The result's water (found in the original) replaced by a blur of the water alone (so nothing
+    of what is in front bleeds in); softly at its edge, which stays a pixel off what is in front."""
     mask = Image.fromarray((found*255).astype(np.uint8)).filter(ImageFilter.MinFilter(3))
     mask = mask.resize(result.size, Image.BILINEAR)
-    m = np.asarray(mask, dtype=np.float64)[..., None]/255
+    m = np.asarray(mask, dtype=np.float64)/255
     pixels = np.asarray(result, dtype=np.float64)
-    width = 12*SCALE + 1
-    kernel = np.ones(width)
-
-    def blur(a):
-        return np.apply_along_axis(lambda row: np.convolve(row, kernel, mode='same'), 1, a)
-    weight = blur(m[..., 0])[..., None]
-    smooth = np.stack([blur(pixels[..., c]*m[..., 0]) for c in range(3)], axis=2)/np.maximum(weight, 1e-6)
+    smooth = np.stack([blur(pixels[..., c]*m) for c in range(3)], axis=2)/np.maximum(blur(m), 1e-6)[..., None]
     soft = np.asarray(mask.filter(ImageFilter.GaussianBlur(SCALE)), dtype=np.float64)[..., None]/255
     return Image.fromarray(np.clip(pixels*(1 - soft) + smooth*soft, 0, 255).round().astype(np.uint8))
+
+
+def smooth_streaks(result, source, seeds):
+    """The vertical streaks in the water smoothed away, by a wide horizontal blur, which keeps the
+    water's gradient from top to bottom."""
+    found = open_water(source) if seeds == 'auto' else water(source, seeds)
+    kernel = np.ones(12*SCALE + 1)
+    return smooth_water(result, found, lambda a: np.apply_along_axis(lambda row: np.convolve(row, kernel, mode='same'), 1, a))
+
+
+def smooth_dither(result, source):
+    """The dithering in the water, which the AI draws as a woven pattern, smoothed away by a blur
+    of about three of the original's pixels (three box blurs each way)."""
+    radius = 3*SCALE
+
+    def box(a, axis):
+        ends = [(radius + 1, radius) if i == axis else (0, 0) for i in range(2)]
+        total = np.cumsum(np.pad(a, ends, mode='edge'), axis=axis)
+        n = total.shape[axis]
+        return (np.take(total, range(2*radius + 1, n), axis=axis) - np.take(total, range(n - 2*radius - 1), axis=axis))/(2*radius + 1)
+
+    def blur(a):
+        for _ in range(3):
+            a = box(box(a, 0), 1)
+        return a
+    return smooth_water(result, calm_water(source), blur)
 
 
 def worst_shift(tiles):
@@ -377,6 +425,10 @@ def run(keys):
                                       and streaky(source, open_water(source)) >= STREAKY)
         if smoothed:
             result = smooth_streaks(result, source, streaks.get(key, 'auto'))
+        # the dithering in the open water of some (the AI turns it into a woven pattern) smoothed too
+        dither = k == 'picture' and source.size == (640, 480) and dithered(source, calm_water(source)) >= DITHERED
+        if dither:
+            result = smooth_dither(result, source)
         for x1, y1, x2, y2 in regions().get(key, []):
             box = (x1*SCALE, y1*SCALE, x2*SCALE, y2*SCALE)
             result.paste(Image.open(esrgan(key)).convert('RGB').crop(box), box[:2])
@@ -387,7 +439,8 @@ def run(keys):
         worst = worst_shift(shifts)
         report = {'kind': k, 'seconds': round(time.time() - start), 'texts': texts.get(key, []), 'tiles': shifts,
                   'shift': [round(sx, 2), round(sy, 2)], 'difference': round(difference, 2),
-                  'colour': [round(c, 1) for c in colour], 'usable': bool(worst <= MAX_SHIFT), 'streaks smoothed': bool(smoothed)}
+                  'colour': [round(c, 1) for c in colour], 'usable': bool(worst <= MAX_SHIFT), 'streaks smoothed': bool(smoothed),
+                  'dither smoothed': bool(dither)}
         json.dump(report, open(report_path, 'w'), indent=1, ensure_ascii=False)
         print(f'{n + 1}/{len(keys)} {key} {k}: {report["seconds"]} s, {len(shifts)} tiles, worst shift {worst:.2f}, '
               f'difference {difference:.2f}{"" if report["usable"] else "  NOT USABLE"}', flush=True)
