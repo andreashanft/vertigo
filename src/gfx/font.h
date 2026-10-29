@@ -52,7 +52,7 @@ private:
         int height;
     };
 
-    // the large silver font's glyphs drawn from the vector font (gfx::VectorFont), made on first
+    // the silver fonts' glyphs drawn from the vector font (gfx::VectorFont), made on first
     // use; false without it
     bool prepareVector();
 
@@ -63,7 +63,7 @@ private:
     Rgb m_colorNormal;
     Rgb m_colorHighlight;
 
-    // the large silver font is drawn from the vector font while the upscaled graphics are on:
+    // the silver fonts are drawn from the vector font while the upscaled graphics are on:
     // its glyphs as the file has them, and a texture of them drawn (the game's scaled where the
     // vector font has none) with their places in it
     std::vector<Image> m_images;

@@ -61,6 +61,24 @@ const VectorFont* vectorFont()
     return font.get();
 }
 
+// the vector font's glyph for a game glyph, as opaque as the game glyph is (the depot draws a
+// half transparent silver font)
+Image vectorGlyph(const VectorFont &font, int index, const Image &image, int scale, const std::vector<Rgb> &palette)
+{
+    int opacity = 0;
+    for (int y = 0; y < image.height(); y++)
+        for (int x = 0; x < image.width(); x++)
+            opacity = std::max(opacity, int(alpha(image.pixel(x, y))));
+    Image glyph = font.render(index, image.width(), image.height(), scale, image, palette, VectorFont::Size);
+    if (opacity > 0 && opacity < 255)
+        for (int y = 0; y < glyph.height(); y++) {
+            std::uint8_t *texel = glyph.scanLine(y);
+            for (int x = 0; x < glyph.width(); x++, texel += 4)
+                texel[3] = std::uint8_t(texel[3]*opacity/255);
+        }
+    return glyph;
+}
+
 } // namespace
 
 Font::Font(Name name)
@@ -99,10 +117,13 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
         m_alpha = false;
     }
 
-    // the large silver font has a vector version
+    // the silver fonts have a vector version
     std::string name = String(filename).toUtf8();
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::tolower(c); });
-    const bool vector = !m_alpha && name.size() >= 11 && name.compare(name.size() - 11, 11, "dplarge.fnt") == 0;
+    auto endsWith = [&name](const std::string &end) {
+        return name.size() >= end.size() && name.compare(name.size() - end.size(), end.size(), end) == 0;
+    };
+    const bool vector = !m_alpha && (endsWith("dplarge.fnt") || endsWith("dpmedium.fnt") || endsWith("dpsmall.fnt"));
 
     int maxHeight = 0;
     int x = 1;
@@ -228,7 +249,7 @@ bool FontPrivate::prepareVector()
         for (std::size_t i = 0; i < m_images.size(); i++) {
             const Image &image = m_images[i];
             m_vectorTexture.update(places[i].x, places[i].y, drawnAs[i]
-                ? font->render(drawnAs[i], image.width(), image.height(), scale, image, palette)
+                ? vectorGlyph(*font, drawnAs[i], image, scale, palette)
                 : image.scaled(image.width()*scale, image.height()*scale));
             RectF rect;
             rect.x = places[i].x / float(res);
@@ -246,7 +267,7 @@ bool FontPrivate::prepareVector()
 
 Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCenter, bool alignBottom, const ClipRect *clipRect)
 {
-    // with the upscaled graphics the large silver font is drawn from its vector version
+    // with the upscaled graphics the silver fonts are drawn from their vector version
     const bool vector = !m_images.empty() && Upscaled::isActive() && prepareVector();
     (vector ? m_vectorTexture : m_texture).bind();
 

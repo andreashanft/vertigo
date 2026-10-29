@@ -324,7 +324,7 @@ double VectorFont::random(std::uint32_t glyph, std::uint32_t x, std::uint32_t y,
 }
 
 
-Image VectorFont::render(int index, int w, int h, int scale, const Image &original, const std::vector<Rgb> &palette) const
+Image VectorFont::render(int index, int w, int h, int scale, const Image &original, const std::vector<Rgb> &palette, double size) const
 {
     Image image(w*scale, h*scale, Image::RGBA8888);
     const auto found = m_glyphs.find(index);
@@ -333,10 +333,14 @@ Image VectorFont::render(int index, int w, int h, int scale, const Image &origin
     const Glyph &glyph = found->second;
     const Style &s = m_style;
 
-    // the samples over the game glyph's box in the cell
-    const double perUnit = scale*Samples;
+    // the samples over the game glyph's box in the cell: the large font's box, as wide as the
+    // game glyph would be there, at the box's centre, its height taking size times the box's
+    const double pixelsPerUnit = size*h/CellHeight;
+    const double cx = glyph.ox + (w + CellHeight - h)/2.0, cy = glyph.oy + CellHeight/2.0;
+    const double x0 = cx - w/2.0/pixelsPerUnit, y0 = cy - h/2.0/pixelsPerUnit;
+    const double perUnit = pixelsPerUnit*scale*Samples;
     const int sw = w*scale*Samples, sh = h*scale*Samples;
-    Mask fillMask(sw, sh, perUnit, glyph.ox, glyph.oy);
+    Mask fillMask(sw, sh, perUnit, x0, y0);
     fill(fillMask, glyph.rings);
     Mask outlineMask = fillMask;
     if (s.outline && s.outlineWidth > 0)
@@ -344,7 +348,7 @@ Image VectorFont::render(int index, int w, int h, int scale, const Image &origin
             fill(outlineMask, { piece });
     // the lit band is where the glyph moved down and right isn't, the shade where moved up and left isn't
     const bool lit = s.bevel && s.litBand > 0, shade = s.bevel && s.shadeBand > 0;
-    Mask litMask(sw, sh, perUnit, glyph.ox, glyph.oy), shadeMask = litMask;
+    Mask litMask(sw, sh, perUnit, x0, y0), shadeMask = litMask;
     if (lit)
         fill(litMask, glyph.rings, s.litBand, s.litBand);
     if (shade)
@@ -421,7 +425,7 @@ Image VectorFont::render(int index, int w, int h, int scale, const Image &origin
                         if (shade && !shadeMask.at(i, j))
                             c = shadeColor;
                         if (grain) {
-                            const double g = grainAt(glyph.ox + (i + 0.5)/perUnit, glyph.oy + (j + 0.5)/perUnit);
+                            const double g = grainAt(x0 + (i + 0.5)/perUnit, y0 + (j + 0.5)/perUnit);
                             for (double &channel : c)
                                 channel = (1 - s.grainAmount)*channel + s.grainAmount*blend(mode, channel, g);
                         }

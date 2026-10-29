@@ -32,12 +32,16 @@ namespace gfx {
 // whose units are the game glyph's pixels, and one style for all of them: an outline, light and
 // shade bands, grain and the game's palette. A glyph is drawn at any scale over the box of the
 // game's glyph it replaces, so text keeps the game's widths and places. It looks as the editor
-// shows it.
+// shows it. The glyphs are drawn for the large font; the medium and small silver fonts take them
+// shrunk to their height.
 class VectorFont
 {
 public:
     // the texels per game pixel the glyphs are drawn with when they replace the game's
     static const int Scale = 8;
+    // the glyphs' size when they replace the game's: the cell's height takes this part of the
+    // game glyph's
+    static constexpr double Size = 0.9;
 
     // the editor's file; false (and no glyphs) on a syntax error
     bool parse(const std::string &text);
@@ -46,9 +50,11 @@ public:
     bool has(int index) const;
     // The glyph for the font index, over the box of the game's glyph (w x h pixels), at scale
     // texels per pixel, RGBA8888. The game's glyph gives the grain when the style takes it from
-    // there; the palette is the game's glyph colours, for the style that snaps to them.
+    // there; the palette is the game's glyph colours, for the style that snaps to them. The
+    // cell's height takes size times the box's, centred on the box; a box less than 12 pixels
+    // high is a smaller font's, as many pixels narrower as it is lower than the large font's.
     Image render(int index, int w, int h, int scale, const Image &original = Image(),
-                 const std::vector<Rgb> &palette = {}) const;
+                 const std::vector<Rgb> &palette = {}, double size = 1) const;
 
     // the grain's random value of a cell, 0 to 1, as the editor makes it
     static double random(std::uint32_t glyph, std::uint32_t x, std::uint32_t y, std::uint32_t seed);
