@@ -1,11 +1,9 @@
 # Font editor
 
-A browser tool for redrawing the game's silver font (DPLARGE) as scalable
-vectors. Every glyph is a set of polygons in an 11 × 12 unit cell, monospaced,
-with the ink starting one unit in. The editor shows the game's glyph under the
-shape, compares both at actual and enlarged sizes and measures their pixel
-overlap. It also previews the outline, light and shade, and grain layers that
-give the vectors the look of the game's font.
+A vector font to recreate the game's main menu silver font in high res. The font
+editor is a browser tool to modify the vector font on a glyph basis. With it, the shape 
+of a letter on a pixel level as well as the outline, light and shade,
+and grain layers that give the vectors the look of the game's font, can be edited.
 
 | File | |
 |---|---|
@@ -36,7 +34,7 @@ returns a glyph to its shape in `glyphs.json`.
 
 ## In Vertigo
 
-With the upscaled graphics on, Vertigo draws the silver fonts (large, medium
+With the upscaled graphics on, Vertigo draws the main menu fonts (large, medium
 and small) from `vertigo-mono.json`, which the build copies next to the program
 (`font/vertigo-mono.json`, in `share/vertigo/font` when installed): each glyph
 over the box of the game's glyph it replaces, so text keeps the game's widths,
