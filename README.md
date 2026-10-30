@@ -171,8 +171,24 @@ A new game starts an autosave, saving on arriving at a station, after each conve
 
 ## Upscaled graphics
 
+### AI upscale
+
+An optional upscale with a newer AI model (Qwen Image 2.1 in ComfyUI) redraws the
+pictures and textures with more detail and clean lettering. It runs outside the game as a
+script, takes a few hours on a strong graphics card and builds on the upscale of the
+Real-ESRGAN one below. 
+
+See [data/AI-upscale](data/AI-upscale/README.md).
+
+### Main Menu HD Font
+
+The silver font of the main menus and screens is drawn from a recreated vector version, sharp 
+at any size and can be fine-tuned with the font editor in [data/font](data/font/README.md). 
+
+### Simple Upscale
+
 Using [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), an image upscaler based
-on machine learning, game graphics are automatically upscaled locally:
+on machine learning, game graphics are upscaled locally within a few minutes:
 
 - Full-screen pictures: stations, rooms, backgrounds, the main menu's
   title, the notebook and the 2D cockpits' art
@@ -182,10 +198,9 @@ on machine learning, game graphics are automatically upscaled locally:
 
 ![Screenshot from the main menu comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-Vergleich.jpg)
 
-
 ![Screenshot grid showing two follow cam ingame scenes and comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-3rd-Cam-Vergleich.jpg)
 
-### How to enable
+#### How to enable
 
 In the main menu's Options: click on **Upscaled graphics: PREPARE** to start the process.
 
@@ -199,18 +214,12 @@ It asks before downloading Real-ESRGAN (the latest official release, ~ 52 MB, ch
 
 ### Caveats
 
-The fonts, the HUD's own art and the terrain are not scaled (the upscaler
-does not work well for small letters, and the terrain's tiles stop meeting seamlessly), and
-the movies stay as they are. Small lettering on models and buildings is
-still upscaled and can come out garbled.
+Currently excluded from the upscale are:
+* All other fonts and the HUD's own art (they are pixel doubled and keep their sharpness anyway)
+* Terrain (the upscaler does not work well for it as it breaks the seamless tiling)
+* Movies and background animations
 
-### AI upscale
-
-A second, optional upscale with a newer AI model (Qwen Image 2.1 in ComfyUI) redraws the
-pictures and textures with more detail and clean lettering. It runs outside the game as a
-script, takes a few hours on a strong graphics card, and makes a set the game uses like the
-Real-ESRGAN one. See [data/AI-upscale](data/AI-upscale/README.md).
-
+Small lettering on models and buildings can come out garbled.
 
 ## Game controllers
 

@@ -18,10 +18,69 @@
 #include "fontmanager.h"
 #include "image.h"
 #include "pipeline.h"
+#include "upscaled.h"
+#include "vectorfont.h"
 #include "util/error.h"
+#include "util/path.hpp"
+
+#include <SDL3/SDL_filesystem.h>
+#include <algorithm>
+#include <cctype>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <sstream>
 #include <vector>
 
 namespace gfx {
+
+namespace {
+
+// the vector font that comes with Vertigo (data/font): font/vertigo-mono.json next to the program
+// (in the app's resources on iOS), or in share/vertigo/font when installed; null without it
+const VectorFont* vectorFont()
+{
+    static const std::unique_ptr<VectorFont> font = []() -> std::unique_ptr<VectorFont> {
+        const char *base = SDL_GetBasePath();
+        if (!base)
+            return nullptr;
+        for (const char *candidate : { "font/vertigo-mono.json", "../share/vertigo/font/vertigo-mono.json" }) {
+            std::ifstream file(util::toPath(util::joinPath(base, candidate)), std::ios::binary);
+            if (!file)
+                continue;
+            std::stringstream text;
+            text << file.rdbuf();
+            auto font = std::make_unique<VectorFont>();
+            if (font->parse(text.str()))
+                return font;
+            std::cerr << "The vector font " << candidate << " can't be read" << std::endl;
+        }
+        return nullptr;
+    }();
+    return font.get();
+}
+
+// the vector font's glyph for a game glyph, as opaque as the game glyph is (the depot draws a
+// half transparent silver font)
+Image vectorGlyph(const VectorFont &font, int index, const Image &image, int scale, double size, double gamma,
+                  const std::vector<Rgb> &palette)
+{
+    int opacity = 0;
+    for (int y = 0; y < image.height(); y++)
+        for (int x = 0; x < image.width(); x++)
+            opacity = std::max(opacity, int(alpha(image.pixel(x, y))));
+    Image glyph = font.render(index, image.width(), image.height(), scale, image, palette, size, gamma);
+    if (opacity > 0 && opacity < 255)
+        for (int y = 0; y < glyph.height(); y++) {
+            std::uint8_t *texel = glyph.scanLine(y);
+            for (int x = 0; x < glyph.width(); x++, texel += 4)
+                texel[3] = std::uint8_t(texel[3]*opacity/255);
+        }
+    return glyph;
+}
+
+} // namespace
 
 Font::Font(Name name)
 {
@@ -59,6 +118,19 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
         m_alpha = false;
     }
 
+    // the silver fonts have a vector version
+    std::string name = String(filename).toUtf8();
+    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::tolower(c); });
+    auto endsWith = [&name](const std::string &end) {
+        return name.size() >= end.size() && name.compare(name.size() - end.size(), end.size(), end) == 0;
+    };
+    const bool vector = !m_alpha && (endsWith("dplarge.fnt") || endsWith("dpmedium.fnt") || endsWith("dpsmall.fnt"));
+    // the large font's vector glyphs as high as the game's and brightened to its glyphs' light
+    // insides, the medium and small font's at 90%
+    m_vectorLarge = endsWith("dplarge.fnt");
+    m_vectorSize = m_vectorLarge ? 1 : 0.9;
+    m_vectorGamma = m_vectorLarge ? 1.4 : 1;
+
     int maxHeight = 0;
     int x = 1;
     int y = 1;
@@ -82,6 +154,8 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
             util::fatal("Unknown font type");
         }
 
+        if (vector)
+            m_images.push_back(image);
         image = image.scaled(image.width() * scaleFactor, image.height() * scaleFactor);
 
         if (x + image.width() + 1 >= res) {
@@ -108,9 +182,117 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
     m_height = maxHeight / scaleFactor;
 }
 
+bool FontPrivate::prepareVector()
+{
+    if (m_vectorState != 0)
+        return m_vectorState > 0;
+    m_vectorState = -1;
+    const VectorFont *font = vectorFont();
+    if (font == nullptr || m_images.empty())
+        return false;
+
+    // the character (CP437 code) of each game glyph: its place in the file, but the large font has
+    // Ö and Ü at 0x95 and 0x96, and other glyphs at their codes
+    std::vector<int> codes(m_images.size());
+    for (std::size_t i = 0; i < m_images.size(); i++) {
+        const int index = int(i) + 32;
+        codes[i] = !m_vectorLarge ? index : index == 0x95 ? 0x99 : index == 0x96 ? 0x9a
+                 : index == 0x99 || index == 0x9a ? 0 : index;
+    }
+
+    // the game's palette for the style that snaps to it: the colours of the glyphs the vector font
+    // redraws, those that occur at least eight times
+    std::map<Rgb, int> counts;
+    for (std::size_t i = 0; i < m_images.size(); i++) {
+        if (!font->has(codes[i]))
+            continue;
+        const Image &image = m_images[i];
+        for (int y = 0; y < image.height(); y++)
+            for (int x = 0; x < image.width(); x++) {
+                const Rgb c = image.pixel(x, y);
+                if (alpha(c) > 0)
+                    counts[c | 0xff000000]++;
+            }
+    }
+    std::vector<Rgb> palette;
+    for (const auto &[c, n] : counts)
+        if (n >= 8)
+            palette.push_back(c);
+
+    // the vector glyph of each game glyph: its own, that of a glyph that looks the same, or for a
+    // small letter its capital's (the fonts' small letters are their capitals, some a pixel off)
+    auto same = [](const Image &a, const Image &b) {
+        if (a.width() != b.width() || a.height() != b.height())
+            return false;
+        for (int y = 0; y < a.height(); y++)
+            for (int x = 0; x < a.width(); x++)
+                if (a.pixel(x, y) != b.pixel(x, y))
+                    return false;
+        return true;
+    };
+    std::vector<int> drawnAs(m_images.size(), 0);
+    for (std::size_t i = 0; i < m_images.size(); i++) {
+        if (font->has(codes[i])) {
+            drawnAs[i] = codes[i];
+            continue;
+        }
+        for (std::size_t j = 0; j < m_images.size() && !drawnAs[i]; j++)
+            if (font->has(codes[j]) && same(m_images[i], m_images[j]))
+                drawnAs[i] = codes[j];
+        if (drawnAs[i])
+            continue;
+        static const std::map<int, int> umlauts = { { 0x81, 0x9a }, { 0x84, 0x8e }, { 0x94, 0x99 } };
+        const auto umlaut = umlauts.find(codes[i]);
+        const int capital = codes[i] >= 'a' && codes[i] <= 'z' ? codes[i] - 32
+                          : umlaut != umlauts.end() ? umlaut->second : 0;
+        if (capital && font->has(capital))
+            drawnAs[i] = capital;
+    }
+
+    // the glyphs in rows, a game pixel apart so the smaller mipmap levels keep them apart
+    const int scale = VectorFont::Scale, pad = scale;
+    for (const int res : { 2048, 4096 }) {
+        std::vector<Point> places;
+        int x = pad, y = pad, rowHeight = 0;
+        for (const Image &image : m_images) {
+            const int w = image.width()*scale, h = image.height()*scale;
+            if (x + w + pad > res) {
+                x = pad;
+                y += rowHeight + pad;
+                rowHeight = 0;
+            }
+            places.push_back(Point(x, y));
+            x += w + pad;
+            rowHeight = std::max(rowHeight, h);
+        }
+        if (y + rowHeight + pad > res)
+            continue;
+
+        m_vectorTexture.createEmpty(res, res, Texture::RGBA, true);
+        for (std::size_t i = 0; i < m_images.size(); i++) {
+            const Image &image = m_images[i];
+            m_vectorTexture.update(places[i].x, places[i].y, drawnAs[i]
+                ? vectorGlyph(*font, drawnAs[i], image, scale, m_vectorSize, m_vectorGamma, palette)
+                : image.scaled(image.width()*scale, image.height()*scale));
+            RectF rect;
+            rect.x = places[i].x / float(res);
+            rect.y = places[i].y / float(res);
+            rect.width = image.width()*scale / float(res);
+            rect.height = image.height()*scale / float(res);
+            m_vectorRects.push_back(rect);
+        }
+        m_vectorTexture.generateMipmaps();
+        m_vectorState = 1;
+        return true;
+    }
+    return false;
+}
+
 Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCenter, bool alignBottom, const ClipRect *clipRect)
 {
-    m_texture.bind();
+    // with the upscaled graphics the silver fonts are drawn from their vector version
+    const bool vector = !m_images.empty() && Upscaled::isActive() && prepareVector();
+    (vector ? m_vectorTexture : m_texture).bind();
 
     Rect drawRect(dstRect.pos(), Size(0, m_height));
 
@@ -187,7 +369,7 @@ Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCente
                 setColor(highlight ? m_colorHighlight : m_colorNormal);
 
             RectF dst = RectF(pos, SizeF(symbol.width, symbol.height));
-            RectF src = symbol.rect;
+            RectF src = vector ? m_vectorRects[c] : symbol.rect;
             if (clipRect == nullptr || clipRect->clip(dst, src))
             {
                 quads.push_back({ Vector3D(dst.left(), dst.top(), 0), Vector2D(src.left(), src.top()) });
