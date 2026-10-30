@@ -39,21 +39,18 @@ class VectorFont
 public:
     // the texels per game pixel the glyphs are drawn with when they replace the game's
     static const int Scale = 8;
-    // the glyphs' size when they replace the game's: the cell's height takes this part of the
-    // game glyph's
-    static constexpr double Size = 0.9;
 
     // the editor's file; false (and no glyphs) on a syntax error
     bool parse(const std::string &text);
 
-    // whether the font index (the character code the game's font file has it at) has a glyph
-    bool has(int index) const;
-    // The glyph for the font index, over the box of the game's glyph (w x h pixels), at scale
+    // whether the character (its CP437 code) has a glyph
+    bool has(int code) const;
+    // The glyph for the character, over the box of the game's glyph (w x h pixels), at scale
     // texels per pixel, RGBA8888. The game's glyph gives the grain when the style takes it from
     // there; the palette is the game's glyph colours, for the style that snaps to them. The
     // cell's height takes size times the box's, centred on the box; a box less than 12 pixels
     // high is a smaller font's, as many pixels narrower as it is lower than the large font's.
-    Image render(int index, int w, int h, int scale, const Image &original = Image(),
+    Image render(int code, int w, int h, int scale, const Image &original = Image(),
                  const std::vector<Rgb> &palette = {}, double size = 1) const;
 
     // the grain's random value of a cell, 0 to 1, as the editor makes it

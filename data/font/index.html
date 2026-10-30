@@ -395,6 +395,8 @@ function render() {
   el('rect', { x: 0, y: 0, width: ADV, height: H, fill: 'none', stroke: '#8b8ea3', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, ed);
   el('rect', { x: 1, y: 1, width: ADV - 2, height: H - 2, fill: 'none', stroke: '#ffb347', 'stroke-opacity': .5, 'stroke-dasharray': '4 4', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, ed);
   if (!isStyled) el('path', { d: pathD(g.rings), fill: '#e8e6f0', 'fill-opacity': $('fillop').value, 'fill-rule': 'evenodd', 'pointer-events': 'none' }, ed);
+  // the slit most glyphs have, between y 3 and 4
+  el('path', { d: `M${VB.x},3H${VB.x + VB.w}M${VB.x},4H${VB.x + VB.w}`, stroke: '#4fc3ff', 'stroke-opacity': .6, 'stroke-dasharray': '6 3', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke', fill: 'none', 'pointer-events': 'none' }, ed);
   if (peek) orig(g.full, 1);
   // one path per ring so a ring can be grabbed
   g.rings.forEach((r, ri) => {

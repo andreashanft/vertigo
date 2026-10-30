@@ -70,6 +70,8 @@ private:
     Texture m_vectorTexture;
     std::vector<RectF> m_vectorRects;
     int m_vectorState = 0;  // 0 not tried yet, 1 made, -1 not to be had
+    bool m_vectorLarge = false;  // the large font, whose glyphs have places of their own
+    double m_vectorSize = 1;  // the vector glyphs' height as a part of the game glyphs'
 };
 
 

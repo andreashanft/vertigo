@@ -187,19 +187,6 @@ Blend blendMode(const std::string &name)
     return Blend::Normal;
 }
 
-// the font index of an editor id: the CP437 code, but this font has Ö and Ü at 0x95 and 0x96
-int fontIndex(int id)
-{
-    switch (id) {
-    case 0x99:
-        return 0x95;
-    case 0x9a:
-        return 0x96;
-    default:
-        return id;
-    }
-}
-
 // the game glyph's own grain: each pixel's brightness against the glyph's mean (its pixels
 // brighter than 50 of 255), spread two pixels past them
 std::vector<double> originalGrain(const Image &original)
@@ -303,15 +290,15 @@ bool VectorFont::parse(const std::string &text)
                 glyph.rings.push_back(ring);
         }
         if (glyph.id > 0 && !glyph.rings.empty())
-            m_glyphs[fontIndex(glyph.id)] = glyph;
+            m_glyphs[glyph.id] = glyph;
     }
     return true;
 }
 
 
-bool VectorFont::has(int index) const
+bool VectorFont::has(int code) const
 {
-    return m_glyphs.count(index) != 0;
+    return m_glyphs.count(code) != 0;
 }
 
 
@@ -324,10 +311,10 @@ double VectorFont::random(std::uint32_t glyph, std::uint32_t x, std::uint32_t y,
 }
 
 
-Image VectorFont::render(int index, int w, int h, int scale, const Image &original, const std::vector<Rgb> &palette, double size) const
+Image VectorFont::render(int code, int w, int h, int scale, const Image &original, const std::vector<Rgb> &palette, double size) const
 {
     Image image(w*scale, h*scale, Image::RGBA8888);
-    const auto found = m_glyphs.find(index);
+    const auto found = m_glyphs.find(code);
     if (found == m_glyphs.end() || w <= 0 || h <= 0)
         return image;
     const Glyph &glyph = found->second;

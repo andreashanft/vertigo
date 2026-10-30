@@ -3,66 +3,66 @@
 <path id="c20" data-char=" " fill="currentColor" fill-rule="evenodd" d=""/>
 <path id="c21" data-char="!" fill="currentColor" fill-rule="evenodd" d="M15,1 15,7 17,7 17,1ZM15,9 15,11 17,11 17,9Z"/>
 <path id="c22" data-char="&quot;" fill="currentColor" fill-rule="evenodd" d="M28,1 28,5.5 30.5,5.5 30.5,1ZM24,1 24,5.5 26.5,5.5 26.5,4 24,4 24,3 26.5,3 26.5,1Z"/>
-<path id="c23" data-char="#" fill="currentColor" fill-rule="evenodd" d="M36.75,2.75 36.75,4 34,4 34,5 35.25,5 35.25,7 34,7 34,8 35.25,8 35.25,10 36.75,10 36.75,8 39,8 39,10 40.5,10 40.5,8 42,8 42,7 40.5,7 40.5,5 42,5 42,4 40.5,4 40.5,1 39,1 39,4 36.75,4 36.75,1 35.25,1 35.25,2.75ZM39,5 39,7 36.75,7 36.75,5Z"/>
-<path id="c24" data-char="$" fill="currentColor" fill-rule="evenodd" d="M45.25,5 45.25,7 52.25,7 52.25,8.75 45.25,8.75 45.25,10 48.75,10 48.75,11 50.25,11 50.25,10 53.75,10 53.75,5ZM45.25,2 48.75,2 48.75,1 50.25,1 50.25,2 53.5,2 53.5,3.25 47,3.25 47,4.25 45.25,4.25Z"/>
-<path id="c25" data-char="%" fill="currentColor" fill-rule="evenodd" d="M63,9.25 65,9.25 65,7.25 63,7.25ZM58,11 66,2 66,1 64.75,1 57,9.5 57,11ZM59.25,4 59.25,2 57.25,2 57.25,4Z"/>
+<path id="c23" data-char="#" fill="currentColor" fill-rule="evenodd" d="M37,3 37,4 34,4 34,5 35.25,5 35.25,7 34,7 34,8 35.25,8 35.25,10 37,10 37,8 39,8 39,10 40.75,10 40.75,8 42,8 42,7 40.75,7 40.75,5 42,5 42,4 40.75,4 40.75,1 39,1 39,4 37,4 37,1 35.25,1 35.25,3ZM39,5 39,7 37,7 37,5Z"/>
+<path id="c24" data-char="$" fill="currentColor" fill-rule="evenodd" d="M45.25,5 45.25,7 52.25,7 52.25,8.75 45.25,8.75 45.25,10 48.75,10 48.75,11 50.25,11 50.25,10 53.75,10 53.75,5ZM45.25,2 48.75,2 48.75,1 50.25,1 50.25,2 53.5,2 53.5,3 47,3 47,4 45.25,4Z"/>
+<path id="c25" data-char="%" fill="currentColor" fill-rule="evenodd" d="M63,9.25 65,9.25 65,7.25 63,7.25ZM58,11 66,2 66,1 64.75,1 57,9.5 57,11ZM59.25,3.75 59.25,2 57.25,2 57.25,3.75Z"/>
 <path id="c26" data-char="&amp;" fill="currentColor" fill-rule="evenodd" d="M67,7.5 67,10 68,10 68,11 72,11 72,10 73,10 73,11 76,11 76,10 75,10 75,8 76,8 76,6 74,6 74,7 73,7 73,5 74,5 74,2 73,2 73,1 69,1 69,2 68,2 68,3 70,3 70.5,2.5 71.25,2.5 71.75,3 71.75,4 71.25,4.75 70.25,4.75 69.75,4 68,4 68,5 69,5 69,5.5ZM69,9 69,7 71,7 71,8 72,8 72,9Z"/>
-<path id="c27" data-char="'" fill="currentColor" fill-rule="evenodd" d="M81,3.75 80.25,3.75 80.25,5.75 82,5.75 82,4.75 83.25,4.75 83.25,1.25 81.25,1.25Z"/>
-<path id="c28" data-char="(" fill="currentColor" fill-rule="evenodd" d="M91.25,4.25 91.25,9.75 92.25,11 94.75,11 94.75,9.5 93.75,9.5 93,8.75 93,4.25ZM91.25,2.25 92.25,1 94.75,1 94.75,2.5 93.75,2.5 93,3.25 91.25,3.25Z"/>
+<path id="c27" data-char="'" fill="currentColor" fill-rule="evenodd" d="M80.75,3.75 80,3.75 80,5.75 81.75,5.75 81.75,4.75 83,4.75 83,1.25 81,1.25Z"/>
+<path id="c28" data-char="(" fill="currentColor" fill-rule="evenodd" d="M91.25,4 91.25,9.75 92.25,11 94.75,11 94.75,9.5 93.75,9.5 93,8.75 93,4ZM91.25,2.25 92.25,1 94.75,1 94.75,2.5 93.75,2.5 93,3 91.25,3Z"/>
 <path id="c29" data-char=")" fill="currentColor" fill-rule="evenodd" d="M103.25,2.5 104.25,2.5 105,3.25 105,8.75 104.25,9.5 103.25,9.5 103.25,11 105.75,11 106.75,9.75 106.75,2.25 105.75,1 103.25,1Z"/>
 <path id="c2a" data-char="*" fill="currentColor" fill-rule="evenodd" d="M111.5,5 114.5,5 111.75,2 113.25,2 115.75,4.25 118.25,2 120,2 117.25,5 120.5,5 120.5,6.25 117.25,6.25 120,9 118.25,9 116,7 113.75,9 112,9 114.5,6.25 111.5,6.25Z"/>
 <path id="c2b" data-char="+" fill="currentColor" fill-rule="evenodd" d="M126,4.75 123,4.75 123,6.75 126,6.75 126,9.25 128,9.25 128,6.75 131,6.75 131,4.75 128,4.75 128,2 126,2Z"/>
 <path id="c2c" data-char="," fill="currentColor" fill-rule="evenodd" d="M136.5,11 138,11 139.5,7.75 139,6.5 137.5,6.5 136,10Z"/>
-<path id="c2d" data-char="-" fill="currentColor" fill-rule="evenodd" d="M144,7.25 151.5,7.25 151.5,5 144,5Z"/>
+<path id="c2d" data-char="-" fill="currentColor" fill-rule="evenodd" d="M144.5,7.5 151.5,7.5 151.5,5.25 144.5,5.25Z"/>
 <path id="c2e" data-char="." fill="currentColor" fill-rule="evenodd" d="M158.75,11 161.25,11 161.25,8.5 158.75,8.5Z"/>
 <path id="c2f" data-char="/" fill="currentColor" fill-rule="evenodd" d="M173.25,1 166,9.25 166,11 167.25,11 174.75,2.25 174.5,1Z"/>
-<path id="c30" data-char="0" fill="currentColor" fill-rule="evenodd" d="M3,19.25 3,15.5 1.25,15.5 1.25,22.25 2,23 9,23 9.75,22.25 9.75,13.75 9,13 2,13 1.25,13.75 1.25,14.5 7.5,14.5ZM3.25,21.5 8,16.5 8,21.5Z"/>
-<path id="c31" data-char="1" fill="currentColor" fill-rule="evenodd" d="M12,16.5 12,18 13.5,18 15.5,16 16,16 16,23 18,23 18,13 15.5,13Z"/>
-<path id="c32" data-char="2" fill="currentColor" fill-rule="evenodd" d="M23,15.25 25,15.25 25,14.75 29,14.75 29,15.5 23,21.5 23,23 32,23 32,21 27,21 27,20.5 31.5,16 31.75,15.25 32,13.75 31.25,13 24,13 23,14ZM23,15.75 25,15.75 25,17.25 23,17.25Z"/>
-<path id="c33" data-char="3" fill="currentColor" fill-rule="evenodd" d="M35,15 41,15 41,17 36,17 36,19 41,19 41,21 34,21 34,23 42,23 42,22 43,22 43,18 42,18 42,17 43,17 43,13 35,13Z"/>
+<path id="c30" data-char="0" fill="currentColor" fill-rule="evenodd" d="M3,19.25 3,16 1.25,16 1.25,22 2.25,23 8.75,23 9.75,22 9.75,14 8.75,13 2.25,13 1.25,14 1.25,15 3,15 3,14.5 7.5,14.5ZM3.25,21.5 8,16.5 8,21.5Z"/>
+<path id="c31" data-char="1" fill="currentColor" fill-rule="evenodd" d="M16,15 16,16 16,23 18,23 18,14 17,13 15.5,13 13.5,15ZM12,16.5 12.5,16 15.5,16 13.5,18 12,18Z"/>
+<path id="c32" data-char="2" fill="currentColor" fill-rule="evenodd" d="M23,15 25,15 25.5,14.5 28.75,14.5 28.5,16 23,21.5 23,23 32,23 32,21 26.75,21 26.75,20.5 31,16 31.25,15 31.25,14 30.25,13 24.25,13 23.25,14ZM23,16 25,16 25,17.5 23,17.5Z"/>
+<path id="c33" data-char="3" fill="currentColor" fill-rule="evenodd" d="M35,15 41,15 41,17 36,17 36,19 41,19 41,21 34,21 34,23 42,23 43,22 43,18 42,17.5 43,17 43,14 42,13 35.5,13 35,13.5Z"/>
 <path id="c34" data-char="4" fill="currentColor" fill-rule="evenodd" d="M45,19 51,19 51,23 53,23 53,19 54,19 54,17 53,17 53,13 51,13 51,17 47,17 47,16 45,16ZM45,13 47,13 47,15 45,15Z"/>
-<path id="c35" data-char="5" fill="currentColor" fill-rule="evenodd" d="M57,19 63,19 63,21 56,21 56,23 65,23 65,17 59,17 59,16 57,16ZM57,15 63,15 63,13 57,13Z"/>
-<path id="c36" data-char="6" fill="currentColor" fill-rule="evenodd" d="M76,22 76,17 69,17 69,16 67,16 67,23 75,23ZM69,21 69,19 74,19 74,21ZM75,14.5 75,13 67,13 67,15 69,15 69,14.5Z"/>
+<path id="c35" data-char="5" fill="currentColor" fill-rule="evenodd" d="M57,19 63,19 63,21 56,21 56,23 65,23 65,18 64,17 59,17 59,16 57,16ZM57,15 63,15 63,13 57,13Z"/>
+<path id="c36" data-char="6" fill="currentColor" fill-rule="evenodd" d="M76,22 76,18 75,17 69,17 69,16 67,16 67,23 75,23ZM69,21 69,19 74,19 74,21ZM75,14.5 75,13 67,13 67,15 69,15 69,14.5Z"/>
 <path id="c37" data-char="7" fill="currentColor" fill-rule="evenodd" d="M78,15 84,15 84,15.5 78,21.5 78,23 79.5,23 87,15.5 87,13 78,13Z"/>
-<path id="c38" data-char="8" fill="currentColor" fill-rule="evenodd" d="M96,17 91,17 91,16 89,16 89,17 90,17.5 89,18 89,22 90.5,23 96.5,23 98,22 98,18 97,17.5 98,17 98,14 96.5,13 90.5,13 89,14 89,15 96,15ZM91,21 91,19 96,19 96,21Z"/>
-<path id="c39" data-char="9" fill="currentColor" fill-rule="evenodd" d="M101,19 107,19 107,21 101,21 101,23 108,23 109,22 109,14 108,13 101,13 100,13.5 100,15.5 102,15.5 102,16.5 100,16.5 100,18ZM102,17.25 102,15 107,15 107,17.25Z"/>
+<path id="c38" data-char="8" fill="currentColor" fill-rule="evenodd" d="M96,17 90.75,17 90.75,16 89,16 89,17 90,17.5 89,18 89,22 90,23 96.75,23 97.75,22 97.75,18 97,17.5 97.75,17 97.75,14 96.75,13 90,13 89,14 89,15 96,15ZM90.75,21 90.75,19 96,19 96,21Z"/>
+<path id="c39" data-char="9" fill="currentColor" fill-rule="evenodd" d="M100.75,19 107,19 107,21 101,21 101,23 107.75,23 108.75,22 108.75,14 107.75,13 100.75,13 100,13.75 100,15 101.75,15 101.75,16 100,16 100,18ZM101.75,17.25 101.75,15 107,15 107,17.25Z"/>
 <path id="c3a" data-char=":" fill="currentColor" fill-rule="evenodd" d="M115,18.5 117.5,18.5 117.5,16 115,16ZM115,23 117.5,23 117.5,20.5 115,20.5Z"/>
 <path id="c3b" data-char=";" fill="currentColor" fill-rule="evenodd" d="M125,18 127,18 127,16 125,16ZM123.5,22.25 124,23 125.5,23 127,19.75 126.5,19 125,19Z"/>
-<path id="c3c" data-char="&lt;" fill="currentColor" fill-rule="evenodd" d="M134,17.5 134,18.5 138.5,23 140,23 140,21.5 137,18.5 137,17.5 139,15.5 136,15.5ZM139.75,13 139.75,14.5 139.5,14.75 136.5,14.75 138.25,13Z"/>
+<path id="c3c" data-char="&lt;" fill="currentColor" fill-rule="evenodd" d="M134,17.5 134,18.5 138,23 139.5,23 139.5,21.5 136.75,18.5 136.75,17.5 138,16 135.25,16ZM139.5,13 139.5,14.5 139,15 136,15 138,13Z"/>
 <path id="c3d" data-char="=" fill="currentColor" fill-rule="evenodd" d="M145,17.25 152,17.25 152,15.25 145,15.25ZM145,21 152,21 152,19.25 145,19.25Z"/>
-<path id="c3e" data-char=">" fill="currentColor" fill-rule="evenodd" d="M160,16.75 160,17.5 160,18.5 157,21.5 157,23 158.5,23 163,18.5 163,17 161.25,15.5 158.5,15.5ZM157.5,13 159,13 160.75,14.75 157.75,14.75 157.5,14.5Z"/>
+<path id="c3e" data-char=">" fill="currentColor" fill-rule="evenodd" d="M160.25,17.5 160.25,18.5 157.5,21.5 157.5,23 159,23 163,18.5 163,17.5 161.75,16 159,16ZM157.5,13 159,13 161,15 158,15 157.5,14.5Z"/>
 <path id="c3f" data-char="?" fill="currentColor" fill-rule="evenodd" d="M172,15.5 170,17.5 170,20 172,20 172,18.5 174,16.5 174,14 173,13 167,13 166,14 166,15 172,15ZM172,23 172,21 170,21 170,23ZM168,16 166,16 166,18 168,18Z"/>
-<path id="c40" data-char="@" fill="currentColor" fill-rule="evenodd" d="M7.75,29 6.75,29 6.75,28 5,28 5,30 6,31 9,31 10,30 10,26 9,25 2,25 1,26 1,27 8,27 8,28.75ZM10,34 10,33 3,33 3,28 1,28 1,34 2,35 9,35Z"/>
-<path id="c41" data-char="A" fill="currentColor" fill-rule="evenodd" d="M12,25 12,26.5 12.5,27 19,27 19,30 13.75,30 13.75,28 12,28 12,35 13.75,35 13.75,32 19,32 19,35 20.75,35 20.75,26 19.5,25Z"/>
+<path id="c40" data-char="@" fill="currentColor" fill-rule="evenodd" d="M7.25,29 6.25,29 6.25,28 4.5,28 4.5,30 5.5,31 8.5,31 9.5,30 9.5,26 8.5,25 2,25 1,26 1,27 7.5,27 7.5,28.75ZM9.5,34 9.5,33 3,33 3,28 1,28 1,34 2,35 8.5,35Z"/>
+<path id="c41" data-char="A" fill="currentColor" fill-rule="evenodd" d="M12,25 12,26.5 12,27 19,27 19,30 13.75,30 13.75,28 12,28 12,35 13.75,35 13.75,32 19,32 19,35 20.75,35 20.75,26 19.75,25Z"/>
 <path id="c42" data-char="B" fill="currentColor" fill-rule="evenodd" d="M30,29 24.75,29 24.75,28 23,28 23,35 31,35 32,34 32,30.25 31,29.5 32,28.75 32,26 31,25 23,25 23,27 30,27ZM24.75,33 24.75,31 30,31 30,33Z"/>
 <path id="c43" data-char="C" fill="currentColor" fill-rule="evenodd" d="M34,27 43,27 43,25 34,25ZM34,35 43,35 43,33 36,33 36,28 34,28Z"/>
-<path id="c44" data-char="D" fill="currentColor" fill-rule="evenodd" d="M45,27 52,27 52,33 47,33 47,28 45,28 45,35 51.5,35 54,32.5 54,27.5 51.5,25 45,25Z"/>
+<path id="c44" data-char="D" fill="currentColor" fill-rule="evenodd" d="M45,27 51,27 52,28 52,33 47,33 47,28 45,28 45,35 52,35 54,33 54,27.5 51.5,25 45,25Z"/>
 <path id="c45" data-char="E" fill="currentColor" fill-rule="evenodd" d="M56,27 65,27 65,25 56,25ZM56,35 65,35 65,33 58,33 58,31 64,31 64,29 58,29 58,28 56,28Z"/>
 <path id="c46" data-char="F" fill="currentColor" fill-rule="evenodd" d="M67,27 76,27 76,25 67,25ZM67,35 69,35 69,31 75,31 75,29 69,29 69,28 67,28Z"/>
-<path id="c47" data-char="G" fill="currentColor" fill-rule="evenodd" d="M78,27 87,27 87,25 78,25ZM78,35 87,35 87,29 81,29 81,31 85,31 85,33 80,33 80,28 78,28Z"/>
-<path id="c48" data-char="H" fill="currentColor" fill-rule="evenodd" d="M91,28 89,28 89,35 91,35 91,31 96,31 96,35 98,35 98,25 96,25 96,29 91,29ZM91,25 89,25 89,27 91,27Z"/>
+<path id="c47" data-char="G" fill="currentColor" fill-rule="evenodd" d="M78,27 87,27 87,25 78,25ZM78,35 87,35 87,29 81,29 81,30.5 81.5,31 85,31 85,33 80,33 80,28 78,28Z"/>
+<path id="c48" data-char="H" fill="currentColor" fill-rule="evenodd" d="M91,28 89,28 89,35 91,35 91,31 95.75,31 95.75,35 97.75,35 97.75,25 95.75,25 95.75,29 91,29ZM91,25 89,25 89,27 91,27Z"/>
 <path id="c49" data-char="I" fill="currentColor" fill-rule="evenodd" d="M104,28 104,35 106.25,35 106.25,28ZM104,25 106.25,25 106.25,27 104,27Z"/>
 <path id="c4a" data-char="J" fill="currentColor" fill-rule="evenodd" d="M118,33 113,33 113,31 111,31 111,34 112,35 120,35 120,25 118,25Z"/>
 <path id="c4b" data-char="K" fill="currentColor" fill-rule="evenodd" d="M122,35 124,35 124,31 125.5,31 129.5,35 131,35 131,33.5 128,30.5 128,29.5 131,26.5 131,25 129.5,25 125.5,29 124,29 124,28 122,28ZM122,25 124,25 124,27 122,27Z"/>
 <path id="c4c" data-char="L" fill="currentColor" fill-rule="evenodd" d="M133,35 142,35 142,33 135,33 135,28 133,28ZM133,27 135,27 135,25 133,25Z"/>
-<path id="c4d" data-char="M" fill="currentColor" fill-rule="evenodd" d="M144,25 144,26.5 147,26.5 147.75,27.25 144,27.25 144,35 146,35 146,28 147.75,29.75 148.75,29.75 151,28 151,35 153,35 153,25 151.25,25 148.25,27.75 145.5,25Z"/>
-<path id="c4e" data-char="N" fill="currentColor" fill-rule="evenodd" d="M155,27 155,35 157,35 156.75,28.75 157.604,28.75 162.25,33.396 162.25,35 164,35 164,25 162,25 162.25,30.25 161.396,30.25 158,27ZM155,25 157,25 158,26.25 155,26.25Z"/>
-<path id="c4f" data-char="O" fill="currentColor" fill-rule="evenodd" d="M166,27 173,27 173,33 168,33 168,28 166,28 166,35 175,35 175,25 166,25Z"/>
-<path id="c50" data-char="P" fill="currentColor" fill-rule="evenodd" d="M3,43 10,43 10,37 1,37 1,47 3,47ZM3,41 3,39 8,39 8,41Z"/>
-<path id="c51" data-char="Q" fill="currentColor" fill-rule="evenodd" d="M12,39 19,39 19,42 16,42 16,42.5 18,44.5 18,45 14,45 14,40 12,40 12,47 21,47 21,37 12,37Z"/>
-<path id="c52" data-char="R" fill="currentColor" fill-rule="evenodd" d="M25,43 26.5,43 30.5,47 32,47 32,45.5 30,43.5 30,43 32,43 32,37 23,37 23,47 25,47ZM25,41 25,39 30,39 30,41Z"/>
-<path id="c53" data-char="S" fill="currentColor" fill-rule="evenodd" d="M34,43 41,43 41,45 34,45 34,47 43,47 43,41 36,41 36,39 43,39 43,37 34,37Z"/>
-<path id="c54" data-char="T" fill="currentColor" fill-rule="evenodd" d="M45,39 49,39 49,47 51,47 51,39 54,39 54,37 45,37Z"/>
-<path id="c55" data-char="U" fill="currentColor" fill-rule="evenodd" d="M58,40 56,40 56,47 65,47 65,37 63,37 63,45 58,45ZM58,37 56,37 56,39 58,39Z"/>
-<path id="c56" data-char="V" fill="currentColor" fill-rule="evenodd" d="M69,42.5 69,40 67,40 67,43.5 70.5,47 72.5,47 76,43.5 76,37 74,37 74,42.5 71.5,45ZM69,37 67,37 67,39 69,39Z"/>
-<path id="c57" data-char="W" fill="currentColor" fill-rule="evenodd" d="M78,47 79.5,47 82.5,44 85.5,47 87,47 87,37 85,37 85,44 84,44 84,43 81,43 81,44 80,44 80,37 78,37Z"/>
-<path id="c58" data-char="X" fill="currentColor" fill-rule="evenodd" d="M89,38.5 92,41.5 92,42.5 89,45.5 89,47 90.5,47 93.5,44 96.5,47 98,47 98,45.5 95,42.5 95,41.5 98,38.5 98,37 96.5,37 93.5,40 90.5,37 89,37Z"/>
-<path id="c59" data-char="Y" fill="currentColor" fill-rule="evenodd" d="M100,38.5 104,42.5 104,47 106,47 106,41.5 109,38.5 109,37 107.5,37 104.5,40 101.5,37 100,37Z"/>
-<path id="c5a" data-char="Z" fill="currentColor" fill-rule="evenodd" d="M111,39 117,39 117,39.5 111,45.5 111,47 120,47 120,45 115,45 115,44.5 120,39.5 120,37 111,37Z"/>
+<path id="c4d" data-char="M" fill="currentColor" fill-rule="evenodd" d="M147.75,28 144,28 144,35 146,35 146,28 148,30.5 150.75,28 150.75,35 152.75,35 152.75,25 151,25ZM144,25 145.5,25 147,27 144,27Z"/>
+<path id="c4e" data-char="N" fill="currentColor" fill-rule="evenodd" d="M155,28 155,35 157,35 157,28.75 157.354,28.75 162,34.75 162,35 163.75,35 163.75,25 161.75,25 161.75,31.75 158.75,28ZM155,25 156.5,25 158,27 155,27Z"/>
+<path id="c4f" data-char="O" fill="currentColor" fill-rule="evenodd" d="M166,27 173,27 173,33 168,33 168,28 166,28 166,34 167,35 174,35 175,34 175,26 174,25 167,25 166,26Z"/>
+<path id="c50" data-char="P" fill="currentColor" fill-rule="evenodd" d="M3,43 9,43 10,42 10,37 1,37 1,39 3,39 3,40 1,40 1,47 2.5,47 3,46.5ZM3,41 3,39 8,39 8,41Z"/>
+<path id="c51" data-char="Q" fill="currentColor" fill-rule="evenodd" d="M12.25,39 19,39 19,43.75 17.25,42 16,42 16,43.25 17.75,45 14.25,45 14.25,40 12.25,40 12.25,46 13.25,47 19,47 18.75,46 20,47.25 21,47 21.25,46 20,44.75 21,45 21,38 20,37 13.25,37 12.25,38Z"/>
+<path id="c52" data-char="R" fill="currentColor" fill-rule="evenodd" d="M25,43 26.5,43 30.5,47 32,47 32,45.5 30,43.5 30,43 31,43 32,42 32,38 31,37 23,37 23,39 25,39 25,40 23,40 23,47 25,47ZM25,41 25,39 30,39 30,41Z"/>
+<path id="c53" data-char="S" fill="currentColor" fill-rule="evenodd" d="M34,43 41,43 41,45 34,45 34,47 42,47 43,46 43,41 36,41 36,39 43,39 43,37 34,37 34,39 36,39 36,40 34,40Z"/>
+<path id="c54" data-char="T" fill="currentColor" fill-rule="evenodd" d="M45.25,39 49,39 49,47 51,47 51,39 54,39 54,37 45.25,37Z"/>
+<path id="c55" data-char="U" fill="currentColor" fill-rule="evenodd" d="M58,40 56,40 56,46 57,47 64,47 65,46 65,37 63,37 63,45 58,45ZM58,37 56,37 56,39 58,39Z"/>
+<path id="c56" data-char="V" fill="currentColor" fill-rule="evenodd" d="M69,42.5 69,40 67,40 67,43.25 70.5,47 72.5,47 76,43.25 76,37 74,37 74,42.5 71.5,45ZM69,37 67,37 67,39 69,39Z"/>
+<path id="c57" data-char="W" fill="currentColor" fill-rule="evenodd" d="M78,47 79.5,47 82.25,44 85.25,47 86.75,47 86.75,37 84.75,37 84.75,44 83.25,42.5 81.5,42.5 80,44 80,40 78,40ZM78,37 80,37 80,39 78,39Z"/>
+<path id="c58" data-char="X" fill="currentColor" fill-rule="evenodd" d="M90.5,40 92,41.5 92,42.5 89,45.5 89,47 90.5,47 93.5,44 96.5,47 98,47 98,45.5 95,42.5 95,41.5 98,38.5 98,37 96.5,37 93.5,40ZM89,37 90.5,37 92.5,39 89.5,39 89,38.5Z"/>
+<path id="c59" data-char="Y" fill="currentColor" fill-rule="evenodd" d="M101.5,40 104,42.25 104,47 106,47 106,41.5 109,38.5 109,37 107.5,37 104.5,40ZM100,37 101.5,37 103.5,39 100.5,39 100,38.5Z"/>
+<path id="c5a" data-char="Z" fill="currentColor" fill-rule="evenodd" d="M111,39 117,39 117,39.5 111,45.25 111,47 120,47 120,45 114.5,45 120,39.25 120,37 111,37Z"/>
 <path id="c5b" data-char="[" fill="currentColor" fill-rule="evenodd" d="M123,39 129,39 129,37 123,37ZM123,47 129,47 129,45 125,45 125,40 123,40Z"/>
 <path id="c5c" data-char="\" fill="currentColor" fill-rule="evenodd" d="M140.5,47 142,47 142,45.25 134,37 132.25,37 132.25,38.75Z"/>
 <path id="c5d" data-char="]" fill="currentColor" fill-rule="evenodd" d="M147,39 151,39 151,45 147,45 147,47 153,47 153,37 147,37Z"/>
-<path id="c5e" data-char="^" fill="currentColor" fill-rule="evenodd" d="M155,40.5 155,42 156.5,42 159.5,39 162.5,42 164,42 164,40.5 160.5,37 158.5,37Z"/>
+<path id="c5e" data-char="^" fill="currentColor" fill-rule="evenodd" d="M156.5,39 159.5,39 162.5,42 164,42 164,40.5 160.5,37 158.5,37ZM155,40.5 155.5,40 158.5,40 156.5,42 155,42Z"/>
 <path id="c5f" data-char="_" fill="currentColor" fill-rule="evenodd" d="M166,47 175,47 175,45 166,45Z"/>
 <path id="c60" data-char="`" fill="currentColor" fill-rule="evenodd" d="M4,52.5 5.25,54 6.75,54 6.75,52.5 5.75,51 4,51ZM3.75,48 5.75,48 5.75,50 3.75,50Z"/>
 <path id="c8e" data-char="Ä" fill="currentColor" fill-rule="evenodd" d="M19,57.75 19,59 21,59 21,52 12,52 12,59 14,59 14,57.75ZM14,54 19,54 19,56 14,56ZM19.75,49 17.75,49 17.75,51 19.75,51ZM15.25,49 13.25,49 13.25,51 15.25,51Z"/>

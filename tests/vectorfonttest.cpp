@@ -59,9 +59,9 @@ int main()
     CHECK(vector.parse(font("{ \"outline\": { \"on\": true, \"color\": \"#102030\", \"width\": 1, \"join\": \"bevel\" }, "
                             "\"grain\": { \"on\": false }, " + Plain + " }")));
     CHECK(vector.has(0x41));
-    // Ö is at 0x95 in this font, and a glyph without a shape isn't there
-    CHECK(vector.has(0x95));
-    CHECK(!vector.has(0x99));
+    // Ö is at its CP437 code, and a glyph without a shape isn't there
+    CHECK(vector.has(0x99));
+    CHECK(!vector.has(0x95));
     CHECK(!vector.has(0x42));
 
     // two texels per unit: the inside, the outline a unit wide, and nothing past it
