@@ -1,4 +1,5 @@
 # Vertigo
+
 [![Build](https://github.com/andreashanft/vertigo/actions/workflows/build.yml/badge.svg)](https://github.com/andreashanft/vertigo/actions/workflows/build.yml)
 
 In November 1996, „[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)“ - or better known under its original German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)" - was released by *Massive Development*.
@@ -6,24 +7,23 @@ In November 1996, „[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archime
 This repository contains an open-source clone with the goal to faithfully recreate this 30 year old classic. It is based on the original work from [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had already been reimplemented years ago but then abandoned mid-finished.
 
 With the help of Claude Code, most open TODOs and missing features could finally be implemented, bringing the codebase closer to its original. In addition, an iPad version was created as well as a feasibility study to enable real 3D cockpits for an eventual VR port. 
+
 The game is now portable and playable on current hard and software in modern resolutions, improving the look (eg. by upscaling) but keeping its style and oldschool graphics.  For copyright reasons, the repository does not contain any old game data or binaries, the game assets from an original version of the game (either English or German), from an old CD or GOG installation, are required.
-This implementation in its current form can be considered **96% done**:
+
+This implementation in its current form can be considered **98% done**:
 
 * Modern codebase and renderer that support compiling for multiple platforms: macOS, iOS (iPad), Linux, Windows (not playtested yet)
 * Import of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data 
 * Menus, stations and interactions (dialogs, dock, upgrades), notebook, movies, music all work
 * Missions are playable and story can be progressed
 * For input, Keyboard and Controllers are supported (as well as touch on the iPad)
-* Experimental: 3D cockpits, also making true support for widescreen aspect ratios possible
+* Experimental: 3D cockpits, to support widescreen aspect ratios and in the future VR 
 
-What's still missing are the details and playtesting, find the open points in [docs/ROADMAP.md](docs/ROADMAP.md).
+What's still missing are some details and thorough playtesting, find the open points in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 # Downloads
-GitHub Actions builds and tests Vertigo on Linux, macOS and Windows for every
-commit on master, and keeps each build for 30 days as an artifact of the run
-(Actions › the run › Artifacts), named `vertigo-<version>-<platform>-<commit>`.
-A tag `v<version>` puts the three packages on its release: the one made for
-the tag on GitHub's page, or else a new draft to publish:
+
+Builds of Vertigo for Linux, macOS and Windows are available in the Releases section of Github:
 
 * `vertigo-<version>-linux-x86_64.tar.gz`: SDL 3 is built in; needs OpenAL
   (`libopenal1`), OpenGL 3.2 and a system as recent as Ubuntu 24.04
@@ -37,9 +37,9 @@ the tag on GitHub's page, or else a new draft to publish:
 The game data is added at the first start (see [Game data](#game-data)).
 
 # Compiling
+
 Vertigo needs SDL 3, OpenAL and GLM, and draws with OpenGL 3.2 (core profile)
-or OpenGL ES 3. The build also has tests of the game's own types for text,
-data values, images, JSON and CD images (`ctest`).
+or OpenGL ES 3.
 
 ```
 mkdir build
@@ -48,17 +48,8 @@ cmake ..
 make
 ```
 
-## Linux
-
-Ubuntu 24.04 has no SDL 3 package, so building there means building SDL 3
-first, as [the workflow](.github/workflows/build.yml) does.
-
-### Nix
-
-If you use Nix with flakes enabled, you can build and start Vertigo by running:
-```
-nix run github:pnordhus/vertigo
-```
+The build also has tests of the game's own types for text,
+data values, images, JSON and CD images (`ctest`).
 
 ## macOS (Homebrew)
 
@@ -69,20 +60,6 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
-
-## Windows
-
-With Visual Studio 2022 and CMake, from the Visual Studio builds of SDL 3
-(`SDL3-devel-<version>-VC.zip`) and OpenAL Soft (`openal-soft-<version>-bin.zip`)
-and GLM's headers, as [the workflow](.github/workflows/build.yml) does:
-
-```
-cmake -S . -B build -A x64 -DSDL3_DIR=<SDL>/cmake -Dglm_DIR=<GLM>/share/glm -DOPENAL_INCLUDE_DIR=<OpenAL Soft>/include/AL -DOPENAL_LIBRARY=<OpenAL Soft>/libs/Win64/OpenAL32.lib
-cmake --build build --config Release
-```
-
-`vertigo.exe` needs `SDL3.dll` and OpenAL Soft's `soft_oal.dll`, renamed to
-`OpenAL32.dll`, next to it.
 
 ## iPad
 
@@ -137,44 +114,106 @@ on. The game's sound
 mixes with other apps' audio, such as music, and is silent with the silent
 switch.
 
-## Game data
+## Linux
+
+Ubuntu 24.04 has no SDL 3 package, so building there means building SDL 3
+first, as [the workflow](.github/workflows/build.yml) does.
+
+### Nix
+
+If you use Nix with flakes enabled, you can build and start Vertigo by running:
+```
+nix run github:pnordhus/vertigo
+```
+
+## Windows
+
+With Visual Studio 2022 and CMake, from the Visual Studio builds of SDL 3
+(`SDL3-devel-<version>-VC.zip`) and OpenAL Soft (`openal-soft-<version>-bin.zip`)
+and GLM's headers, as [the workflow](.github/workflows/build.yml) does:
+
+```
+cmake -S . -B build -A x64 -DSDL3_DIR=<SDL>/cmake -Dglm_DIR=<GLM>/share/glm -DOPENAL_INCLUDE_DIR=<OpenAL Soft>/include/AL -DOPENAL_LIBRARY=<OpenAL Soft>/libs/Win64/OpenAL32.lib
+cmake --build build --config Release
+```
+
+`vertigo.exe` needs `SDL3.dll` and OpenAL Soft's `soft_oal.dll`, renamed to
+`OpenAL32.dll`, next to it.
+
+
+# Game data
 
 Vertigo needs the complete game data, including the movies. A GOG installation
 only contains part of it; the rest is in the CD image (`game.gog`, a raw
 `MODE1/2352` track). Point Vertigo to a directory containing `DAT`, `GFX`,
 `SFX`, `TXT` and `VFX` from the CD's `SF` directory, with the installed files
-copied on top. The case of the file names doesn't matter, also on file systems
-that tell upper and lower case apart. Vertigo asks for the directory at the
+copied on top. Vertigo asks for the directory at the
 first start, and again whenever the remembered one lacks part of the data.
 Given a GOG installation, or a directory with a CD image of the game (`.iso`,
 or `.bin` of a `MODE1/2352` track), it offers to build that directory itself,
 as `Game Data` next to the saved games. `--data <directory>` uses another
 directory for one run, without remembering it.
 
-The missions' music is the CD's audio tracks 2 to 5. Building `Game Data`
-also copies them out of the image (or, for a rip with a file for each track,
-by its `.cue`), as `SFX/CD/TRACK02.WAV` to `TRACK05.WAV` (98 MB); a directory
-put together by hand can have them there too. Game data built before this
-version lacks them: delete `Game Data` and build it again. The notebook's
-Options › Sound, or the main menu's Options, turns the music off and on, as
-the original's "CD Musik" did.
+Building `Game Data` also copies the music from the CD's audio tracks out of the image (or, for a rip with a file for each track,
+by its `.cue`). A directory put together by hand can have them there too.
 
-## Views from outside
+## Saved games and settings
 
-As in the original, the number pad shows the boat from outside while the
-mission goes on: 0 the chase view behind the boat, with a few instruments
-over it (the weapons, the system state, the sonar and THREAT), 5 the look-at
-view round the boat, and 1 and 7 the same of the locked target until it is
-destroyed. The same key again goes back to the cockpit. 9 and 3 zoom in and
-out, 4, 6, 8 and 2 move the look-at view's camera round the boat, a step at
-a time; the zoom and the place round the boat are kept for the whole run.
-The sounds are heard where the camera is.
+Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
+`~/Library/Application Support/Vertigo/Vertigo` on macOS,
+`%LOCALAPPDATA%\Vertigo\Vertigo` on Windows and
+`~/.local/share/Vertigo/Vertigo` on Linux, and in the app's own folder on the
+iPad.
 
-V steps through the 2D cockpit, the 3D one, and the chase and look-at views
-of the boat and of the target (as LB+Back on a game controller and VIEW on
-the touch screen). In the views a drag with the mouse or a finger moves the
-look-at view's camera round the boat, and the mouse wheel (two fingers on a
-trackpad) or a pinch zooms.
+A new game starts an autosave, saving on arriving at a station, after each conversation and before each mission automatically. The notebook's LOAD / SAVE also offers manual savegames. A game loaded from a manual save continues to keep its own autosave up to date. Each savegame is a  `slot_<n>.des` file in `save`;
+
+# Features
+
+## Upscaled graphics
+
+Using [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), an image upscaler based
+on machine learning, game graphics are automatically upscaled locally:
+
+- Full-screen pictures: stations, rooms, backgrounds, the main menu's
+  title, the notebook and the 2D cockpits' art
+- Textures of the models and the effects' sprites
+- Pictures that are mostly text are upscaled using Real-ESRGAN's model for
+  animation, it works better for letters (the sea and area maps, the autopilot's destinations, the credits)
+
+![Screenshot from the main menu comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-Vergleich.jpg)
+
+
+![Screenshot grid showing two follow cam ingame scenes and comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-3rd-Cam-Vergleich.jpg)
+
+### How to enable
+
+In the main menu's Options: click on **Upscaled graphics: PREPARE** to start the process.
+
+It asks before downloading Real-ESRGAN (the latest official release, ~ 52 MB, checked against checksum) into `Real-ESRGAN` next to the saved games. Upscaling then takes about 5-10 minutes and runs in the background. Clicking the line again stops the process, progress is saved and can be resumed.
+
+**Once finished, restart the game to use the upscaled graphics.** The set is kept in `Game Data Upscaled` next to the saved games and the `Real-ESRGAN` installation. (see **Saved games and settings** for exact location)
+
+ The upscaler is not available on the iPad. To use the HD images there, copy the `Game Data Upscaled` folder from a computer into Vertigo's folder (On My iPad › Vertigo in the Files app) and switch it on in Options.
+
+`vertigo --upscale` makes the set in a terminal, printing the progress. The upscaler needs Vulkan (on macOS through Metal).
+
+### Caveats
+
+The silver fonts of the menus and screens are drawn from their vector version
+instead, sharp at any size and with the game's widths (made with the font editor
+in [data/font](data/font/README.md)). The other fonts, the HUD's own art and the
+terrain are not scaled (the upscaler does not work well for small letters, and
+the terrain's tiles stop meeting seamlessly), and
+the movies stay as they are. Small lettering on models and buildings is
+still upscaled and can come out garbled.
+
+### AI upscale
+
+A second, optional upscale with a newer AI model (Qwen Image 2.1 in ComfyUI) redraws the
+pictures and textures with more detail and clean lettering. It runs outside the game as a
+script, takes a few hours on a strong graphics card, and makes a set the game uses like the
+Real-ESRGAN one. See [data/AI-upscale](data/AI-upscale/README.md).
+
 
 ## Game controllers
 
@@ -206,10 +245,7 @@ buttons stand for the keys in brackets, and LB held gives a second set:
 In the mission and turret menus the d-pad highlights an option, A takes it and
 B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a
 mission after its briefing, B or Start skips a movie, A confirms a new game's
-name. Menus and stations take the mouse, or touch on the iPad. A station's
-windows (rooms, conversations, the depot) can be dragged by their frame; a
-right click closes a room or the depot, and so does a tap beside it on the
-iPad.
+name. Menus and stations take the mouse, or touch on the iPad. 
 
 ## Touch controls
 
@@ -238,84 +274,62 @@ button hides them again.
   look-at view it moves the camera round the boat, and two fingers zoom the
   views from outside.
 
-The controls keep the size they have on an 11-inch iPad, in the corners of a
-larger screen. The main menu's Options, and the notebook's Options › Input
+The main menu's Options, and the notebook's Options › Input
 devices, put the stick on the right and the buttons on the left (Touch stick:
 RIGHT), and let up raise the nose (Touch stick vertical: INVERTED).
 
-## Saved games and settings
 
-Vertigo keeps its saved games (`save`) and its settings (`settings.ini`) in
-`~/Library/Application Support/Vertigo/Vertigo` on macOS,
-`%LOCALAPPDATA%\Vertigo\Vertigo` on Windows and
-`~/.local/share/Vertigo/Vertigo` on Linux, and in the app's own folder on the
-iPad.
+## Views from outside
 
-A new game's name names its autosave, which takes the next free slot and is
-written on arriving at a station, after each conversation and before each
-mission. The notebook's LOAD / SAVE saves by hand, in a new slot or over
-another hand-made save (never over an autosave), and loads any saved game;
-the main menu's LOAD does too. A game loaded from a hand-made save goes on
-writing its own autosave. There are as many slots as saves, each `slot_<n>.des`
-in `save`; games saved before there were slots keep their file and take a
-free slot.
+As in the original, the number pad offers outside views:
 
-## Training
+- 0 - chase view behind the boat, with a few instruments
+- 5 - look-at-view round the boat
+- 1 and 7 the same of the locked target 
+- 9 and 3 to zoom; 4, 6, 8 and 2 move the look-at view's camera round the boat
 
-The main menu's Training has the original's four training missions, each with
-its briefing and its own boat, outside the story. Afterwards the game goes back
-to the menu.
+V steps through the 2D cockpit, the 3D one, and the chase and look-at views
+of the boat and of the target (as LB+Back on a game controller and VIEW on
+the touch screen). In the views a drag with the mouse or a finger moves the
+look-at view's camera round the boat, and the mouse wheel (two fingers on a
+trackpad) or a pinch zooms.
 
-Below them, Open Mission (Offene Mission) plays any mission of the game outside
-the story, as `vertigo s00101` does: pick one of the four boats, fit it out in
-the depot, which sells every item and leaves you $10,000,000 to spend, then pick
-the mission. When it is over, or aborted, the list of missions comes back with
-the boat as it was fitted out; DEPOT there changes the fittings again.
+## 3D cockpits
 
-## Upscaled graphics
+Besides the original 2D cockpit art, Vertigo can show 3D models of the four
+cockpits. The models are bundled without their textures
+(`cockpits` next to the program, built by the Blender scripts in
+[data/3D-cockpits](data/3D-cockpits/README.md)). The first time a 3D cockpit is
+shown, its texture is created from the cockpit art of your game
+data in the background (during load, the 2D cockpit still shows), and keept it in its cache (`~/Library/Caches/Vertigo` on macOS,
+`~/.cache/vertigo` on Linux, `AppData/Local/Vertigo/Vertigo/Cache` on
+Windows).
 
-The main menu's Options can make the game's graphics four times as large with
-[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), an image upscaler based
-on machine learning, and use them in their place:
+- `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
+  mission and saves the choice (setting `cockpit/mode`). Without a model for
+  the boat's cockpit the 2D art is shown.
+- A finished model, e.g. one textured with upscaled art by the scripts in
+  data/3D-cockpits, takes the kit's place when it is in the folder
+  `3d-cockpits` of the data directory (or the folder set as
+  `cockpit/directory`). `--cockpit-dir 3d-cockpits-vector` takes them from
+  another folder for one run (a relative one in the data directory), e.g. to
+  compare variants of the textures; without a model there, the kit is used.
+- On the iPad the cockpit texture resolution is reduced to 4096x4096 (8192x8192 on the desktop)
+- In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
+  cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
+  window. The instruments are projected onto the model's screens.
+- Mouse look: dragging with a mouse button (or on the trackpad) turns the
+  pilot's head, up to 105° to the side, 65° up and 55° down; when the button
+  is released the head turns back to the front. `--look=60,-10` fixes the
+  head at 60° left and 10° down for the whole run, e.g. for screenshots.
+- 3D cockpits support cockpit shake: `--shake 0.5` (setting `cockpit/shake`, default 1)
+  scales it, 0 turns it off. `--trace` with the player's id prints the head
+  offset.
 
-- the full-screen pictures: stations, rooms, backgrounds, the main menu's
-  title, the notebook and the 2D cockpits' art;
-- the textures of the models and the effects' sprites;
-- the pictures that are mostly text (the sea and area maps, the autopilot's
-  destinations, the credits) and the cursor, with Real-ESRGAN's model for
-  animation, which keeps letters whole and edges crisp where the general model
-  garbles and smears them.
 
-The large silver font of the menus and screens is drawn from its vector
-version instead (`data/font`, made with the font editor there), sharp at any
-size and with the game's widths. The other fonts, the HUD's own art and the
-terrain keep their pixels (the upscaler breaks up the letters, and the
-terrain's tiles stop meeting seamlessly), and the movies stay as they are. Small lettering on models and buildings is
-upscaled with them by the general model and can come out garbled.
+# Testing
 
-The first click on *Upscaled graphics: PREPARE* asks before downloading
-Real-ESRGAN (its official release, about 52 MB, checked against the checksum
-it must have) into `Real-ESRGAN` next to the saved games. Upscaling then takes
-about 15 minutes on an Apple silicon Mac, in the background: the line shows the
-percentage, the game can be played meanwhile, and clicking the line again
-stops it, keeping what is done for the next time. Once it is finished the
-upscaled graphics are switched on and used from the next screen on; the line
-switches them off and on. When the game data changes, the line offers to
-*UPDATE* the set.
-
-The set is kept in `Game Data Upscaled` next to the saved games (about
-165 MB), a JPEG per picture or a PNG where it has transparency, named after a
-hash of the image the game decodes, so it doesn't
-depend on file names or the game's language. On the iPad, where the upscaler
-can't run, copy that folder from a computer into Vertigo's folder (On My iPad
-› Vertigo in the Files app) and switch it on in Options. `vertigo --upscale` makes the set in a
-terminal, printing the progress. The download is fetched with curl and
-unpacked with the system's own tools (ditto on macOS, tar on Windows 10 and
-later, unzip on Linux); the upscaler needs Vulkan (on macOS through Metal).
-
-## Testing
-
-Vertigo can start a mission directly, which is meant for testing:
+Vertigo can start a mission directly from the command line, which great for testing:
 
 ```
 vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
@@ -402,58 +416,16 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
   s01805: timeout after 5.006 s, 43/51 units enabled, 2 radio messages
   ```
 
-In a mission, Esc opens the mission menu (continue, which also ends a pause,
-abort the game, restart the mission, load the last saved game), P pauses, and Ctrl+K (Cmd+K on macOS)
-skips the mission as if it had been accomplished, for debugging. Once a mission
-is accomplished, Alt+A (the autopilot) asks for the station to go to, in the
-original's autopilot menu: any open station of the area, or the one the boat was on its way
-to. With only one it goes there at once, as do test missions and training. The
-mission, turret and autopilot menus show on the cockpit's big screen, in place
-of the target, as in the original.
+For debugging during a mission Ctrl+D (Cmd+D on macOS) shows debug information. Ctrl+K (Cmd+K on macOS) skips the mission as if it had been accomplished. 
+
+### Mission Sanity Checks
 
 `vertigo --check [mission...]` loads all missions (or the given ones) and lists
 everything the loader skips or ignores: unsupported object types, unread
-settings and sections, and conditions that can't be resolved. The output for
-the German CD data is kept in [docs/mission-check.txt](docs/mission-check.txt);
-regenerate it after changes to the loader and compare:
+settings and sections, and conditions that can't be resolved. The output is kept in [docs/mission-check.txt](docs/mission-check.txt).
+Regenerate after changes to compare:
 
 ```
 build/vertigo --check > docs/mission-check.txt
 ```
 
-## 3D cockpits
-
-Besides the original 2D cockpit art, Vertigo can show 3D models of the four
-cockpits. They come with Vertigo as kits: the models without their textures
-(`cockpits` next to the program, built by the Blender scripts in
-[data/3D-cockpits](data/3D-cockpits/README.md)). The first time a cockpit is
-shown in 3D, Vertigo paints its texture from the cockpit art of your game
-data, in a few seconds and in the background (the 2D cockpit shows
-meanwhile), and keeps it in its cache (`~/Library/Caches/Vertigo` on macOS,
-`~/.cache/vertigo` on Linux, `AppData/Local/Vertigo/Vertigo/Cache` on
-Windows).
-
-- `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
-  mission and saves the choice (setting `cockpit/mode`). Without a model for
-  the boat's cockpit the 2D art is shown.
-- A finished model, e.g. one textured with upscaled art by the scripts in
-  data/3D-cockpits, takes the kit's place when it is in the folder
-  `3d-cockpits` of the data directory (or the folder set as
-  `cockpit/directory`). `--cockpit-dir 3d-cockpits-vector` takes them from
-  another folder for one run (a relative one in the data directory), e.g. to
-  compare variants of the textures; without a model there, the kit is used.
-- On the iPad the texture is painted at 4096x4096 (8192x8192 on the desktop),
-  which its screen doesn't need more than; it takes half the time and 0.5 GB
-  less. A finished model's texture is halved to that size.
-- In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
-  cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
-  window. The instruments are projected onto the model's screens.
-- Mouse look: dragging with a mouse button (or on the trackpad) turns the
-  pilot's head, up to 105° to the side, 65° up and 55° down; when the button
-  is released the head turns back to the front. `--look=60,-10` fixes the
-  head at 60° left and 10° down for the whole run, e.g. for screenshots.
-- The pilot's head lags behind accelerations and is thrown about by
-  collisions, ground contact, hits and nearby explosions, which shows the
-  depth of the cockpit. `--shake 0.5` (setting `cockpit/shake`, default 1)
-  scales it, 0 turns it off. `--trace` with the player's id prints the head
-  offset.
