@@ -311,7 +311,7 @@ double VectorFont::random(std::uint32_t glyph, std::uint32_t x, std::uint32_t y,
 }
 
 
-Image VectorFont::render(int code, int w, int h, int scale, const Image &original, const std::vector<Rgb> &palette, double size) const
+Image VectorFont::render(int code, int w, int h, int scale, const Image &original, const std::vector<Rgb> &palette, double size, double gamma) const
 {
     Image image(w*scale, h*scale, Image::RGBA8888);
     const auto found = m_glyphs.find(code);
@@ -416,6 +416,9 @@ Image VectorFont::render(int code, int w, int h, int scale, const Image &origina
                             for (double &channel : c)
                                 channel = (1 - s.grainAmount)*channel + s.grainAmount*blend(mode, channel, g);
                         }
+                        if (gamma != 1)
+                            for (double &channel : c)
+                                channel = std::pow(std::clamp(channel, 0.0, 1.0), 1/gamma);
                     }
                     for (int k = 0; k < 3; k++)
                         sum[k] += c[k];

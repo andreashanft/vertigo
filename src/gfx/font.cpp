@@ -63,13 +63,14 @@ const VectorFont* vectorFont()
 
 // the vector font's glyph for a game glyph, as opaque as the game glyph is (the depot draws a
 // half transparent silver font)
-Image vectorGlyph(const VectorFont &font, int index, const Image &image, int scale, double size, const std::vector<Rgb> &palette)
+Image vectorGlyph(const VectorFont &font, int index, const Image &image, int scale, double size, double gamma,
+                  const std::vector<Rgb> &palette)
 {
     int opacity = 0;
     for (int y = 0; y < image.height(); y++)
         for (int x = 0; x < image.width(); x++)
             opacity = std::max(opacity, int(alpha(image.pixel(x, y))));
-    Image glyph = font.render(index, image.width(), image.height(), scale, image, palette, size);
+    Image glyph = font.render(index, image.width(), image.height(), scale, image, palette, size, gamma);
     if (opacity > 0 && opacity < 255)
         for (int y = 0; y < glyph.height(); y++) {
             std::uint8_t *texel = glyph.scanLine(y);
@@ -124,9 +125,11 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
         return name.size() >= end.size() && name.compare(name.size() - end.size(), end.size(), end) == 0;
     };
     const bool vector = !m_alpha && (endsWith("dplarge.fnt") || endsWith("dpmedium.fnt") || endsWith("dpsmall.fnt"));
-    // the large font's vector glyphs as high as the game's, the medium and small font's at 90%
+    // the large font's vector glyphs as high as the game's and brightened to its glyphs' light
+    // insides, the medium and small font's at 90%
     m_vectorLarge = endsWith("dplarge.fnt");
     m_vectorSize = m_vectorLarge ? 1 : 0.9;
+    m_vectorGamma = m_vectorLarge ? 1.4 : 1;
 
     int maxHeight = 0;
     int x = 1;
@@ -269,7 +272,7 @@ bool FontPrivate::prepareVector()
         for (std::size_t i = 0; i < m_images.size(); i++) {
             const Image &image = m_images[i];
             m_vectorTexture.update(places[i].x, places[i].y, drawnAs[i]
-                ? vectorGlyph(*font, drawnAs[i], image, scale, m_vectorSize, palette)
+                ? vectorGlyph(*font, drawnAs[i], image, scale, m_vectorSize, m_vectorGamma, palette)
                 : image.scaled(image.width()*scale, image.height()*scale));
             RectF rect;
             rect.x = places[i].x / float(res);

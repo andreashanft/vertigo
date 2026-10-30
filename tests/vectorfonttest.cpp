@@ -76,6 +76,10 @@ int main()
     // half the texel across the edge
     CHECK_EQUAL(alpha(image, 17, 12), 255);
     CHECK_EQUAL(alpha(image, 2, 12), 255);
+    // a gamma of 2 brightens the inside to the square root of its grey, not the outline
+    image = vector.render(0x41, 11, 12, 2, gfx::Image(), {}, 1, 2);
+    CHECK_EQUAL(red(image, 11, 12), int(std::lround(std::sqrt(0xa0/255.0)*255)));
+    CHECK_EQUAL(red(image, 3, 12), 0x10);
     // a bevelled corner leaves out its tip, a mitred one doesn't
     CHECK_EQUAL(alpha(image, 2, 2), 0);
     CHECK(vector.parse(font("{ \"outline\": { \"on\": true, \"color\": \"#102030\", \"width\": 1, \"join\": \"miter\" }, "

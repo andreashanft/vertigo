@@ -50,8 +50,10 @@ public:
     // there; the palette is the game's glyph colours, for the style that snaps to them. The
     // cell's height takes size times the box's, centred on the box; a box less than 12 pixels
     // high is a smaller font's, as many pixels narrower as it is lower than the large font's.
+    // Above 1, gamma brightens the glyph's inside (not its outline): its colours are raised to
+    // the power of 1/gamma.
     Image render(int code, int w, int h, int scale, const Image &original = Image(),
-                 const std::vector<Rgb> &palette = {}, double size = 1) const;
+                 const std::vector<Rgb> &palette = {}, double size = 1, double gamma = 1) const;
 
     // the grain's random value of a cell, 0 to 1, as the editor makes it
     static double random(std::uint32_t glyph, std::uint32_t x, std::uint32_t y, std::uint32_t seed);

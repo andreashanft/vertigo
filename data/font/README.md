@@ -40,7 +40,9 @@ With the upscaled graphics on, Vertigo draws the silver fonts (large, medium
 and small) from `vertigo-mono.json`, which the build copies next to the program
 (`font/vertigo-mono.json`, in `share/vertigo/font` when installed): each glyph
 over the box of the game's glyph it replaces, so text keeps the game's widths,
-in the editor's style, eight texels per game pixel. The medium and small fonts
+in the editor's style, eight texels per game pixel. The large font's glyphs are
+brightened inside (gamma 1.4) to the game's lighter large font; the medium and
+small fonts
 take the glyphs shrunk to their lower boxes, at 90% of their height, centred on
 them. The game's small letters
 are its capitals, so they take the capitals' vector glyphs; a glyph without a
