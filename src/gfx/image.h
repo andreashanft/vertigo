@@ -86,6 +86,8 @@ public:
     bool save(const std::string &fileName) const;
     // as JPEG, quality 1 to 100
     bool saveJpeg(const std::string &fileName, int quality) const;
+    // the alpha alone, as a grey PNG
+    bool saveAlpha(const std::string &fileName) const;
     // a PNG or JPEG image; a null image if it can't be decoded
     static Image fromData(const std::uint8_t *data, std::size_t size);
 

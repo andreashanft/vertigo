@@ -27,9 +27,10 @@
 namespace gfx {
 
 // The upscaled graphics (game::Upscaler makes them): Scale times larger copies of the game's
-// pictures, model and effect textures and cursor, each found by a hash of the
-// image the game decodes, so wherever an image becomes a texture its copy takes its place. A
-// texture made from a copy keeps the size of the image it stands for. The set lives in "Game Data
+// pictures, model and effect textures, the depot's art and movies and the cursor, each found by a
+// hash of the image the game decodes, so wherever an image becomes a texture (or a movie's
+// picture goes into one) its copy takes its place. A texture made from a copy keeps the size of
+// the image it stands for. The set lives in "Game Data
 // Upscaled" next to the saves (on the iPad in the app's documents, where it can be copied to).
 class Upscaled
 {
@@ -49,10 +50,14 @@ public:
     // the hash of an image as a texture takes it (its size and RGBA pixels)
     static std::uint64_t key(const Image &image);
     static std::string keyName(std::uint64_t key);
-    // a copy's file: the hash in hex, ".png" with transparency, ".jpg" without
+    // a copy's file: the hash in hex and ".jpg", or ".png" (with transparency, from an older
+    // Vertigo); a JPEG's transparency, where it has some, is in alphaName()
     static bool parseName(const std::string &name, std::uint64_t &key);
+    static std::string alphaName(std::uint64_t key);
     // the copy of the image with this hash, Scale times its size; null without one or when off
     static Image find(std::uint64_t key);
+    // the same, kept decoded for images shown again and again (a movie's pictures)
+    static Image findRepeated(std::uint64_t key);
     // whether copies are being used
     static bool isActive();
 

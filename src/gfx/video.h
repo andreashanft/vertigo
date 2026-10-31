@@ -42,6 +42,8 @@ public:
     bool isPlaying() const { return m_playing; }
     void setFrameRate(int frameRate);
     Image getFrame();
+    // the next picture, whatever the frame rate (a movie's pictures one after the other)
+    Image nextFrame();
     std::vector<char> getAudio();
     bool atEnd() const;
     std::uint32_t width() const { return m_width; }

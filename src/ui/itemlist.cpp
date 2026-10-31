@@ -34,9 +34,9 @@ ItemList::ItemList(std::function<void(int)> &&funcClicked, Widget *parent, bool 
 {
     setSize(539, 48);
 
-    m_texture.createEmpty(54*maxItems + 3, 48, gfx::Texture::RGBA);
+    m_texture.createEmptyUpscaled(54*maxItems + 3, 48, gfx::Texture::RGBA);
     if (showChecks)
-        m_textureChecks.createEmpty(54*maxItems + 3, 48, gfx::Texture::RGBA);
+        m_textureChecks.createEmptyUpscaled(54*maxItems + 3, 48, gfx::Texture::RGBA);
 
     const gfx::ColorTable colorTable("gfx:pal/gui/border.pal");
     gfx::ColorTable colorTableDisabled;
@@ -96,9 +96,9 @@ void ItemList::selectItem(int index)
 
 void ItemList::clear()
 {
-    m_texture.createEmpty(m_texture.width(), m_texture.height(), gfx::Texture::RGBA);
+    m_texture.createEmptyUpscaled(m_texture.width(), m_texture.height(), gfx::Texture::RGBA);
     if (m_textureChecks.isValid())
-        m_textureChecks.createEmpty(m_textureChecks.width(), m_textureChecks.height(), gfx::Texture::RGBA);
+        m_textureChecks.createEmptyUpscaled(m_textureChecks.width(), m_textureChecks.height(), gfx::Texture::RGBA);
     m_items = 0;
     m_firstItem = 0;
     m_selectedItem = -1;

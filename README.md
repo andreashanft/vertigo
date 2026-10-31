@@ -188,11 +188,13 @@ at any size and can be fine-tuned with the font editor in [data/font](data/font/
 ### Simple Upscale
 
 Using [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), an image upscaler based
-on machine learning, game graphics are upscaled locally within a few minutes:
+on machine learning, game graphics are upscaled locally in about half an hour:
 
 - Full-screen pictures: stations, rooms, backgrounds, the main menu's
   title, the notebook and the 2D cockpits' art
 - Textures of the models and the effects' sprites
+- The depot: its pictures and buttons, the items' icons and the movies of the boat
+  turning over and the items turning
 - Pictures that are mostly text are upscaled using Real-ESRGAN's model for
   animation, it works better for letters (the sea and area maps, the autopilot's destinations, the credits)
 
@@ -200,11 +202,13 @@ on machine learning, game graphics are upscaled locally within a few minutes:
 
 ![Screenshot grid showing two follow cam ingame scenes and comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-3rd-Cam-Vergleich.jpg)
 
+![The depot with its icons, the boat and the turning item, original above the upscaled version](docs/Depot-Upscale-Vergleich.jpg)
+
 #### How to enable
 
 In the main menu's Options: click on **Upscaled graphics: PREPARE** to start the process.
 
-It asks before downloading Real-ESRGAN (the latest official release, ~ 52 MB, checked against checksum) into `Real-ESRGAN` next to the saved games. Upscaling then takes about 5-10 minutes and runs in the background. Clicking the line again stops the process, progress is saved and can be resumed.
+It asks before downloading Real-ESRGAN (the latest official release, ~ 52 MB, checked against checksum) into `Real-ESRGAN` next to the saved games. Upscaling then takes about half an hour (most of it the depot's movies) and runs in the background. Clicking the line again stops the process, progress is saved and can be resumed.
 
 **Once finished, restart the game to use the upscaled graphics.** The set is kept in `Game Data Upscaled` next to the saved games and the `Real-ESRGAN` installation. (see **Saved games and settings** for exact location)
 
@@ -217,7 +221,8 @@ It asks before downloading Real-ESRGAN (the latest official release, ~ 52 MB, ch
 Currently excluded from the upscale are:
 * All other fonts and the HUD's own art (they are pixel doubled and keep their sharpness anyway)
 * Terrain (the upscaler does not work well for it as it breaks the seamless tiling)
-* Movies and background animations
+* The window frames, the arrows and the desktop's other buttons
+* Movies (except the depot's) and background animations
 
 Small lettering on models and buildings can come out garbled.
 

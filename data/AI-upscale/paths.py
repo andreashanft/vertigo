@@ -69,6 +69,17 @@ def esrgan(key):
     raise SystemExit(f'No Real-ESRGAN copy of {key} (run "aiupscale.py prepare" first).')
 
 
+def esrgan_image(key):
+    """The Real-ESRGAN copy, with its transparency (beside a JPEG in KEY-alpha.png)."""
+    from PIL import Image
+    image = Image.open(esrgan(key))
+    alpha = os.path.join(ESRGAN_SET, key + '-alpha.png')
+    if os.path.exists(alpha):
+        image = image.convert('RGB')
+        image.putalpha(Image.open(alpha).convert('L'))
+    return image
+
+
 def keys():
     """All exported originals."""
     found = []

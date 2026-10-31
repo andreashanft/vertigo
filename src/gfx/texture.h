@@ -52,8 +52,11 @@ public:
     void fromImage(const Image &image, bool smooth = true);
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
     void createEmpty(const Size &size, Texture::Format format, bool smooth = true);
-    // (on a texture made from an upscaled copy, at the position the image stands for: the image
-    // is scaled up with it)
+    // for images put in with update() that have upscaled copies (a movie's pictures, icons in a
+    // row): while the copies are used it holds them, smoothed and with mipmaps
+    void createEmptyUpscaled(int w, int h, Texture::Format format);
+    // (on a texture made from an upscaled copy or for them, at the position the image stands for:
+    // the image's copy takes its place, or the image is scaled up)
     void update(int x, int y, const Image &image);
     // trilinear with mipmaps and filtered anisotropically, for the world's textures seen far off
     // and at an angle; the image fills the texture (sides powers of two), else the padding
@@ -89,6 +92,7 @@ public:
     void setFilter(bool smooth);
     void fromImage(const Image &image, bool smooth);
     void createEmpty(int w, int h, Texture::Format format, bool smooth);
+    void createEmptyUpscaled(int w, int h, Texture::Format format);
     void update(int x, int y, const Image &image);
     // an empty texture of a size that holds images scale times as large (an upscaled copy), and
     // such an image at a position of the size it stands for
@@ -178,6 +182,12 @@ inline void Texture::createEmpty(int w, int h, Texture::Format format, bool smoo
 inline void Texture::createEmpty(const Size &size, Texture::Format format, bool smooth)
 {
     d->createEmpty(size.width, size.height, format, smooth);
+}
+
+
+inline void Texture::createEmptyUpscaled(int w, int h, Texture::Format format)
+{
+    d->createEmptyUpscaled(w, h, format);
 }
 
 

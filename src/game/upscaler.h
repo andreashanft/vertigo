@@ -27,8 +27,10 @@ namespace game {
 
 // Makes the upscaled graphics (gfx::Upscaled) from the game data, in the background: fetches the
 // Real-ESRGAN upscaler once (its official release, checked against the hash it should have),
-// decodes the game's pictures, model and effect textures and the cursor as the game does, has the upscaler make them four times as large, and keeps each in "Game
-// Data Upscaled" as soon as it is done, so a stopped run goes on where it was. Desktop systems only.
+// decodes the game's pictures, model and effect textures, the depot's art and movies and the
+// cursor as the game does, has the upscaler make them four times as large, and keeps each in
+// "Game Data Upscaled" as soon as it is done, so a stopped run goes on where it was. Desktop
+// systems only.
 class Upscaler
 {
 public:

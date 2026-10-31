@@ -341,6 +341,19 @@ bool Image::saveJpeg(const std::string &fileName, int quality) const
 }
 
 
+bool Image::saveAlpha(const std::string &fileName) const
+{
+    const Image rgba = convertToFormat(RGBA8888);
+    if (rgba.isNull())
+        return false;
+    std::vector<std::uint8_t> alpha(std::size_t(m_width)*m_height);
+    for (int y = 0; y < m_height; y++)
+        for (int x = 0; x < m_width; x++)
+            alpha[std::size_t(y)*m_width + x] = rgba.constScanLine(y)[4*x + 3];
+    return stbi_write_png(fileName.c_str(), m_width, m_height, 1, alpha.data(), m_width) != 0;
+}
+
+
 Image Image::fromData(const std::uint8_t *data, std::size_t size)
 {
     int width, height, channels;

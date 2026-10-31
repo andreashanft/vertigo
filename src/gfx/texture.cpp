@@ -143,6 +143,17 @@ void TexturePrivate::createEmptyScaled(int w, int h, Texture::Format format, int
 }
 
 
+void TexturePrivate::createEmptyUpscaled(int w, int h, Texture::Format format)
+{
+    if (!Upscaled::isActive()) {
+        createEmpty(w, h, format, true);
+        return;
+    }
+    createEmptyScaled(w, h, format, Upscaled::Scale);
+    generateMipmaps();
+}
+
+
 void TexturePrivate::updateScaled(int x, int y, const Image &image)
 {
     const int scale = m_scale;
@@ -155,6 +166,14 @@ void TexturePrivate::updateScaled(int x, int y, const Image &image)
 void TexturePrivate::update(int x, int y, const Image &source)
 {
     if (m_scale > 1) {
+        // its copy, kept for the next time (a movie shows its pictures again)
+        if (m_scale == Upscaled::Scale && Upscaled::isActive()) {
+            const Image copy = Upscaled::findRepeated(Upscaled::key(source));
+            if (copy.width() == source.width()*m_scale && copy.height() == source.height()*m_scale) {
+                updateScaled(x, y, copy);
+                return;
+            }
+        }
         updateScaled(x, y, source.scaled(source.width()*m_scale, source.height()*m_scale));
         return;
     }
