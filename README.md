@@ -2,24 +2,24 @@
 
 [![Build](https://github.com/andreashanft/vertigo/actions/workflows/build.yml/badge.svg)](https://github.com/andreashanft/vertigo/actions/workflows/build.yml)
 
-In November 1996, „[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)“, better known under its German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)", was released by *Massive Development*.
+In November 1996, "[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)", better known under its German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)", was released by *Massive Development*.
 
-This repository is an open-source clone that faithfully recreates this 30 year old classic. It builds on [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had been reimplemented years ago before the project was abandoned.
+This repository is an open-source clone that faithfully recreates this 30 year old classic. It builds on [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had been reimplemented already years ago before the project was abandoned.
 
 With the help of Claude Code, most open TODOs and missing features are now implemented. There is also an iPad version and a feasibility study of real 3D cockpits for an eventual VR port.
 
-The game runs on current hardware and systems in modern resolutions, with an improved look (e.g. upscaled graphics) that keeps its style. For copyright reasons the repository contains no game data or binaries: the assets of an original English or German version (CD or GOG) are required.
+The game runs on current hardware and systems in modern resolutions, with an improved look (e.g. upscaled graphics) that stays faithful to the original. For copyright reasons the repository contains no game data or binaries: the assets of an original English or German version (CD or GOG) are required.
 
-The implementation is about **98% done**:
+The implementation is about **99% done**:
 
 * Modern codebase and renderer for macOS, iOS (iPad), Linux and Windows (not playtested yet)
-* English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data
+* Support of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data
 * Menus, stations, dialogs, dock, upgrades, notebook, movies and music all work
 * Missions are playable and the story can be progressed
 * Keyboard, game controllers and touch on the iPad
 * Experimental: 3D cockpits for widescreen and, in the future, VR
 
-What's still missing are details and thorough playtesting, see [docs/ROADMAP.md](docs/ROADMAP.md).
+What's still missing are details I might have missed and thorough playtesting, see [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Contents
 
@@ -36,10 +36,10 @@ What's still missing are details and thorough playtesting, see [docs/ROADMAP.md]
 
 # Downloads
 
-Builds for Linux, macOS and Windows are in the Releases section on GitHub:
+Builds for Linux, macOS and Windows are in the [Releases section](releases) on GitHub:
 
 * `vertigo-<version>-linux-x86_64.tar.gz`: SDL 3 built in; needs OpenAL
-  (`libopenal1`), OpenGL 3.2 and Ubuntu 24.04 or newer
+  (`libopenal1`), OpenGL 3.2 and minimum Ubuntu 24.04 or similar
 * `vertigo-<version>-macos-universal.zip`: `Vertigo.app` for Apple silicon and
   Intel, macOS 13.3 or later. It isn't signed, so macOS refuses the first
   start: System Settings › Privacy & Security › Open Anyway starts it (or
@@ -274,34 +274,19 @@ name. Menus and stations take the mouse, or touch on the iPad.
 
 ## Touch controls
 
-On a touch screen (the iPad) missions show their own controls over the
-cockpit: from the start when no keyboard or game controller is connected,
-otherwise once the screen is touched. A key or a controller's button hides
-them again.
+On a touch screen (iPad) a control overlay is shown unless another input source
+is detected. Connecting a keyboard or game controller hides the touch UI.
 
-- A finger on the left part of the screen brings up a stick where it comes
-  down; it steers as far as it is pushed (up lowers the nose).
-- Under the right thumb: FIRE (held), and around it TORP (fire a torpedo),
-  BUZZ (drop a buzzer), NEXT (the next torpedo) and LOCK (the nearest enemy);
-  above them + and - change the speed by 10 km/h (repeating while held), and
-  STOP stops.
-- In the corners: MENU (the mission menu when the finger is lifted; held for a
-  second it toggles the debug overlay), NAV (the next nav point), AUTO
-  (autopilot), SONAR (on or off), TURR (turret menu) and VIEW (the next
-  cockpit or view from outside, as V).
-- A tap takes an option of the mission and turret menus.
-- A tap on a status monitor changes its page: the weapon monitor steps through
-  the gun, the magazine and the turrets to the overview (as F1-F4), the armor
-  monitor switches to the system state and back (as I); Hiob's single monitor
-  goes through all of them. In the 3D cockpit only with the head facing
-  forward.
-- In the 3D cockpit a finger dragged elsewhere turns the head; in the look-at
-  view it moves the camera round the boat, and two fingers zoom the views from
-  outside.
+- Most items should be self-explanatory, FIRE fires the main gun(s), TORP a torpedo etc.
+- When the 3D cockpit is enabled, dragging in the centre of the screen turns the head
+- In the 3rd-person view dragging moves the camera around, pinching with two fingers zooms in and out
+- MENU opens the mission menu; holding it toggles the debug overlay
+- Tapping any secondary status monitor cycles its views
+- VIEW toggles between the 2D and 3D cockpit and any applicable outside views (enemy when a target is locked)
 
-The main menu's Options, and the notebook's Options › Input devices, put the
-stick on the right and the buttons on the left (Touch stick: RIGHT), and let
-up raise the nose (Touch stick vertical: INVERTED).
+Two options are available:
+ - Touch stick: LEFT/RIGHT - what side the virtual joystick should be
+ - Touch stick vertical: REGULAR/INVERTED - let up raise or lower the nose
 
 ## Views from outside
 
@@ -331,8 +316,6 @@ use (Real-ESRGAN's or the AI upscale's). The texture is cached in
 `~/Library/Caches/Vertigo` on macOS, `~/.cache/vertigo` on Linux and
 `AppData/Local/Vertigo/Vertigo/Cache` on Windows.
 
-![The Gator's 3D cockpit painted from the original art and from the upscaled art](docs/3D-cockpit-upscaled.jpg)
-
 - `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
   mission and saves the choice (setting `cockpit/mode`). Without a model for
   the boat's cockpit the 2D art is shown.
@@ -345,10 +328,9 @@ use (Real-ESRGAN's or the AI upscale's). The texture is cached in
 - The texture is 8192x8192 on the desktop and 4096x4096 on the iPad.
 - In 3D the world uses the cockpit art's camera (`ViewAngle` 105° in the
   cockpit's DES file, wider than the 2D cockpit's view) and fills the whole
-  window. The instruments are projected onto the model's screens.
-- Mouse look: dragging with a mouse button (or on the trackpad) turns the
-  pilot's head, up to 105° to the side, 65° up and 55° down; on release the
-  head turns back to the front. `--look=60,-10` fixes the head at 60° left and
+  window.
+- Mouse look: dragging with a mouse (or on the trackpad) turns the
+  pilot's head. `--look=60,-10` fixes the head at 60° left and
   10° down for the whole run, e.g. for screenshots.
 - Cockpit shake: `--shake 0.5` (setting `cockpit/shake`, default 1) scales it,
   0 turns it off. `--trace` with the player's id prints the head offset.
