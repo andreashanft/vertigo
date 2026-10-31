@@ -111,7 +111,7 @@ Depot::Depot(Boat *boat, Account account, std::function<void()> &&funcClose) :
 
     assert(m_videoFlip1.width() == m_videoFlip2.width());
     assert(m_videoFlip1.height() == m_videoFlip2.height());
-    m_boatTexture.createEmpty(m_videoFlip1.width(), m_videoFlip1.height(), gfx::Texture::RGBA);
+    m_boatTexture.createEmptyUpscaled(m_videoFlip1.width(), m_videoFlip1.height(), gfx::Texture::RGBA);
 
     m_boatLabel = new ui::Label(&m_panelMountings);
     m_boatLabel->setTexture(m_boatTexture);
@@ -397,7 +397,7 @@ void Depot::updateInfo()
     m_videoItem.open(String("gfx:mvi/thing/%1.mvi").arg(item->imgname));
     m_videoItem.setFrameRate(13);
     m_videoItem.playLoop();
-    m_itemTexture.createEmpty(m_videoItem.width(), m_videoItem.height(), gfx::Texture::RGBA);
+    m_itemTexture.createEmptyUpscaled(m_videoItem.width(), m_videoItem.height(), gfx::Texture::RGBA);
 
     int price = Items::getDepotPrice(item->model);
     if (m_selectedList == 2) {

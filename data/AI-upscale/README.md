@@ -43,7 +43,8 @@ A room inside a station:
 
 - Vertigo, built from this repository, and the game data.
 - The Real-ESRGAN set, made by the game: Options › **Upscaled graphics: PREPARE**, or
-  `vertigo --upscale`.
+  `vertigo --upscale`. One from an older Vertigo is brought up to date there first
+  (**UPDATE**), and the steps below run again.
 - Python 3.9 or newer, and curl.
 - ComfyUI 0.42 or newer with these models (the names are in `workflows.py`):
   - `diffusion_models/qwen_image_2.1_int8_convrot.safetensors`
@@ -77,9 +78,10 @@ venv/bin/python aiupscale.py check
 Run the steps in this order. Each one can be stopped and started again.
 
 1. `venv/bin/python aiupscale.py export`
-   Gets the game's pictures and textures as the game decodes them (334 files), into
-   `work/originals`. It runs Vertigo's own upscale with a stand-in for Real-ESRGAN, in a
-   throwaway home folder. It finds the game data like Vertigo does, or takes `--data DIR`.
+   Gets the game's pictures and textures as the game decodes them (3444 files, most of them the
+   depot's movie pictures), into `work/originals`. It runs Vertigo's own upscale with a stand-in
+   for Real-ESRGAN, in a throwaway home folder. It finds the game data like Vertigo does, or
+   takes `--data DIR`.
 2. `venv/bin/python aiupscale.py prepare`
    Copies the game's Real-ESRGAN set into `work/esrgan`. The AI set is built on it.
 3. `venv/bin/python aiupscale.py names` (optional)
@@ -121,8 +123,9 @@ Run the steps in this order. Each one can be stopped and started again.
   pipeline finds both and smooths them away.
 - On the sea maps only the terrain is redrawn. Labels, lines and frames stay from Real-ESRGAN.
 - Some images keep the Real-ESRGAN copy: the effects' sprites with transparency, smoke and
-  fire (the AI does not improve them), the autopilot's destinations, the credits
-  and the cursor.
+  fire (the AI does not improve them), the autopilot's destinations, the credits, the cursor
+  and the depot's pictures, icons and movies (a movie's pictures redrawn one by one would
+  flicker).
 
 ## The config files
 

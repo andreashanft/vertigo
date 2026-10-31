@@ -128,8 +128,6 @@ Image Video::getFrame()
     if (!m_playing)
         return Image();
 
-    bool gotFrame = false;
-
     if (atEnd()) {
         if (m_looping) {
             reset();
@@ -143,6 +141,13 @@ Image Video::getFrame()
         return Image();
 
     m_time.restart();
+
+    return nextFrame();
+}
+
+Image Video::nextFrame()
+{
+    bool gotFrame = false;
 
     while (!atEnd() && !gotFrame) {
         const Entry &entry = m_entries[m_videoPos++];

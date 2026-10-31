@@ -199,11 +199,13 @@ version, sharp at any size. It can be fine-tuned with the font editor in
 ### Simple upscale
 
 [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), an image upscaler based
-on machine learning, upscales the game's graphics locally within a few minutes:
+on machine learning, upscales the game's graphics locally in about half an hour:
 
 - Full-screen pictures: stations, rooms, backgrounds, the main menu's title,
   the notebook and the cockpits' art (also for the 3D cockpits)
 - Textures of the models and the effects' sprites
+- The depot: its pictures and buttons, the items' icons and the movies of the
+  boat turning over and the items turning
 - Pictures that are mostly text, with Real-ESRGAN's model for animation, which
   keeps letters better (the sea and area maps, the autopilot's destinations,
   the credits)
@@ -212,13 +214,15 @@ on machine learning, upscales the game's graphics locally within a few minutes:
 
 ![Screenshot grid showing two follow cam ingame scenes and comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-3rd-Cam-Vergleich.jpg)
 
+![The depot with its icons, the boat and the turning item, original above the upscaled version](docs/Depot-Upscale-Vergleich.jpg)
+
 #### How to enable
 
 In the main menu's Options, click **Upscaled graphics: PREPARE**. It asks
 before downloading Real-ESRGAN (the latest official release, ~52 MB, checked
 against its checksum) into `Real-ESRGAN` next to the saved games. Upscaling
-takes about 5-10 minutes in the background; clicking the line again stops it,
-and it resumes where it stopped.
+takes about half an hour (most of it the depot's movies) in the background;
+clicking the line again stops it, and it resumes where it stopped.
 
 **Once finished, restart the game to use the upscaled graphics.** The set is
 kept in `Game Data Upscaled` next to the saved games (see
@@ -236,7 +240,8 @@ upscaler needs Vulkan (on macOS through Metal).
 Not upscaled are:
 * The other fonts and the HUD's own art (pixel doubled, they stay sharp)
 * The terrain (the upscaler breaks its seamless tiling)
-* Movies and background animations
+* The window frames, the arrows and the desktop's other buttons
+* Movies (except the depot's) and background animations
 
 Small lettering on models and buildings can come out garbled.
 

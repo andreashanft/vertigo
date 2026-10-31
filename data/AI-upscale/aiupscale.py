@@ -100,7 +100,8 @@ def prepare(args):
         raise SystemExit(f'No Real-ESRGAN set in {source}: make it in the game first (Options › Upscaled graphics).')
     shutil.rmtree(ESRGAN_SET, ignore_errors=True)
     shutil.copytree(source, ESRGAN_SET)
-    print(f'{len(os.listdir(ESRGAN_SET)) - 1} copies from {source} in {ESRGAN_SET}')
+    copies = [name for name in os.listdir(ESRGAN_SET) if name.endswith(('.jpg', '.png')) and len(name) == 20]
+    print(f'{len(copies)} copies from {source} in {ESRGAN_SET}')
 
 
 def fnv(data, h=14695981039346656037):

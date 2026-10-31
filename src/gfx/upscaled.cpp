@@ -26,7 +26,9 @@
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
+#include <list>
 #include <map>
+#include <set>
 
 namespace gfx {
 
@@ -36,13 +38,21 @@ const char *const SettingKey = "Graphics/upscaled";
 const char *const SourceFile = "source.txt";
 // raised when what the set holds changes, so an older one is brought up to date: the copies it
 // lacks are made, those no longer wanted removed (2: without the fonts and the terrain; 3: the
-// pictures of text with the model that keeps letters whole)
-const char *const SetVersion = "3";
+// pictures of text with the model that keeps letters whole; 4: the depot's pictures, icons and
+// movies)
+const char *const SetVersion = "4";
+// what findRepeated() keeps decoded at most
+const std::size_t RepeatedBytes = std::size_t(256) << 20;
 
 bool g_loaded = false;
 bool g_available = false;
 std::string g_source;
 std::map<std::uint64_t, std::string> g_files;
+// the copies with their transparency in alphaName()
+std::set<std::uint64_t> g_alpha;
+// the copies findRepeated() keeps, the one used last first
+std::list<std::pair<std::uint64_t, Image>> g_repeated;
+std::size_t g_repeatedBytes = 0;
 
 void load()
 {
@@ -50,17 +60,23 @@ void load()
         return;
     g_loaded = true;
     g_files.clear();
+    g_alpha.clear();
     g_source.clear();
     const std::string directory = Upscaled::directory();
     const std::vector<char> source = util::readFile(util::joinPath(directory, SourceFile));
     g_source.assign(source.begin(), source.end());
     while (!g_source.empty() && std::isspace(static_cast<unsigned char>(g_source.back())))
         g_source.pop_back();
+    std::set<std::string> names;
     for (const std::string &name : util::files(directory)) {
+        names.insert(name);
         std::uint64_t key = 0;
         if (Upscaled::parseName(name, key))
             g_files[key] = name;
     }
+    for (const auto &file : g_files)
+        if (names.count(Upscaled::alphaName(file.first)))
+            g_alpha.insert(file.first);
     g_available = !g_files.empty() && g_source.compare(0, std::string(SetVersion).size() + 1, std::string(SetVersion) + "-") == 0;
 }
 
@@ -115,6 +131,8 @@ bool Upscaled::isOutdated()
 void Upscaled::reload()
 {
     g_loaded = false;
+    g_repeated.clear();
+    g_repeatedBytes = 0;
 }
 
 
@@ -150,6 +168,12 @@ std::string Upscaled::keyName(std::uint64_t key)
 }
 
 
+std::string Upscaled::alphaName(std::uint64_t key)
+{
+    return keyName(key) + "-alpha.png";
+}
+
+
 bool Upscaled::parseName(const std::string &name, std::uint64_t &key)
 {
     if (name.size() != 20 || (name.compare(16, 4, ".png") != 0 && name.compare(16, 4, ".jpg") != 0))
@@ -170,7 +194,42 @@ Image Upscaled::find(std::uint64_t key)
     if (it == g_files.end())
         return Image();
     const std::vector<char> data = util::readFile(util::joinPath(directory(), it->second));
-    return Image::fromData(reinterpret_cast<const std::uint8_t *>(data.data()), data.size());
+    Image copy = Image::fromData(reinterpret_cast<const std::uint8_t *>(data.data()), data.size());
+    if (copy.isNull() || !g_alpha.count(key))
+        return copy;
+    // the transparency, its grey as the red
+    const std::vector<char> alphaData = util::readFile(util::joinPath(directory(), alphaName(key)));
+    const Image alpha = Image::fromData(reinterpret_cast<const std::uint8_t *>(alphaData.data()), alphaData.size());
+    if (alpha.width() != copy.width() || alpha.height() != copy.height() || alpha.format() != Image::RGB888)
+        return copy;
+    copy = copy.convertToFormat(Image::RGBA8888);
+    for (int y = 0; y < copy.height(); y++) {
+        std::uint8_t *pixel = copy.scanLine(y);
+        const std::uint8_t *grey = alpha.constScanLine(y);
+        for (int x = 0; x < copy.width(); x++)
+            pixel[4*x + 3] = grey[3*x];
+    }
+    return copy;
+}
+
+
+Image Upscaled::findRepeated(std::uint64_t key)
+{
+    for (auto it = g_repeated.begin(); it != g_repeated.end(); ++it)
+        if (it->first == key) {
+            g_repeated.splice(g_repeated.begin(), g_repeated, it);
+            return it->second;
+        }
+    const Image copy = find(key);
+    if (copy.isNull())
+        return copy;
+    g_repeated.emplace_front(key, copy);
+    g_repeatedBytes += std::size_t(copy.bytesPerLine())*copy.height();
+    while (g_repeatedBytes > RepeatedBytes && g_repeated.size() > 1) {
+        g_repeatedBytes -= std::size_t(g_repeated.back().second.bytesPerLine())*g_repeated.back().second.height();
+        g_repeated.pop_back();
+    }
+    return copy;
 }
 
 

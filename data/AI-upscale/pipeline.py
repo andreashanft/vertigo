@@ -5,7 +5,8 @@ What each original gets, by kind:
   picture  (stations, rooms, title, ...)    an edit in tiles of about a megapixel, blended
   map      (the sea and area maps)          as a picture, then the labels, lines and frames put
                                             back from the Real-ESRGAN copy (their colours mark them)
-  keep     (the effects' textures, the autopilot's destinations, the cursor, the credits, frames)
+  keep     (the effects' textures, the autopilot's destinations, the cursor, the credits, frames,
+            the depot's pictures, icons and movies)
                                             the Real-ESRGAN copy stays
 Smoke and fire, which the AI turns into technical structure, keep the Real-ESRGAN copy too: in the
 parts of a texture config/esrgan-regions.json names, or all of it. Where an original has
@@ -33,7 +34,7 @@ from PIL import Image, ImageFilter
 
 from comfy import Comfy
 from measure import gray, measure, shift
-from paths import ESRGAN_SET, ORIGINALS, OUT, REGIONS, SETS, STREAKS, TEXTS, TILES, esrgan, original
+from paths import ESRGAN_SET, ORIGINALS, OUT, REGIONS, SETS, STREAKS, TEXTS, TILES, esrgan_image, original
 import prompts
 import workflows
 
@@ -66,6 +67,10 @@ def kind(key):
         # redraws wrongly
         return 'map' if image.size == (304, 284) else 'keep'
     if regions().get(key) == 'all':
+        return 'keep'
+    # the depot's: its movies' pictures (128x128, 320x200) redrawn one by one would flicker, and
+    # its icons, buttons and background stay alike with them
+    if image.size in ((128, 128), (320, 200), (48, 48), (33, 33), (16, 32), (8, 8), (555, 350)):
         return 'keep'
     if image.size == (256, 256):
         return 'keep' if transparent else 'texture'
@@ -417,7 +422,7 @@ def run(keys):
         result = result.crop((0, 0) + size)
         result = match_colours(result, source.resize(size, Image.LANCZOS))
         if k == 'map':
-            copy = Image.open(esrgan(key)).convert('RGB')
+            copy = esrgan_image(key).convert('RGB')
             result.paste(copy, (0, 0), map_overlay(source))
         # the vertical streaks in some station pictures' open water (an artefact of the original)
         # smoothed away: where config/streaks.json says, or found by themselves in the backgrounds
@@ -431,9 +436,9 @@ def run(keys):
             result = smooth_dither(result, source)
         for x1, y1, x2, y2 in regions().get(key, []):
             box = (x1*SCALE, y1*SCALE, x2*SCALE, y2*SCALE)
-            result.paste(Image.open(esrgan(key)).convert('RGB').crop(box), box[:2])
+            result.paste(esrgan_image(key).convert('RGB').crop(box), box[:2])
         if transparent:
-            result.putalpha(Image.open(esrgan(key)).convert('RGBA').getchannel('A'))
+            result.putalpha(esrgan_image(key).convert('RGBA').getchannel('A'))
         result.save(os.path.join(OUT, key + '.png'))
         sx, sy, difference, colour = measure(source, result.convert('RGB'))
         worst = worst_shift(shifts)
@@ -448,7 +453,7 @@ def run(keys):
 
 def make_set(name):
     """The Real-ESRGAN set copied, with the usable AI copies in place (as the game keeps them:
-    JPEG at quality 92, PNG with transparency)."""
+    JPEG at quality 92, the transparency beside it in KEY-alpha.png)."""
     target = os.path.join(SETS, name)
     if os.path.exists(target):
         shutil.rmtree(target)
@@ -461,12 +466,11 @@ def make_set(name):
         if not json.load(open(report_path))['usable']:
             print(f'{key}: not used (shifted)')
             continue
-        for old in glob.glob(os.path.join(target, key + '.*')):
+        for old in glob.glob(os.path.join(target, key + '.*')) + glob.glob(os.path.join(target, key + '-alpha.png')):
             os.remove(old)
         image = Image.open(os.path.join(OUT, key + '.png'))
         if image.mode == 'RGBA':
-            image.save(os.path.join(target, key + '.png'))
-        else:
-            image.convert('RGB').save(os.path.join(target, key + '.jpg'), quality=92)
+            image.getchannel('A').save(os.path.join(target, key + '-alpha.png'))
+        image.convert('RGB').save(os.path.join(target, key + '.jpg'), quality=92)
         used += 1
     print(f'{target}: {used} AI copies, the rest Real-ESRGAN')

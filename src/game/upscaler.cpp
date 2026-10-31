@@ -16,9 +16,11 @@
  ***************************************************************************/
 
 #include "upscaler.h"
+#include "items.h"
 #include "gfx/colortable.h"
 #include "gfx/image.h"
 #include "gfx/upscaled.h"
+#include "gfx/video.h"
 #include "txt/desfile.h"
 #include "util/datapath.h"
 #include "util/path.hpp"
@@ -135,11 +137,26 @@ gfx::Image upscaledCopy(const std::string &file, const gfx::Image &original)
     return copy.width() == original.width()*s && copy.height() == original.height()*s ? copy : gfx::Image();
 }
 
+// a movie's picture as the depot shows it, with its first colour transparent
+gfx::Image moviePicture(const String &file, int index)
+{
+    gfx::Video video(file);
+    gfx::Image frame;
+    for (int i = 0; i <= index && !video.atEnd(); i++)
+        frame = video.nextFrame();
+    if (frame.isNull())
+        return frame;
+    gfx::ColorTable colorTable = frame.colorTable();
+    colorTable[0] = gfx::rgba(0, 0, 0, 0);
+    frame.setColorTable(colorTable);
+    return frame;
+}
+
 // What gets upscaled, decoded as the game decodes it (each key as the texture made from it has):
-// the full-screen pictures, the model and effect textures and the cursor. The fonts and the HUD's
-// own art keep their pixels, as does the terrain: its tiles meet their
-// neighbours at their edges' pixels, which the upscaler changes, and it trades their light
-// patterns for gravel.
+// the full-screen pictures, the model and effect textures, the depot's pictures, icons and movies
+// and the cursor. The fonts and the HUD's own art keep their pixels, as does the terrain: its
+// tiles meet their neighbours at their edges' pixels, which the upscaler changes, and it trades
+// their light patterns for gravel.
 std::vector<Item> collect()
 {
     std::map<std::uint64_t, Item> items;
@@ -212,6 +229,37 @@ std::vector<Item> collect()
             add(false, [file]() { return gfx::Image::load(file, 640, 480, true); });
         }
 
+    // the depot's pictures (game/depot.cpp, ui/itemlist.cpp), the buttons also greyed out
+    const gfx::ColorTable border("gfx:pal/gui/border.pal");
+    gfx::ColorTable greyed;
+    for (int i = 0; i < 256; i++)
+        greyed << gfx::rgba(gfx::red(border[i]), gfx::green(border[i]), gfx::blue(border[i]), 128);
+    const std::set<std::string> greyedOut = { "gdfliu", "gdbuyu", "gdselu", "gdtinfu", "gdlefu", "gdrigu" };
+    for (const std::string &name : dataFiles("gfx:img/desktop/depot")) {
+        if (!endsWith(name, ".img"))
+            continue;
+        const String file = String::fromUtf8(name.c_str());
+        add(false, [file, border]() { return gfx::Image::load(file, border); });
+        if (greyedOut.count(util::fileName(name.substr(0, name.size() - 4))))
+            add(false, [file, greyed]() { return gfx::Image::load(file, greyed); });
+    }
+    // the items' icons, each with its palette (game/items.cpp; the table is made when a run starts)
+    for (const auto &entry : Items::all()) {
+        const gfx::Image icon = entry.second.icon;
+        add(false, [icon]() { return icon; });
+    }
+    // the depot's movies, the boats turning over and the items turning: every picture
+    for (const char *part : { "gfx:mvi/sflip", "gfx:mvi/thing" })
+        for (const std::string &name : dataFiles(part)) {
+            if (!endsWith(name, ".mvi"))
+                continue;
+            const String file = String::fromUtf8(name.c_str());
+            gfx::Video video(file);
+            for (int index = 0; !video.atEnd(); index++)
+                if (!video.nextFrame().isNull())
+                    add(false, [file, index]() { return moviePicture(file, index); });
+        }
+
     // the cursor, whose edges the model for animation keeps crisp
     add(true, []() {
         return gfx::Image::loadCursor("gfx:img/desktop/gui/cur_norm.img", gfx::ColorTable("gfx:pal/gui/cursor.pal")).convertToFormat(gfx::Image::RGBA8888);
@@ -223,23 +271,28 @@ std::vector<Item> collect()
     return result;
 }
 
-// as PNG where it has transparency, else as JPEG, a quarter of the size and the difference
-// invisible at this quality
-bool keep(const gfx::Image &image, const std::string &path)
-{
-    const gfx::Image rgba = image.convertToFormat(gfx::Image::RGBA8888);
-    const std::uint8_t *pixel = rgba.constBits();
-    for (std::size_t i = 3; i < std::size_t(rgba.bytesPerLine())*rgba.height(); i += 4)
-        if (pixel[i] != 255)
-            return rgba.save(path + ".png");
-    return rgba.saveJpeg(path + ".jpg", 92);
-}
-
-
 void removeAll(const std::string &path)
 {
     std::error_code error;
     fs::remove_all(util::toPath(path), error);
+}
+
+// as JPEG, a quarter of a PNG's size or less and the difference invisible at this quality; the
+// transparency, where it has some, as a grey PNG beside it (written first, so that a copy is
+// complete once its JPEG is there)
+bool keep(const gfx::Image &image, const std::string &directory, std::uint64_t key)
+{
+    const gfx::Image rgba = image.convertToFormat(gfx::Image::RGBA8888);
+    const std::uint8_t *pixel = rgba.constBits();
+    const std::string alpha = util::joinPath(directory, gfx::Upscaled::alphaName(key));
+    removeAll(alpha);
+    for (std::size_t i = 3; i < std::size_t(rgba.bytesPerLine())*rgba.height(); i += 4)
+        if (pixel[i] != 255) {
+            if (!rgba.saveAlpha(alpha))
+                return false;
+            break;
+        }
+    return rgba.saveJpeg(util::joinPath(directory, gfx::Upscaled::keyName(key) + ".jpg"), 92);
 }
 
 } // namespace
@@ -286,6 +339,8 @@ void Upscaler::start()
     m_stop = false;
     m_permille = 0;
     m_state = State::Running;
+    // the items' table, for their icons, made here and not on the run's thread
+    Items::all();
     m_thread = std::thread(&Upscaler::run, this);
 }
 
@@ -445,8 +500,10 @@ bool Upscaler::upscale()
     // what a copy of older game data had and this one doesn't
     for (const std::string &file : util::files(directory)) {
         std::uint64_t key = 0;
-        if (gfx::Upscaled::parseName(file, key) && !wanted.count(key))
+        if (gfx::Upscaled::parseName(file, key) && !wanted.count(key)) {
             removeAll(util::joinPath(directory, file));
+            removeAll(util::joinPath(directory, gfx::Upscaled::alphaName(key)));
+        }
     }
 
     const int start = m_permille;
@@ -490,7 +547,7 @@ bool Upscaler::upscale()
             for (std::size_t i = first; i < last; i++) {
                 const Item &item = *list[i];
                 const gfx::Image copy = upscaledCopy(util::joinPath(out, gfx::Upscaled::keyName(item.key) + ".png"), originals[i - first]);
-                if (copy.isNull() || !keep(copy, util::joinPath(directory, gfx::Upscaled::keyName(item.key)))) {
+                if (copy.isNull() || !keep(copy, directory, item.key)) {
                     removeAll(work);
                     fail(process.exitCode() != 0 ? "The upscaler stopped with an error. Does the computer's graphics support Vulkan?"
                                                  : "An upscaled picture couldn't be kept in " + directory + ".");
