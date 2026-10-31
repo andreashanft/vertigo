@@ -201,12 +201,15 @@ while the 2D cockpit is shown:
 2. per part, it makes a colour field from those pixels (push-pull) and finds the art's strong,
    long edges;
 3. it draws every part into the atlas, each texel taking its part's field where the eye sees it
-   (with the edges drawn crisp), else the fallback shading tinted with the part's colour;
+   (with the edges drawn crisp), else the fallback shading tinted with the part's colour; with
+   the upscaled graphics on, texels where the part covers the art's pixels fully take the
+   upscaled art instead (Real-ESRGAN's or the AI upscale's, as the 2D cockpit shows it);
 4. it fills the texels between the islands (pull-push).
 
-That takes about 3 seconds for an 8192×8192 texture on an M1 Pro. The texture goes to the cache
-(`util::cacheLocation()`, as JPEG, named after a hash of the kit, the art, the camera and the
-size), so later starts only load it. On the iPad the texture is 4096×4096. The test
+That takes a few seconds for an 8192×8192 texture. The texture goes to the cache
+(`util::cacheLocation()`, as JPEG, named after a hash of the kit, the art, the upscaled art, the
+camera and the size, the one with upscaled art and the one without apart), so later starts only
+load it. On the iPad the texture is 4096×4096. The test
 `cockpitpaint` paints the Gator's kit from a made-up art.
 
 The kits come from the layouts, not the game data, so they can be built without it; they hold

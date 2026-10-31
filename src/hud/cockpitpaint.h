@@ -40,7 +40,8 @@ namespace hud {
 //  1. the kit seen from the eye at eyeScale times the art's resolution, each part in its own
 //     colour: how much of every pixel of the art each part covers;
 //  2. per part, a colour field from the art's pixels it covers, continued smoothly beyond them
-//     (push-pull), and the art's strong, long edges in it, drawn crisp;
+//     (push-pull), and the art's strong, long edges in it, drawn crisp; where the part covers
+//     the art's pixels fully, the upscaled art takes the field's place, if there is one;
 //  3. every part drawn into the atlas: a texel takes its part's colour field where the eye sees
 //     it, and blends into the fallback shading, tinted with the part's colour, where the surface
 //     turns away from the eye or lies far from the part's pixels;
@@ -53,6 +54,7 @@ public:
     {
         const gfx::GlbModel *kit = nullptr;
         gfx::Image art;                     // the 640x480 cockpit art, RGB888
+        gfx::Image detail;                  // the art upscaled (a whole multiple of its size), RGB888, or null
         std::vector<std::uint8_t> see;      // 640x480, 1 where the art is see-through
         float focal = 245.5f;               // the art's camera: focal length and optical centre
         Vector2D center = Vector2D(320, 240);

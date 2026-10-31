@@ -266,8 +266,9 @@ Grid box(const Grid &g, int r)
 struct Field
 {
     bool valid = false;
-    int x0 = 0, y0 = 0;         // of col and conf
+    int x0 = 0, y0 = 0;         // of col, conf and own
     Grid col, conf;
+    Grid own;                   // how much the art's pixels are the part's own
     bool edges = false;
     int ex0 = 0, ey0 = 0;       // of lo, hi and edge
     Grid lo, hi, edge;
@@ -484,6 +485,10 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
     const Vector2D C = input.center;
     if (!input.kit || input.art.width() != ArtWidth || input.art.height() != ArtHeight || int(input.see.size()) != ArtWidth*ArtHeight)
         return gfx::Image();
+    // the upscaled art, R times the art's size
+    const int R = input.detail.width()/ArtWidth;
+    const bool detail = R >= 2 && input.detail.width() == R*ArtWidth && input.detail.height() == R*ArtHeight
+                        && input.detail.format() == gfx::Image::RGB888;
 
     // the parts: the kit's textured meshes (the window glass and the HUD plane are blended)
     std::vector<Part> parts;
@@ -643,6 +648,8 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
         field.y0 = y0;
         field.col = col.crop(x0, y0, x1 - x0, y1 - y0);
         field.conf = conf.crop(x0, y0, x1 - x0, y1 - y0);
+        if (detail)
+            field.own = weight.crop(x0, y0, x1 - x0, y1 - y0);
         // the edges around its pixels
         const int ex0 = std::max(cx0 + Pad - 4, 0), ey0 = std::max(cy0 + Pad - 4, 0);
         const int ex1 = std::min(cx1 + Pad + 5, CanvasWidth), ey1 = std::min(cy1 + Pad + 5, CanvasHeight);
@@ -659,6 +666,23 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
     // 3. The atlas: every part's texels, from its field where the eye sees them, else the
     //    fallback; the fallback's tint first, from a sample of the texels
     // ------------------------------------------------------------------------------------------
+    // the upscaled art at a point of the art (in its pixels), linear
+    float linearTable[256];
+    for (int i = 0; i < 256; i++)
+        linearTable[i] = toLinear(i/255.0f);
+    auto detailAt = [&](float px, float py) {
+        const float x = std::min(std::max(px*R - 0.5f, 0.0f), float(input.detail.width() - 1));
+        const float y = std::min(std::max(py*R - 0.5f, 0.0f), float(input.detail.height() - 1));
+        const int x0 = std::min(int(x), input.detail.width() - 2), y0 = std::min(int(y), input.detail.height() - 2);
+        const float fx = x - x0, fy = y - y0;
+        const std::uint8_t *a = input.detail.constScanLine(y0) + 3*x0, *b = input.detail.constScanLine(y0 + 1) + 3*x0;
+        Vector3D out;
+        for (int k = 0; k < 3; k++)
+            out[k] = (linearTable[a[k]]*(1 - fx) + linearTable[a[k + 3]]*fx)*(1 - fy)
+                   + (linearTable[b[k]]*(1 - fx) + linearTable[b[k + 3]]*fx)*fy;
+        return out;
+    };
+
     // a texel: its colour from the field and how much of it to take
     struct Texel { Vector3D rgb; float alpha; float shade; };
     auto texel = [&](const Field &field, const Vector3D &p, const Vector3D &normal, float u, float v, bool sharp) {
@@ -709,6 +733,12 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
                 const Vector3D sharpened = l + (h - l)*a;
                 out.rgb = glm::max(out.rgb + (sharpened - s)*clamp01(e), Vector3D(0));
             }
+        }
+        // the upscaled art where the art's pixels are the part's own
+        if (sharp && detail && px >= 0 && py >= 0 && px < ArtWidth && py < ArtHeight) {
+            const float own = field.own.linear(x - field.x0, y - field.y0);
+            if (own > 0)
+                out.rgb += (detailAt(px, py) - out.rgb)*own;
         }
         return out;
     };
