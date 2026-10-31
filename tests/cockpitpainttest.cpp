@@ -17,7 +17,7 @@
 
 
 // hud::CockpitPaint: a kit of data/3D-cockpits/kits painted from a made-up cockpit art (the game's
-// art isn't in the repository), and the art's see-through area
+// art isn't in the repository), also with an upscaled art, and the art's see-through area
 
 #include "check.hpp"
 
@@ -38,6 +38,13 @@ void artColour(float x, float y, float *rgb)
     rgb[0] = 0.2f + 0.6f*x/640;
     rgb[1] = 0.15f + 0.7f*y/480;
     rgb[2] = 0.35f;
+}
+
+// its made-up upscaled version: bluer
+void detailColour(float x, float y, float *rgb)
+{
+    artColour(x, y, rgb);
+    rgb[2] = 0.6f;
 }
 
 }
@@ -88,34 +95,48 @@ int main()
     CHECK(texture.format() == gfx::Image::RGB888);
 
     // where the eye sees the master monitor's bezel, the texture has the art's colour there
-    std::vector<float> errors;
-    for (const gfx::GlbModel::Mesh &mesh : kit.meshes()) {
-        if (mesh.name != "MasterMonitor_Bezel")
-            continue;
-        CHECK_EQUAL(mesh.normals.size(), mesh.positions.size());
-        for (std::size_t t = 0; t + 2 < mesh.indices.size(); t += 3) {
-            const std::uint32_t a = mesh.indices[t], b = mesh.indices[t + 1], c = mesh.indices[t + 2];
-            const Vector3D p = (mesh.positions[a] + mesh.positions[b] + mesh.positions[c])/3.0f;
-            const Vector3D n = glm::normalize(mesh.normals[a] + mesh.normals[b] + mesh.normals[c]);
-            const Vector2D uv = (mesh.texCoords[a] + mesh.texCoords[b] + mesh.texCoords[c])/3.0f;
-            const float x = input.center.x + input.focal*p.x/-p.z, y = input.center.y - input.focal*p.y/-p.z;
-            if (glm::dot(n, -glm::normalize(p)) < 0.5f || x < 20 || x > 620 || y < 20 || y > 460)
+    auto bezel = [&](const gfx::Image &texture, void (*colour)(float, float, float *)) {
+        std::vector<float> errors;
+        for (const gfx::GlbModel::Mesh &mesh : kit.meshes()) {
+            if (mesh.name != "MasterMonitor_Bezel")
                 continue;
-            float expected[3];
-            artColour(x, y, expected);
-            const std::uint8_t *got = texture.constScanLine(std::min(int(uv.y*1024), 1023)) + 3*std::min(int(uv.x*1024), 1023);
-            float error = 0;
-            for (int k = 0; k < 3; k++)
-                error = std::max(error, std::abs(got[k]/255.0f - expected[k]));
-            errors.push_back(error);
+            CHECK_EQUAL(mesh.normals.size(), mesh.positions.size());
+            for (std::size_t t = 0; t + 2 < mesh.indices.size(); t += 3) {
+                const std::uint32_t a = mesh.indices[t], b = mesh.indices[t + 1], c = mesh.indices[t + 2];
+                const Vector3D p = (mesh.positions[a] + mesh.positions[b] + mesh.positions[c])/3.0f;
+                const Vector3D n = glm::normalize(mesh.normals[a] + mesh.normals[b] + mesh.normals[c]);
+                const Vector2D uv = (mesh.texCoords[a] + mesh.texCoords[b] + mesh.texCoords[c])/3.0f;
+                const float x = input.center.x + input.focal*p.x/-p.z, y = input.center.y - input.focal*p.y/-p.z;
+                if (glm::dot(n, -glm::normalize(p)) < 0.5f || x < 20 || x > 620 || y < 20 || y > 460)
+                    continue;
+                float expected[3];
+                colour(x, y, expected);
+                const std::uint8_t *got = texture.constScanLine(std::min(int(uv.y*1024), 1023)) + 3*std::min(int(uv.x*1024), 1023);
+                float error = 0;
+                for (int k = 0; k < 3; k++)
+                    error = std::max(error, std::abs(got[k]/255.0f - expected[k]));
+                errors.push_back(error);
+            }
         }
-    }
-    CHECK(errors.size() > 50);
-    if (!errors.empty()) {
-        std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
-        const float median = errors[errors.size()/2];
-        std::cout << errors.size() << " bezel triangles, median error " << median << std::endl;
-        CHECK(median < 0.04f);
-    }
+        CHECK(errors.size() > 50);
+        if (!errors.empty()) {
+            std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
+            const float median = errors[errors.size()/2];
+            std::cout << errors.size() << " bezel triangles, median error " << median << std::endl;
+            CHECK(median < 0.04f);
+        }
+    };
+    bezel(texture, artColour);
+
+    // with the art upscaled four times, its colours where the bezel covers the art
+    input.detail = gfx::Image(2560, 1920, gfx::Image::RGB888);
+    for (int y = 0; y < 1920; y++)
+        for (int x = 0; x < 2560; x++) {
+            float rgb[3];
+            detailColour((x + 0.5f)/4, (y + 0.5f)/4, rgb);
+            for (int k = 0; k < 3; k++)
+                input.detail.scanLine(y)[3*x + k] = std::uint8_t(std::lround(rgb[k]*255));
+        }
+    bezel(hud::CockpitPaint::paint(input), detailColour);
     return test::result();
 }

@@ -19,6 +19,7 @@
 #include "cockpitpaint.h"
 #include "gfx/glbmodel.h"
 #include "gfx/pipeline.h"
+#include "gfx/upscaled.h"
 #include "util/datapath.h"
 #include "util/path.hpp"
 
@@ -61,7 +62,7 @@ const int EyeScale = 8;
 #endif
 
 // raised when CockpitPaint paints differently, so that the cached textures are painted again
-const int PaintVersion = 1;
+const int PaintVersion = 2;
 const int CacheQuality = 92;
 
 std::uint64_t fnv1a(const void *data, std::size_t size, std::uint64_t hash = 14695981039346656037ull)
@@ -245,6 +246,11 @@ void Cockpit3D::startPainting(const String &cockpit)
     const gfx::Image art = gfx::Image::load(String("vfx:cockpit/%1/cockpit.r16").arg(cockpit), 640, 480, true);
     input.see = CockpitPaint::seeThrough(art);
     input.art = art.convertToFormat(gfx::Image::RGB888);
+    // the upscaled art, as the 2D cockpit shows it, from the set in use (Real-ESRGAN's or the AI
+    // upscale's)
+    const gfx::Image upscaled = gfx::Upscaled::find(gfx::Upscaled::key(art));
+    if (upscaled.width() == art.width()*gfx::Upscaled::Scale && upscaled.height() == art.height()*gfx::Upscaled::Scale)
+        input.detail = upscaled.convertToFormat(gfx::Image::RGB888);
     input.focal = m_focal;
     input.center = m_center;
     GLint maxSize = 0;
@@ -258,6 +264,8 @@ void Cockpit3D::startPainting(const String &cockpit)
     util::readFile(m_fileName, kit);
     std::uint64_t hash = fnv1a(kit.data(), kit.size());
     hash = fnv1a(input.art.constBits(), std::size_t(input.art.bytesPerLine())*input.art.height(), hash);
+    if (!input.detail.isNull())
+        hash = fnv1a(input.detail.constBits(), std::size_t(input.detail.bytesPerLine())*input.detail.height(), hash);
     const float camera[3] = { input.focal, input.center.x, input.center.y };
     const int settings[3] = { input.size, input.eyeScale, PaintVersion };
     hash = fnv1a(camera, sizeof(camera), hash);
@@ -265,7 +273,8 @@ void Cockpit3D::startPainting(const String &cockpit)
     char hex[17];
     std::snprintf(hex, sizeof(hex), "%016llx", static_cast<unsigned long long>(hash));
     const std::string directory = util::joinPath(util::cacheLocation(), "3d-cockpits");
-    const std::string prefix = String("cockpit_%1_%2_").arg(cockpit).arg(input.size).toUtf8();
+    // (with and without the upscaled art apart, so that switching it keeps both)
+    const std::string prefix = String("cockpit_%1_%2_%3").arg(cockpit).arg(input.size).arg(input.detail.isNull() ? "sd_" : "hd_").toUtf8();
     const std::string file = util::joinPath(directory, prefix + hex + ".jpg");
 
     m_cancel = false;
