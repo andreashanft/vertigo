@@ -36,7 +36,7 @@ What's still missing are details I might have missed and thorough playtesting, s
 
 # Downloads
 
-Builds for Linux, macOS and Windows are in the [Releases section](releases) on GitHub:
+Builds for Linux, macOS and Windows are in the [Releases section](https://github.com/andreashanft/vertigo/releases) on GitHub:
 
 * `vertigo-<version>-linux-x86_64.tar.gz`: SDL 3 built in; needs OpenAL
   (`libopenal1`), OpenGL 3.2 and minimum Ubuntu 24.04 or similar
