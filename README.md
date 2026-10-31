@@ -331,6 +331,8 @@ use (Real-ESRGAN's or the AI upscale's). The texture is cached in
 `~/Library/Caches/Vertigo` on macOS, `~/.cache/vertigo` on Linux and
 `AppData/Local/Vertigo/Vertigo/Cache` on Windows.
 
+![The Gator's 3D cockpit painted from the original art and from the upscaled art](docs/3D-cockpit-upscaled.jpg)
+
 - `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
   mission and saves the choice (setting `cockpit/mode`). Without a model for
   the boat's cockpit the 2D art is shown.

@@ -299,4 +299,4 @@ $B -b --factory-startup --python compose_texture.py -- --cockpit 000 \
   the game draws screen contents at runtime. For final
   assets, an artist pass over the upscaled art, or a model tuned on 90s pre-rendered CG, would
   remove the painted look.
-- **Speed.** The upscale takes seconds per cockpit on an M1 Pro (ncnn-vulkan via Metal).
+- **Speed.** The upscale takes seconds per cockpit (ncnn-vulkan, on macOS via Metal).
