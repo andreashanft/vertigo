@@ -133,15 +133,11 @@ float Tank::ground(float x, float y) const
 
 
 // the vehicle stands on the ground under its base's four corners (docs/ROADMAP.md, appendix J):
-// at their mean height, tilted by the difference front to back and right to left, without limit;
-// each corner's height is the nearest map vertex's
+// at their mean height, tilted by the difference front to back and right to left, without limit
 void Tank::setPosition(const Vector3D &pos)
 {
     m_position = Vector3D(pos.x, pos.y, 0);
-    const float cell = m_scenario->surface().scale().x;
-    auto vertex = [this, cell](const Vector2D &at) {
-        return ground(std::round(at.x/cell)*cell, std::round(at.y/cell)*cell);
-    };
+    auto vertex = [this](const Vector2D &at) { return ground(at.x, at.y); };
     const BoundingBox base = m_base->box().scale(m_scale);
     const Vector2D heading(std::sin(m_heading), std::cos(m_heading)), side(std::cos(m_heading), -std::sin(m_heading));
     auto corner = [&](float x, float y) { return vertex(Vector2D(pos) + side*x + heading*y); };
@@ -320,7 +316,7 @@ void Tank::draw()
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     gfx::Pipeline::scale(m_scale);
     m_base->draw();
-    // the gun tilts around its origin; the turret turns around its pivot, only its yaw shows
+    // the gun tilts around its origin; the turret turns around its pivot and tilts its arm
     if (m_gun)
     {
         gfx::Pipeline::pushMatrix();
@@ -335,6 +331,7 @@ void Tank::draw()
         gfx::Pipeline::translate(m_pivot);
         gfx::Pipeline::rotate(-glm::degrees(m_turretYaw), Vector3D(0, 0, 1));
         gfx::Pipeline::translate(-m_pivot);
+        m_turret->setArmPitch(m_turretPitch);
         m_turret->draw();
         gfx::Pipeline::popMatrix();
     }

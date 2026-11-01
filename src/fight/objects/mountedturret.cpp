@@ -574,6 +574,7 @@ void MountedTurret::draw()
         gfx::Pipeline::rotate(180, Vector3D(0, 1, 0));
     gfx::Pipeline::rotate(-glm::degrees(m_yaw), Vector3D(0, 0, 1));
     gfx::Pipeline::scale(m_modelScale);
+    m_model->setArmPitch(m_pitch);
     m_model->draw();
     gfx::Pipeline::popMatrix();
 }

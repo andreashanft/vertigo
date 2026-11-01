@@ -18,6 +18,7 @@
 #include "turret.h"
 #include "fight/scenario.h"
 #include "gfx/pipeline.h"
+#include <glm/trigonometric.hpp>
 
 
 namespace fight {
@@ -62,6 +63,7 @@ void Turret::draw()
     {
         gfx::Pipeline::pushMatrix();
         gfx::Pipeline::translate(m_armLeftPosition);
+        gfx::Pipeline::rotate(glm::degrees(m_armPitch), Vector3D(1, 0, 0));
         m_armLeft->draw();
         gfx::Pipeline::popMatrix();
     }
@@ -70,6 +72,7 @@ void Turret::draw()
     {
         gfx::Pipeline::pushMatrix();
         gfx::Pipeline::translate(m_armRightPosition);
+        gfx::Pipeline::rotate(glm::degrees(m_armPitch), Vector3D(1, 0, 0));
         m_armRight->draw();
         gfx::Pipeline::popMatrix();
     }

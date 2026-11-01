@@ -20,6 +20,7 @@
 
 
 #include "simpleobject.h"
+#include "turret.h"
 #include <memory>
 #include <vector>
 #include "util/string.hpp"
@@ -63,7 +64,7 @@ private:
     Vector3D pivot() const { return m_position + m_turretPosition*m_scale; }
 
 private:
-    std::unique_ptr<Object> m_body;
+    std::unique_ptr<Turret> m_body;
     Vector3D m_turretPosition; // model units
     String m_turretName;
     float m_yaw;               // radians, 0 is +y, increasing to the right

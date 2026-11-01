@@ -248,6 +248,7 @@ void TurretBase::draw()
         gfx::Pipeline::translate(m_turretPosition);
         gfx::Pipeline::rotate(-glm::degrees(m_yaw), Vector3D(0, 0, 1));
         gfx::Pipeline::translate(-m_turretPosition);
+        m_body->setArmPitch(m_pitch);
         m_body->draw();
     }
     gfx::Pipeline::popMatrix();

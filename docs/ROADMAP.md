@@ -807,8 +807,9 @@ point says otherwise.
   ground a cell to either side, 1.5 cells ahead, and makes for a point one
   cell to the side that is flatter there, if either is flat enough, else
   lower. A ground vehicle stands at the mean height of the ground under its
-  base's four corners (each the nearest map vertex's), tilted by their
-  differences front to back and right to left, without limit. Crawlers
+  base's four corners, tilted by their differences front to back and right
+  to left, without limit, at once every frame (the original takes each
+  corner's height between the map's points; Vertigo from its smooth ground). Crawlers
   never leave their orders to fight.
 
 ### K. What the original does with the engine, the energy guns and the booster
