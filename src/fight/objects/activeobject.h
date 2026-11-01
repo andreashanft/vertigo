@@ -36,6 +36,7 @@ namespace fight {
 class Scenario;
 class UnitGun;
 class Orders;
+struct OrderSlot;
 
 
 class ActiveObject : public Object
@@ -88,10 +89,12 @@ public:
     // while the unit lies silent in ambush
     virtual float noise() const { return m_silent ? 0 : m_noise + (m_info.sensor == 2 ? 1 : 0); }
     void setSilent(bool silent) { m_silent = silent; }
-    // the unit's energy defence changed within the last tenth of a second: the moment the AI
-    // reacts to being fired at
+    // the unit's armour changed within the last tenth of a second: the moment the AI reacts to
+    // being fired at
     bool hitRecently() const;
     float hitTime() const { return m_hitTime; }
+    // who fired that hit (a shot's or torpedo's owner, a rammer), nullptr if nobody
+    ActiveObject* lastAttacker() const { return m_lastAttacker; }
     bool isIdentified() const { return m_eventIdentify.isCompleted(); }
 
     int kineticShield() const { return m_kineticShield; };
@@ -117,15 +120,21 @@ public:
     virtual void aimAt(const Vector3D &point) {}
 
     // torpedoes (the mission's tor and ntor keys); fireTorpedo() launches one when reloaded,
-    // following the target if the type homes, otherwise straight along the direction
+    // following the target if the type homes, otherwise straight along the direction; a boat
+    // reloads on every try (startTorpedoReload()) and launches with launchTorpedo()
     void setTorpedoes(int type, int count) { m_torpedoType = type; m_torpedoCount = count; }
     bool hasTorpedoes() const { return m_torpedoCount > 0 && m_torpedoType >= 0; }
     int torpedoType() const { return m_torpedoType; }
     bool fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction);
-    // the units running a torpedo attack on this one: at most 8 at a time, for every target
-    // (docs/ROADMAP.md, appendix J); false if the list is full
-    bool engageTorpedo(ActiveObject *attacker);
-    void disengageTorpedo(ActiveObject *attacker);
+    bool torpedoReady() const;
+    // the next try 2 to 3.5 s later
+    void startTorpedoReload();
+    void launchTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction);
+    // the units attacking this one (not the player, whose list is the scenario's): at most 4 at a
+    // time on every difficulty (docs/ROADMAP.md, appendix J); false if the list is full
+    bool engageAttacker(ActiveObject *attacker);
+    void disengageAttacker(ActiveObject *attacker);
+    const std::vector<ActiveObject*>& attackers() const { return m_attackers; }
 
     // attacker: who fired or rammed, nullptr for damage nobody caused (e.g. crashing into something)
     virtual void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
@@ -158,10 +167,14 @@ public:
     // starts its current order slot again when the player comes back within that radius.
     bool sleeps() const { return m_info.sleeps; }
     bool isAsleep() const { return m_asleep; }
-    // whether the unit may go to sleep right now (boats not while exploding, towers not while attacking)
+    // whether the unit may go to sleep right now (boats not while exploding)
     virtual bool canSleep() const;
-    void sleep();
+    virtual void sleep();
     void wake();
+    // the unit's orders take up a slot (nullptr: none left); a bomber hands it to its turrets
+    virtual void orderStarted(const OrderSlot *slot) {}
+    // the unit was attacked: its "attacked" event, once
+    void noteAttacked();
 
     // Energy (docs/ROADMAP.md, appendix K): one pool per unit, 0 to 1, full at the start. The engine
     // model (a unit's eng key, the boat's engine) sets the seconds it takes to refill from empty:
@@ -214,6 +227,7 @@ protected:
     bool m_tumbling = false;
     bool m_silent = false;
     float m_hitTime = -1;
+    ActiveObject *m_lastAttacker = nullptr;
     int m_engine = 0;
     float m_energy = 1.0f;
 
@@ -229,7 +243,7 @@ protected:
     bool m_trigger = false;
     int m_torpedoType = -1;
     int m_torpedoCount = 0;
-    std::vector<ActiveObject*> m_torpedoAttackers;
+    std::vector<ActiveObject*> m_attackers;
     float m_torpedoReady = 0;
 
     GroundWreck m_groundWreck = GroundWreck::None;

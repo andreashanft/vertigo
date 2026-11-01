@@ -75,8 +75,10 @@ void RadioMessage::draw()
     m_lblText.setPosition(rect.x, rect.y + 2);
     m_lblText.setSize(rect.width, rect.height - 5);
     String text = m_hud->scenario()->radio()[i]->text();
-    // '#' and '~' mark messages in red
-    if (text[0] == '#' || text[0] == '~')
+    // '#' marks messages in red ('~' only colours the log)
+    if (text[0] == '~')
+        text = text.mid(1);
+    if (text[0] == '#')
     {
         text = text.mid(1);
         m_lblText.setFont(m_hud->fontRed());

@@ -42,6 +42,9 @@ public:
 
 public:
     Billboard* getBillboard(Effects effect);
+    // the scale for addEffect that makes an explosion of the given size (metres): its last frame's
+    // farthest corner that far from its centre, as the original sizes them (docs/ROADMAP.md, appendix R)
+    float fitScale(Effects effect, float size);
 
     // an animation played once at the position
     void addEffect(Effects effect, const Vector3D &position, float angle = 0, float scale = 1);

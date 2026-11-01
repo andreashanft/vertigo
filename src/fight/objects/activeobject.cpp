@@ -81,14 +81,33 @@ void ActiveObject::setOrders(Orders *orders)
 
 bool ActiveObject::fireTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction)
 {
-    const TorpedoType *type = TorpedoType::get(m_torpedoType);
-    if (!type || m_torpedoCount <= 0 || m_scenario->time() < m_torpedoReady)
+    if (!torpedoReady())
         return false;
+    launchTorpedo(target, position, direction);
+    startTorpedoReload();
+    return true;
+}
+
+
+bool ActiveObject::torpedoReady() const
+{
+    return TorpedoType::get(m_torpedoType) && m_torpedoCount > 0 && m_scenario->time() >= m_torpedoReady;
+}
+
+
+void ActiveObject::startTorpedoReload()
+{
+    m_torpedoReady = m_scenario->time() + 2.0f + 1.5f*util::random()/float(RAND_MAX);
+}
+
+
+void ActiveObject::launchTorpedo(ActiveObject *target, const Vector3D &position, const Vector3D &direction)
+{
+    const TorpedoType *type = TorpedoType::get(m_torpedoType);
+    if (!type || m_torpedoCount <= 0)
+        return;
     m_scenario->launchTorpedo(m_torpedoType, position, direction, glm::length(m_velocity), this, type->lockType != 0 ? target : nullptr);
     m_torpedoCount--;
-    // the next one 2 to 3.5 s later
-    m_torpedoReady = m_scenario->time() + 2.0f + 1.5f*util::random()/float(RAND_MAX);
-    return true;
 }
 
 
@@ -112,15 +131,13 @@ bool ActiveObject::update(float elapsedTime)
 void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker)
 {
     if (attacker && attacker != this)
+        noteAttacked();
+    // the AI feels a hit when its armour changes (docs/ROADMAP.md, appendix J)
+    if (kinetic != 0)
     {
-        if (!m_eventAttack.isCompleted())
-            m_scenario->logEvent(name(), &m_eventAttack, txt::Fight6);
-        m_eventAttack.complete();
-    }
-    // the AI feels a hit when its energy defence changes, so shells without shock go unnoticed
-    // (docs/ROADMAP.md, appendix J)
-    if (shock != 0)
         m_hitTime = m_scenario->time();
+        m_lastAttacker = attacker != this ? attacker : nullptr;
+    }
     const bool wasDying = isDying();
     m_kineticShield -= kinetic;
     m_shockShield -= shock;
@@ -157,8 +174,17 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
         explode();
     }
 
-    if (attacker && attacker != this && attacker == m_scenario->player())
-        m_scenario->playerHit(this, !wasDying && isDying());
+    // (a unit already dying takes no more hits)
+    if (attacker && attacker != this && attacker == m_scenario->player() && !wasDying)
+        m_scenario->playerHit(this, isDying());
+}
+
+
+void ActiveObject::noteAttacked()
+{
+    if (!m_eventAttack.isCompleted())
+        m_scenario->logEvent(name(), &m_eventAttack, txt::Fight6);
+    m_eventAttack.complete();
 }
 
 
@@ -169,23 +195,23 @@ bool ActiveObject::touches(const Object *object, int faction)
 }
 
 
-bool ActiveObject::engageTorpedo(ActiveObject *attacker)
+bool ActiveObject::engageAttacker(ActiveObject *attacker)
 {
-    m_torpedoAttackers.erase(std::remove_if(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), [](ActiveObject *unit) {
-        return !unit->isEnabled() || unit->isAsleep() || unit->isTumbling();
-    }), m_torpedoAttackers.end());
-    if (std::find(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), attacker) != m_torpedoAttackers.end())
+    m_attackers.erase(std::remove_if(m_attackers.begin(), m_attackers.end(), [](ActiveObject *unit) {
+        return !unit->isEnabled() || unit->isAsleep() || unit->isTumbling() || unit->isDying();
+    }), m_attackers.end());
+    if (std::find(m_attackers.begin(), m_attackers.end(), attacker) != m_attackers.end())
         return true;
-    if (m_torpedoAttackers.size() >= 8)
+    if (m_attackers.size() >= 4)
         return false;
-    m_torpedoAttackers.push_back(attacker);
+    m_attackers.push_back(attacker);
     return true;
 }
 
 
-void ActiveObject::disengageTorpedo(ActiveObject *attacker)
+void ActiveObject::disengageAttacker(ActiveObject *attacker)
 {
-    m_torpedoAttackers.erase(std::remove(m_torpedoAttackers.begin(), m_torpedoAttackers.end(), attacker), m_torpedoAttackers.end());
+    m_attackers.erase(std::remove(m_attackers.begin(), m_attackers.end(), attacker), m_attackers.end());
 }
 
 
@@ -370,8 +396,7 @@ void ActiveObject::updateLaterExplosions()
         }
         m_laterExplosions.erase(m_laterExplosions.begin() + i);
         const Effects effect = Effects(int(Effects::Explosion_0) + explosion.type);
-        const float sizeScale = std::max(1e-3f, m_scenario->effectManager().getBillboard(effect)->sizeScale());
-        m_scenario->effectManager().addEffect(effect, explosion.position, 0, explosion.scale/sizeScale);
+        m_scenario->effectManager().addEffect(effect, explosion.position, 0, m_scenario->effectManager().fitScale(effect, explosion.scale));
         const Vector3D &at = explosion.position;
         sfx::SampleMap::playAt(explosion.type < 3 ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
         m_scenario->explosionAt(at, explosion.type < 3 ? 1.0f : 0.3f);

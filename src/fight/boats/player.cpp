@@ -521,7 +521,11 @@ bool Player::update(float elapsedTime)
         {
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(colObject);
             if (activeObject)
+            {
+                m_scenario->setPlayerRamming(true);
                 activeObject->damage(m_kineticStrength, m_shockStrength, posObject - normObject*1.5f, this);
+                m_scenario->setPlayerRamming(false);
+            }
             damage(colObject->kineticStrength(), colObject->shockStrength(), posObject - normObject*1.5f);
             sfx::SampleMap::get(sfx::Sample::Boat_Collision).playInstance();
             const Vector3D bounce = -2*glm::dot(m_velocity, normObject)*normObject;
