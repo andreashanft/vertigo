@@ -450,9 +450,9 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 - 67–69: friendly-fire warnings; 70: "one more and you are out"; 71:
   friendly object destroyed; 89: mission failed after three friendly
   kills. The original (read off in November 2026) notes each frame in which
-  the player's shots or torpedoes hit a unit friendly to it (faction 8;
-  Vertigo leaves out destroy objectives and mines, which the original's
-  test doesn't); ramming counts only on a big ship. Every tenth such frame
+  the player's shots or torpedoes hit a unit friendly to it (faction 8),
+  destroy objectives too (in s01805 three of the friendly tanks the
+  mission wants destroyed fail it); ramming counts only on a big ship. Every tenth such frame
   shows one of 67, 68 and 69 at random, after the unit's name in brackets,
   on the radio line in green, unless another message is on it (then it is
   lost). Each friendly kill goes only to the radio log, in amber: 71 with

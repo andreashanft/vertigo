@@ -73,9 +73,8 @@ public:
     void delayComplete(Condition *cond, int delay);
     // completes the "destroyed" event of an entry (for an area or nav point: reached), for testing
     bool signal(int id);
-    // the faction of a unit (-1 if it has none), and whether destroying it is an objective
+    // the faction of a unit (-1 if it has none)
     int iff(int id) const;
-    bool isDestroyTarget(int id) const { return m_destroyTargets.count(id) > 0; }
     void fail() { m_condFailure.complete(); }
     // a failure nothing undoes, accomplished or not (three friendly kills)
     void failForced() { m_forcedFailure = true; fail(); }
@@ -103,7 +102,6 @@ private:
     bool m_forcedFailure = false;
     StringList m_issues;
     std::map<int, Condition> m_condObjectives;
-    std::set<int> m_destroyTargets;
     std::list<ConditionEvent> m_absentEvents; // completed once the dependencies are built
 
     struct DelayCompleteEntry

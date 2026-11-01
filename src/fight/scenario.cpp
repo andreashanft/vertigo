@@ -1072,8 +1072,8 @@ void Scenario::loadIssue(const String &text)
 }
 
 
-// Friendly fire (docs/ROADMAP.md, appendix C): a hit by the player's shots or torpedoes on a unit
-// friendly to the player (faction 8), not a destroy objective or a mine, notes the unit for the frame;
+// Friendly fire (docs/ROADMAP.md, appendix F): a hit by the player's shots or torpedoes on a unit
+// friendly to the player (faction 8), destroy objectives too, mines not, notes the unit for the frame;
 // a ram counts only on a big ship
 void Scenario::playerHit(ActiveObject *unit, bool destroyed)
 {
@@ -1132,8 +1132,7 @@ void Scenario::shadeModels(bool gouraud)
 
 bool Scenario::isFriendlyFire(int id, const ActiveObject *unit) const
 {
-    return id >= 0 && m_conditionManager.iff(id) >= 0 && !isHostile(PlayerFaction, m_conditionManager.iff(id)) && !m_conditionManager.isDestroyTarget(id) &&
-           !dynamic_cast<const Mine *>(unit);
+    return id >= 0 && m_conditionManager.iff(id) >= 0 && !isHostile(PlayerFaction, m_conditionManager.iff(id)) && !dynamic_cast<const Mine *>(unit);
 }
 
 
