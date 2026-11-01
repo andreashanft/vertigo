@@ -83,6 +83,7 @@ private:
     float m_aimHold;          // seconds until the turret returns to the front
     float m_dustTime;         // until the next puff of dust
     float m_paralysedEnd = 0; // when a paralysed one stops for good
+    Vector4D m_corners;       // the ground under the base's corners: back left, back right, front left, front right
 };
 
 

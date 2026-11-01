@@ -129,7 +129,7 @@ outside views' camera (V).
 |---|---|---|---|
 | O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original's turrets fire through friends (appendix T); whether the player's sonar lists the bombers' and big ships' turrets as contacts of their own (Vertigo doesn't); what the gun towers do while they blow up (they may keep firing); the slope rule and the unit avoidance of tanks on the ground (the original steers sideways and back from ground steeper than 15° and around units ahead; Vertigo's tanks climb any slope); the mines' slow nod; whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original's turrets fire through friends (appendix T); whether the player's sonar lists the bombers' and big ships' turrets as contacts of their own (Vertigo doesn't); what the gun towers do while they blow up (they may keep firing); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -796,8 +796,16 @@ point says otherwise.
   (GotoWithArrive) or twice its top speed (a patrol point) horizontally; a
   patrol point lies on the arc, inside the area, of a circle round the tank
   between half the radius and the far side of the area, and is given up
-  after four times the time to drive there. Crawlers never leave their
-  orders to fight.
+  after four times the time to drive there. In patrols, attacks and
+  ambushes the way bends around units ahead (one within three of the tank's
+  radii plus its own pushes the steering point away, fully within one), and
+  a tank tilted more than its climbing angle (15°; a crawler 5°) looks at the
+  ground a cell to either side, 1.5 cells ahead, and makes for a point one
+  cell to the side that is flatter there, if either is flat enough, else
+  lower. A ground vehicle stands at the mean height of the ground under its
+  base's four corners (each the nearest map vertex's), tilted by their
+  differences front to back and right to left, without limit. Crawlers
+  never leave their orders to fight.
 
 ### K. What the original does with the engine, the energy guns and the booster
 
@@ -1057,8 +1065,9 @@ vehicles, towers, turrets, buildings, ship modules, debris, shots and
 torpedoes, never another mine; a unit of the mine's own faction passes
 through. On contact each takes the other's offense, so the mine goes up
 and the unit loses 2000 or 1500 armor. Every mine turns about the vertical
-at 0.5 to 1 rad/s from a random heading (it also nods slowly, which Vertigo
-leaves out). It goes in one explosion of its
+at 0.5 to 1 rad/s from a random heading, and nods: its pitch is 0.25 rad
+times the cosine of a phase that runs at a random 0 to 0.5 rad/s. It goes
+in one explosion of its
 kind, sized to 1.5 times its radius and without debris,
 `EXPLOSIO.DES` entry 5 (Explosion1L) for a passive mine, entry 1
 (Explosion0M) for an active one, each with its sound: entries 0–2 play

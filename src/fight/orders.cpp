@@ -21,6 +21,7 @@
 #include "boats/tank.h"
 #include "objects/activeobject.h"
 #include "objects/turretbase.h"
+#include "objects/mine.h"
 #include "weapons/unitgun.h"
 #include "weapons/torpedo.h"
 #include "util/random.h"
@@ -452,11 +453,91 @@ Vector3D Orders::avoidUnits(const Vector3D &point) const
 }
 
 
+// Units ahead (within three of the vehicle's radii plus their own, fully within one) bend the way
+// as for boats, the nearest weighing in fully. Then, tilted more than its climbing angle, the
+// vehicle looks at the ground a cell to either side, 1.5 cells ahead, and makes for a point one
+// cell to the side that is flatter there (if either is flat enough), else lower.
+Vector3D Orders::groundWay(const Vector3D &target) const
+{
+    const Vector3D &position = m_unit->position();
+    const float radius = hullRadius();
+    Vector3D point = target;
+    {
+        const Vector3D ahead = position + m_boat->dir()*(2*radius + glm::length(m_unit->velocity()));
+        Vector3D push(0);
+        float strongest = 0;
+        auto consider = [&](const ActiveObject *other, float otherRadius) {
+            if (!other || other == m_unit || !other->isEnabled() || other->isDying())
+                return;
+            if (glm::length(Vector2D(other->position() - ahead)) > 3*radius + otherRadius + radius)
+                return;
+            const Vector3D away = other->position() - position;
+            const float distance = glm::length(away);
+            if (distance < 1e-3f)
+                return;
+            const float near = radius + otherRadius, far = 3*radius + otherRadius;
+            const float weight = glm::clamp((far - distance)/(far - near), 0.0f, 1.0f);
+            if (weight <= 0)
+                return;
+            push -= weight*away/distance;
+            strongest = std::max(strongest, weight);
+        };
+        for (const auto &record : m_scenario->objectRecords())
+        {
+            if (const SimpleBoat *boat = dynamic_cast<const SimpleBoat *>(record.object))
+                consider(boat, boat->hullRadius());
+            else if (const ActiveObject *unit = dynamic_cast<const ActiveObject *>(record.object))
+                if (!dynamic_cast<const Mine *>(unit))
+                    consider(unit, 0.5f*glm::length(Vector2D(unit->box().dim())));
+        }
+        Vector3D way = target - position;
+        if (strongest > 0 && glm::length(push) > 1e-4f && glm::length(way) > 1e-3f)
+        {
+            const Vector3D bent = strongest*glm::normalize(push) + (1 - strongest)*glm::normalize(way);
+            if (glm::length(bent) > 1e-3f)
+                point = position + glm::normalize(bent)*AvoidReach;
+        }
+    }
+
+    // the slope
+    const Vector3D &up = m_boat->up();
+    const float climb = m_boat->dir().z >= 0 ? m_boat->maxClimbingAngle() : m_boat->minClimbingAngle();
+    if (up.z > std::cos(climb))
+        return point;
+    Surface &surface = m_scenario->surface();
+    const float cell = surface.scale().x;
+    Vector2D forward(m_boat->dir()), side(m_boat->right());
+    forward = glm::length(forward) > 1e-3f ? glm::normalize(forward) : Vector2D(0, 1);
+    side = glm::length(side) > 1e-3f ? glm::normalize(side) : Vector2D(1, 0);
+    struct Probe { Vector2D at; float flat, height; };
+    auto probe = [&](float sign) {
+        Probe p;
+        p.at = Vector2D(position) + forward*(1.5f*cell) + side*(sign*cell);
+        // the ground's normal from four heights half a cell about it
+        const float h = 0.5f*cell;
+        const float east = surface.heightAt(p.at.x + h, p.at.y), west = surface.heightAt(p.at.x - h, p.at.y);
+        const float north = surface.heightAt(p.at.x, p.at.y + h), south = surface.heightAt(p.at.x, p.at.y - h);
+        p.flat = glm::normalize(Vector3D(west - east, south - north, 2*h)).z;
+        p.height = 0.25f*(east + west + north + south);
+        return p;
+    };
+    const Probe right = probe(1), left = probe(-1);
+    const float flatEnough = std::cos(climb);
+    bool toRight;
+    if (right.flat > flatEnough || left.flat > flatEnough)
+        toRight = right.flat > left.flat;
+    else
+        toRight = right.height < left.height;
+    const Vector2D aside = Vector2D(position) + side*(toRight ? cell : -cell);
+    return Vector3D(aside, position.z);
+}
+
+
 bool Orders::fly(const Vector3D &point, float minHeight, float maxHeight, float speed, bool avoid, float hullFactor)
 {
     if (m_boat->isGroundVehicle())
     {
-        m_boat->steerTo(inBand(point, minHeight, std::max(maxHeight, 0.0f)), speed);
+        m_boat->steerTo(avoid ? groundWay(point) : point, speed);
         return false;
     }
     Vector3D aim = avoid ? avoidUnits(point) : point;
@@ -1118,7 +1199,7 @@ void Orders::updateTankFight(ActiveObject *target, float speed)
         float f = std::min(1.0f, distance/m_runDistance);
         if (f > 0.5f)
             f = 1.0f - f;
-        m_boat->steerTo(point, (f + 0.5f)*speed);
+        m_boat->steerTo(groundWay(point), (f + 0.5f)*speed);
         m_unit->setTrigger(turret && aligned);
         if (distance < arrive || now > m_alignEnd)
             startTankFight(Fight::Run, target, speed);
@@ -1129,7 +1210,7 @@ void Orders::updateTankFight(ActiveObject *target, float speed)
     }
 
     // the drive at the target
-    m_boat->steerTo(target->position(), m_attackSpeed);
+    m_boat->steerTo(groundWay(target->position()), m_attackSpeed);
     m_unit->setTrigger(aligned);
     const float distance = glm::length(Vector2D(target->position()) - Vector2D(m_unit->position()));
     m_targetYaw = targetYaw;
@@ -1503,7 +1584,7 @@ void Orders::update()
                 // second of this one (horizontally) or when its time is up
                 if (glm::length(Vector2D(m_point) - Vector2D(m_unit->position())) < 2*m_boat->maxVelocity() || m_scenario->time() > m_pointEnd)
                     pickTankPoint(speed);
-                m_boat->steerTo(m_point, speed);
+                m_boat->steerTo(groundWay(m_point), speed);
                 break;
             }
             const float flyTime = speed > 0.1f ? slot.rad/speed : 10.0f;

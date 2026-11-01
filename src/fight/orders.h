@@ -135,6 +135,9 @@ private:
     // and the point moved if they leave it
     bool bandPoint(Vector3D &point, float zmin, float zmax) const;
     Vector3D avoidUnits(const Vector3D &point) const;
+    // a ground vehicle's way (appendix J): bent around units ahead, and sideways off ground steeper
+    // than its climbing angle
+    Vector3D groundWay(const Vector3D &point) const;
     float hullRadius() const;
     // a new point of the patrol area, at least minFraction of the radius from the current one
     void pickPatrolPoint(float minFraction);

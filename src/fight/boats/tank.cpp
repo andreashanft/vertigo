@@ -132,32 +132,40 @@ float Tank::ground(float x, float y) const
 }
 
 
+// the vehicle stands on the ground under its base's four corners (docs/ROADMAP.md, appendix J):
+// at their mean height, tilted by the difference front to back and right to left, without limit;
+// each corner's height is the nearest map vertex's
 void Tank::setPosition(const Vector3D &pos)
 {
-    m_position = Vector3D(pos.x, pos.y, ground(pos.x, pos.y) + m_groundOffset);
+    m_position = Vector3D(pos.x, pos.y, 0);
+    const float cell = m_scenario->surface().scale().x;
+    auto vertex = [this, cell](const Vector2D &at) {
+        return ground(std::round(at.x/cell)*cell, std::round(at.y/cell)*cell);
+    };
+    const BoundingBox base = m_base->box().scale(m_scale);
+    const Vector2D heading(std::sin(m_heading), std::cos(m_heading)), side(std::cos(m_heading), -std::sin(m_heading));
+    auto corner = [&](float x, float y) { return vertex(Vector2D(pos) + side*x + heading*y); };
+    const float minX = base.minPoint().x, maxX = base.maxPoint().x, minY = base.minPoint().y, maxY = base.maxPoint().y;
+    const float backLeft = corner(minX, minY), backRight = corner(maxX, minY), frontLeft = corner(minX, maxY), frontRight = corner(maxX, maxY);
+    m_corners = Vector4D(backLeft, backRight, frontLeft, frontRight);
+    m_position.z = 0.25f*(backLeft + backRight + frontLeft + frontRight) + m_groundOffset;
     alignToGround();
     updateBox();
 }
 
 
-// up follows the ground under the vehicle, forward follows the heading
 void Tank::alignToGround()
 {
-    const float d = std::max(1.5f, 0.35f*m_localBox.dim().y);
-    const float dx = (ground(m_position.x + d, m_position.y) - ground(m_position.x - d, m_position.y))/(2*d);
-    const float dy = (ground(m_position.x, m_position.y + d) - ground(m_position.x, m_position.y - d))/(2*d);
-    Vector3D up = glm::normalize(Vector3D(-dx, -dy, 1));
-    // tilt at most MaxClimbingAngle
-    const float tilt = std::acos(glm::clamp(up.z, -1.0f, 1.0f));
-    if (tilt > m_maxClimbingAngle)
-    {
-        const Vector2D side = glm::normalize(Vector2D(up));
-        up = Vector3D(side*std::sin(m_maxClimbingAngle), std::cos(m_maxClimbingAngle));
-    }
-    const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0);
-    const Vector3D forward = glm::normalize(heading - glm::dot(heading, up)*up);
-
-    m_orientationInverted = glm::mat3(glm::cross(forward, up), forward, up);
+    const BoundingBox base = m_base->box().scale(m_scale);
+    const float length = std::max(0.1f, base.dim().y), width = std::max(0.1f, base.dim().x);
+    const float pitch = std::atan((0.5f*(m_corners.z + m_corners.w) - 0.5f*(m_corners.x + m_corners.y))/length);
+    const float roll = std::atan((0.5f*(m_corners.y + m_corners.w) - 0.5f*(m_corners.x + m_corners.z))/width);
+    const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0), side(std::cos(m_heading), -std::sin(m_heading), 0);
+    const Vector3D forward = glm::normalize(heading*std::cos(pitch) + Vector3D(0, 0, std::sin(pitch)));
+    Vector3D right = side*std::cos(roll) + Vector3D(0, 0, std::sin(roll));
+    const Vector3D up = glm::normalize(glm::cross(right, forward));
+    right = glm::cross(forward, up);
+    m_orientationInverted = glm::mat3(right, forward, up);
     m_orientation = glm::transpose(m_orientationInverted);
 }
 

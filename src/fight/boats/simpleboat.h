@@ -42,6 +42,8 @@ public:
     float maxVelocity() const { return m_maxVelocity; }
     float minVelocity() const { return m_minVelocity; }
     float maxOrientationAcceleration() const { return m_maxOrientationAcceleration; }
+    float minClimbingAngle() const { return m_minClimbingAngle; }
+    float maxClimbingAngle() const { return m_maxClimbingAngle; }
 
     float velocityTarget() const { return m_velocityTarget; }
     void setVelocityTarget(float velocityTarget) { m_velocityTarget = velocityTarget; }

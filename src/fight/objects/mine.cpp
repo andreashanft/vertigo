@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "mine.h"
+#include <glm/gtx/transform.hpp>
 #include <cmath>
 #include <glm/gtc/constants.hpp>
 #include "util/random.h"
@@ -58,8 +59,10 @@ Mine::Mine(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info) :
     m_speed = std::max(0.0f, file.value("maxvelocity").toFloat()/32.0f*SpeedFactor);
     // a mine that moves can't be remembered by the shots' collision cache
     m_static = !isActive();
-    // every mine turns about the vertical at 0.5 to 1 rad/s from a random heading
+    // every mine turns about the vertical at 0.5 to 1 rad/s from a random heading, and nods up and
+    // down by up to 0.25 rad as the cosine of a phase that runs at up to 0.5 rad/s
     m_spin = 0.5f + 0.5f*util::random()/float(RAND_MAX);
+    m_nodRate = 0.5f*util::random()/float(RAND_MAX);
     setYaw((2.0f*util::random()/float(RAND_MAX) - 1.0f)*glm::pi<float>());
 }
 
@@ -78,6 +81,9 @@ bool Mine::update(float elapsedTime)
     if (m_eventDestroy.isCompleted())
         return false;
     setYaw(std::remainder(m_yaw + m_spin*elapsedTime, glm::two_pi<float>()));
+    m_nodPhase = std::remainder(m_nodPhase + m_nodRate*elapsedTime, glm::two_pi<float>());
+    const Vector3D right(std::cos(m_yaw), -std::sin(m_yaw), 0);
+    m_tilt = glm::mat3(glm::rotate(0.25f*std::cos(m_nodPhase), right));
     if (!isActive())
         return false;
 
