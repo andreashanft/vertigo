@@ -37,10 +37,11 @@ namespace fight {
 
 namespace {
 
-// The GunTurret (TANTUR2) turns as the turret models, 1.5 rad/s if the data has no rate
+// The GunTurret (TANTUR2) turns at its rate, 1.5 rad/s if the data has none, within 90 degrees of
+// the front, its gun from 5 degrees down to straight up (docs/ROADMAP.md, appendix J)
 const float GunTurnRate = 1.5f;
-const float MinPitch = -0.17f;
-const float MaxPitch = 1.0f;
+const float MinPitch = -glm::radians(5.0f);
+const float MaxPitch = glm::half_pi<float>();
 // a fixed Gun module (panztur*) only tilts, from 5 degrees down to straight up, at the hull's
 // pitch rate (MaxAngleVelocityB), and only at targets ahead (docs/ROADMAP.md, appendix J)
 const float GunMinPitch = -glm::radians(5.0f);
@@ -82,7 +83,8 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
     file.setSection("gunturret");
     if (file.contains("name"))
     {
-        txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(file.value("name").toString()));
+        m_turretName = file.value("name").toString();
+        txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(m_turretName));
         m_turret.reset(new Turret(scenario, turretFile));
         m_turret->setPosition(Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat()));
         m_localBox.add(m_turret->box().scale(m_scale));
@@ -100,9 +102,13 @@ Tank::~Tank()
 }
 
 
+// a turret tank (TANK2) fires its turret's gun ([StaticGun] and [VolleyGun] of TANTUR2), not its
+// own file's; the others their [StaticGun] on the gun module
 void Tank::arm(int model, txt::DesFile &file)
 {
-    const UnitGun::Mount mount = UnitGun::readMount(file);
+    txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(m_turretName.isEmpty() ? String("gvehicle") : m_turretName));
+    txt::DesFile &gunFile = m_turret ? turretFile : file;
+    const UnitGun::Mount mount = UnitGun::readMount(gunFile);
     if (mount.model < 0)
         return; // crawlers have no gun
     if (!UnitGun::isGun(model))
@@ -112,8 +118,9 @@ void Tank::arm(int model, txt::DesFile &file)
     std::vector<Vector3D> muzzles;
     for (const Vector3D &muzzle : mount.muzzles)
         muzzles.push_back(muzzle*m_scale);
-    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &file));
+    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &gunFile));
     m_unitGun->setCountFirst(!m_turret);
+    m_unitGun->setRestartOnRelease(true);
     if (mount.ammunition >= 0)
         m_unitGun->setAmmunition(mount.ammunition);
 }
@@ -252,8 +259,11 @@ void Tank::aimAt(const Vector3D &point)
     const Vector3D way = m_orientation*(point - (m_position + m_orientationInverted*(m_pivot*m_scale)));
     if (m_turret)
     {
+        // behind the hull's side, back to the front
         m_targetYaw = std::atan2(way.x, way.y);
         m_targetPitch = glm::clamp(std::atan2(way.z, glm::length(Vector2D(way))), MinPitch, MaxPitch);
+        if (glm::abs(m_targetYaw) > glm::half_pi<float>())
+            m_targetYaw = m_targetPitch = 0;
     }
     else
     {

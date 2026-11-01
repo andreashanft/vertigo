@@ -123,6 +123,8 @@ public:
     // the CD track of the mission's music, as numbered on the CD (0: none)
     int cdTrack() const { return m_cdTrack > 0 ? m_cdTrack + 1 : 0; }
     float time() const { return m_time; }
+    // the time the current frame advances the mission by (seconds)
+    float frameTime() const { return m_frameTime; }
     int buzzers() const { return m_buzzers; }
     bool useBuzzer() { if (m_buzzers <= 0) return false; m_buzzers--; return true; }
     bool blink() const { return static_cast<int>(m_time/0.5f)%2 == 0; }
@@ -296,6 +298,7 @@ private:
     ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;
+    float m_frameTime = 0;
     float m_failTime = -1;      // when the mission failed, -1 while it hasn't
     void updateDecoyContacts();
     void setEye(const Matrix &cameraInverted);

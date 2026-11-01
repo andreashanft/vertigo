@@ -41,18 +41,30 @@ public:
 
     float maxVelocity() const { return m_maxVelocity; }
     float minVelocity() const { return m_minVelocity; }
+    float maxOrientationAcceleration() const { return m_maxOrientationAcceleration; }
 
     float velocityTarget() const { return m_velocityTarget; }
     void setVelocityTarget(float velocityTarget) { m_velocityTarget = velocityTarget; }
     bool fullThrottle() const { return m_fullThrottle; }
     void setFullThrottle(bool fullThrottle) { m_fullThrottle = fullThrottle; }
-    void setTurnVelocity(const Vector3D &turnVelocity) { m_turnVelocity = turnVelocity; }
+    void setTurnVelocity(const Vector3D &turnVelocity) { m_turnVelocity = turnVelocity; m_steered = false; }
 
-    // steering for the AI orders: head for a point at a speed (climbing to its height within a
-    // short way), point the nose straight at it (to fire along the nose), or stay in place
+    // steering for the AI orders: head for a point at a speed, the nose turning to the point's own
+    // direction and the pitch to its true elevation (docs/ROADMAP.md, appendix J); pointAt() is
+    // the same, for aiming the guns along the nose; turnBy() turns by the given errors (radians,
+    // positive to the right and nose down); hold() stops, holding the heading and levelling off
     void steerTo(const Vector3D &point, float speed);
     void pointAt(const Vector3D &point, float speed);
+    void turnBy(float yawError, float pitchError, float speed);
     void hold();
+    // a push (m/s², world axes) on top of the engine's, as the ambush's hover and the escort's
+    // pull into its place make; it stays until set again
+    void setPush(const Vector3D &push) { m_push = push; }
+    // stops dead where it is (an Explode order's wait)
+    void freeze() { m_velocity = Vector3D(0); hold(); }
+    // where the next torpedo leaves the hull ([TorpedoMagazine] RelativeN in turn, the nose
+    // without any), in world coordinates
+    Vector3D nextTorpedoTube();
 
     // the [Attack] settings of the object file, distances in metres
     // (docs/ROADMAP.md, appendix B and appendix J "The attack manoeuvre")
@@ -122,6 +134,12 @@ protected:
     // big ships push through; the others steer round them
     virtual bool collidesWithObjects() const { return true; }
     bool startWreck() override;
+    // the destruction sequence's variants (a bomber's): whether each step kicks the hull, a hook
+    // at each step, the last step's debris, and the end of the hull (gone and counted destroyed)
+    virtual bool wreckKicks() const { return true; }
+    virtual void wreckStepped(int step) {}
+    virtual void wreckLastDebris();
+    virtual void wreckEnd();
     // a piece of debris flung out of the hull (ActiveObject::wreckDebris)
     void wreckDebris(int index, float minElevation, float maxElevation) { ActiveObject::wreckDebris(index, minElevation, maxElevation, m_position, hullRadius()); }
     void nextWreckStep();
@@ -143,6 +161,15 @@ protected:
 
     Vector3D m_angleVelocity;
     Vector3D m_turnVelocity;
+    // the AI's turn (docs/ROADMAP.md, appendix J): the errors left to turn (x pitch, z yaw) drive
+    // an angular acceleration of MaxAngleAcceleration times the error over pi, damped by
+    // AngleFriction; m_steered is false while the turn rates are set directly (setTurnVelocity)
+    Vector3D m_turnError;
+    Vector3D m_maxAngleAcceleration;
+    bool m_steered = false;
+    Vector3D m_push;
+    std::vector<Vector3D> m_torpedoTubes;   // metres in the hull's frame
+    int m_nextTube = 0;
     float m_bank = 0;           // the hull's roll into its turn, as it is drawn
     Vector3D m_spin;            // the paralysed drift's angular velocity
     float m_tumbleEnd = 0;      // and when its way has run out

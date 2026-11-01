@@ -29,6 +29,7 @@ namespace fight {
 
 
 class CargoShip;
+class MountedTurret;
 class Module;
 class Turret;
 class UnitGun;
@@ -80,6 +81,8 @@ public:
 public:
     int blocks() const { return int(m_blocks.size()); }
     int turrets() const { return int(m_turrets.size()); }
+    // the turrets as units of their own; the scenario owns them
+    std::vector<MountedTurret *> turretUnits() const;
     // the height of the hull's bottom below the ship's position
     float draught() const { return -m_localBox.minPoint().z; }
 
@@ -102,6 +105,13 @@ public:
     void damage(int kinetic, int shock, const Vector3D &position, ActiveObject *attacker = nullptr);
     void destroy();
     bool isDying() const override { return SimpleBoat::isDying() || m_exploding; }
+    // an Explode order blows it up block by block, as when its armour is gone; paralysed, it
+    // stops dead where it is (docs/ROADMAP.md, appendix A)
+    bool startWreck() override { destroy(); return true; }
+    bool startTumbling() override;
+    // the ship hands its orders to its turrets, and lets them rest while it sleeps
+    void orderStarted(const OrderSlot *slot);
+    void sleep();
 
 private:
     struct Block
@@ -127,35 +137,18 @@ private:
         glm::mat3 tilt = glm::mat3(1);
     };
 
+    // a block's gun turret ([TurretN] of its file), a unit of its own (MountedTurret)
     struct ShipTurret
     {
-        std::unique_ptr<Turret> model;
-        std::unique_ptr<UnitGun> gun;
+        MountedTurret *unit;
         int block;
-        float scale;
-        Vector3D position;  // ship coordinates, on the hull
-        bool below;         // hangs under the hull, upside down
-        float yaw;          // in the mount's frame, positive to the right
-        float pitch;
-        float restYaw;
-        float turnRate;
-        float range;
-        bool destroyed = false;
-        ActiveObject *target = nullptr;
-        float nextScan = 0;
     };
 
-    // ship coordinates <-> the turret's mount frame (turned over for turrets under the hull)
-    static Vector3D toMount(const ShipTurret &turret, const Vector3D &v) { return turret.below ? Vector3D(-v.x, v.y, -v.z) : v; }
     Vector3D toWorld(const Vector3D &local) const { return m_position + m_orientationInverted*local; }
     Vector3D toLocal(const Vector3D &world) const { return m_orientation*(world - m_position); }
-    Vector3D turretAim(const ShipTurret &turret) const; // world direction
-    void updateTurret(ShipTurret &turret, float elapsedTime);
-    ActiveObject* findTarget(const ShipTurret &turret) const;
-    bool isTargetValid(const ActiveObject *unit) const;
+
     // the block's part of the sequence that follows the ship's destruction
     void updateBlock(int index, float elapsedTime);
-    void destroyTurret(ShipTurret &turret);
     Vector3D blockCenter(const Block &block) const; // world
     float blockRadius(const Block &block) const;
     Matrix blockTransform(const Block &block) const; // ship coordinates
@@ -168,6 +161,7 @@ private:
     std::vector<ShipTurret> m_turrets;
     String m_picture;
     bool m_exploding = false;
+    bool m_paralysed = false;
     int m_nextBlock = 0;                // the next block to blow up, and when
     float m_nextExplosion = 0;
 };

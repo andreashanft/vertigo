@@ -16,6 +16,9 @@
  ***************************************************************************/
 
 #include "mine.h"
+#include <cmath>
+#include <glm/gtc/constants.hpp>
+#include "util/random.h"
 #include "fight/scenario.h"
 #include "fight/boats/player.h"
 #include "fight/collisionmanager.h"
@@ -55,6 +58,9 @@ Mine::Mine(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info) :
     m_speed = std::max(0.0f, file.value("maxvelocity").toFloat()/32.0f*SpeedFactor);
     // a mine that moves can't be remembered by the shots' collision cache
     m_static = !isActive();
+    // every mine turns about the vertical at 0.5 to 1 rad/s from a random heading
+    m_spin = 0.5f + 0.5f*util::random()/float(RAND_MAX);
+    setYaw((2.0f*util::random()/float(RAND_MAX) - 1.0f)*glm::pi<float>());
 }
 
 
@@ -69,7 +75,10 @@ void Mine::setPosition(const Vector3D &pos)
 bool Mine::update(float elapsedTime)
 {
     ActiveObject::update(elapsedTime);
-    if (!isActive() || m_eventDestroy.isCompleted())
+    if (m_eventDestroy.isCompleted())
+        return false;
+    setYaw(std::remainder(m_yaw + m_spin*elapsedTime, glm::two_pi<float>()));
+    if (!isActive())
         return false;
 
     Player *player = m_scenario->player();

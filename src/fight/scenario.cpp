@@ -36,6 +36,8 @@
 #include "objects/turretbase.h"
 #include "objects/navpoint.h"
 #include "objects/placeholder.h"
+#include "objects/mountedturret.h"
+#include "boats/bomber.h"
 #include "boats/cargoship.h"
 #include "objects/simpleobject.h"
 
@@ -247,7 +249,7 @@ Scenario::Scenario(const String &name) :
 
         case TypeBomber:
             {
-                object = new SimpleBoat(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>());
+                object = new Bomber(this, objectDes, info, m_file.value("card").toInt()*glm::quarter_pi<float>(), desName);
                 Vector3D pos = getPosition();
                 pos.z += 20.0f;
                 object->setPosition(pos);
@@ -289,17 +291,18 @@ Scenario::Scenario(const String &name) :
 
         case TypeMine:
             {
-                // num mines above each other, dis height units apart, the lowest at hei: the entries
-                // with more than one mine sit in neighbouring cells (16 m), too close for rows. To be
-                // compared with the original
+                // num mines above each other, dis metres apart, the lowest hei metres over the ground
+                // (docs/ROADMAP.md, appendix Q)
                 object = new Mine(this, objectDes, info);
-                object->setPosition(getPosition());
+                Vector3D pos = getPosition();
+                pos.z = m_surface.heightAt(pos.x, pos.y) + m_file.value("hei").toFloat();
+                object->setPosition(pos);
                 const int count = m_file.value("num", 1).toInt();
-                const float distance = m_file.value("dis").toInt()*m_surface.scale().z;
+                const float distance = m_file.value("dis").toFloat();
                 for (int i = 1; i < count; i++)
                 {
                     Mine *mine = new Mine(this, objectDes, info);
-                    mine->setPosition(getPosition() + Vector3D(0, 0, i*distance));
+                    mine->setPosition(pos + Vector3D(0, 0, i*distance));
                     moreMines.push_back(mine);
                 }
             }
@@ -417,8 +420,15 @@ Scenario::Scenario(const String &name) :
             m_objects.emplace_back(object);
             m_records.push_back({ id, type, desName, object });
             if (CargoShip *ship = dynamic_cast<CargoShip *>(object))
+            {
                 for (CargoSegment *segment : ship->createSegments())
                     m_objects.emplace_back(segment);
+                for (MountedTurret *turret : ship->turretUnits())
+                    m_objects.emplace_back(turret);
+            }
+            if (Bomber *bomber = dynamic_cast<Bomber *>(object))
+                for (MountedTurret *turret : bomber->turrets())
+                    m_objects.emplace_back(turret);
             object->disable();
             entry.condTrigger = object->condEnable();
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(object);
@@ -696,6 +706,7 @@ void Scenario::update(float elapsedTime)
 {
     markGround();
     m_time += elapsedTime;
+    m_frameTime = elapsedTime;
 
     // pushed forward the stick lowers the nose, as the original's joystick (and the Up key)
     m_player->setTurnVelocity(Vector3D(glm::clamp(m_up - m_down - m_stick.y, -1.0f, 1.0f), glm::clamp(m_left - m_right - m_stick.x, -1.0f, 1.0f), 0));

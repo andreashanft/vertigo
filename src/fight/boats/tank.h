@@ -45,11 +45,15 @@ public:
     void draw();
     void arm(int model, txt::DesFile &file);
     bool isGroundVehicle() const { return true; }
+    // a crawler never leaves its orders to fight (docs/ROADMAP.md, appendix J)
+    bool engagesHostiles() const { return m_groundWreck != GroundWreck::Crawler; }
     // an energy defence's collapse: it brakes to a stop and stays there for good
     bool startTumbling() override;
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void aimAt(const Vector3D &point);
     Vector3D gunDirection() const;
+    // a GunTurret (TANK2) rather than a fixed gun module
+    bool hasTurret() const { return m_turret != nullptr; }
 
 private:
     float ground(float x, float y) const;
@@ -69,6 +73,7 @@ private:
     Module *m_gun;            // a fixed gun model (Cluster/Gun) ...
     Vector3D m_gunOffset;
     std::unique_ptr<Turret> m_turret; // ... or a turret (GunTurret)
+    String m_turretName;
     Vector3D m_pivot;         // what the turret turns around (model coordinates)
     float m_turretRate;       // rad/s
     float m_turretYaw;        // relative to the hull, positive to the right

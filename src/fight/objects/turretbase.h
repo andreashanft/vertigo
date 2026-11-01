@@ -20,6 +20,8 @@
 
 
 #include "simpleobject.h"
+#include <memory>
+#include <vector>
 #include "util/string.hpp"
 
 
@@ -36,11 +38,22 @@ public:
     bool update(float elapsedTime);
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     void arm(int model, txt::DesFile &file);
-    void aimAt(const Vector3D &point);
-    void aimAt(float yaw) { m_targetYaw = yaw; m_targetPitch = 0; }
+    // tracks the point (docs/ROADMAP.md, appendix J): within 90 degrees of the centre if bounded,
+    // else the turret turns back to the centre; the guns from 5 degrees down to straight up
+    void track(const Vector3D &point, bool bounded = false, float centre = 0);
+    void aimAt(const Vector3D &point) override { track(point); }
+    // turns to the yaw, the guns level (from 15 degrees down to straight up when told a pitch)
+    void aimAt(float yaw, float pitch = 0) { m_targetYaw = yaw; m_targetPitch = pitch; m_tracking = false; }
+    // the turret has got there: within a degree (half a degree turning at a fixed rate)
+    bool arrived() const;
+    bool isTorpedoTurret() const { return m_torpedoTurret; }
+    // where the next torpedo leaves the turret ([TorpedoMagazine] RelativeN in turn), world
+    Vector3D nextTube();
 
     // the direction the turret points to
     Vector3D aim() const;
+    // between the muzzles (the pivot)
+    Vector3D muzzles() const { return pivot(); }
 
 private:
     // an energy defence's collapse: a gun tower turns its gun to the front and lowers it, a
@@ -57,8 +70,21 @@ private:
     float m_pitch;
     float m_targetYaw;
     float m_targetPitch;
-    float m_yawVelocity;       // the turret's turn rates (rad/s)
-    float m_pitchVelocity;
+    bool m_tracking = false;
+    // the turret's turning (docs/ROADMAP.md, appendix J): soft, an angular acceleration of
+    // MaxAngleAcceleration times the error over pi damped by AngleFriction, or hard, at
+    // MaxAngleVelocity right onto the angle; tracking by SoftBodyAdjust and SoftArmRAdjust, turns to
+    // an angle always soft
+    float m_yawRate = 0, m_pitchRate = 0;
+    float m_maxYawRate = 1, m_maxPitchRate = 1;
+    float m_yawAcceleration = 0, m_pitchAcceleration = 0;
+    float m_yawFriction = 0, m_pitchFriction = 0;
+    bool m_softYaw = true, m_softPitch = true;
+    bool m_torpedoTurret = false;     // turns only about the vertical
+    std::unique_ptr<UnitGun> m_armGun;  // the second arm's gun (the first is m_unitGun)
+    Vector3D m_armOffset[2];          // the arms' offsets from the pivot (model units)
+    std::vector<Vector3D> m_tubes;    // model units
+    int m_nextTube = 0;
 };
 
 

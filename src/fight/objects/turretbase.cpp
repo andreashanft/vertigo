@@ -23,10 +23,24 @@
 #include "gfx/pipeline.h"
 #include <glm/gtc/constants.hpp>
 #include <glm/trigonometric.hpp>
+#include <glm/gtx/transform.hpp>
+#include <algorithm>
 #include <cmath>
 
 
 namespace fight {
+
+
+namespace {
+
+// tracking, the guns go from 5 degrees down to straight up, turned to an angle from 15 degrees down
+const float MinTrackPitch = glm::radians(-5.0f);
+const float MinTurnPitch = glm::radians(-15.0f);
+const float MaxPitch = glm::half_pi<float>();
+const float SoftDone = glm::radians(1.0f);
+const float HardDone = glm::radians(0.5f);
+
+}
 
 
 TurretBase::TurretBase(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info) :
@@ -34,9 +48,7 @@ TurretBase::TurretBase(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     m_yaw(0),
     m_pitch(0),
     m_targetYaw(0),
-    m_targetPitch(0),
-    m_yawVelocity(1),
-    m_pitchVelocity(1)
+    m_targetPitch(0)
 {
     m_static = false;
 
@@ -45,6 +57,7 @@ TurretBase::TurretBase(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
         file.setSection(section);
         if (!file.contains("name"))
             continue;
+        m_torpedoTurret = String(section) == "torpedoturret";
         m_turretName = file.value("name").toString();
         txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(m_turretName));
         m_body.reset(new Turret(scenario, turretFile)); // TODO: TurretTorpedo
@@ -53,13 +66,27 @@ TurretBase::TurretBase(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
         m_box.add(m_body->box().scale(m_scale));
 
         turretFile.setSection("kinematics");
-        m_yawVelocity = turretFile.value("MaxAngleVelocityA", 1).toFloat();
-        m_pitchVelocity = turretFile.value("MaxAngleVelocityB", 1).toFloat();
+        m_maxYawRate = turretFile.value("MaxAngleVelocityA", 1).toFloat();
+        m_maxPitchRate = turretFile.value("MaxAngleVelocityB", 1).toFloat();
+        m_yawAcceleration = turretFile.value("MaxAngleAccelerationA").toFloat();
+        m_pitchAcceleration = turretFile.value("MaxAngleAccelerationB").toFloat();
+        m_yawFriction = turretFile.value("AngleFrictionA").toFloat();
+        m_pitchFriction = turretFile.value("AngleFrictionB").toFloat();
+        m_softYaw = turretFile.value("SoftBodyAdjust", "yes").toString().trimmed().toLower() != "no";
+        m_softPitch = turretFile.value("SoftArmRAdjust", "yes").toString().trimmed().toLower() != "no";
+        turretFile.setSection("cluster");
+        m_armOffset[0] = Vector3D(turretFile.value("ArmROffsetX").toFloat(), turretFile.value("ArmROffsetY").toFloat(), turretFile.value("ArmROffsetZ").toFloat());
+        m_armOffset[1] = Vector3D(turretFile.value("ArmLOffsetX").toFloat(), turretFile.value("ArmLOffsetY").toFloat(), turretFile.value("ArmLOffsetZ").toFloat());
+        turretFile.setSection("torpedomagazine");
+        for (int i = 0; turretFile.contains(String("relative%1x").arg(i)); i++)
+            m_tubes.push_back(Vector3D(turretFile.value(String("relative%1x").arg(i)).toFloat(), turretFile.value(String("relative%1y").arg(i)).toFloat(),
+                                       turretFile.value(String("relative%1z").arg(i)).toFloat()));
     }
 }
 
 
-// the gun is in the turret's file: [StaticGun] and [VolleyGun]
+// the gun is in the turret's file: [StaticGun] and [VolleyGun], one on each arm, the barrels
+// relative to the arm; the volley starts again whenever the aim is lost
 void TurretBase::arm(int model, txt::DesFile &file)
 {
     if (m_turretName.isEmpty())
@@ -75,17 +102,53 @@ void TurretBase::arm(int model, txt::DesFile &file)
     std::vector<Vector3D> muzzles;
     for (const Vector3D &muzzle : mount.muzzles)
         muzzles.push_back(muzzle*m_scale);
-    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &turretFile));
-    if (mount.ammunition >= 0)
-        m_unitGun->setAmmunition(mount.ammunition);
+    turretFile.setSection("cluster");
+    const bool twoArms = turretFile.contains("arml") && turretFile.value("arml").toString() != "no";
+    for (std::unique_ptr<UnitGun> *gun : { &m_unitGun, &m_armGun })
+    {
+        gun->reset(new UnitGun(m_scenario, this, model, muzzles, &turretFile));
+        (*gun)->setRestartOnRelease(true);
+        if (mount.ammunition >= 0)
+            (*gun)->setAmmunition(mount.ammunition);
+        if (!twoArms)
+            break;
+    }
 }
 
 
-void TurretBase::aimAt(const Vector3D &point)
+void TurretBase::track(const Vector3D &point, bool bounded, float centre)
 {
     const Vector3D way = point - pivot();
-    m_targetYaw = std::atan2(way.x, way.y);
+    const float yaw = std::atan2(way.x, way.y);
+    if (bounded && glm::abs(std::remainder(yaw - centre, glm::two_pi<float>())) > glm::half_pi<float>())
+    {
+        aimAt(centre);
+        return;
+    }
+    m_targetYaw = yaw;
     m_targetPitch = std::atan2(way.z, glm::length(Vector2D(way)));
+    m_tracking = true;
+}
+
+
+bool TurretBase::arrived() const
+{
+    const bool softYaw = !m_tracking || m_softYaw, softPitch = !m_tracking || m_softPitch;
+    const float yawError = glm::abs(std::remainder(m_targetYaw - m_yaw, glm::two_pi<float>()));
+    const float low = m_tracking ? MinTrackPitch : MinTurnPitch;
+    const float pitchError = m_torpedoTurret ? 0 : glm::abs(glm::clamp(m_targetPitch, low, MaxPitch) - m_pitch);
+    return yawError <= (softYaw ? SoftDone : HardDone) && pitchError <= (softPitch ? SoftDone : HardDone);
+}
+
+
+Vector3D TurretBase::nextTube()
+{
+    const glm::mat3 turn = glm::mat3(glm::rotate(-m_yaw, Vector3D(0, 0, 1)));
+    if (m_tubes.empty())
+        return pivot() + aim()*4.0f;
+    const Vector3D tube = m_tubes[m_nextTube];
+    m_nextTube = (m_nextTube + 1) % int(m_tubes.size());
+    return pivot() + turn*(tube*m_scale);
 }
 
 
@@ -95,14 +158,40 @@ Vector3D TurretBase::aim() const
 }
 
 
+// a gun tower turns its gun to the front and lowers it to -14 degrees; a torpedo tower's turret
+// stops where it is
 bool TurretBase::startTumbling()
 {
     m_tumbling = true;
     m_trigger = false;
-    m_targetYaw = 0;
-    m_targetPitch = -0.244f;
+    if (m_torpedoTurret)
+        aimAt(m_yaw, m_pitch);
+    else
+        aimAt(0, -0.244f);
     m_scenario->disengagePlayer(this);
     return true;
+}
+
+
+namespace {
+
+// one axis of the turn: soft (a damped spring) or hard (at the rate right onto the angle)
+void turnAxis(float &angle, float &rate, float error, bool soft, float acceleration, float friction, float maxRate, float dt)
+{
+    if (soft)
+    {
+        float push = glm::abs(error) > SoftDone ? acceleration*error/glm::pi<float>() : 0.0f;
+        push -= rate*std::min(friction, 1/dt);
+        angle += rate*dt + 0.5f*push*dt*dt;
+        rate = glm::clamp(rate + push*dt, -maxRate, maxRate);
+    }
+    else
+    {
+        rate = glm::abs(error) > HardDone ? glm::sign(error)*std::min(maxRate, glm::abs(error)/dt) : 0.0f;
+        angle += rate*dt;
+    }
+}
+
 }
 
 
@@ -115,17 +204,29 @@ bool TurretBase::update(float elapsedTime)
     if ((m_tumbling && updateGroundWreck(elapsedTime)) || isGroundWrecking() || !isEnabled())
         return false;
 
-    // turn towards the target at the turret's rates
-    const float yawError = std::remainder(m_targetYaw - m_yaw, glm::two_pi<float>());
-    m_yaw += glm::clamp(yawError, -m_yawVelocity*elapsedTime, m_yawVelocity*elapsedTime);
-    m_pitch += glm::clamp(m_targetPitch - m_pitch, -m_pitchVelocity*elapsedTime, m_pitchVelocity*elapsedTime);
-
-    if (m_unitGun)
+    const float dt = std::max(elapsedTime, 1e-4f);
+    const float low = m_tracking ? MinTrackPitch : MinTurnPitch;
+    turnAxis(m_yaw, m_yawRate, std::remainder(m_targetYaw - m_yaw, glm::two_pi<float>()), !m_tracking || m_softYaw,
+             m_yawAcceleration, m_yawFriction, m_maxYawRate, dt);
+    m_yaw = std::remainder(m_yaw, glm::two_pi<float>());
+    if (!m_torpedoTurret)
     {
-        const Vector3D dir = aim();
-        const Vector3D right = Vector3D(std::cos(m_yaw), -std::sin(m_yaw), 0);
-        m_unitGun->update(elapsedTime, m_trigger, pivot(), dir, glm::cross(right, dir), right);
+        turnAxis(m_pitch, m_pitchRate, glm::clamp(m_targetPitch, low, MaxPitch) - m_pitch, !m_tracking || m_softPitch,
+                 m_pitchAcceleration, m_pitchFriction, m_maxPitchRate, dt);
+        if (m_pitch < low || m_pitch > MaxPitch)
+        {
+            m_pitch = glm::clamp(m_pitch, low, MaxPitch);
+            m_pitchRate = 0;
+        }
     }
+
+    const Vector3D dir = aim();
+    const Vector3D right = Vector3D(std::cos(m_yaw), -std::sin(m_yaw), 0);
+    const glm::mat3 turn = glm::mat3(glm::rotate(-m_yaw, Vector3D(0, 0, 1)));
+    if (m_unitGun)
+        m_unitGun->update(elapsedTime, m_trigger, pivot() + turn*(m_armOffset[0]*m_scale), dir, glm::cross(right, dir), right);
+    if (m_armGun)
+        m_armGun->update(elapsedTime, m_trigger, pivot() + turn*(m_armOffset[1]*m_scale), dir, glm::cross(right, dir), right);
     return false;
 }
 
