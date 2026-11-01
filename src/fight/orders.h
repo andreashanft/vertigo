@@ -93,6 +93,8 @@ public:
     void restart() { if (m_current >= 0) start(m_current); }
     // the buzzer magazine works only in patrols, attacks, ambushes and escorts (appendix J)
     bool usesBuzzers() const;
+    // a tower blowing up: its turret goes on at the target it had (appendix J)
+    void keepFiring();
 
     // sensing, also for a bomber's turrets, which look with their own sensor through an Orders
     // without slots
@@ -182,6 +184,7 @@ private:
     // towers (appendix J): CardinalPatrol and CardinalAttack sweep and fight with the tower's sensor
     void updateTower(const OrderSlot &slot);
     void sweepTurret(const OrderSlot &slot);
+    void towerFire(const OrderSlot &slot);
     static Vector3D intercept(const Vector3D &origin, const ActiveObject *target, float speed);
     float random() const;
     float random(float min, float max) const;

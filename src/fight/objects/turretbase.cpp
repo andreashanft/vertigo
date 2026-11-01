@@ -18,6 +18,7 @@
 #include "turret.h"
 #include "turretbase.h"
 #include "fight/scenario.h"
+#include "fight/orders.h"
 #include "fight/weapons/unitgun.h"
 #include "txt/desfile.h"
 #include "gfx/pipeline.h"
@@ -201,8 +202,12 @@ bool TurretBase::update(float elapsedTime)
         updateLaterExplosions();
     else
         ActiveObject::update(elapsedTime);
-    if ((m_tumbling && updateGroundWreck(elapsedTime)) || isGroundWrecking() || !isEnabled())
+    if ((m_tumbling && updateGroundWreck(elapsedTime)) || !isEnabled())
         return false;
+    // blowing up, the turret goes on at the target it had: tracking it, firing and launching at it
+    // while it lives, until the tower is gone (docs/ROADMAP.md, appendix J)
+    if (isGroundWrecking() && m_orders)
+        m_orders->keepFiring();
 
     const float dt = std::max(elapsedTime, 1e-4f);
     const float low = m_tracking ? MinTrackPitch : MinTurnPitch;

@@ -1362,6 +1362,25 @@ void Orders::updateTower(const OrderSlot &slot)
         sweepTurret(slot);
         return;
     }
+    towerFire(slot);
+}
+
+
+// a tower blowing up looks for no one, but its turret keeps tracking the target it had and firing
+// at it while it lives, to the end (appendix J)
+void Orders::keepFiring()
+{
+    const OrderSlot *slot = currentSlot();
+    if (slot && (slot->type == OrderSlot::CardinalPatrol || slot->type == OrderSlot::CardinalAttack) && m_target && isAlive(m_target))
+        towerFire(*slot);
+    else
+        m_unit->setTrigger(false);
+}
+
+
+void Orders::towerFire(const OrderSlot &slot)
+{
+    TurretBase *turret = static_cast<TurretBase *>(m_unit);
     const bool bounded = slot.car == 0 || slot.car == 2 || slot.car == 4 || slot.car == 6;
     if (turret->isTorpedoTurret())
     {

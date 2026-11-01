@@ -129,7 +129,7 @@ outside views' camera (V).
 |---|---|---|---|
 | O1 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model; compare a salvo in the original |
 | O3 | s00705 (G5) | S | The AD mod says Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original's turrets fire through friends (appendix T); whether the player's sonar lists the bombers' and big ships' turrets as contacts of their own (Vertigo doesn't); what the gun towers do while they blow up (they may keep firing); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
+| O4 | Open comparisons | – | Whether the original shows the units' event messages as they happen (they are in the radio log); the sonars' detection ranges; `wccond 9` (56 units, s00303 and s02006 among them); which of `car` 2 and 6 is left; why one of S00202's two upward current cells does nothing; how engine volume and pan fall off with distance; what the monitors' lamps show; whether the original lists the start station in the autopilot menu, loops a mission's track and pauses it in the menu; whether big buildings show as blocks or ground on the radar; whether the original's turrets fire through friends (appendix T); whether the player's sonar lists the bombers' and big ships' turrets as contacts of their own (Vertigo doesn't); whether the player takes damage running into buildings, towers or boats (the contact table pairs the player only with shots, debris, torpedoes and mines; Vertigo's player takes their strength) |
 
 Risks: renderer changes stay self-contained so that a modern renderer and
 VR work stay easy; the cargo-ship block layout is inferred from the data.
@@ -768,7 +768,11 @@ point says otherwise.
   18° for `tor` 0 and 1, within 21.6° for the others while the target has
   fewer than 4 homing torpedoes on it, and only with the terrain clear
   between the tube and the target. Towers sleep while they fight, too. A
-  Wait faces the centre of the last cardinal order.
+  Wait faces the centre of the last cardinal order. A tower blowing up
+  (appendix R) looks for no one, but its turret goes on as it was: tracking
+  the target it had and firing or launching at it while that lives, for the
+  two seconds until the tower is gone; a paralysed tower's turret stays
+  still.
 - **Big ships' turrets** are the bombers' kind, on the blocks
   (`BBLOCK*.DES`), handed the ship's order the same way; they blow up with
   their block, half at its start and half at 1.6 s.
