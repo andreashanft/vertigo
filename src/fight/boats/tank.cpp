@@ -42,10 +42,15 @@ namespace {
 const float GunTurnRate = 1.5f;
 const float MinPitch = -glm::radians(5.0f);
 const float MaxPitch = glm::half_pi<float>();
-// a fixed Gun module (panztur*) only tilts, from 5 degrees down to straight up, at the hull's
-// pitch rate (MaxAngleVelocityB), and only at targets ahead (docs/ROADMAP.md, appendix J)
+// a fixed Gun module (panztur*) only tilts, to the target's elevation over the hull's plane, and
+// only at targets ahead, from 5 degrees down to straight up; otherwise it goes back to level
+// (from 15 degrees down); it turns as a damped spring by the hull's MaxAngleAccelerationB,
+// AngleFrictionB and MaxAngleVelocityB, leaving a degree to the damping (docs/ROADMAP.md,
+// appendix J)
 const float GunMinPitch = -glm::radians(5.0f);
+const float GunRestMinPitch = -glm::radians(15.0f);
 const float GunMaxPitch = glm::half_pi<float>();
+const float GunDeadZone = glm::radians(1.0f);
 // while it drives, a puff of dust behind one of its tracks every 0.2 to 0.3 s (a crawler 0.16 to
 // 0.3 s), the larger the faster it goes (docs/ROADMAP.md, appendix H)
 const float DustInterval = 0.2f;
@@ -274,9 +279,10 @@ void Tank::aimAt(const Vector3D &point)
         // the gun points along the hull; behind it, it levels out
         if (way.y <= 0)
             return;
-        m_targetPitch = glm::clamp(std::atan2(way.z, way.y), GunMinPitch, GunMaxPitch);
+        m_targetPitch = std::atan2(way.z, glm::length(Vector2D(way)));
     }
-    m_aimHold = 1.0f;
+    m_aimHold = m_turret ? 1.0f : 0.0f;
+    m_aiming = true;
 }
 
 
@@ -299,6 +305,27 @@ glm::mat3 Tank::turretRotation() const
 
 void Tank::updateTurret(float elapsedTime)
 {
+    if (m_gun)
+    {
+        // aimed this frame, or back to level
+        const bool aiming = m_aiming;
+        m_aiming = false;
+        if (!aiming)
+            m_targetPitch = 0;
+        const float dt = std::max(elapsedTime, 1e-4f);
+        const float error = m_targetPitch - m_turretPitch;
+        float acceleration = glm::abs(error) > GunDeadZone ? m_maxAngleAcceleration.x*error/glm::pi<float>() : 0.0f;
+        acceleration -= m_gunRate*std::min(-m_angleFriction.x, 1/dt);
+        m_turretPitch += m_gunRate*dt + 0.5f*acceleration*dt*dt;
+        m_gunRate = glm::clamp(m_gunRate + acceleration*dt, -m_maxAngleVelocity.x, m_maxAngleVelocity.x);
+        const float low = aiming ? GunMinPitch : GunRestMinPitch;
+        if (m_turretPitch < low || m_turretPitch > GunMaxPitch)
+        {
+            m_turretPitch = glm::clamp(m_turretPitch, low, GunMaxPitch);
+            m_gunRate = 0;
+        }
+        return;
+    }
     m_aimHold -= elapsedTime;
     if (m_aimHold <= 0)
         m_targetYaw = m_targetPitch = 0;

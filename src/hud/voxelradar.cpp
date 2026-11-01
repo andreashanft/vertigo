@@ -34,6 +34,7 @@
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
 #include <algorithm>
+#include <map>
 #include <set>
 #include <cmath>
 
@@ -57,8 +58,9 @@ const int SuperSample = 3;
 // the patch at the boat's ground level fills at most this part of the view
 const float PatchWidth = 0.94f;
 const float PatchHeight = 0.9f;
-// the water currents' slab, in cells
-const float CurrentHeight = 0.4f;
+// the shading table's entries for the ground of currents of spd 0 and 2
+const int CurrentSlow = 65;
+const int CurrentFast = 66;
 // the patch's half width in cells, from the original's pictures (its depth comes from the
 // cockpit description)
 const float HalfWidth = 15;
@@ -264,8 +266,17 @@ void VoxelRadar::render(fight::Scenario *scenario)
             lines.push_back({ project(Vector3D(position.x, position.y, ground(position.x, position.y))), project(position), colour });
     };
 
+    // the water currents colour their 2x2 blocks of map cells: the shading table's entry 65 for
+    // spd 0 (dark teal), 66 for spd 2 (light cyan) (docs/ROADMAP.md, appendix D)
+    std::map<std::pair<int, int>, int> currents;
+    const Vector3D &scale = surface.scale();
+    for (const fight::Scenario::CurrentCell &current : scenario->currentCells())
+        for (int dy = 0; dy < 2; dy++)
+            for (int dx = 0; dx < 2; dx++)
+                currents[{ current.x + dx, current.y + dy }] = current.spd == 0 ? CurrentSlow : CurrentFast;
+
     // the terrain cells, cut at the patch's edges
-    struct Cell { std::vector<Vector3D> corners; float height; float depth; };
+    struct Cell { std::vector<Vector3D> corners; float height; float depth; int current; };
     std::vector<Cell> cells;
     float lowest = 1e9f, highest = -1e9f, nearest = 1e9f, farthest = -1e9f;
     for (int j = 0; j + 1 < count; j++)
@@ -291,6 +302,9 @@ void VoxelRadar::render(fight::Scenario *scenario)
             }
             middle /= float(polygon.size());
             cell.height = middle.z;
+            const Vector3D centre = fromPatch(middle.x, middle.y, middle.z);
+            const auto found = currents.find({ int(std::floor(centre.x/scale.x)), int(std::floor(centre.y/scale.y)) });
+            cell.current = found != currents.end() ? found->second : -1;
             cell.depth = view(fromPatch(middle.x, middle.y, middle.z)).z;
             nearest = std::min(nearest, cell.depth);
             farthest = std::max(farthest, cell.depth);
@@ -309,7 +323,7 @@ void VoxelRadar::render(fight::Scenario *scenario)
         // the lowest ground dark, the highest bright, slightly darker towards the far edge
         const int level = glm::clamp(int(8 + 32*(cell.height - m_lowest)/range), 0, LightLevels - 1);
         const int fog = FogRows - 1 - int(6*(cell.depth - nearest)/std::max(farthest - nearest, 1.0f));
-        fillPolygon(cell.corners, shade(fog, level));
+        fillPolygon(cell.corners, shade(fog, cell.current >= 0 ? cell.current : level));
     }
 
     // buildings as their models in orange, the faces lit from above and behind, in a few shades
@@ -362,42 +376,6 @@ void VoxelRadar::render(fight::Scenario *scenario)
             if (polygon.size() >= 3)
                 fillPolygon(polygon, colour);
         }
-    }
-
-    // the water currents as one turquoise sheet a little above the ground over their 2x2 blocks
-    // of map cells, with sides only where no current is next to it, so that neighbouring blocks
-    // form one closed area
-    const Vector3D &scale = surface.scale();
-    std::set<std::pair<int, int>> currents;
-    for (const fight::Scenario::CurrentCell &current : scenario->currentCells())
-        currents.insert({ current.x, current.y });
-    const gfx::Rgb turquoise = gfx::rgb(48, 208, 216);
-    for (const fight::Scenario::CurrentCell &current : scenario->currentCells())
-    {
-        const Vector2D a(current.x*scale.x, current.y*scale.y), b = a + Vector2D(2*scale.x, 2*scale.y);
-        const float lift = CurrentHeight*scale.x;
-        // a corner of the sheet, following the ground, in the patch's frame
-        auto corner = [&](const Vector2D &p, float above) { return Vector3D(toPatch(Vector3D(p, 0)), ground(p.x, p.y) + above); };
-        // a face in the patch's frame, cut at the edges and drawn in the world
-        auto face = [&](std::vector<Vector3D> polygon, gfx::Rgb colour) {
-            polygon = clip(polygon);
-            for (Vector3D &c : polygon)
-                c = fromPatch(c.x, c.y, c.z);
-            if (polygon.size() >= 3)
-                fillPolygon(polygon, colour);
-        };
-        auto side = [&](const Vector2D &p, const Vector2D &q, gfx::Rgb colour) {
-            face({ corner(p, 0), corner(q, 0), corner(q, lift), corner(p, lift) }, colour);
-        };
-        face({ corner(a, lift), corner(Vector2D(b.x, a.y), lift), corner(b, lift), corner(Vector2D(a.x, b.y), lift) }, gfx::lighter(turquoise, 115));
-        if (!currents.count({ current.x, current.y - 2 }))
-            side(a, Vector2D(b.x, a.y), gfx::darker(turquoise, 130));
-        if (!currents.count({ current.x, current.y + 2 }))
-            side(Vector2D(a.x, b.y), b, gfx::darker(turquoise, 130));
-        if (!currents.count({ current.x - 2, current.y }))
-            side(a, Vector2D(a.x, b.y), gfx::darker(turquoise, 150));
-        if (!currents.count({ current.x + 2, current.y }))
-            side(Vector2D(b.x, a.y), b, gfx::darker(turquoise, 150));
     }
 
     // lines: debris (trash) green; sonar contacts red hostile, green friendly, blue neutral, the

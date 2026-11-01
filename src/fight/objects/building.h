@@ -55,6 +55,7 @@ private:
     mutable std::vector<Vector3D> m_triangles;
     int m_size;
     float m_angle;
+    bool m_gouraud = false;   // [Display] ShadingMode g: shaded from the light above and behind the eye
 };
 
 

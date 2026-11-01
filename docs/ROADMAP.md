@@ -141,7 +141,7 @@ Succubus cockpits). All are done.
 
 | # | Area | Original, and what Vertigo does now |
 |---|---|---|
-| D1–D3 | Voxel radar | Always shown in the lower part of the master monitor, the target's picture above it: a patch of terrain from 5 cells behind the boat (`WorldMinY`) to 20 ahead (`WorldMaxY`) and 15 to each side, turning with the heading, seen in perspective from behind at `Projection` 30° so that the far edge is about half as wide as the near one and the boat sits in the lower third (`FlightY`); no background, so the monitor's grid shows through; light grey ground, low ground dark, with `VOX_000.S16`; buildings as their models in orange, units as vertical lines from the ground (red hostile, green friendly, blue neutral, grey the locked target), debris green, the boat orange, water currents as one turquoise sheet over their cells |
+| D1–D3 | Voxel radar | Always shown in the lower part of the master monitor, the target's picture above it: a patch of terrain from 5 cells behind the boat (`WorldMinY`) to 20 ahead (`WorldMaxY`) and 15 to each side, turning with the heading, seen in perspective from behind at `Projection` 30° so that the far edge is about half as wide as the near one and the boat sits in the lower third (`FlightY`); no background, so the monitor's grid shows through; light grey ground, low ground dark, with `VOX_000.S16`; buildings as their models in orange, units as vertical lines from the ground (red hostile, green friendly, blue neutral, grey the locked target), debris green, the boat orange, the ground of water currents dark teal (`spd` 0) or light cyan (`spd` 2) |
 | D4–D6 | Slave monitors | The first monitor shows a weapon page (item name, state as a word, the torpedo's long name, its picture; F1–F4 pick gun, magazine or a turret, the same key again the overview of all weapons, appendix T), the second the armor page (`ARMOR STATE`, the silhouette with each side's percentage); Hiob's single monitor shows the weapon page; I switches between the armor page and the system state page (appendix O), never back to the weapon page |
 | D7–D8 | Master monitor | The second line shows what the target does (`GOTO`, `PATROLLING`, `ATTACKING`), `G:` its gun's short name and `T:` its torpedoes |
 | D9 | Aim help | Drawn ahead of a moving target where the shot has to go, clamped to the HUD frame |
@@ -218,9 +218,13 @@ it (`Z` −1000), turned by `Alpha` counter-clockwise from the bow, at its own
 `[Size] Scale`/32. The mission position is the middle of the hull. A big ship
 takes hits as a whole on its own `[Defense]` shield (cargo ships
 20,000–60,000, Big Fat Mama 10,000,000). The block hit takes them on its
-own shield as well (`BBLOCK*.DES`, e.g. 10,000), which only shows a small
-explosion (entry 1) where it was hit when 60 % and again 80 % of it are
-gone, and then it is whole again; a block never goes on its own. When the
+own shield as well (`BBLOCK*.DES`, e.g. 10,000): when 60 % and again 80 % of
+it are gone it shows 6 to 11 small explosions over 1.5 s (entries 8, 5, 0
+and 5 alike), each 0.05 to 0.1 of the block's radius (at most 20 m) in size,
+spread over 0.8 of that in the plane of the screen about a point 0.6 radii
+from the block's origin towards the eye and raised by 0.15 to 0.5 of its
+height, and then it is whole again; a block never goes on its own (read
+off in November 2026). When the
 ship's shield is used up (read off in October 2026) it brakes to a stop at
 its retardation, its turrets keep firing, and its blocks blow up in their
 order, the first at once and each next one 0.5 to 1.5 s after the one
@@ -229,9 +233,15 @@ faster (10 to 40 units/s²) and turns slowly (up to 0.07 rad/s about two
 axes), with the boats' bursts and the debris 2, 2, 1 at 0.9 s (36° to
 72°) and 2, 1, 2, 1 at 2.0 s (0° to 36°) plus one body (14 or 15 two
 times in five each, 16 once),
-sample 18 two times in three at the start, and a big blast (entry 2, sized
-0.35 of its radius) on its side towards the player at 2.0 s; half of its
-turrets go up at the start and the rest at 1.6 s. Ship and blocks stay
+sample 18 two times in three at the start, the bursts about the block's
+model origin within its farthest vertex, and 0.6 s after the last step a
+big blast (entry 2) of 0.35 of that radius, half the block's height up and
+its flat radius out towards the eye, which at its largest covers the whole
+block. An explosion "of a size" is scaled so that its last frame's farthest
+corner lies that far from its centre (for entries 0 to 2 a third of their
+first frames' reach). Half of the block's turrets (rounded down) go up at the
+start and the rest at 1.6 s, each in its own two seconds of explosions, and
+the block goes only with its last turret. Ship and blocks stay
 sonar contacts and targets until each is gone; the ship counts as destroyed
 when its first block is gone (in a squadron of several ships the original
 counts every block that goes, which Vertigo doesn't), and is gone with its
@@ -332,12 +342,15 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
   downward cells push 9 m/s (`spd` 2) or 4.5 m/s (`spd` 0), upward ones about
   5 m/s (`spd` 0; one of S00202's two upward cells did nothing). The engine's
   state doesn't matter, and a boat that leaves the cells coasts and slows at
-  3.5–4.7 m/s². Vertigo makes of this a steady push of 9 m/s² (`spd` 2) or
-  3.1 m/s² (`spd` 0) on the boat: its drag across its axis and the cap of twice
-  its top speed along it give the speeds above, its own retardation the
-  coasting. Affected: the player (`[Kinematics] Current`) and AI boats
-  (`[Fluid] Current`), and torpedoes at a factor of 1 like the boats (read
-  off in October 2026, appendix S); not mines or shots.
+  3.5–4.7 m/s². Read off in November 2026: the push is 200 units/s² (6.25
+  m/s²) for `spd` 0 and 400 (12.5 m/s²) for `spd` 2, an acceleration with no
+  falloff, held across the boat by its drag and along it only by its
+  engine (no cap), which gives the speeds measured above. Affected: the
+  player (`[Kinematics] Current`) and torpedoes at a factor of 1 (appendix
+  S); the missions' units don't drift (mines would at 0.2, which Vertigo
+  leaves out). The voxel radar colours a current's four map cells as
+  ground: dark teal (the shading table's entry 65) for `spd` 0, light cyan
+  (66) for `spd` 2.
 - Radiation has no data key: it is a depth rule, the same on every map
   (measured on S00701, S01801 and S00202; the rest read off in October
   2026). Its strength is 1 − depth/100 m, from 0 a hundred metres down to 1
@@ -434,13 +447,18 @@ Each movable has up to 8 order slots `o<N>…` (N = 0–7), e.g. `o0typ`,
 - 31/32: "MISSION NICHT ERFÜLLT", "AUTOPILOT NICHT VERFÜGBAR".
 - 38–48: turret order menu. 49–56: Esc menu. 57/58, 61–66: death and
   game-over menu. The autopilot menu follows.
-- 67–70: escalating friendly-fire warnings; 71: friendly object destroyed;
-  89: mission failed after three friendly kills. Vertigo counts the
-  player's hits (gun, turrets, torpedoes) on units whose faction isn't
-  hostile to the player, leaving out destroy objectives and mines: a
-  warning at most every 3 s, 71 for each friend destroyed, 89 and the
-  mission failed at the third. Texts starting with `~` or
-  `#` are red.
+- 67–69: friendly-fire warnings; 70: "one more and you are out"; 71:
+  friendly object destroyed; 89: mission failed after three friendly
+  kills. The original (read off in November 2026) notes each frame in which
+  the player's shots or torpedoes hit a unit friendly to it (faction 8;
+  Vertigo leaves out destroy objectives and mines, which the original's
+  test doesn't); ramming counts only on a big ship. Every tenth such frame
+  shows one of 67, 68 and 69 at random, after the unit's name in brackets,
+  on the radio line in green, unless another message is on it (then it is
+  lost). Each friendly kill goes only to the radio log, in amber: 71 with
+  the name, at the second also 70, at the third 89, and from the third on
+  the mission counts as failed, even an accomplished one. On the radio
+  line a text starting with `#` is red; `~` only colours the log.
 
 ### G. Sounds (`SFX/SND/SMPMAP.DES`, `NumOfVoices = 8`)
 
@@ -790,9 +808,10 @@ point says otherwise.
   between its `MinVelocity` and `MaxVelocity` times the order's percentage,
   so most tanks back away in about a third of their runs, nose on the
   target. A fixed `Gun` module (all tanks but TANK2) points along the hull
-  and only tilts, from 5° down to straight up at the hull's
-  `MaxAngleVelocityB`, and only at a target ahead, and fires only in the
-  run; TANK2's `GunTurret` (TANTUR2, whose `[StaticGun]` and `[VolleyGun]`
+  and only tilts, to the target's elevation over the hull's plane, from 5°
+  down to straight up, as a damped spring by the hull's
+  `MaxAngleAccelerationB`, `AngleFrictionB` and `MaxAngleVelocityB`, and only
+  at a target ahead, else back to level at once; it fires only in the run; TANK2's `GunTurret` (TANTUR2, whose `[StaticGun]` and `[VolleyGun]`
   it fires, not TANK2's own) turns within 90° of the front, leads the target
   and fires by itself the whole fight. Both fire within 14°, whatever the
   terrain. Goto, GotoWithArrive and Patrol drive at full speed to the end;
@@ -918,10 +937,14 @@ finer than the original's grid, so the bands along slopes fall in slightly
 different places. Against the original's pictures at s00701's start the band
 means of the ground differ by 12.5 units RMS over four views.
 
-The models follow the same rule: every vertex gets the brightness of its
-normal, turned into the camera, against the same point 8 m above and 4 m
-ahead of the eye, clamped and rounded the same way, and the polygons pick
-the row per pixel from the brightness interpolated between the corners.
+The models follow the same rule, clamped and rounded the same way, and the
+polygons pick the row per pixel from the brightness interpolated between the
+corners, but with their own light (read off in November 2026): models with
+`ShadingMode f` (every unit, turret, shot and explosion, buildings, most
+ground plans and the container freighters' blocks) are lit from the eye
+itself, so every face turned to the viewer is lit, undersides too; those
+with `ShadingMode g` (the battleship blocks and a few ground plans) from a
+point 4 m above and 8 m behind the eye.
 There is no other light on them, neither a headlight nor an ambient colour.
 Their own shading tables (`MOD_nnn.S16`) hold the palette itself in the last
 row, not twice it, with the same blue F in the first, so a model at the eye

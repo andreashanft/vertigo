@@ -69,8 +69,9 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     m_maxAngleVelocity = Vector3D(file.value("MaxAngleVelocityB").toFloat(), file.value("MaxAngleVelocityC").toFloat(), file.value("MaxAngleVelocityA").toFloat());
     m_maxAngleAcceleration = Vector3D(file.value("MaxAngleAccelerationB").toFloat(), file.value("MaxAngleAccelerationC").toFloat(), file.value("MaxAngleAccelerationA").toFloat());
     m_angleFriction = Vector3D(-file.value("AngleFrictionB").toFloat(), -file.value("AngleFrictionC").toFloat(), -file.value("AngleFrictionA").toFloat());
-    file.setSection("fluid");
-    m_currentFactor = file.value("Current", 1).toFloat();
+    // the units of the missions don't drift in the currents, only the player's boat does
+    // (its [Kinematics] Current; docs/ROADMAP.md, appendix D)
+    m_currentFactor = 0;
     file.setSection("buzzermagazine");
     if (file.contains("Type"))
     {
@@ -382,7 +383,7 @@ void SimpleBoat::updateVelocity(float elapsedTime)
 {
     Vector3D velocity = m_orientation * m_velocity;
     // the water's drag, and a current's push: a steady push is held by the drag across the boat
-    // and by the cap along its axis (docs/ROADMAP.md, appendix D)
+    // and by the engine along its axis (docs/ROADMAP.md, appendix D)
     Vector3D acceleration = velocity*m_orientationFriction + m_orientation*(m_scenario->current(m_position)*m_currentFactor + m_push);
 
     // the booster pushes the boat to twice its top speed whatever the throttle says
@@ -395,8 +396,6 @@ void SimpleBoat::updateVelocity(float elapsedTime)
     acceleration.y += orientationAcceleration;
 
     velocity += acceleration*elapsedTime;
-    // nothing pushes the boat past twice its top speed along its axis
-    velocity.y = glm::clamp(velocity.y, 2*m_minVelocity, 2*m_maxVelocity);
     m_velocity = m_orientationInverted * velocity;
 }
 

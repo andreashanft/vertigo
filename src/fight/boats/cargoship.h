@@ -122,6 +122,10 @@ private:
         BoundingBox box;    // ship coordinates
         bool destroyed = false;
         CargoSegment *segment = nullptr;
+        bool gouraud = false;   // [Display] ShadingMode g (docs/ROADMAP.md, appendix M)
+        float radius = 0;       // the model's farthest vertex from its origin (metres) ...
+        float flatRadius = 0;   // ... from its vertical
+        float top = 0;          // its highest point over its origin
         int shield = 0;     // its own kinetic shield, for the explosions under fire
         int shieldMax = 0;
         bool hitHard = false;
@@ -150,6 +154,7 @@ private:
     // the block's part of the sequence that follows the ship's destruction
     void updateBlock(int index, float elapsedTime);
     Vector3D blockCenter(const Block &block) const; // world
+    Vector3D blockOrigin(const Block &block) const; // world: the model's origin, as it has moved
     float blockRadius(const Block &block) const;
     Matrix blockTransform(const Block &block) const; // ship coordinates
     Matrix blockMotion(const Block &block) const;

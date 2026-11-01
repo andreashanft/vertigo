@@ -174,8 +174,9 @@ void ActiveObject::damage(int kinetic, int shock, const Vector3D &position, Acti
         explode();
     }
 
-    if (attacker && attacker != this && attacker == m_scenario->player())
-        m_scenario->playerHit(this, !wasDying && isDying());
+    // (a unit already dying takes no more hits)
+    if (attacker && attacker != this && attacker == m_scenario->player() && !wasDying)
+        m_scenario->playerHit(this, isDying());
 }
 
 
@@ -395,8 +396,7 @@ void ActiveObject::updateLaterExplosions()
         }
         m_laterExplosions.erase(m_laterExplosions.begin() + i);
         const Effects effect = Effects(int(Effects::Explosion_0) + explosion.type);
-        const float sizeScale = std::max(1e-3f, m_scenario->effectManager().getBillboard(effect)->sizeScale());
-        m_scenario->effectManager().addEffect(effect, explosion.position, 0, explosion.scale/sizeScale);
+        m_scenario->effectManager().addEffect(effect, explosion.position, 0, m_scenario->effectManager().fitScale(effect, explosion.scale));
         const Vector3D &at = explosion.position;
         sfx::SampleMap::playAt(explosion.type < 3 ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, at.x, at.y, at.z);
         m_scenario->explosionAt(at, explosion.type < 3 ? 1.0f : 0.3f);

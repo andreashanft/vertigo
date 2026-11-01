@@ -123,6 +123,8 @@ public:
     // the CD track of the mission's music, as numbered on the CD (0: none)
     int cdTrack() const { return m_cdTrack > 0 ? m_cdTrack + 1 : 0; }
     float time() const { return m_time; }
+    // the light the models are shaded with: at the eye, or for ShadingMode g above and behind it
+    void shadeModels(bool gouraud);
     // the time the current frame advances the mission by (seconds)
     float frameTime() const { return m_frameTime; }
     int buzzers() const { return m_buzzers; }
@@ -133,6 +135,8 @@ public:
     int playerId() const { return m_playerId; }
     // the player hit a unit; warns and fails the mission when it is a friend (see friendlyFire in scenario.cpp)
     void playerHit(ActiveObject *unit, bool destroyed);
+    // the player's boat runs into the units it damages now (not its shots)
+    void setPlayerRamming(bool ramming) { m_playerRamming = ramming; }
     // whether the player's hits on the unit (the mission's object id) are friendly fire
     bool isFriendlyFire(int id, const ActiveObject *unit) const;
     // the player's boat is destroyed: the death view watches its destruction sequence from
@@ -172,7 +176,7 @@ public:
 
     // the water current's push at a position (m/s²), that of the cell the position is in
     Vector3D current(const Vector3D &position) const;
-    struct CurrentCell { int x; int y; Vector3D push; };     // x, y: first map cell of the 2x2 block; the push in m/s²
+    struct CurrentCell { int x; int y; Vector3D push; int spd; };   // x, y: first map cell of the 2x2 block; the push in m/s²
     const std::vector<CurrentCell>& currentCells() const { return m_currentCells; }
     gfx::TextureManager& textureManager() { return m_textureManager; }
     ModuleManager& moduleManager() { return m_moduleManager; }
@@ -292,13 +296,17 @@ private:
     char m_attitudeMatrix[9][9];
     int m_endType;
     int m_playerId;
-    int m_friendlyWarnings = 0;
+    int m_friendlyHits = 0;          // frames with a hit on a friend
     int m_friendlyKills = 0;
-    float m_lastFriendlyWarning = -100;
+    ActiveObject *m_friendlyHit = nullptr;     // this frame's
+    ActiveObject *m_friendlyKilled = nullptr;
+    void updateFriendlyFire();
+    bool m_playerRamming = false;
     ConditionEvent m_eventPlayerDestroyed;
 
     float m_time;
     float m_frameTime = 0;
+    gfx::Pipeline::TableShading m_modelShading = {};
     float m_failTime = -1;      // when the mission failed, -1 while it hasn't
     void updateDecoyContacts();
     void setEye(const Matrix &cameraInverted);

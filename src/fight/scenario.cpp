@@ -92,11 +92,10 @@ void Scenario::overrideDifficulty(int difficulty)
 
 namespace {
 
-// how hard a current pushes a boat (m/s²) for spd 0 and spd 2, from the original's measured
-// drifts (docs/ROADMAP.md, appendix D): the boat's own drag across and the cap of twice its top
-// speed along its axis set the speeds reached, about 19 m/s across and 41 m/s along for spd 2
-const float CurrentPushSlow = 3.1f;
-const float CurrentPushFast = 9.0f;
+// how hard a current pushes (m/s²) for spd 0 and spd 2 (docs/ROADMAP.md, appendix D): 200 and 400
+// game units/s²; the boat's own drag across its axis and its engine along it set the speeds reached
+const float CurrentPushSlow = 6.25f;
+const float CurrentPushFast = 12.5f;
 
 // the player and active buildings face one of four ways, card 0, 2, 4 or 6; any other card leaves
 // them facing as card 0 does (cargo ships take all eight)
@@ -589,7 +588,13 @@ Scenario::Scenario(const String &name) :
             loadIssue(String("unhandled: current typ %1 pz %2").arg(m_file.value("typ").toInt()).arg(m_file.value("pz").toInt()));
 
         const int card = m_file.value("card").toInt();
-        const float push = m_file.value("spd").toInt() == 0 ? CurrentPushSlow : CurrentPushFast;
+        const int speed = m_file.value("spd").toInt();
+        if (speed != 0 && speed != 2)
+        {
+            loadIssue(String("unhandled: current spd %1").arg(speed));
+            continue;
+        }
+        const float push = speed == 0 ? CurrentPushSlow : CurrentPushFast;
         Vector3D direction;
         if (card == 8)
             direction = Vector3D(0, 0, 1);
@@ -600,7 +605,7 @@ Scenario::Scenario(const String &name) :
 
         const int x = m_file.value("px").toInt();
         const int y = m_file.value("py").toInt();
-        m_currentCells.push_back({ x, y, direction*push });
+        m_currentCells.push_back({ x, y, direction*push, speed });
         m_currentGrid[std::make_pair(x/2, y/2)] = direction*push;
     }
 
@@ -727,6 +732,7 @@ void Scenario::update(float elapsedTime)
     m_outsideView.update(elapsedTime);
     setEye(outside() ? m_outsideView.matrixInverted() : m_cameraMatrixInverted);
 
+    updateFriendlyFire();
     m_conditionManager.update(elapsedTime);
     if (m_failTime < 0 && m_conditionManager.failed())
         m_failTime = m_time;
@@ -894,11 +900,14 @@ void Scenario::draw(const Matrix &projection, const Matrix &camera)
     const float brightness = this->brightness();
     m_surface.draw(m_eye, -m_eyeAxes[2], brightness);
 
-    // the models take their rows of the shading tables by the terrain's rule, from the same
-    // light at the eye, without any light of their own; their tables hold the palette itself
-    // in the last row
+    // the models take their rows of the shading tables by the terrain's rule, without any light
+    // of their own; their tables hold the palette itself in the last row. Most are shaded with
+    // the light at the eye, so every face turned to it is lit; those with ShadingMode g (the big
+    // ships' battleship blocks, a few ground plans) from a light 4 m above and 8 m behind it
+    // (docs/ROADMAP.md, appendix M)
     gfx::Pipeline::setLighting(false);
-    gfx::Pipeline::setTableShading(m_surface.shading(brightness));
+    m_modelShading = m_surface.shading(brightness);
+    shadeModels(false);
     gfx::Pipeline::setTableShading(true);
     for (const auto &object : m_objects)
         if (object->isEnabled())
@@ -1063,37 +1072,61 @@ void Scenario::loadIssue(const String &text)
 }
 
 
-// Friendly fire: hits on units that aren't hostile to the player (faction 8), aren't destroy objectives or mines
-// get escalating warnings (texts 67-70, at most one every 3 s); each friendly kill is reported (71),
-// and the third fails the mission (89).
+// Friendly fire (docs/ROADMAP.md, appendix C): a hit by the player's shots or torpedoes on a unit
+// friendly to the player (faction 8), not a destroy objective or a mine, notes the unit for the frame;
+// a ram counts only on a big ship
 void Scenario::playerHit(ActiveObject *unit, bool destroyed)
 {
+    if (m_playerRamming && !dynamic_cast<CargoShip *>(unit))
+        return;
     int id = -1;
     for (const auto &record : m_records)
         if (record.object == unit)
             id = record.id;
     if (!isFriendlyFire(id, unit))
         return;
+    (destroyed ? m_friendlyKilled : m_friendlyHit) = unit;
+}
 
-    auto say = [this, unit](int text) {
-        m_conditionManager.addCondRadio(unit->position(), txt::StringTable::get(txt::StringFight(text)))->complete();
-    };
-    if (destroyed)
+
+// Once a frame: every tenth frame with a friendly hit shows one of three warnings (67-69) with the
+// unit's name on the radio line, unless something else is on it; each friendly kill goes to the
+// radio log (71 with the name), the second also 70, the third 89, and from then on the mission
+// counts as failed, even an accomplished one
+void Scenario::updateFriendlyFire()
+{
+    if (m_friendlyHit && ++m_friendlyHits % 10 == 0 && (m_radio.empty() || m_time >= m_radio.back()->time() + 5.0f))
     {
+        const float u = util::random()/float(RAND_MAX);
+        const int text = u < 0.33f ? 67 : u < 0.66f ? 68 : 69;
+        m_conditionManager.addCondRadio(m_friendlyHit->position(),
+            "(" + m_friendlyHit->name() + ") " + txt::StringTable::get(txt::StringFight(text)))->complete();
+    }
+    m_friendlyHit = nullptr;
+    if (m_friendlyKilled)
+    {
+        auto entry = [](int text) {
+            const String line = txt::StringTable::get(txt::StringFight(text));
+            return line.startsWith("~") ? line.mid(1) : line;
+        };
         m_friendlyKills++;
-        say(71);
-        if (m_friendlyKills >= 3)
-        {
-            say(89);
-            m_conditionManager.fail();
-        }
+        log(entry(71) + " (" + m_friendlyKilled->name() + ")", LogColor::Amber);
+        if (m_friendlyKills == 2)
+            log(entry(70), LogColor::Amber);
+        if (m_friendlyKills == 3)
+            log(entry(89), LogColor::Amber);
+        m_friendlyKilled = nullptr;
     }
-    else if (m_time - m_lastFriendlyWarning >= 3.0f)
-    {
-        say(67 + std::min(m_friendlyWarnings, 3));
-        m_friendlyWarnings++;
-        m_lastFriendlyWarning = m_time;
-    }
+    if (m_friendlyKills >= 3)
+        m_conditionManager.failForced();
+}
+
+
+void Scenario::shadeModels(bool gouraud)
+{
+    gfx::Pipeline::TableShading shading = m_modelShading;
+    shading.origin = gouraud ? Vector3D(0, 4, 8) : Vector3D(0);
+    gfx::Pipeline::setTableShading(shading);
 }
 
 
