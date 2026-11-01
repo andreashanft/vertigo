@@ -118,15 +118,18 @@ let peek = false;                  // Space held: the original on top
 // ---------- style ----------
 // colours read off the original: its outline, the bright first and the darker second row of a stroke
 const STYLE0 = {
+  weight: { on: false, grow: 0 },
   outline: { on: true, color: '#25201a', width: 1.25, join: 'bevel' },
-  bevel: { on: true, lit: '#d4d2e4', litBand: 0.75, mid: '#a9a5ad', shade: '#8c8890', shadeBand: 0.75 },
+  bevel: { on: true, lit: '#d4d2e4', litBand: 0.75, mid: '#a9a5ad', shade: '#8c8890', shadeBand: 0.75, side: 1, steps: 1 },
   grain: { on: true, source: 'random', cell: '1', amount: 0.5, blend: 'overlay', seed: 1, crisp: true },
   palette: { on: false },
 };
 const SPEC = [
+  ['weight', 'Weight', [['grow', 'grow', 'range', 0, 1, 0.05]]],
   ['outline', 'Outline', [['color', 'colour', 'color'], ['width', 'width', 'range', 0, 2.5, 0.05], ['join', 'corners', 'select', ['bevel', 'miter', 'round']]]],
   ['bevel', 'Light and shade', [['lit', 'lit (top / left)', 'color'], ['litBand', 'lit band', 'range', 0, 2, 0.05],
-                                ['mid', 'body', 'color'], ['shade', 'shade (bottom / right)', 'color'], ['shadeBand', 'shade band', 'range', 0, 2, 0.05]]],
+                                ['mid', 'body', 'color'], ['shade', 'shade (bottom / right)', 'color'], ['shadeBand', 'shade band', 'range', 0, 2, 0.05],
+                                ['side', 'bands at the sides', 'range', 0, 2, 0.05], ['steps', 'steps', 'range', 1, 8, 1]]],
   ['grain', 'Grain', [['source', 'source', 'select', ['random', 'original']], ['cell', 'cell size', 'select', ['1', '0.5', '0.25']],
                       ['amount', 'amount', 'range', 0, 1, 0.02], ['blend', 'blend', 'select', ['overlay', 'soft-light', 'hard-light', 'multiply', 'screen', 'normal']],
                       ['seed', 'seed', 'number'], ['crisp', 'crisp cells', 'check']]],
@@ -216,14 +219,23 @@ function paletteFilter(id, box) {
 function styled(items, W, Hh) {
   const d = items.map(it => pathD(it.g.rings, it.x, it.y)).join('');
   if (!d) return '';
-  const o = style.outline, b = style.bevel, gr = style.grain;
+  const o = style.outline, b = style.bevel, gr = style.grain, grow = style.weight.on ? Math.max(0, style.weight.grow) : 0;
   const box = `x="-3" y="-3" width="${W + 6}" height="${Hh + 6}"`;
-  let defs = `<clipPath id="@@c"><path d="${d}" clip-rule="evenodd"/></clipPath>`, out = '';
-  if (o.on && o.width > 0) out += `<path d="${d}" fill="${o.color}" fill-rule="evenodd" stroke="${o.color}" stroke-width="${2 * o.width}" stroke-linejoin="${o.join}" stroke-miterlimit="4"/>`;
+  // the glyph, grown by the weight: stroked as wide, with the outline's corners
+  const shape = (fill, extra = '') => `<path d="${d}" fill="${fill}" fill-rule="evenodd"${grow > 0 ? ` stroke="${fill}" stroke-width="${2 * grow}" stroke-linejoin="${o.join}" stroke-miterlimit="4"` : ''}${extra}/>`;
+  let defs = grow > 0 ? `<mask id="@@c" maskUnits="userSpaceOnUse" ${box}>${shape('#fff')}</mask>` : `<clipPath id="@@c"><path d="${d}" clip-rule="evenodd"/></clipPath>`, out = '';
+  if (o.on && o.width > 0) out += `<path d="${d}" fill="${o.color}" fill-rule="evenodd" stroke="${o.color}" stroke-width="${2 * (grow + o.width)}" stroke-linejoin="${o.join}" stroke-miterlimit="4"/>`;
   let inner = `<rect ${box} fill="${b.mid}"/>`;
+  // a band is the glyph without itself moved away from the light (at the sides by side times as
+  // much); in steps, the moves are the steps' parts of the band, painted from the widest at 1/k,
+  // so that a point takes as much of the colour as steps leave it outside
   const band = (id, dd, col) => {
-    defs += `<mask id="@@${id}" maskUnits="userSpaceOnUse" ${box}><path d="${d}" fill="#fff" fill-rule="evenodd"/><path d="${d}" fill="#000" fill-rule="evenodd" transform="translate(${dd} ${dd})"/></mask>`;
-    inner += `<rect ${box} fill="${col}" mask="url(#@@${id})"/>`;
+    const n = Math.max(1, Math.trunc(b.steps));
+    for (let k = n; k >= 1; k--) {
+      const t = dd * k / n;
+      defs += `<mask id="@@${id}${k}" maskUnits="userSpaceOnUse" ${box}>${shape('#fff')}${shape('#000', ` transform="translate(${t * b.side} ${t})"`)}</mask>`;
+      inner += `<rect ${box} fill="${col}" mask="url(#@@${id}${k})"${k > 1 ? ` opacity="${1 / k}"` : ''}/>`;
+    }
   };
   if (b.on && b.litBand > 0) band('l', b.litBand, b.lit);
   if (b.on && b.shadeBand > 0) band('s', -b.shadeBand, b.shade);
@@ -231,7 +243,7 @@ function styled(items, W, Hh) {
     const t = texture(items, W, Hh);
     inner += `<image href="${t.url}" x="0" y="0" width="${t.w}" height="${t.h}" preserveAspectRatio="none" opacity="${gr.amount}" style="mix-blend-mode:${gr.blend};${gr.crisp ? 'image-rendering:pixelated' : ''}"/>`;
   }
-  out += `<g clip-path="url(#@@c)" style="isolation:isolate">${inner}</g>`;
+  out += `<g ${grow > 0 ? 'mask' : 'clip-path'}="url(#@@c)" style="isolation:isolate">${inner}</g>`;
   if (style.palette.on && PAL.length) { defs += paletteFilter('@@q', box); out = `<g filter="url(#@@q)">${out}</g>`; }
   return `<defs>${defs}</defs>${out}`;
 }

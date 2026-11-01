@@ -2,7 +2,7 @@
 
 A vector font to recreate the game's main menu silver font in high res. The font
 editor is a browser tool to modify the vector font on a glyph basis. With it, the shape 
-of a letter on a pixel level as well as the outline, light and shade,
+of a letter on a pixel level as well as the weight, outline, light and shade,
 and grain layers that give the vectors the look of the game's font, can be edited.
 
 | File | |
