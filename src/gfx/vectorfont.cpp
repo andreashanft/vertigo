@@ -249,8 +249,10 @@ bool VectorFont::parse(const std::string &text)
         return false;
 
     const util::Json &style = json["style"];
-    const util::Json &outline = style["outline"], &bevel = style["bevel"], &grain = style["grain"];
+    const util::Json &weight = style["weight"], &outline = style["outline"], &bevel = style["bevel"], &grain = style["grain"];
     Style s;
+    s.weight = weight["on"].toBool(s.weight);
+    s.grow = weight["grow"].toDouble(s.grow);
     s.outline = outline["on"].toBool(s.outline);
     s.outlineColor = parseColor(outline["color"], s.outlineColor);
     s.outlineWidth = outline["width"].toDouble(s.outlineWidth);
@@ -260,8 +262,11 @@ bool VectorFont::parse(const std::string &text)
     s.lit = parseColor(bevel["lit"], s.lit);
     s.litBand = bevel["litBand"].toDouble(s.litBand);
     s.mid = parseColor(bevel["mid"], s.mid);
+    s.low = parseColor(bevel["low"], s.mid);
     s.shade = parseColor(bevel["shade"], s.shade);
     s.shadeBand = bevel["shadeBand"].toDouble(s.shadeBand);
+    s.side = bevel["side"].toDouble(s.side);
+    s.steps = std::max(1, int(bevel["steps"].toDouble(s.steps)));
     s.grain = grain["on"].toBool(s.grain);
     s.grainOriginal = grain["source"].toString() == "original";
     // (the editor keeps the cell size as the text of its choice)
@@ -327,19 +332,39 @@ Image VectorFont::render(int code, int w, int h, int scale, const Image &origina
     const double x0 = cx - w/2.0/pixelsPerUnit, y0 = cy - h/2.0/pixelsPerUnit;
     const double perUnit = pixelsPerUnit*scale*Samples;
     const int sw = w*scale*Samples, sh = h*scale*Samples;
-    Mask fillMask(sw, sh, perUnit, x0, y0);
-    fill(fillMask, glyph.rings);
+    // the glyph, grown by the weight, moved by (dx, dy)
+    const double grow = s.weight ? std::max(0.0, s.grow) : 0;
+    const std::vector<Ring> grown = grow > 0 ? stroke(glyph.rings, grow, s.join) : std::vector<Ring>();
+    auto glyphMask = [&](double dx, double dy) {
+        Mask mask(sw, sh, perUnit, x0, y0);
+        fill(mask, glyph.rings, dx, dy);
+        for (const Ring &piece : grown)
+            fill(mask, { piece }, dx, dy);
+        return mask;
+    };
+    const Mask fillMask = glyphMask(0, 0);
     Mask outlineMask = fillMask;
     if (s.outline && s.outlineWidth > 0)
-        for (const Ring &piece : stroke(glyph.rings, s.outlineWidth, s.join))
+        for (const Ring &piece : stroke(glyph.rings, grow + s.outlineWidth, s.join))
             fill(outlineMask, { piece });
-    // the lit band is where the glyph moved down and right isn't, the shade where moved up and left isn't
+    // the lit band is where the glyph moved down and right (away from the light) isn't, the shade
+    // where moved up and left isn't; in steps, the glyph is moved by each step's part of the band,
+    // and a sample takes as much of the band's colour as steps leave it outside
     const bool lit = s.bevel && s.litBand > 0, shade = s.bevel && s.shadeBand > 0;
-    Mask litMask(sw, sh, perUnit, x0, y0), shadeMask = litMask;
-    if (lit)
-        fill(litMask, glyph.rings, s.litBand, s.litBand);
-    if (shade)
-        fill(shadeMask, glyph.rings, -s.shadeBand, -s.shadeBand);
+    std::vector<Mask> litMasks, shadeMasks;
+    for (int k = 1; k <= s.steps; k++) {
+        const double l = s.litBand*k/s.steps, d = s.shadeBand*k/s.steps;
+        if (lit)
+            litMasks.push_back(glyphMask(l*s.side, l));
+        if (shade)
+            shadeMasks.push_back(glyphMask(-d*s.side, -d));
+    }
+    auto outside = [](const std::vector<Mask> &masks, int i, int j) {
+        int n = 0;
+        for (const Mask &mask : masks)
+            n += !mask.at(i, j);
+        return double(n)/masks.size();
+    };
 
     // the grain: a grey per cell, 128 neutral, over the editor's whole cell
     const bool grain = s.grain && s.grainAmount > 0;
@@ -391,7 +416,8 @@ Image VectorFont::render(int code, int w, int h, int scale, const Image &origina
         }
     }
 
-    const Color outlineColor = color(s.outlineColor), litColor = color(s.lit), midColor = color(s.mid), shadeColor = color(s.shade);
+    const Color outlineColor = color(s.outlineColor), litColor = color(s.lit), midColor = color(s.mid), lowColor = color(s.low),
+                shadeColor = color(s.shade);
     for (int ty = 0; ty < h*scale; ty++) {
         std::uint8_t *out = image.scanLine(ty);
         for (int tx = 0; tx < w*scale; tx++, out += 4) {
@@ -406,11 +432,13 @@ Image VectorFont::render(int code, int w, int h, int scale, const Image &origina
                     if (!fillMask.at(i, j)) {
                         c = outlineColor;
                     } else {
-                        c = midColor;
-                        if (lit && !litMask.at(i, j))
-                            c = litColor;
-                        if (shade && !shadeMask.at(i, j))
-                            c = shadeColor;
+                        // the body from the top of the capitals (a unit into the cell) to the baseline
+                        const double t = std::clamp((y0 + (j + 0.5)/perUnit - 1)/(CellHeight - 2), 0.0, 1.0);
+                        for (int k = 0; k < 3; k++)
+                            c[k] = midColor[k]*(1 - t) + lowColor[k]*t;
+                        const double l = lit ? outside(litMasks, i, j) : 0, d = shade ? outside(shadeMasks, i, j) : 0;
+                        for (int k = 0; k < 3; k++)
+                            c[k] = (c[k]*(1 - l) + litColor[k]*l)*(1 - d) + shadeColor[k]*d;
                         if (grain) {
                             const double g = grainAt(x0 + (i + 0.5)/perUnit, y0 + (j + 0.5)/perUnit);
                             for (double &channel : c)

@@ -86,6 +86,37 @@ int main()
                             "\"grain\": { \"on\": false }, " + Plain + " }")));
     CHECK_EQUAL(alpha(vector.render(0x41, 11, 12, 2), 2, 2), 255);
 
+    // a weight grows the glyph by half a unit: the texel from 1.5 to 2 is its inside now
+    CHECK(vector.parse(font("{ \"weight\": { \"on\": true, \"grow\": 0.5 }, \"outline\": { \"on\": false }, "
+                            "\"grain\": { \"on\": false }, " + Plain + " }")));
+    image = vector.render(0x41, 11, 12, 2);
+    CHECK_EQUAL(alpha(image, 3, 12), 255);
+    CHECK_EQUAL(red(image, 3, 12), 0xa0);
+    CHECK_EQUAL(alpha(image, 2, 12), 0);
+
+    // a lit band of a unit in two steps: white in the first half unit below the top edge, half
+    // white in the second, the body below; with no band at the sides, none at the left edge
+    const std::string lit = "\"bevel\": { \"on\": true, \"lit\": \"#ffffff\", \"litBand\": 1, \"mid\": \"#000000\", \"shadeBand\": 0, "
+                            "\"steps\": 2, \"side\": ";
+    CHECK(vector.parse(font("{ \"outline\": { \"on\": false }, \"grain\": { \"on\": false }, " + lit + "1 }, \"palette\": { \"on\": false } }")));
+    image = vector.render(0x41, 11, 12, 2);
+    CHECK_EQUAL(red(image, 11, 4), 255);
+    CHECK_EQUAL(red(image, 11, 5), 128);
+    CHECK_EQUAL(red(image, 11, 6), 0);
+    CHECK_EQUAL(red(image, 4, 12), 255);
+    CHECK(vector.parse(font("{ \"outline\": { \"on\": false }, \"grain\": { \"on\": false }, " + lit + "0 }, \"palette\": { \"on\": false } }")));
+    image = vector.render(0x41, 11, 12, 2);
+    CHECK_EQUAL(red(image, 11, 4), 255);
+    CHECK_EQUAL(red(image, 4, 12), 0);
+
+    // a body from black at the top of the capitals (a unit into the cell) to white at the baseline
+    // (a unit above the cell's bottom): the texels from 2 to 2.5 and from 9.5 to 10 units down
+    CHECK(vector.parse(font("{ \"outline\": { \"on\": false }, \"grain\": { \"on\": false }, \"bevel\": { \"on\": true, "
+                            "\"litBand\": 0, \"shadeBand\": 0, \"mid\": \"#000000\", \"low\": \"#ffffff\" }, \"palette\": { \"on\": false } }")));
+    image = vector.render(0x41, 11, 12, 2);
+    CHECK_EQUAL(red(image, 11, 4), 32);
+    CHECK_EQUAL(red(image, 11, 19), 223);
+
     // grain alone, crisp cells of a unit: the cell's grey, 128 + 127 times the random value from -1 to 1
     CHECK(vector.parse(font("{ \"outline\": { \"on\": false }, \"grain\": { \"on\": true, \"source\": \"random\", \"cell\": \"1\", "
                             "\"amount\": 1, \"blend\": \"normal\", \"seed\": 1, \"crisp\": true }, " + Plain + " }")));

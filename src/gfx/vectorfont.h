@@ -29,8 +29,9 @@ namespace gfx {
 
 // The silver font (DPLARGE) redrawn as vectors with the font editor in data/font, as it saves it
 // (vertigo-mono.json): each glyph a set of polygons, filled even-odd, in a cell of 11 x 12 units
-// whose units are the game glyph's pixels, and one style for all of them: an outline, light and
-// shade bands, grain and the game's palette. A glyph is drawn at any scale over the box of the
+// whose units are the game glyph's pixels, and one style for all of them: a weight, an outline,
+// a body (one colour, or from the top down to the baseline a gradient), light and shade bands
+// (hard, or ramps of steps), grain and the game's palette. A glyph is drawn at any scale over the box of the
 // game's glyph it replaces, so text keeps the game's widths and places. It looks as the editor
 // shows it. The glyphs are drawn for the large font; the medium and small silver fonts take them
 // shrunk to their height.
@@ -73,6 +74,8 @@ private:
 
     struct Style
     {
+        bool weight = false;
+        double grow = 0;    // the glyph made bolder: grown by this much to each side, with the outline's corners
         bool outline = true;
         Rgb outlineColor = 0xff25201a;
         double outlineWidth = 1.25;
@@ -81,8 +84,11 @@ private:
         Rgb lit = 0xffd4d2e4;
         double litBand = 0.75;
         Rgb mid = 0xffa9a5ad;
+        Rgb low = 0xffa9a5ad;   // the body at the baseline, mid at the top
         Rgb shade = 0xff8c8890;
         double shadeBand = 0.75;
+        double side = 1;    // the bands at the sides as wide as this times those at the top and bottom
+        int steps = 1;      // the bands in steps, each as much lighter or darker
         bool grain = true;
         bool grainOriginal = false;
         double grainCell = 1;
