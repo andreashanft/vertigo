@@ -19,7 +19,8 @@ Features:
 * Input: Keyboard, game controllers and touch on the iPad
 * Experimental: 3D cockpits for widescreen and, in the future, VR
 
-While the rewrite is fairly done, some details are still open as well as thorough playtesting, see [docs/TODO.md](docs/TODO.md)
+While the rewrite is fairly done, some details are still open as well as thorough playtesting, see [docs/TODO.md](docs/TODO.md).
+
 How the original behaves is collected in [docs/KNOWLEDGE.md](docs/KNOWLEDGE.md).
 
 ## Contents
