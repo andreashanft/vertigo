@@ -87,7 +87,7 @@ bool knownScenario(const String &name)
 Vertigo::Vertigo(const Options &options) :
     m_options(options),
     // automated runs (with a time limit) shouldn't take the focus (on macOS see also main())
-    m_window(options.timeout <= 0),
+    m_window(options.timeout <= 0, options.windowWidth, options.windowHeight),
     // automated runs (headless, with a time limit, or checking missions) are silent
     m_soundSystem(options.headless || options.timeout > 0 || options.check),
     m_mainMenu(
@@ -124,6 +124,30 @@ int Vertigo::start()
 
     if (m_options.scenario.isEmpty()) {
         m_window.setRenderer(&m_mainMenu);
+        if (m_options.newGame) {
+            // straight to the first station (or the one asked for), as a game that is never saved
+            m_name = "Screenshot";
+            createChapter();
+            m_chapter->setScreenshotRun();
+            m_chapter->loadChapter(1);
+            if (!m_options.station.isEmpty()) {
+                int index = -1;
+                for (const auto &entry : m_chapter->stations())
+                    if (entry.second.shortName().toLower() == m_options.station.toLower())
+                        index = entry.first;
+                if (index < 0) {
+                    std::cerr << "Unknown station " << m_options.station << " in the first chapter's area" << std::endl;
+                    return ExitUsage;
+                }
+                m_chapter->setStation(index);
+            }
+        } else if (m_options.openMission != 0) {
+            if (m_options.openMission < 2049 || m_options.openMission > 2052) {
+                std::cerr << "Unknown boat type " << m_options.openMission << " (2049-2052)" << std::endl;
+                return ExitUsage;
+            }
+            startOpenMission(m_options.openMission);
+        }
     } else {
         if (!knownScenario(m_options.scenario))
             return ExitUsage;

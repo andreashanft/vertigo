@@ -69,6 +69,8 @@ public:
     void saveGame(const SavedGame &slot, const String &name) const;
     void loadGame(const std::string &path);
     void loadChapter(int chapter);
+    // a screenshot run: the game is never saved and no movie plays
+    void setScreenshotRun() { m_screenshotRun = true; }
     void setStation(int station, bool load = false);
     Area* area() const { return m_area; }
     const std::map<int, Station>& stations() const { return m_stations; }
@@ -160,6 +162,7 @@ private:
     std::unique_ptr<hud::HUD> m_HUD;
     txt::DesFile m_tasksFile;
     bool m_save;
+    bool m_screenshotRun = false;
     Boat *m_boat;
     // the boat as it left for the mission, for starting it again
     std::unique_ptr<Boat> m_boatAtStart;

@@ -23,6 +23,7 @@
 #include "gfx/image.h"
 #include "gfx/upscaled.h"
 #include "util/error.h"
+#include "util/path.hpp"
 #include "util/settings.hpp"
 
 #include <SDL3/SDL.h>
@@ -140,7 +141,8 @@ const float TriggerRelease = 0.3f;
 } // namespace
 
 
-Window::Window(bool focusable)
+Window::Window(bool focusable, int width, int height) :
+    m_fixedSize(width > 0 && height > 0)
 {
     // the depth and stencil buffers of the QGLWidget this replaced; gfx::Pipeline's shader needs
     // OpenGL 3.2 (core profile) or OpenGL ES 3
@@ -192,7 +194,10 @@ Window::Window(bool focusable)
     updateCursor();
 #if !defined(SDL_PLATFORM_IOS)
     // (on iOS the window is the screen)
-    loadSettings();
+    if (m_fixedSize)
+        SDL_SetWindowSize(m_window, width, height);
+    else
+        loadSettings();
 #endif
 }
 
@@ -326,9 +331,26 @@ void Window::render()
     }
 
     if (!m_screenshots.empty()) {
-        // the frame is still in the back buffer
+        // the frame is still in the back buffer. It is multisampled, which OpenGL ES can't read
+        // from (the desktop drivers resolve it themselves), so it is resolved into a plain
+        // framebuffer first and read from there
+        GLint bound = 0;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound);
+        GLuint framebuffer = 0, colour = 0;
+        glGenFramebuffers(1, &framebuffer);
+        glGenRenderbuffers(1, &colour);
+        glBindRenderbuffer(GL_RENDERBUFFER, colour);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, viewportWidth, viewportHeight);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colour);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, GLuint(bound));
+        glBlitFramebuffer(0, 0, viewportWidth, viewportHeight, 0, 0, viewportWidth, viewportHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
         gfx::Image image(viewportWidth, viewportHeight, gfx::Image::RGBA8888);
         glReadPixels(0, 0, viewportWidth, viewportHeight, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+        glBindFramebuffer(GL_FRAMEBUFFER, GLuint(bound));
+        glDeleteFramebuffers(1, &framebuffer);
+        glDeleteRenderbuffers(1, &colour);
         image = image.flipped().convertToFormat(gfx::Image::RGB888);
         for (const std::string &file : m_screenshots) {
             if (!image.save(file))
@@ -348,6 +370,14 @@ void Window::swapBuffers()
 
 void Window::saveScreenshot(const std::string &fileName)
 {
+#if defined(SDL_PLATFORM_IOS)
+    // a relative path goes into the app's Documents folder, which the Files app shows
+    if (!fileName.empty() && fileName[0] != '/') {
+        const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+        m_screenshots.push_back(util::joinPath(documents ? documents : ".", fileName));
+        return;
+    }
+#endif
     m_screenshots.push_back(fileName);
 }
 
@@ -598,6 +628,8 @@ void Window::toggleFullScreen()
 
 void Window::saveSettings()
 {
+    if (m_fixedSize)
+        return;
     // a maximized window comes back with its size, but not as maximized: on
     // macOS, maximizing a window of that size would shrink it again
     std::ostringstream geometry;

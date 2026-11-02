@@ -50,6 +50,7 @@ constexpr void (*glBindFragDataLocation)(GLuint, GLuint, const GLchar *) = nullp
     X(glAttachShader, PFNGLATTACHSHADERPROC) X(glBindAttribLocation, PFNGLBINDATTRIBLOCATIONPROC) \
     X(glBindBuffer, PFNGLBINDBUFFERPROC) X(glBindFramebuffer, PFNGLBINDFRAMEBUFFERPROC) \
     X(glBindRenderbuffer, PFNGLBINDRENDERBUFFERPROC) X(glBindVertexArray, PFNGLBINDVERTEXARRAYPROC) \
+    X(glBlitFramebuffer, PFNGLBLITFRAMEBUFFERPROC) \
     X(glBlendFuncSeparate, PFNGLBLENDFUNCSEPARATEPROC) X(glBufferData, PFNGLBUFFERDATAPROC) \
     X(glBufferSubData, PFNGLBUFFERSUBDATAPROC) X(glCheckFramebufferStatus, PFNGLCHECKFRAMEBUFFERSTATUSPROC) \
     X(glCompileShader, PFNGLCOMPILESHADERPROC) X(glCreateProgram, PFNGLCREATEPROGRAMPROC) \
@@ -91,6 +92,7 @@ GFX_GL_OPTIONAL_FUNCTIONS(GFX_GL_DECLARE)
 #define glBindRenderbuffer gfx_glBindRenderbuffer
 #define glBindTexture gfx_glBindTexture
 #define glBindVertexArray gfx_glBindVertexArray
+#define glBlitFramebuffer gfx_glBlitFramebuffer
 #define glBlendFunc gfx_glBlendFunc
 #define glBlendFuncSeparate gfx_glBlendFuncSeparate
 #define glBufferData gfx_glBufferData

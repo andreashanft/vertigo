@@ -11,3 +11,9 @@
   number by one, e.g. 0.9.0 to 0.9.1 for a branch like fidelity-tuning; if
   master has moved on when the branch merges it, the branch takes the next
   number. 1.0.0 is the feature-complete clone.
+- README.md shows screenshots from docs/screenshots, taken by
+  docs/screenshots/take.sh (the iPad one by hand, as the script's comment
+  says). A change that alters what one of them shows (the main menu, the
+  station screens, the depot, the cockpits and HUD, the models' textures,
+  the touch controls, the upscaled graphics or the vector font) also retakes
+  that screenshot with the script and commits the new image.
