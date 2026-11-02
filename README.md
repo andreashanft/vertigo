@@ -34,7 +34,7 @@ How the original behaves is collected in [docs/KNOWLEDGE.md](docs/KNOWLEDGE.md).
   </tr>
 </table>
 
-The screenshots show the [upscaled graphics](#upscaled-graphics) with the AI upscale and the HD font; [docs/screenshots/take.sh](docs/screenshots/take.sh) takes them.
+The screenshots show the [upscaled graphics](#upscaled-graphics) with the AI upscale and the HD font.
 
 ## Contents
 
