@@ -24,8 +24,10 @@
 #
 # devicectl takes --timeout as its own option, so the run gets none and has to be
 # stopped by hand; a relative --screenshot path lands in the app's Documents folder.
-# The iPad must be unlocked, or the launch is refused. The JPEG keeps the iPad's
-# 2752x2064 pixels.
+# The iPad must be unlocked, or the launch is refused, and its Game Data Upscaled
+# must be the set the build expects (its source.txt starts with the set version,
+# else the original art shows); a 3d-cockpits folder in the game data would
+# replace the kit cockpit. The JPEG keeps the iPad's 2752x2064 pixels.
 set -e
 cd "$(dirname "$0")"
 vertigo=${1:-../../build/vertigo}
