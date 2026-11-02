@@ -40,8 +40,9 @@ class Renderer;
 class Window
 {
 public:
-    // without focus for automated runs
-    explicit Window(bool focusable = true);
+    // without focus for automated runs; with a size in points it is a window of that size, not
+    // full screen, and the settings' geometry is neither used nor saved (screenshots)
+    explicit Window(bool focusable = true, int width = 0, int height = 0);
     ~Window();
 
 public:
@@ -102,6 +103,7 @@ private:
     SDL_GLContext m_context = nullptr;
     SDL_Cursor *m_cursor = nullptr;
     bool m_shown = false;
+    bool m_fixedSize = false;
     bool m_closed = false;
     // the app in the background (on the iPad), where nothing may draw: iOS ends apps that use
     // OpenGL there

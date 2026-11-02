@@ -23,13 +23,26 @@ While the rewrite is fairly done, some details are still open as well as thoroug
 
 How the original behaves is collected in [docs/KNOWLEDGE.md](docs/KNOWLEDGE.md).
 
+<table>
+  <tr>
+    <td><img src="docs/screenshots/main-menu.jpg" alt="The main menu, with the AI-upscaled title art and the HD font"></td>
+    <td><img src="docs/screenshots/topos-asylum.jpg" alt="The station screen of Topo's Asylum"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/depot-succubus.jpg" alt="The depot, fitting out a Succubus"></td>
+    <td><img src="docs/screenshots/zorn-freighter.jpg" alt="In the Zorn's cockpit beside a KILLTEK freighter"></td>
+  </tr>
+</table>
+
+The screenshots show the [upscaled graphics](#upscaled-graphics) with the AI upscale and the HD font; [docs/screenshots/take.sh](docs/screenshots/take.sh) takes them.
+
 ## Contents
 
 - [Downloads](#downloads)
 - [Compiling](#compiling): [macOS](#macos-homebrew), [iPad](#ipad), [Linux](#linux), [Windows](#windows)
 - [Game data](#game-data): [Saved games and settings](#saved-games-and-settings)
 - [Features](#features)
-  - [Upscaled graphics](#upscaled-graphics): [AI upscale](#ai-upscale), [HD font](#main-menu-hd-font), [Simple upscale](#simple-upscale)
+  - [Upscaled graphics](#upscaled-graphics): [Simple upscale](#simple-upscale), [AI upscale](#ai-upscale), [HD font](#hd-font)
   - [Game controllers](#game-controllers)
   - [Touch controls](#touch-controls)
   - [Views from outside](#views-from-outside)
@@ -78,7 +91,7 @@ make
 
 ## iPad
 
-![Screenshot from the iPad version showing a battle](docs/iPad-Schleichfahrt.jpg)
+![Screenshot from the iPad version: the first training mission against the Mogh boats, in the Gator's 3D cockpit with the touch controls](docs/screenshots/ipad-moghs.jpg)
 
 The iPad version requires Xcode, CMake 3.24 or newer and GLM's headers
 (`brew install cmake glm`), and runs on iPadOS 18.6 or later. CMake downloads
@@ -185,18 +198,15 @@ loaded from one keeps its own autosave up to date. Each save is a
 
 ## Upscaled graphics
 
-### AI upscale
+Vertigo can show the game with sharper art than the original's 640×480 assets.
+Three parts make the look of the screenshots above. Each is usable on its own;
+the AI upscale builds on the simple one.
 
-An optional upscale with a modern AI model (Qwen Image 2.1 in ComfyUI) redraws
-the pictures and textures with more detail and clean lettering. It runs outside
-the game as a script, takes a few hours on a strong graphics card and builds on
-the Real-ESRGAN upscale below. See [data/AI-upscale](data/AI-upscale/README.md).
-
-### Main Menu HD Font
-
-The silver font of the menus and screens is drawn from a recreated vector
-version, sharp at any size. It can be fine-tuned with the font editor in
-[data/font](data/font/README.md).
+| Part | What it does | Effort and result |
+|---|---|---|
+| [Simple upscale](#simple-upscale) | Real-ESRGAN enlarges the pictures, textures and depot movies on your computer | about half an hour; good |
+| [AI upscale](#ai-upscale) | a modern image model redraws the pictures and textures with more detail and clean lettering, starting from the simple upscale | a few hours on a strong graphics card; great |
+| [HD font](#hd-font) | the silver font of the menus and screens, drawn from a recreated vector version | comes with Vertigo, nothing to make |
 
 ### Simple upscale
 
@@ -211,12 +221,6 @@ on machine learning, upscales the game's graphics locally in about half an hour:
 - Pictures that are mostly text, with Real-ESRGAN's model for animation, which
   keeps letters better (the sea and area maps, the autopilot's destinations,
   the credits)
-
-![Screenshot from the main menu comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-Vergleich.jpg)
-
-![Screenshot grid showing two follow cam ingame scenes and comparing the upscaled with the original quality](docs/Schleichfahrt-Upscale-3rd-Cam-Vergleich.jpg)
-
-![The depot with its icons, the boat and the turning item, original above the upscaled version](docs/Depot-Upscale-Vergleich.jpg)
 
 #### How to enable
 
@@ -246,6 +250,22 @@ Not upscaled are:
 * Movies (except the depot's) and background animations
 
 Small lettering on models and buildings can come out garbled.
+
+### AI upscale
+
+An optional second step redraws the pictures and textures with a modern AI
+model (Qwen Image 2.1 in ComfyUI), with more detail and clean lettering. It
+starts from the simple upscale's set, runs outside the game as a script and
+takes a few hours on a strong graphics card; the result takes the place of
+`Game Data Upscaled` and is switched on the same way. See
+[data/AI-upscale](data/AI-upscale/README.md).
+
+### HD font
+
+The silver font of the menus and screens is drawn from a recreated vector
+version that comes with Vertigo, sharp at any size, with nothing to make or
+download. It is shown whenever the upscaled graphics are on, with either set.
+It can be fine-tuned with the font editor in [data/font](data/font/README.md).
 
 ## Game controllers
 
@@ -418,6 +438,15 @@ vertigo s00101 --boat 2050 --equip GUN=3083,TUR1=3074 --overlay --timeout 60
 - Without a mission, `--timeout`, `--keys`, `--click` and `--screenshot`
   work in the main menu and the game it starts, in seconds since the start,
   e.g. `vertigo --click 1=320,240 --screenshot 3=menu.png --timeout 4`.
+- `--new-game` starts a new game at its first station without the intro,
+  the movies, the story's dialogues and saving it; `--station st0203` takes
+  it to that station of the first chapter's area instead. `--open-mission
+  2052` opens the open mission's depot with that boat. Both are for
+  screenshots of the station screens and the depot (with `--timeout`).
+- `--window 1280x960` uses a window of that size in points for the run, not
+  full screen, without touching the saved geometry, so screenshots come out
+  at a known size ([docs/screenshots/take.sh](docs/screenshots/take.sh)
+  takes the README's this way).
 - `--seed 5` picks the random numbers (default 1), so a run repeats exactly.
   Compare runs only between builds of the same build type: an optimised build
   rounds floating point differently, and missions can end differently.

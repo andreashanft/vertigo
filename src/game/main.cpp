@@ -272,6 +272,10 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("trace", "Print the position, speed and order of these units every second (test mode), e.g. 2064,2068.", "ids");
     parser.addOption("fire", "Let these units fire their guns (test mode); towers and tanks aim at the player.", "ids");
     parser.addOption("near", "Enable this unit and start 40 m from it, looking at it (test mode).", "id");
+    parser.addOption("new-game", "Start a new game at its first station, without the intro, the movies and saving it, e.g. for screenshots of a station (with --timeout).");
+    parser.addOption("station", "With --new-game: start at this station of the first chapter's area instead, by its short name, e.g. st0203.", "name");
+    parser.addOption("open-mission", "Open the main menu's open mission with this boat (2049 Hiob to 2052 Succubus), in its depot, e.g. for screenshots (with --timeout).", "boat");
+    parser.addOption("window", "Use a window of this size in points for this run, not full screen, leaving the settings' geometry alone, e.g. 1280x960 for screenshots.", "WxH");
     parser.addOption("start", "Start at this cell of the map (test mode), optionally hei height units above the ground and heading card (0 north, 2 east, 4 south, 6 west) as in the scenario's player record, e.g. 76,76 or 76,76,10,4.", "x,y[,hei[,card]]");
     parser.addOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
     parser.addOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
@@ -497,6 +501,32 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
             std::cerr << "Invalid --near value " << parser.value("near") << ", expected a unit id" << std::endl;
             return end(game::Vertigo::ExitUsage);
         }
+    }
+    options.newGame = parser.isSet("new-game");
+    if (parser.isSet("station")) {
+        if (!options.newGame) {
+            std::cerr << "--station needs --new-game" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.station = text(parser.value("station"));
+    }
+    if (parser.isSet("open-mission")) {
+        bool ok = false;
+        options.openMission = text(parser.value("open-mission")).toInt(&ok);
+        if (!ok || options.openMission < 2049 || options.openMission > 2052) {
+            std::cerr << "Invalid --open-mission value " << parser.value("open-mission") << ", expected a boat type 2049-2052" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+    }
+    if (parser.isSet("window")) {
+        const StringList size = text(parser.value("window")).toLower().split('x');
+        const bool ok = size.size() == 2 && isNumber(size[0]) && isNumber(size[1]) && size[0].toInt() > 0 && size[1].toInt() > 0;
+        if (!ok) {
+            std::cerr << "Invalid --window value " << parser.value("window") << ", expected WxH in points, e.g. 1280x960" << std::endl;
+            return end(game::Vertigo::ExitUsage);
+        }
+        options.windowWidth = size[0].toInt();
+        options.windowHeight = size[1].toInt();
     }
     if (!ids(parser, "fire", "unit ids", options.fire) || !ids(parser, "trace", "unit ids", options.trace))
         return end(game::Vertigo::ExitUsage);

@@ -176,9 +176,11 @@ void Chapter::load(const std::string &filename, bool load)
             addMission(file.value(key).toString(), station.index());
     }
 
+    // (a screenshot run shows the station without the story's dialogues)
     file.setSection("pendingdialogues");
-    for (const String &key : file.keys().withPrefix("dialogue"))
-        addDialog(file.value(key).toInt());
+    if (!m_screenshotRun)
+        for (const String &key : file.keys().withPrefix("dialogue"))
+            addDialog(file.value(key).toInt());
 
     file.setSection("successmissions");
     if (file.value("clearmissions").toString().toLower() == "yes")
@@ -230,6 +232,8 @@ void Chapter::load(const std::string &filename, bool load)
 
 void Chapter::save() const
 {
+    if (m_screenshotRun)
+        return;
     // the game's autosave, in the next free slot when it has none yet (a game saved before there
     // were slots gets its slot now)
     if (m_autosave.file.empty() || !util::exists(m_autosave.file)) {
@@ -415,7 +419,7 @@ void Chapter::setStation(int stationIndex, bool load)
         m_missions.erase(here);
     }
 
-    if (m_movieHarbour && previousStation >= 0)
+    if (m_movieHarbour && previousStation >= 0 && !m_screenshotRun)
         m_movies.emplace(String("gfx:mvi/film/%1hf.mvi").arg(m_boat->moviePrefix()), Movie::MovieTransit, 
                          txt::StringTable::get(txt::Movie_Dock), 
                          String("%1 %2 ...").arg(txt::StringTable::get(txt::Movie_Leaving)).arg(m_stations[previousStation].name()));
@@ -558,6 +562,8 @@ void Chapter::loadLastSave()
 
 void Chapter::playApproach(bool autopilot)
 {
+    if (m_screenshotRun)
+        return;
     if (m_approachMovieReplacement.count(m_currentStation)) {
         const String movie = util::take(m_approachMovieReplacement, m_currentStation);
         String number;

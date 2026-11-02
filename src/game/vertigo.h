@@ -77,6 +77,11 @@ public:
         std::vector<Click> clicks;                      // click at these times, at points of the 640x480 screen, released at to
         bool check = false;                             // report what the mission loader ignores
         StringList checkScenarios;                     // empty = all missions
+        bool newGame = false;                           // start a new game at its first station, without the intro, movies and saving (screenshots)
+        String station;                                 // with newGame: this station of the chapter's area instead (short name, e.g. st0203)
+        int openMission = 0;                            // open the open mission's depot with this boat type (2049-2052)
+        int windowWidth = 0;                            // a window of this size in points, not full screen, not saved (0: the settings')
+        int windowHeight = 0;
     };
 
     enum ExitCode
