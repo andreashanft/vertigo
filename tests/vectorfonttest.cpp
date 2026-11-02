@@ -109,6 +109,14 @@ int main()
     CHECK_EQUAL(red(image, 11, 4), 255);
     CHECK_EQUAL(red(image, 4, 12), 0);
 
+    // a body from black at the top of the capitals (a unit into the cell) to white at the baseline
+    // (a unit above the cell's bottom): the texels from 2 to 2.5 and from 9.5 to 10 units down
+    CHECK(vector.parse(font("{ \"outline\": { \"on\": false }, \"grain\": { \"on\": false }, \"bevel\": { \"on\": true, "
+                            "\"litBand\": 0, \"shadeBand\": 0, \"mid\": \"#000000\", \"low\": \"#ffffff\" }, \"palette\": { \"on\": false } }")));
+    image = vector.render(0x41, 11, 12, 2);
+    CHECK_EQUAL(red(image, 11, 4), 32);
+    CHECK_EQUAL(red(image, 11, 19), 223);
+
     // grain alone, crisp cells of a unit: the cell's grey, 128 + 127 times the random value from -1 to 1
     CHECK(vector.parse(font("{ \"outline\": { \"on\": false }, \"grain\": { \"on\": true, \"source\": \"random\", \"cell\": \"1\", "
                             "\"amount\": 1, \"blend\": \"normal\", \"seed\": 1, \"crisp\": true }, " + Plain + " }")));

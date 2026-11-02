@@ -51,6 +51,7 @@ input[type=color] { width:34px; height:22px; padding:0; border:1px solid var(--l
 .grp .rows input[type=range] { flex:1; }
 .grp .rows output { width:34px; text-align:right; font:11px ui-monospace, monospace; color:var(--mut); }
 .grp.off .rows { opacity:.4; }
+.menu { background:#000; border-radius:4px; overflow:auto; }
 </style></head>
 <body>
 <aside>
@@ -77,6 +78,8 @@ input[type=color] { width:34px; height:22px; padding:0; border:1px solid var(--l
     <button class="b" id="undo" title="⌘Z">Undo</button>
     <button class="b" id="redo" title="⇧⌘Z">Redo</button>
     <button class="b" id="addsq" title="N">Add square</button>
+    <button class="b" id="cut" title="C: two points of a shape selected">Cut</button>
+    <button class="b" id="separate" title="where a shape touches itself">Separate</button>
     <button class="b" id="reset">Reset glyph</button>
     <span id="status">no changes</span>
   </div>
@@ -85,7 +88,8 @@ input[type=color] { width:34px; height:22px; padding:0; border:1px solid var(--l
     <kbd>drag</kbd> point or shape · <kbd>⇧</kbd>+click add to selection · drag on empty space to box-select ·
     <kbd>⌥</kbd> while dragging: no snap · <kbd>double-click</kbd> an edge: new point · <kbd>⌫</kbd> delete points (select a whole shape by its edge) · <kbd>N</kbd> new square at the pointer ·
     <kbd>←↑→↓</kbd> nudge by snap step · <kbd>⌘A</kbd> all · <kbd>Esc</kbd> none · <kbd>[</kbd> <kbd>]</kbd> previous / next glyph ·
-    <kbd>O</kbd> original on/off · <kbd>T</kbd> shape / styled · hold <kbd>Space</kbd> to see the original instead
+    <kbd>C</kbd> cut a shape between its two selected points · <b>Separate</b>: cut the shapes apart where they touch themselves ·
+    <kbd>O</kbd> original on/off · <kbd>T</kbd> shape / styled · hold <kbd>Space</kbd> to see the original instead (also in the main menu)
   </div>
 </main>
 
@@ -101,6 +105,9 @@ input[type=color] { width:34px; height:22px; padding:0; border:1px solid var(--l
   <input type="text" id="sample" value="NEUES SPIEL  Größe: 0123456789">
   <div class="bar" style="margin:6px 0"><label>Scale <input type="range" id="sscale" min="1" max="6" step="0.5" value="3"></label><span id="sv" class="help"></span></div>
   <div class="strip" id="strip"></div>
+  <h2>Main menu <span class="help" style="text-transform:none;letter-spacing:0">(hold Space for the original font)</span></h2>
+  <div class="bar" style="margin:0 0 6px"><label>Zoom <input type="range" id="mscale" min="1" max="4" step="0.25" value="1"></label></div>
+  <div class="menu" id="menu"></div>
   <h2>Pixel overlap <span id="iou"></span></h2>
   <canvas id="diff"></canvas>
   <div class="legend"><span><i style="background:#8fd18f"></i>both</span><span><i style="background:#e5675f"></i>original only</span><span><i style="background:#5fa8e5"></i>vector only</span><span>shape pixels = lum &gt; 50</span></div>
@@ -120,7 +127,7 @@ let peek = false;                  // Space held: the original on top
 const STYLE0 = {
   weight: { on: false, grow: 0 },
   outline: { on: true, color: '#25201a', width: 1.25, join: 'bevel' },
-  bevel: { on: true, lit: '#d4d2e4', litBand: 0.75, mid: '#a9a5ad', shade: '#8c8890', shadeBand: 0.75, side: 1, steps: 1 },
+  bevel: { on: true, lit: '#d4d2e4', litBand: 0.75, mid: '#a9a5ad', low: '', shade: '#8c8890', shadeBand: 0.75, side: 1, steps: 1 },
   grain: { on: true, source: 'random', cell: '1', amount: 0.5, blend: 'overlay', seed: 1, crisp: true },
   palette: { on: false },
 };
@@ -128,7 +135,7 @@ const SPEC = [
   ['weight', 'Weight', [['grow', 'grow', 'range', 0, 1, 0.05]]],
   ['outline', 'Outline', [['color', 'colour', 'color'], ['width', 'width', 'range', 0, 2.5, 0.05], ['join', 'corners', 'select', ['bevel', 'miter', 'round']]]],
   ['bevel', 'Light and shade', [['lit', 'lit (top / left)', 'color'], ['litBand', 'lit band', 'range', 0, 2, 0.05],
-                                ['mid', 'body', 'color'], ['shade', 'shade (bottom / right)', 'color'], ['shadeBand', 'shade band', 'range', 0, 2, 0.05],
+                                ['mid', 'body', 'color'], ['low', 'body at the baseline', 'color'], ['shade', 'shade (bottom / right)', 'color'], ['shadeBand', 'shade band', 'range', 0, 2, 0.05],
                                 ['side', 'bands at the sides', 'range', 0, 2, 0.05], ['steps', 'steps', 'range', 1, 8, 1]]],
   ['grain', 'Grain', [['source', 'source', 'select', ['random', 'original']], ['cell', 'cell size', 'select', ['1', '0.5', '0.25']],
                       ['amount', 'amount', 'range', 0, 1, 0.02], ['blend', 'blend', 'select', ['overlay', 'soft-light', 'hard-light', 'multiply', 'screen', 'normal']],
@@ -136,6 +143,8 @@ const SPEC = [
   ['palette', 'Snap colours to the original palette', []],
 ];
 let style = structuredClone(STYLE0);
+// the body is one colour unless it has another at the baseline
+const fill0 = () => { if (!style.bevel.low) style.bevel.low = style.bevel.mid; };
 const merge = (a, b) => { for (const k in b) if (k in a) a[k] = typeof a[k] === 'object' ? merge(a[k], b[k]) : b[k]; return a; };
 let PAL = [];                      // the original's colours, [lum, r, g, b]
 
@@ -172,7 +181,7 @@ function buildStyle() {
   }
 }
 function styleChanged() { render(); side(); scheduleSave(); }
-$('sreset').onclick = () => { style = structuredClone(STYLE0); buildStyle(); styleChanged(); };
+$('sreset').onclick = () => { style = structuredClone(STYLE0); fill0(); buildStyle(); styleChanged(); };
 
 // a reproducible random value per glyph and cell, so a letter always carries the same grain
 function rnd(a, b, c, seed) {
@@ -216,7 +225,7 @@ function paletteFilter(id, box) {
     <feComponentTransfer><feFuncR type="discrete" tableValues="${ch[0].join(' ')}"/><feFuncG type="discrete" tableValues="${ch[1].join(' ')}"/><feFuncB type="discrete" tableValues="${ch[2].join(' ')}"/></feComponentTransfer></filter>`;
 }
 // the styled glyphs as SVG markup in unit coordinates; "@@" is replaced by a unique id prefix per use
-function styled(items, W, Hh) {
+function styled(items, W, Hh, gamma = 1) {
   const d = items.map(it => pathD(it.g.rings, it.x, it.y)).join('');
   if (!d) return '';
   const o = style.outline, b = style.bevel, gr = style.grain, grow = style.weight.on ? Math.max(0, style.weight.grow) : 0;
@@ -226,6 +235,12 @@ function styled(items, W, Hh) {
   let defs = grow > 0 ? `<mask id="@@c" maskUnits="userSpaceOnUse" ${box}>${shape('#fff')}</mask>` : `<clipPath id="@@c"><path d="${d}" clip-rule="evenodd"/></clipPath>`, out = '';
   if (o.on && o.width > 0) out += `<path d="${d}" fill="${o.color}" fill-rule="evenodd" stroke="${o.color}" stroke-width="${2 * (grow + o.width)}" stroke-linejoin="${o.join}" stroke-miterlimit="4"/>`;
   let inner = `<rect ${box} fill="${b.mid}"/>`;
+  // a gradient from the top of the capitals (a unit into the cell) to the baseline, in every row
+  if (b.low && b.low !== b.mid) {
+    defs += `<linearGradient id="@@g" gradientUnits="userSpaceOnUse" x1="0" y1="1" x2="0" y2="${H - 1}"><stop offset="0" stop-color="${b.mid}"/><stop offset="1" stop-color="${b.low}"/></linearGradient>`
+          + `<pattern id="@@p" patternUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="url(#@@g)"/></pattern>`;
+    inner = `<rect ${box} fill="url(#@@p)"/>`;
+  }
   // a band is the glyph without itself moved away from the light (at the sides by side times as
   // much); in steps, the moves are the steps' parts of the band, painted from the widest at 1/k,
   // so that a point takes as much of the colour as steps leave it outside
@@ -243,7 +258,14 @@ function styled(items, W, Hh) {
     const t = texture(items, W, Hh);
     inner += `<image href="${t.url}" x="0" y="0" width="${t.w}" height="${t.h}" preserveAspectRatio="none" opacity="${gr.amount}" style="mix-blend-mode:${gr.blend};${gr.crisp ? 'image-rendering:pixelated' : ''}"/>`;
   }
-  out += `<g ${grow > 0 ? 'mask' : 'clip-path'}="url(#@@c)" style="isolation:isolate">${inner}</g>`;
+  let body = `<g ${grow > 0 ? 'mask' : 'clip-path'}="url(#@@c)" style="isolation:isolate">${inner}</g>`;
+  // brightened as Vertigo brightens the large font's insides: each colour to the power of 1/gamma
+  if (gamma !== 1) {
+    defs += `<filter id="@@y" filterUnits="userSpaceOnUse" ${box} color-interpolation-filters="sRGB"><feComponentTransfer>`
+          + ['R', 'G', 'B'].map(k => `<feFunc${k} type="gamma" exponent="${1 / gamma}"/>`).join('') + '</feComponentTransfer></filter>';
+    body = `<g filter="url(#@@y)">${body}</g>`;
+  }
+  out += body;
   if (style.palette.on && PAL.length) { defs += paletteFilter('@@q', box); out = `<g filter="url(#@@q)">${out}</g>`; }
   return `<defs>${defs}</defs>${out}`;
 }
@@ -262,6 +284,7 @@ async function load() {
   try { const r = await fetch('originals.json'); if (r.ok) origs = await r.json(); } catch (_) {}
   const blank = Object.assign(document.createElement('canvas'), { width: ADV, height: H }).toDataURL().split(',')[1];
   for (const g of glyphs) Object.assign(g, origs[g.id] || { png: blank, ow: ADV, oh: H });
+  MD = origs.menu || null;
   if (!Object.keys(origs).length) $('status').textContent = 'originals.json missing: run originals.py';
   try {
     const r = await fetch('vertigo-mono.json');
@@ -271,6 +294,7 @@ async function load() {
       if (e.style) merge(style, e.style);
     }
   } catch (_) {}
+  fill0();
   await Promise.all(glyphs.map(prepImages));
   // the original palette: every colour that occurs at least a few times
   const cnt = {};
@@ -510,11 +534,104 @@ function addSquare() {
   const ri = g.rings.length - 1;
   sel = new Set([0, 1, 2, 3].map(i => ri + ':' + i)); changed();
 }
+// ---------- cutting ----------
+const same = (p, q) => Math.abs(p[0] - q[0]) < 1e-6 && Math.abs(p[1] - q[1]) < 1e-6;
+const area = r => r.reduce((a, p, i) => { const q = r[(i + 1) % r.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
+// a ring without repeated points and spikes (a point the outline goes to and straight back from),
+// or null when nothing of it is left
+function tidy(r) {
+  r = r.map(p => [+p[0].toFixed(4), +p[1].toFixed(4)]);
+  for (let again = true; again && r.length >= 3; ) {
+    again = false;
+    for (let i = 0; i < r.length && r.length >= 3; i++) {
+      const a = r[(i + r.length - 1) % r.length], p = r[i], b = r[(i + 1) % r.length];
+      const ux = p[0] - a[0], uy = p[1] - a[1], vx = b[0] - p[0], vy = b[1] - p[1];
+      if (same(a, p) || (Math.abs(ux * vy - uy * vx) < 1e-9 && ux * vx + uy * vy < 0)) { r.splice(i--, 1); again = true; }
+    }
+  }
+  return r.length >= 3 && Math.abs(area(r)) > 1e-9 ? r : null;
+}
+// the two rings a ring falls into where it touches itself: at a point it passes twice, or along a
+// stretch two of its edges run in opposite directions (a bridge of no width); null if it doesn't
+function split(r) {
+  const n = r.length;
+  for (let i = 0; i < n; i++)
+    for (let j = i + 2; j < n; j++)
+      if (same(r[i], r[j]) && !(i === 0 && j === n - 1)) return [r.slice(i, j), r.slice(j).concat(r.slice(0, i))];
+  for (let i = 0; i < n; i++) {
+    const a = r[i], b = r[(i + 1) % n], dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy;
+    if (!L) continue;
+    const t = p => ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L;
+    for (let j = i + 1; j < n; j++) {
+      const c = r[j], e = r[(j + 1) % n], ex = e[0] - c[0], ey = e[1] - c[1];
+      if (Math.abs(dx * ey - dy * ex) > 1e-9 || dx * ex + dy * ey >= 0) continue;   // not opposite
+      if (Math.abs(dx * (c[1] - a[1]) - dy * (c[0] - a[0])) > 1e-9) continue;     // not on one line
+      const lo = Math.max(0, Math.min(t(c), t(e))), hi = Math.min(1, Math.max(t(c), t(e)));
+      if (hi - lo < 1e-9) continue;
+      // edge i runs a, P, Q, b and edge j c, Q, P, e: without P-Q the ring is Q, b ... c and P, e ... a
+      const P = [a[0] + lo * dx, a[1] + lo * dy], Q = [a[0] + hi * dx, a[1] + hi * dy];
+      return [[Q].concat(r.slice(i + 1, j + 1)), [P].concat(r.slice(j + 1), r.slice(0, i + 1))];
+    }
+  }
+  return null;
+}
+function separate(r, depth = 0) {
+  const parts = depth < 50 && split(r);
+  return parts ? parts.map(tidy).filter(Boolean).flatMap(p => separate(p, depth + 1)) : [r];
+}
+const note = text => { $('status').textContent = text; };
+// the current glyph's shapes cut apart where they touch themselves
+function separateAll() {
+  const g = G(), rings = g.rings.flatMap(r => separate(r));
+  if (rings.length <= g.rings.length) { note('no shape touches itself'); return; }
+  pushUndo(snapshot(g)); g.rings = rings; sel.clear(); changed();
+}
+// the shape two of whose points are selected cut in two along the line between them
+function cut() {
+  const g = G(), pts = [...sel].map(k => k.split(':').map(Number));
+  if (pts.length !== 2 || pts[0][0] !== pts[1][0]) { note('select two points of a shape to cut it between them'); return; }
+  const ri = pts[0][0], r = g.rings[ri], [i, j] = [pts[0][1], pts[1][1]].sort((a, b) => a - b);
+  const parts = [r.slice(i, j + 1), r.slice(j).concat(r.slice(0, i + 1))].map(tidy);
+  if (!parts[0] || !parts[1]) { note('nothing to cut between neighbouring points'); return; }
+  pushUndo(snapshot(g)); g.rings.splice(ri, 1, ...parts.flatMap(p => separate(p))); sel.clear(); changed();
+}
+
+// ---------- main menu ----------
+// the game's main menu (640 x 480) as Vertigo lays it out: its bars at x 140 and these heights, the
+// title in the medium font over the upper one, the items in the large font centred at these heights
+const MENU = { bars: [256, 448], items: [288, 308, 328, 348, 368, 408], crop: { x: 136, y: 236, w: 368, h: 220 } };
+let MD = null;                     // originals.json's menu
+function menu() {
+  const box = $('menu');
+  if (!MD) { box.innerHTML = '<p class="help" style="margin:8px">originals.json has no menu: run originals.py</p>'; return; }
+  const c = MENU.crop, zoom = +$('mscale').value, byId = Object.fromEntries(glyphs.map(g => [g.id, g])), made = {};
+  const font = (id, medium) => medium ? MD.medium[id] : byId[id];
+  // a glyph over the game glyph's box, as Vertigo draws it: the large font's brightened inside, the
+  // medium font's at 90% of the box's height, centred on it; held Space, the game's glyph
+  const glyph = (id, x, y, medium) => {
+    const g = byId[id], o = font(id, medium);
+    if (!g || !o) return '';
+    const w = o.ow, h = o.oh, png = `data:image/png;base64,${o.png}`;
+    if (peek || !g.rings.length) return `<image href="${png}" x="${x}" y="${y}" width="${w}" height="${h}" style="image-rendering:pixelated"/>`;
+    const u = (medium ? 0.9 : 1) * h / H, cx = g.ox + (w + H - h) / 2, cy = g.oy + H / 2, k = id + (medium ? 'm' : 'l');
+    const m = made[k] || (made[k] = styled([{ g, x: 0, y: 0 }], ADV, H, medium ? 1 : 1.4));
+    return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${cx - w / 2 / u} ${cy - h / 2 / u} ${w / u} ${h / u}" preserveAspectRatio="none">${inst(m)}</svg>`;
+  };
+  const line = (ids, x, y, medium) => ids.map(id => { const t = glyph(id, x, y, medium); x += (font(id, medium) || { ow: 0 }).ow; return t; }).join('');
+  const width = ids => ids.reduce((a, id) => a + (font(id, false) || { ow: 0 }).ow, 0);
+  let out = `<image href="data:image/png;base64,${MD.picture}" x="0" y="0" width="640" height="480"/>`;
+  for (const y of MENU.bars) out += `<image href="data:image/png;base64,${MD.bar}" x="140" y="${y}" width="${MD.barSize[0]}" height="${MD.barSize[1]}" style="image-rendering:pixelated"/>`;
+  out += line(MD.title, 145, 256 - MD.mediumHeight - 2, true);
+  MD.items.forEach((ids, i) => { out += line(ids, Math.floor((640 - width(ids)) / 2), MENU.items[i], false); });
+  const w = (box.clientWidth || c.w) * zoom;
+  box.innerHTML = `<svg xmlns="${NS}" width="${w}" height="${w * c.h / c.w}" viewBox="${c.x} ${c.y} ${c.w} ${c.h}" style="display:block">${out}</svg>`;
+}
+
 const typing = e => e.target.matches('input[type=text], input[type=number]');
 document.addEventListener('keydown', e => {
   if (typing(e)) return;
   const m = e.metaKey || e.ctrlKey, st = step() || 0.125;
-  if (e.key === ' ') { e.preventDefault(); if (!peek) { peek = true; render(); } }
+  if (e.key === ' ') { e.preventDefault(); if (!peek) { peek = true; render(); menu(); } }
   else if (m && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
   else if (m && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
   else if (m && e.key.toLowerCase() === 'a') { e.preventDefault(); sel = new Set(); G().rings.forEach((r, ri) => r.forEach((_, pi) => sel.add(ri + ':' + pi))); render(); }
@@ -528,15 +645,18 @@ document.addEventListener('keydown', e => {
   else if (e.key === ']') select(cur + 1);
   else if (e.key === 'o' || e.key === 'O') { const b = $('bgmode'); b.value = b.value === 'off' ? 'core' : 'off'; render(); }
   else if ((e.key === 'n' || e.key === 'N') && !m) addSquare();
+  else if ((e.key === 'c' || e.key === 'C') && !m) cut();
   else if (e.key === 't' || e.key === 'T') { const v = $('view'); v.value = v.value === 'styled' ? 'shape' : 'styled'; render(); }
 });
-document.addEventListener('keyup', e => { if (e.key === ' ' && peek) { peek = false; render(); } });
+document.addEventListener('keyup', e => { if (e.key === ' ' && peek) { peek = false; render(); menu(); } });
 
 ['view', 'snap', 'bgmode', 'bgop', 'fillop'].forEach(id => $(id).addEventListener('input', render));
 ['ox', 'oy'].forEach(id => $(id).addEventListener('change', () => {
   const g = G(); pushUndo(snapshot(g)); g[id] = +$(id).value | 0; changed();
 }));
 $('undo').onclick = undo; $('redo').onclick = redo; $('addsq').onclick = addSquare;
+$('cut').onclick = cut; $('separate').onclick = separateAll;
+$('mscale').addEventListener('input', () => menu());
 $('reset').onclick = () => { const g = G(); pushUndo(snapshot(g)); restore(base[g.id]); sel.clear(); changed(); };
 window.addEventListener('resize', render);
 
@@ -556,7 +676,7 @@ function side(quick) {
   }).join('');
   diff(g);
   drawThumb(g);
-  if (!quick) strip();
+  if (!quick) { strip(); menu(); }
 }
 function coverage(g, w, h, ox, oy) {
   const ss = 8, c = document.createElement('canvas'); c.width = w * ss; c.height = h * ss;

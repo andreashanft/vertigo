@@ -262,6 +262,7 @@ bool VectorFont::parse(const std::string &text)
     s.lit = parseColor(bevel["lit"], s.lit);
     s.litBand = bevel["litBand"].toDouble(s.litBand);
     s.mid = parseColor(bevel["mid"], s.mid);
+    s.low = parseColor(bevel["low"], s.mid);
     s.shade = parseColor(bevel["shade"], s.shade);
     s.shadeBand = bevel["shadeBand"].toDouble(s.shadeBand);
     s.side = bevel["side"].toDouble(s.side);
@@ -415,7 +416,8 @@ Image VectorFont::render(int code, int w, int h, int scale, const Image &origina
         }
     }
 
-    const Color outlineColor = color(s.outlineColor), litColor = color(s.lit), midColor = color(s.mid), shadeColor = color(s.shade);
+    const Color outlineColor = color(s.outlineColor), litColor = color(s.lit), midColor = color(s.mid), lowColor = color(s.low),
+                shadeColor = color(s.shade);
     for (int ty = 0; ty < h*scale; ty++) {
         std::uint8_t *out = image.scanLine(ty);
         for (int tx = 0; tx < w*scale; tx++, out += 4) {
@@ -430,7 +432,10 @@ Image VectorFont::render(int code, int w, int h, int scale, const Image &origina
                     if (!fillMask.at(i, j)) {
                         c = outlineColor;
                     } else {
-                        c = midColor;
+                        // the body from the top of the capitals (a unit into the cell) to the baseline
+                        const double t = std::clamp((y0 + (j + 0.5)/perUnit - 1)/(CellHeight - 2), 0.0, 1.0);
+                        for (int k = 0; k < 3; k++)
+                            c[k] = midColor[k]*(1 - t) + lowColor[k]*t;
                         const double l = lit ? outside(litMasks, i, j) : 0, d = shade ? outside(shadeMasks, i, j) : 0;
                         for (int k = 0; k < 3; k++)
                             c[k] = (c[k]*(1 - l) + litColor[k]*l)*(1 - d) + shadeColor[k]*d;
