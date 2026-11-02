@@ -19,7 +19,7 @@ The implementation is about **99% done**:
 * Keyboard, game controllers and touch on the iPad
 * Experimental: 3D cockpits for widescreen and, in the future, VR
 
-What's still missing are details I might have missed and thorough playtesting, see [docs/ROADMAP.md](docs/ROADMAP.md).
+What's still missing are details I might have missed and thorough playtesting, see [docs/TODO.md](docs/TODO.md); what the original does is collected in [docs/KNOWLEDGE.md](docs/KNOWLEDGE.md).
 
 ## Contents
 
