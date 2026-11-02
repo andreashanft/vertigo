@@ -38,29 +38,18 @@ Missions and the campaign:
 - Whether the death menu adds loading the last game in the campaign (it
   showed abort and restart; Vertigo always offers all three).
 - `wccond 9` (56 units, s00303 and s02006 among them).
-- Whether a slot with a break condition ends on its own (T5), and whether
-  Attack and CardinalAttack end after `dur` (Vertigo ends them).
+- Whether a slot with a break condition ends on its own (T5).
 - In a squadron of several big ships the original counts every block that
   goes; Vertigo counts the ship.
 
 Units' behaviour:
 
-- Whether an attacking boat's pitch is limited to `Min/MaxClimbingAngle` (20°
-  on all scouts and bombers; Vertigo limits it, so a boat right under or over
-  its target can't aim at it).
-- What an attacking boat does once its area time is up (the original may
-  pick a new patrol point every frame; Vertigo picks one on the timer).
-- The lower bound of a tank's attack speed (Vertigo takes 40–100 % of the
-  order's speed).
-- GotoWithInfiltrate's approach and docking.
 - Which of `car` 2 and 6 is left (Vertigo turns 2 left).
-- How a boat keeps hitting a standing player while its turning leaves up to
-  1° of error alone (with Vertigo's 1.5 m hit sphere for the player such a
-  boat would miss from about 85 m, so Vertigo turns on until the error is
-  gone).
-- Whether boats, tanks and gun towers hold their fire while the terrain is
-  between them and their target, as the torpedo towers do, and whether the
-  player's turrets fire through friends (Vertigo's do neither).
+- Whether the player's turrets fire through friends (Vertigo's don't).
+- Whether the player's sonar lists the bombers' and big ships' turrets as
+  contacts of their own (Vertigo's doesn't).
+- How many homing torpedoes the player can have on it at once (every AI
+  unit takes at most 4; Vertigo keeps 8 for the player).
 - Whether the player takes damage running into buildings, towers or boats
   (the contact table pairs the player only with shots, debris, torpedoes and
   mines; Vertigo's player takes their strength).
@@ -79,8 +68,7 @@ Sensors, HUD and views:
   (Vertigo goes back to the cockpit), and what the camera does the moment a
   view opens. At the furthest zoom Vertigo's boat shows about 10 rows lower
   than the original's, in the look-at view about 16 rows lower.
-- How far the other boats bank as they turn more slowly, and whether tanks,
-  bombers and torpedoes roll.
+- Whether tanks and torpedoes roll in their turns.
 
 World, physics and effects:
 
@@ -88,9 +76,6 @@ World, physics and effects:
 - What else the original scales with the radiation's strength between 100
   and 40 m below the surface.
 - Whether the keyboard ramps the stick value when turning the boat.
-- What a negative `MaxAngleVelocityC` in the boats', tanks' and torpedoes'
-  object files does.
-- Whether mine columns are stacked upwards.
 - Whether the ground dust is additive with `Transparency = 1`.
 - The length of the fade at a mission's start and end (about a second in the
   original; Vertigo fades in over 1.5 s and out over 2 s).
@@ -107,19 +92,20 @@ Sound:
 Deviations a player may notice. Each is deliberate or waits for one of the
 comparisons above.
 
-- The currents push steadily; the original's speeds come out of Vertigo's
-  drag and speed cap.
+- Mines don't drift in currents (the original pushes them at a factor of
+  0.2).
 - Some explosions' sizes: the mines' explosions keep their own size (within
   about 10 % of the original's), the destruction sequence's come in sizes
   Vertigo's effects don't take, and Vertigo sizes the explosions by the
   sprites' extent, which may not be the size the original measures them by.
 - The boat's turn rates relax at `turnticks` ticks per second (`settings.ini`
   `[Fight]`, default 30, matched by hand).
-- The escort's place is measured from the escorted hull's box to the escort's
-  own, not from hull to hull, so an offset of 7 m to the side puts the escort
-  7 m clear of the hull.
-- The outside views' camera distances are in the watched unit's radii, and
-  the boats' bank follows their share of the full turn rate.
+- The escort is pulled into its place rather than moved there outright.
+- The bombers' turrets sit where a ray from above or below meets the hull
+  rather than on the file's polygon.
+- Tanks stand on Vertigo's smooth ground; the original takes each corner's
+  height between the map's points.
+- The outside views' camera distances are in the watched unit's radii.
 - The agile torpedoes' steering ticks run at 30 a second.
 - The Torch's torch lights the ground about four times as strongly, as
   Vertigo's lights fall off with the square of the distance and the

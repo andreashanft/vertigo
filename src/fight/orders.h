@@ -91,6 +91,25 @@ public:
     bool mayPause() const;
     // begins the current slot again (after the unit has slept)
     void restart() { if (m_current >= 0) start(m_current); }
+    // the buzzer magazine works only in patrols, attacks, ambushes and escorts (appendix J)
+    bool usesBuzzers() const;
+    // a tower blowing up: its turret goes on at the target it had (appendix J)
+    void keepFiring();
+
+    // sensing, also for a bomber's turrets, which look with their own sensor through an Orders
+    // without slots
+    ActiveObject* findUnit(int id) const;
+    bool isAlive(const ActiveObject *unit) const;
+    bool isHostile(const ActiveObject *unit) const;
+    // whether the unit's sensor picks the other up within rangeFactor times its range (appendix J)
+    bool detects(const ActiveObject *unit, float rangeFactor) const;
+    // what the sensor finds, looked for every 1.5 s (0.7 s with sen 3 and 4)
+    ActiveObject* scan();
+    // whoever hit the unit just now, if hostile and detected within rangeFactor times the range
+    ActiveObject* shooter(const ActiveObject *unit, float rangeFactor) const;
+    // takes the target, or nullptr if its list of attackers is full (the player's by difficulty,
+    // anyone else's at 4); lets go of the previous target's list
+    ActiveObject* engage(ActiveObject *target);
     void update();
 
 private:
@@ -107,11 +126,25 @@ private:
     float arriveRadius(float extra) const;
     float slowSpeed(const Vector3D &point, float speed) const;
     // a point over the ground: at least minHeight metres plus half a hull above the highest ground
-    // on the way, at most maxHeight above it (0: no cap)
+    // on the way, at most maxHeight above it (0: no cap); for ground vehicles
     Vector3D inBand(Vector3D point, float minHeight, float maxHeight) const;
     float groundAhead(const Vector3D &point) const;
+    // flies for the point at the speed (appendix J): bent away from other units ahead if avoid,
+    // then kept in the height band, minHeight plus hullFactor hulls to maxHeight over the ground
+    // (maxHeight < 0: no cap); true if the band changed the way
+    bool fly(const Vector3D &point, float minHeight, float maxHeight, float speed, bool avoid, float hullFactor = 0.599f);
+    // the band's check: the hull's front bottom corners a little ahead against the ground; true
+    // and the point moved if they leave it
+    bool bandPoint(Vector3D &point, float zmin, float zmax) const;
+    Vector3D avoidUnits(const Vector3D &point) const;
+    // a ground vehicle's way (appendix J): bent around units ahead, and sideways off ground steeper
+    // than its climbing angle
+    Vector3D groundWay(const Vector3D &point) const;
+    float hullRadius() const;
     // a new point of the patrol area, at least minFraction of the radius from the current one
     void pickPatrolPoint(float minFraction);
+    // a tank's: on its arc of a circle round the tank inside the area (appendix J)
+    void pickTankPoint(float speed);
     Vector3D cellCentre(int x, int y) const;
     // the target's frame: right, forward and up
     static glm::mat3 frameOf(const ActiveObject *unit);
@@ -119,40 +152,27 @@ private:
     static Vector3D toLocal(const ActiveObject *unit, const Vector3D &world);
 
     // --- sensing
-    ActiveObject* findUnit(int id) const;
-    bool isAlive(const ActiveObject *unit) const;
-    bool isHostile(const ActiveObject *unit) const;
     int sensorType() const;
     float sensorRange() const;
-    // whether the unit's sensor picks the other up within rangeFactor times its range (appendix J)
-    bool detects(const ActiveObject *unit, float rangeFactor) const;
     bool hears(const ActiveObject *unit, float distance2) const;
     bool sees(const ActiveObject *unit) const;
-    // nothing of the terrain between the unit's centre and the target's: a unit holds its fire
-    // otherwise
-    bool clearShot(const ActiveObject *target) const;
     static bool isBuzzer(const ActiveObject *unit);
-    // what the sensor finds, looked for every 1.5 s (0.7 s with sen 3 and 4)
-    ActiveObject* scan();
-    // the unit to fight: the ordered enemy in sensor range, the player at double range when hit, the scan
+    // the unit to fight: the ordered enemy in sensor range, whoever hit it at double range, the scan
     ActiveObject* acquire(ActiveObject *enemy);
+    // an escort's target (appendix J): whoever hits it or its charge, or attacks its charge
+    ActiveObject* escortTarget(const ActiveObject *escorted);
     // whether the fight goes on: the enemy and a player who shoots take precedence, a target out of
     // double sensor range is lost
     bool keepTarget(ActiveObject *enemy);
-    // takes the target, or nullptr if it is the player and the difficulty's attacker list is full;
-    // lets go of the player when the target is someone else (or nobody)
-    ActiveObject* engage(ActiveObject *target);
-    ActiveObject* nearestHostile(float range, int sector) const;
     void dropTarget();
     bool freshHit();
     void switchTarget(ActiveObject *target);
-    Vector3D escortStation(const SimpleBoat *escorted, const OrderSlot &slot) const;
+    // the escort's place; approach: a place ahead of the escorted unit moves to just behind it
+    Vector3D escortStation(const SimpleBoat *escorted, const OrderSlot &slot, bool approach) const;
 
     // --- fighting
-    Vector3D lead(const ActiveObject *target) const;
     // where the shots go: the target, a little above a ground unit
     Vector3D aimPoint(const ActiveObject *target) const;
-    bool aligned(const Vector3D &aim, const Vector3D &target, float range) const;
     // fires a torpedo when the nose points at the target closely enough (appendix J)
     bool tryTorpedo(ActiveObject *target);
     void startFight(Fight phase, ActiveObject *target);
@@ -161,8 +181,11 @@ private:
     // is, the way round by the Hook/Cross/Retain/Change probabilities; then a drive at the target
     void startTankFight(Fight phase, ActiveObject *target, float speed);
     void updateTankFight(ActiveObject *target, float speed);
-    void updateTurret(ActiveObject *target, float range, bool sweep);
-    void endTorpedoRun();
+    // towers (appendix J): CardinalPatrol and CardinalAttack sweep and fight with the tower's sensor
+    void updateTower(const OrderSlot &slot);
+    void sweepTurret(const OrderSlot &slot);
+    void towerFire(const OrderSlot &slot);
+    static Vector3D intercept(const Vector3D &origin, const ActiveObject *target, float speed);
     float random() const;
     float random(float min, float max) const;
 
@@ -174,11 +197,12 @@ private:
     int m_current;
     float m_startTime;
     Vector3D m_point;    // current patrol point
-    float m_pointTime;   // when it was picked
+    float m_pointTime;   // when the patrol began or resumed: past the time to fly the radius, a new point every frame
     bool m_arrived = false; // a big ship at its patrol cell
 
     // sensing
     ActiveObject *m_target;      // the unit fought
+    ActiveObject *m_engaged = nullptr;   // whose list of attackers the unit is on (not the player's)
     ActiveObject *m_scanned;     // what the last scan found
     float m_nextScan;
 
@@ -198,18 +222,23 @@ private:
     Vector3D m_flightOffset;     // Flight: where to, in the target's frame
     float m_flightEnd;
     float m_lastFlip;            // when the flight last changed sides
-    float m_targetYaw;           // tanks: the target's heading when the last align began
+    float m_targetYaw;           // tanks: the target's heading on the frame before
+    float m_pointEnd = 0;        // tanks: when the patrol's point is given up
     bool m_torpedo;              // this phase may fire a torpedo
-    bool m_torpedoRun;
-    ActiveObject *m_torpedoTarget;   // whose torpedo attackers the unit is among
     float m_hitAnswered = -1;        // the hit the fight last answered
 
     bool m_lying;        // Ambush: in position, lying silent
     bool m_formation;    // Escort: in place beside the escorted unit
-    float m_dockStart;   // GotoWithInfiltrate: when the unit docked at its target, -1 while on its way
+    float m_dockLeft;    // GotoWithInfiltrate: the docking time still to sit out
+    bool m_docking = false;  // and whether it sits beside its target
     bool m_turretBusy;   // towers: the turret tracks a target
-    float m_sweepYaw;    // CardinalPatrol: where the turret rests while it has no target
-    float m_nextSweep;   // when it turns next
+    float m_sweepYaw;    // the cardinal orders: where the sweeping turret turns to
+    float m_nextSweep;   // when it turns next, once there
+    int m_sweepDirection = 0;    // the next step's way after an edge of the sweep's half circle
+    bool m_sweepWaiting = false; // there, pausing
+    bool m_sweepHome = true;     // back to the centre first (at the start, after a lost target)
+    float m_lastCentre = 0;      // the centre of the last cardinal order (a Wait faces it)
+    ActiveObject *m_enemy = nullptr; // CardinalAttack: the enemy, chosen at the order's start
 };
 
 

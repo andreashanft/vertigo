@@ -33,6 +33,8 @@ public:
 
 public:
     void draw();
+    // the arms' pitch (radians, up positive): they turn about their places on the body
+    void setArmPitch(float pitch) { m_armPitch = pitch; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
 
 private:
@@ -41,6 +43,7 @@ private:
     Module *m_armRight;
     Vector3D m_armLeftPosition;
     Vector3D m_armRightPosition;
+    float m_armPitch = 0;
 };
 
 

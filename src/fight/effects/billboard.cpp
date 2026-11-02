@@ -241,4 +241,16 @@ bool Billboard::intersect(const Vector3D &start, const Vector3D &dir, float &dis
 }
 
 
+float Billboard::endRadius() const
+{
+    if (m_stages.empty())
+        return 32.0f;
+    const Stage &stage = m_stages.back();
+    float radius = 0;
+    for (const Vector3D &corner : square)
+        radius = std::max(radius, glm::length((Vector2D(corner) + stage.offset)*stage.scale));
+    return std::max(1e-3f, 32.0f*radius);
+}
+
+
 } // namespace fight

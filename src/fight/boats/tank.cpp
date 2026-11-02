@@ -37,14 +37,20 @@ namespace fight {
 
 namespace {
 
-// The GunTurret (TANTUR2) turns as the turret models, 1.5 rad/s if the data has no rate
+// The GunTurret (TANTUR2) turns at its rate, 1.5 rad/s if the data has none, within 90 degrees of
+// the front, its gun from 5 degrees down to straight up (docs/ROADMAP.md, appendix J)
 const float GunTurnRate = 1.5f;
-const float MinPitch = -0.17f;
-const float MaxPitch = 1.0f;
-// a fixed Gun module (panztur*) only tilts, from 5 degrees down to straight up, at the hull's
-// pitch rate (MaxAngleVelocityB), and only at targets ahead (docs/ROADMAP.md, appendix J)
+const float MinPitch = -glm::radians(5.0f);
+const float MaxPitch = glm::half_pi<float>();
+// a fixed Gun module (panztur*) only tilts, to the target's elevation over the hull's plane, and
+// only at targets ahead, from 5 degrees down to straight up; otherwise it goes back to level
+// (from 15 degrees down); it turns as a damped spring by the hull's MaxAngleAccelerationB,
+// AngleFrictionB and MaxAngleVelocityB, leaving a degree to the damping (docs/ROADMAP.md,
+// appendix J)
 const float GunMinPitch = -glm::radians(5.0f);
+const float GunRestMinPitch = -glm::radians(15.0f);
 const float GunMaxPitch = glm::half_pi<float>();
+const float GunDeadZone = glm::radians(1.0f);
 // while it drives, a puff of dust behind one of its tracks every 0.2 to 0.3 s (a crawler 0.16 to
 // 0.3 s), the larger the faster it goes (docs/ROADMAP.md, appendix H)
 const float DustInterval = 0.2f;
@@ -82,7 +88,8 @@ Tank::Tank(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float
     file.setSection("gunturret");
     if (file.contains("name"))
     {
-        txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(file.value("name").toString()));
+        m_turretName = file.value("name").toString();
+        txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(m_turretName));
         m_turret.reset(new Turret(scenario, turretFile));
         m_turret->setPosition(Vector3D(file.value("RelativePositionX").toFloat(), file.value("RelativePositionY").toFloat(), file.value("RelativePositionZ").toFloat()));
         m_localBox.add(m_turret->box().scale(m_scale));
@@ -100,9 +107,13 @@ Tank::~Tank()
 }
 
 
+// a turret tank (TANK2) fires its turret's gun ([StaticGun] and [VolleyGun] of TANTUR2), not its
+// own file's; the others their [StaticGun] on the gun module
 void Tank::arm(int model, txt::DesFile &file)
 {
-    const UnitGun::Mount mount = UnitGun::readMount(file);
+    txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(m_turretName.isEmpty() ? String("gvehicle") : m_turretName));
+    txt::DesFile &gunFile = m_turret ? turretFile : file;
+    const UnitGun::Mount mount = UnitGun::readMount(gunFile);
     if (mount.model < 0)
         return; // crawlers have no gun
     if (!UnitGun::isGun(model))
@@ -112,8 +123,9 @@ void Tank::arm(int model, txt::DesFile &file)
     std::vector<Vector3D> muzzles;
     for (const Vector3D &muzzle : mount.muzzles)
         muzzles.push_back(muzzle*m_scale);
-    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &file));
+    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &gunFile));
     m_unitGun->setCountFirst(!m_turret);
+    m_unitGun->setRestartOnRelease(true);
     if (mount.ammunition >= 0)
         m_unitGun->setAmmunition(mount.ammunition);
 }
@@ -125,32 +137,36 @@ float Tank::ground(float x, float y) const
 }
 
 
+// the vehicle stands on the ground under its base's four corners (docs/ROADMAP.md, appendix J):
+// at their mean height, tilted by the difference front to back and right to left, without limit
 void Tank::setPosition(const Vector3D &pos)
 {
-    m_position = Vector3D(pos.x, pos.y, ground(pos.x, pos.y) + m_groundOffset);
+    m_position = Vector3D(pos.x, pos.y, 0);
+    auto vertex = [this](const Vector2D &at) { return ground(at.x, at.y); };
+    const BoundingBox base = m_base->box().scale(m_scale);
+    const Vector2D heading(std::sin(m_heading), std::cos(m_heading)), side(std::cos(m_heading), -std::sin(m_heading));
+    auto corner = [&](float x, float y) { return vertex(Vector2D(pos) + side*x + heading*y); };
+    const float minX = base.minPoint().x, maxX = base.maxPoint().x, minY = base.minPoint().y, maxY = base.maxPoint().y;
+    const float backLeft = corner(minX, minY), backRight = corner(maxX, minY), frontLeft = corner(minX, maxY), frontRight = corner(maxX, maxY);
+    m_corners = Vector4D(backLeft, backRight, frontLeft, frontRight);
+    m_position.z = 0.25f*(backLeft + backRight + frontLeft + frontRight) + m_groundOffset;
     alignToGround();
     updateBox();
 }
 
 
-// up follows the ground under the vehicle, forward follows the heading
 void Tank::alignToGround()
 {
-    const float d = std::max(1.5f, 0.35f*m_localBox.dim().y);
-    const float dx = (ground(m_position.x + d, m_position.y) - ground(m_position.x - d, m_position.y))/(2*d);
-    const float dy = (ground(m_position.x, m_position.y + d) - ground(m_position.x, m_position.y - d))/(2*d);
-    Vector3D up = glm::normalize(Vector3D(-dx, -dy, 1));
-    // tilt at most MaxClimbingAngle
-    const float tilt = std::acos(glm::clamp(up.z, -1.0f, 1.0f));
-    if (tilt > m_maxClimbingAngle)
-    {
-        const Vector2D side = glm::normalize(Vector2D(up));
-        up = Vector3D(side*std::sin(m_maxClimbingAngle), std::cos(m_maxClimbingAngle));
-    }
-    const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0);
-    const Vector3D forward = glm::normalize(heading - glm::dot(heading, up)*up);
-
-    m_orientationInverted = glm::mat3(glm::cross(forward, up), forward, up);
+    const BoundingBox base = m_base->box().scale(m_scale);
+    const float length = std::max(0.1f, base.dim().y), width = std::max(0.1f, base.dim().x);
+    const float pitch = std::atan((0.5f*(m_corners.z + m_corners.w) - 0.5f*(m_corners.x + m_corners.y))/length);
+    const float roll = std::atan((0.5f*(m_corners.y + m_corners.w) - 0.5f*(m_corners.x + m_corners.z))/width);
+    const Vector3D heading(std::sin(m_heading), std::cos(m_heading), 0), side(std::cos(m_heading), -std::sin(m_heading), 0);
+    const Vector3D forward = glm::normalize(heading*std::cos(pitch) + Vector3D(0, 0, std::sin(pitch)));
+    Vector3D right = side*std::cos(roll) + Vector3D(0, 0, std::sin(roll));
+    const Vector3D up = glm::normalize(glm::cross(right, forward));
+    right = glm::cross(forward, up);
+    m_orientationInverted = glm::mat3(right, forward, up);
     m_orientation = glm::transpose(m_orientationInverted);
 }
 
@@ -252,17 +268,21 @@ void Tank::aimAt(const Vector3D &point)
     const Vector3D way = m_orientation*(point - (m_position + m_orientationInverted*(m_pivot*m_scale)));
     if (m_turret)
     {
+        // behind the hull's side, back to the front
         m_targetYaw = std::atan2(way.x, way.y);
         m_targetPitch = glm::clamp(std::atan2(way.z, glm::length(Vector2D(way))), MinPitch, MaxPitch);
+        if (glm::abs(m_targetYaw) > glm::half_pi<float>())
+            m_targetYaw = m_targetPitch = 0;
     }
     else
     {
         // the gun points along the hull; behind it, it levels out
         if (way.y <= 0)
             return;
-        m_targetPitch = glm::clamp(std::atan2(way.z, way.y), GunMinPitch, GunMaxPitch);
+        m_targetPitch = std::atan2(way.z, glm::length(Vector2D(way)));
     }
-    m_aimHold = 1.0f;
+    m_aimHold = m_turret ? 1.0f : 0.0f;
+    m_aiming = true;
 }
 
 
@@ -285,6 +305,27 @@ glm::mat3 Tank::turretRotation() const
 
 void Tank::updateTurret(float elapsedTime)
 {
+    if (m_gun)
+    {
+        // aimed this frame, or back to level
+        const bool aiming = m_aiming;
+        m_aiming = false;
+        if (!aiming)
+            m_targetPitch = 0;
+        const float dt = std::max(elapsedTime, 1e-4f);
+        const float error = m_targetPitch - m_turretPitch;
+        float acceleration = glm::abs(error) > GunDeadZone ? m_maxAngleAcceleration.x*error/glm::pi<float>() : 0.0f;
+        acceleration -= m_gunRate*std::min(-m_angleFriction.x, 1/dt);
+        m_turretPitch += m_gunRate*dt + 0.5f*acceleration*dt*dt;
+        m_gunRate = glm::clamp(m_gunRate + acceleration*dt, -m_maxAngleVelocity.x, m_maxAngleVelocity.x);
+        const float low = aiming ? GunMinPitch : GunRestMinPitch;
+        if (m_turretPitch < low || m_turretPitch > GunMaxPitch)
+        {
+            m_turretPitch = glm::clamp(m_turretPitch, low, GunMaxPitch);
+            m_gunRate = 0;
+        }
+        return;
+    }
     m_aimHold -= elapsedTime;
     if (m_aimHold <= 0)
         m_targetYaw = m_targetPitch = 0;
@@ -302,7 +343,7 @@ void Tank::draw()
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     gfx::Pipeline::scale(m_scale);
     m_base->draw();
-    // the gun tilts around its origin; the turret turns around its pivot, only its yaw shows
+    // the gun tilts around its origin; the turret turns around its pivot and tilts its arm
     if (m_gun)
     {
         gfx::Pipeline::pushMatrix();
@@ -317,6 +358,7 @@ void Tank::draw()
         gfx::Pipeline::translate(m_pivot);
         gfx::Pipeline::rotate(-glm::degrees(m_turretYaw), Vector3D(0, 0, 1));
         gfx::Pipeline::translate(-m_pivot);
+        m_turret->setArmPitch(m_turretPitch);
         m_turret->draw();
         gfx::Pipeline::popMatrix();
     }

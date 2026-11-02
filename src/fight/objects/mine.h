@@ -58,6 +58,9 @@ private:
     float m_speed;          // m/s, 0 for a passive mine
     Vector3D m_home;        // where it was laid
     bool m_chasing = false;
+    float m_spin = 0;       // rad/s about the vertical
+    float m_nodRate = 0;    // rad/s of the nod's phase
+    float m_nodPhase = 0;
 };
 
 

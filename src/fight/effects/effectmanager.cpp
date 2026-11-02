@@ -96,6 +96,13 @@ Billboard* EffectManager::getBillboard(Effects effect)
 }
 
 
+float EffectManager::fitScale(Effects effect, float size)
+{
+    const Billboard *billboard = getBillboard(effect);
+    return size*32.0f/(billboard->endRadius()*std::max(1e-3f, billboard->sizeScale()));
+}
+
+
 void EffectManager::addEffect(Effects effect, const Vector3D &position, float angle, float scale)
 {
     // the explosions differ from one to the next: the size by up to 30 % and the speed of the

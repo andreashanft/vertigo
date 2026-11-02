@@ -42,6 +42,9 @@ public:
 public:
     void draw();
     const BoundingBox& box() const { return m_box; }
+    // the farthest vertex from the origin, and the farthest from its vertical (model units)
+    float radius() const { return m_radius; }
+    float flatRadius() const { return m_flatRadius; }
     bool intersect(const Vector3D &start, const Vector3D &dir, float radius, float &distance, Vector3D &normal);
     // its triangles' corners, transformed, three by three
     void addTriangles(const Matrix &transform, std::vector<Vector3D> &corners) const;
@@ -58,6 +61,8 @@ private:
     };
 
     BoundingBox m_box;
+    float m_radius = 0;
+    float m_flatRadius = 0;
     std::list<Mesh> m_meshes;
     CollisionMesh m_collisionMesh;
 };

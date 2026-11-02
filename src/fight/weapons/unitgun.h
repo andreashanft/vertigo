@@ -64,6 +64,9 @@ public:
     // ready again; a tank's fixed gun counts down first and fires on the frame it is ready
     // (docs/ROADMAP.md, appendix K)
     void setCountFirst(bool countFirst) { m_countFirst = countFirst; }
+    // the volley starts again at its first phase whenever the trigger is released (boats, whose
+    // target has left the aim; docs/ROADMAP.md, appendix J)
+    void setRestartOnRelease(bool restart) { m_restartOnRelease = restart; }
     void update(float elapsedTime, bool trigger, const Vector3D &position, const Vector3D &dir, const Vector3D &up, const Vector3D &right);
 
 private:
@@ -78,6 +81,7 @@ private:
     int m_phase;
     float m_phaseTime;
     bool m_countFirst = false;
+    bool m_restartOnRelease = false;
 };
 
 

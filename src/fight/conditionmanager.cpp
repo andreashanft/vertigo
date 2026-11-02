@@ -106,8 +106,6 @@ int ConditionManager::iff(int id) const
 
 void ConditionManager::updateObjective(int id, int index, int wccond)
 {
-    if (wccond == 2 || wccond == 9)
-        m_destroyTargets.insert(id);
     const ConditionEntry &entry = condEntries.at(id);
     ConditionEvent *condSuccess = NULL;
     ConditionEvent *condFailure = NULL;

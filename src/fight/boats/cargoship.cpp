@@ -21,7 +21,7 @@
 #include "fight/effects/billboard.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/objects/turret.h"
-#include "fight/objects/turretbase.h"
+#include "fight/objects/mountedturret.h"
 #include "fight/weapons/unitgun.h"
 #include "sfx/samplemap.h"
 #include "txt/stringtable.h"
@@ -47,10 +47,6 @@ const float MaxYawRate = 0.15f;      // rad/s
 const float MaxPitchRate = 0.08f;
 const float MaxClimbingAngle = 0.09f; // about 5 degrees
 
-const float ScanInterval = 1.0f;     // turrets look for a new target once a second
-const float AimTolerance = 0.06f;    // radians
-const float MinPitch = -0.1f;        // turrets can't aim into their own hull
-const float MaxPitch = 1.4f;
 
 // a block's own shield: a small explosion where it is hit when 60 % and 80 % of it are gone,
 // and then it is whole again
@@ -91,6 +87,11 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
         block.module = scenario->moduleManager().get(blockFile.value("base").toString());
         blockFile.setSection("size");
         block.scale = blockFile.value("scale").toFloat()/32.0f;
+        block.radius = block.module->radius()*block.scale;
+        block.flatRadius = block.module->flatRadius()*block.scale;
+        block.top = block.module->box().maxPoint().z*block.scale;
+        blockFile.setSection("display");
+        block.gouraud = blockFile.value("ShadingMode", "f").toString().trimmed().toLower() == "g";
         blockFile.setSection("defense");
         block.shield = block.shieldMax = std::max(1, blockFile.value("KineticShield0").toInt());
 
@@ -120,47 +121,25 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
             blockFile.setSection(String("Turret%1").arg(t));
             if (!blockFile.contains("name"))
                 break;
-            ShipTurret turret;
             const String name = blockFile.value("name").toString();
             const float x = blockFile.value("RelativePositionX").toFloat();
             const float y = blockFile.value("RelativePositionY").toFloat();
-            turret.below = blockFile.value("RelativePositionZ").toFloat() < 0;
+            const bool below = blockFile.value("RelativePositionZ").toFloat() < 0;
             // Alpha turns the turret counter-clockwise from the bow
             const float alpha = blockFile.value("Alpha").toFloat();
-            turret.restYaw = turret.below ? alpha : -alpha;
-            turret.yaw = turret.restYaw;
-            turret.pitch = 0;
-            turret.block = i;
 
             // the point of the hull under (or over) the turret
             const Vector3D modelBox[2] = { block.module->box().minPoint(), block.module->box().maxPoint() };
-            const float sign = turret.below ? -1.0f : 1.0f;
+            const float sign = below ? -1.0f : 1.0f;
             float distance;
             Vector3D normal;
-            float z = turret.below ? modelBox[0].z : modelBox[1].z;
+            float z = below ? modelBox[0].z : modelBox[1].z;
             if (block.module->intersect(Vector3D(x, y, sign*10.0f), Vector3D(0, 0, -sign), 0.0f, distance, normal) && distance < 20.0f)
                 z = sign*10.0f - sign*distance;
-            turret.position = block.position + Vector3D(x, y, z)*block.scale;
-
             txt::DesFile turretFile(String("vfx:sobjects/%1.des").arg(name));
-            turret.model.reset(new Turret(scenario, turretFile));
-            turretFile.setSection("size");
-            turret.scale = turretFile.value("scale").toFloat()/32.0f;
-            turretFile.setSection("kinematics");
-            turret.turnRate = turretFile.value("MaxAngleVelocityA", 1).toFloat();
-            turretFile.setSection("sensor");
-            turret.range = turretFile.value("senr", 100).toFloat();
-
-            const UnitGun::Mount mount = UnitGun::readMount(turretFile);
-            if (UnitGun::isGun(mount.model))
-            {
-                std::vector<Vector3D> muzzles;
-                for (const Vector3D &muzzle : mount.muzzles)
-                    muzzles.push_back(muzzle*turret.scale);
-                turret.gun.reset(new UnitGun(scenario, this, mount.model, muzzles, &turretFile));
-                if (mount.ammunition >= 0)
-                    turret.gun->setAmmunition(mount.ammunition);
-            }
+            ShipTurret turret;
+            turret.unit = new MountedTurret(scenario, this, turretFile, info, block.position + Vector3D(x, y, z)*block.scale, below, alpha);
+            turret.block = i;
             m_turrets.push_back(std::move(turret));
         }
     }
@@ -175,7 +154,7 @@ CargoShip::CargoShip(Scenario *scenario, txt::DesFile &file, const ObjectInfo &i
         block.box = block.box.translate(-middle);
     }
     for (ShipTurret &turret : m_turrets)
-        turret.position -= middle;
+        turret.unit->setMountPosition(turret.unit->mountPosition() - middle);
 
     updateLocalBox();
     const Vector3D dim = m_localBox.dim();
@@ -195,9 +174,6 @@ void CargoShip::updateLocalBox()
     for (const Block &block : m_blocks)
         if (!block.destroyed)
             m_localBox.add(block.box);
-    for (const ShipTurret &turret : m_turrets)
-        if (!turret.destroyed)
-            m_localBox.add(turret.model->box().scale(turret.scale).translate(turret.position));
     if (m_localBox.minPoint().x > m_localBox.maxPoint().x)
         m_localBox = BoundingBox(Vector3D(-1), Vector3D(1));
 }
@@ -205,6 +181,8 @@ void CargoShip::updateLocalBox()
 
 bool CargoShip::update(float elapsedTime)
 {
+    if (m_paralysed)
+        freeze();
     if (m_exploding)
     {
         // it brakes to a stop; the blocks start in their order, the first at once, then one
@@ -218,9 +196,15 @@ bool CargoShip::update(float elapsedTime)
         }
     }
     SimpleBoat::update(elapsedTime);
+    updateLaterExplosions();
     for (ShipTurret &turret : m_turrets)
-        if (!turret.destroyed)
-            updateTurret(turret, elapsedTime);
+    {
+        if (!turret.unit->isPresent())
+            continue;
+        if (!turret.unit->isEnabled())
+            turret.unit->enable();
+        turret.unit->think(elapsedTime);
+    }
     for (int i = 0; i < int(m_blocks.size()); i++)
         updateBlock(i, elapsedTime);
     updateSegments();
@@ -334,90 +318,37 @@ void CargoSegment::identify()
 }
 
 
-bool CargoShip::isTargetValid(const ActiveObject *unit) const
+std::vector<MountedTurret *> CargoShip::turretUnits() const
 {
-    if (!unit)
-        return false;
-    if (unit == m_scenario->player())
-        return !m_scenario->playerDestroyed() && m_scenario->isHostile(iff(), unit->iff());
-    return unit->isEnabled() && !unit->isDying() && m_scenario->isHostile(iff(), unit->iff());
+    std::vector<MountedTurret *> units;
+    for (const ShipTurret &turret : m_turrets)
+        units.push_back(turret.unit);
+    return units;
 }
 
 
-// the nearest hostile vessel in range on the turret's side of the hull
-ActiveObject* CargoShip::findTarget(const ShipTurret &turret) const
+bool CargoShip::startTumbling()
 {
-    const Vector3D pivot = toWorld(turret.position);
-    ActiveObject *nearest = nullptr;
-    float nearestDistance = turret.range;
-    auto consider = [&](ActiveObject *unit) {
-        if (unit == this || !isTargetValid(unit))
-            return;
-        const float distance = glm::length(unit->center() - pivot);
-        if (distance >= nearestDistance)
-            return;
-        const Vector3D way = toMount(turret, toLocal(unit->center()) - turret.position);
-        if (std::atan2(way.z, glm::length(Vector2D(way))) < MinPitch)
-            return;
-        nearest = unit;
-        nearestDistance = distance;
-    };
-    consider(m_scenario->player());
-    for (const auto &record : m_scenario->objectRecords())
-        if (ActiveObject *unit = dynamic_cast<ActiveObject *>(record.object))
-            if (dynamic_cast<SimpleBoat *>(unit) || dynamic_cast<TurretBase *>(unit))
-                consider(unit);
-    return nearest;
+    m_paralysed = true;
+    setOrders(nullptr);
+    m_velocity = Vector3D(0);
+    freeze();
+    return true;
 }
 
 
-Vector3D CargoShip::turretAim(const ShipTurret &turret) const
+void CargoShip::orderStarted(const OrderSlot *slot)
 {
-    const Vector3D aim(std::sin(turret.yaw)*std::cos(turret.pitch), std::cos(turret.yaw)*std::cos(turret.pitch), std::sin(turret.pitch));
-    return m_orientationInverted*toMount(turret, aim);
+    for (ShipTurret &turret : m_turrets)
+        turret.unit->setOrder(slot);
 }
 
 
-void CargoShip::updateTurret(ShipTurret &turret, float elapsedTime)
+void CargoShip::sleep()
 {
-    if (m_scenario->time() >= turret.nextScan || (turret.target && !isTargetValid(turret.target)))
-    {
-        turret.target = findTarget(turret);
-        turret.nextScan = m_scenario->time() + ScanInterval;
-    }
-
-    // turn towards the target (leading it) or back to rest
-    float targetYaw = turret.restYaw, targetPitch = 0;
-    Vector3D point;
-    if (turret.target)
-    {
-        point = turret.target->center();
-        const float speed = turret.gun ? turret.gun->projectileSpeed() : 0;
-        if (speed > 0)
-            point += turret.target->velocity()*(glm::length(point - toWorld(turret.position))/speed);
-        const Vector3D way = toMount(turret, toLocal(point) - turret.position);
-        targetYaw = std::atan2(way.x, way.y);
-        targetPitch = glm::clamp(std::atan2(way.z, glm::length(Vector2D(way))), MinPitch, MaxPitch);
-    }
-    const float step = turret.turnRate*elapsedTime;
-    turret.yaw += glm::clamp(std::remainder(targetYaw - turret.yaw, glm::two_pi<float>()), -step, step);
-    turret.pitch += glm::clamp(targetPitch - turret.pitch, -step, step);
-
-    if (!turret.gun)
-        return;
-    const Vector3D pivot = toWorld(turret.position);
-    const Vector3D dir = turretAim(turret);
-    bool trigger = false;
-    if (turret.target)
-    {
-        const Vector3D way = point - pivot;
-        const float distance = glm::length(way);
-        trigger = distance < std::min(turret.range, turret.gun->range()) && distance > 0 && glm::dot(dir, way/distance) > std::cos(AimTolerance);
-    }
-    const Vector3D mountUp = m_orientationInverted*toMount(turret, Vector3D(0, 0, 1));
-    Vector3D right = glm::cross(dir, mountUp);
-    right = glm::length2(right) > 1e-6f ? glm::normalize(right) : m_orientationInverted*Vector3D(1, 0, 0);
-    turret.gun->update(elapsedTime, trigger, pivot, dir, glm::cross(right, dir), right);
+    SimpleBoat::sleep();
+    for (ShipTurret &turret : m_turrets)
+        turret.unit->reset();
 }
 
 
@@ -432,23 +363,11 @@ void CargoShip::draw()
             continue;
         gfx::Pipeline::pushMatrix();
         gfx::Pipeline::multiply(blockTransform(block));
+        if (block.gouraud)
+            m_scenario->shadeModels(true);
         block.module->draw();
-        gfx::Pipeline::popMatrix();
-    }
-    for (const ShipTurret &turret : m_turrets)
-    {
-        if (turret.destroyed)
-            continue;
-        // with its block as that shakes and sinks
-        const Block &block = m_blocks[turret.block];
-        gfx::Pipeline::pushMatrix();
-        gfx::Pipeline::multiply(blockMotion(block));
-        gfx::Pipeline::translate(turret.position);
-        if (turret.below)
-            gfx::Pipeline::rotate(180, Vector3D(0, 1, 0));
-        gfx::Pipeline::rotate(-glm::degrees(turret.yaw), Vector3D(0, 0, 1));
-        gfx::Pipeline::scale(turret.scale);
-        turret.model->draw();
+        if (block.gouraud)
+            m_scenario->shadeModels(false);
         gfx::Pipeline::popMatrix();
     }
     gfx::Pipeline::popMatrix();
@@ -480,17 +399,6 @@ bool CargoShip::intersect(const Vector3D &start, const Vector3D &dir, float radi
         if (block.module->intersect(Vector3D(inverse*Vector4D(localStart, 1)), glm::normalize(Vector3D(inverse*Vector4D(localDir, 0))), radius/block.scale, d, n))
             take(d*block.scale, glm::normalize(Vector3D(transform*Vector4D(n, 0))));
     }
-    for (const ShipTurret &turret : m_turrets)
-    {
-        if (turret.destroyed)
-            continue;
-        // the turret's frame: turned by its yaw (and over, under the hull)
-        const float c = std::cos(turret.yaw), s = std::sin(turret.yaw);
-        auto toTurret = [&](const Vector3D &v) { const Vector3D m = toMount(turret, v); return Vector3D(c*m.x - s*m.y, s*m.x + c*m.y, m.z); };
-        auto fromTurret = [&](const Vector3D &v) { return toMount(turret, Vector3D(c*v.x + s*v.y, -s*v.x + c*v.y, v.z)); };
-        if (turret.model->intersect(toTurret(localStart - turret.position)/turret.scale, toTurret(localDir), radius/turret.scale, d, n))
-            take(d*turret.scale, fromTurret(n));
-    }
     return collision;
 }
 
@@ -517,24 +425,37 @@ void CargoShip::damage(int kinetic, int shock, const Vector3D &position, ActiveO
     if (hit && kinetic > 0)
     {
         hit->shield -= kinetic;
-        auto explosion = [this, &position]() {
-            // a little out of the hull, towards the player
-            const Vector3D way = m_scenario->player() ? m_scenario->player()->position() - position : Vector3D(0);
-            const Vector3D at = position + (glm::length(way) > 1.0f ? glm::normalize(way) : Vector3D(0));
-            m_scenario->effectManager().addEffect(Effects::Explosion_1, at);
-            sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
+        // 6 to 11 small explosions over 1.5 s (entries 8, 5, 0 and 5 alike), each 0.05 to 0.1 of
+        // the block's radius (at most 20 m) in size, spread over 0.8 of that in the plane of the
+        // screen about a point 0.6 radii from the block's origin towards the eye, raised by 0.15 to
+        // 0.5 of its height (docs/ROADMAP.md, appendix A)
+        auto explosion = [this, hit]() {
+            const Vector3D origin = blockOrigin(*hit);
+            const float s = std::min(hit->radius, 20.0f);
+            Vector3D way = m_scenario->eye() - origin;
+            way = glm::length(way) > 0.1f ? glm::normalize(way) : Vector3D(0, -1, 0);
+            const Vector3D p = origin + way*0.6f*hit->radius + Vector3D(0, 0, between(0.15f, 0.5f)*hit->top);
+            const Vector3D right = m_scenario->eyeAxes()[0], up = m_scenario->eyeAxes()[1];
+            static const int types[4] = { 8, 5, 0, 5 };
+            for (int i = 6 + util::random()%6; i > 0; i--)
+                addLaterExplosion(between(0.0f, 1.5f), types[util::random()%4], p + right*between(-0.4f, 0.4f)*s + up*between(-0.4f, 0.4f)*s,
+                                  between(0.05f, 0.1f)*s);
         };
+        // (one burst, even when a hit crosses both marks)
+        bool burst = false;
         if (!hit->hitHard && hit->shield < HitHard*hit->shieldMax)
         {
-            explosion();
+            burst = true;
             hit->hitHard = true;
         }
         if (hit->shield < HitHarder*hit->shieldMax)
         {
-            explosion();
+            burst = true;
             hit->shield = hit->shieldMax;
             hit->hitHard = false;
         }
+        if (burst)
+            explosion();
     }
     ActiveObject::damage(kinetic, shock, position, attacker);
 }
@@ -560,6 +481,12 @@ Vector3D CargoShip::blockCenter(const Block &block) const
 }
 
 
+Vector3D CargoShip::blockOrigin(const Block &block) const
+{
+    return toWorld(Vector3D(blockMotion(block)*Vector4D(block.position, 1)));
+}
+
+
 float CargoShip::blockRadius(const Block &block) const
 {
     const Vector3D dim = block.box.dim();
@@ -578,26 +505,6 @@ Matrix CargoShip::blockMotion(const Block &block) const
 {
     const Vector3D middle = 0.5f*(block.box.minPoint() + block.box.maxPoint());
     return glm::translate(middle + block.shake + Vector3D(0, 0, -block.sink))*Matrix(block.tilt)*glm::translate(-middle);
-}
-
-
-void CargoShip::destroyTurret(ShipTurret &turret)
-{
-    if (turret.destroyed)
-        return;
-    turret.destroyed = true;
-    turret.target = nullptr;
-    const Block &block = m_blocks[turret.block];
-    const Vector3D at = toWorld(Vector3D(blockMotion(block)*Vector4D(turret.position, 1)));
-    m_scenario->effectManager().addEffect(Effects::Explosion_0, at, 0, 0.6f);
-    m_scenario->effectManager().addEffect(Effects::Explosion_3, at, 0, 0.6f);
-    sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
-    for (int index : { 17, 2, 1 })
-    {
-        const float azimuth = between(-glm::pi<float>(), glm::pi<float>());
-        const float elevation = between(0.0f, glm::half_pi<float>());
-        m_scenario->effectManager().addDebris(Effects(int(Effects::Debris_0) + index), at, Vector3D(std::cos(elevation)*std::sin(azimuth), std::cos(elevation)*std::cos(azimuth), std::sin(elevation)));
-    }
 }
 
 
@@ -628,12 +535,13 @@ void CargoShip::updateBlock(int index, float elapsedTime)
     for (ShipTurret &turret : m_turrets)
         if (turret.block == index)
             turrets.push_back(&turret);
-    const int half = int(turrets.size() + 1)/2;
+    const int half = int(turrets.size())/2;
     const float fifth = 0.2f*glm::pi<float>();
 
-    // the bursts as a boat's (appendix R) about the block's middle and within its size
-    const Vector3D centre = blockCenter(block);
-    const float r = blockRadius(block);
+    // the bursts as a boat's (appendix R) about the block's model origin and within its farthest
+    // vertex
+    const Vector3D centre = blockOrigin(block);
+    const float r = block.radius;
     auto debris = [&](int index, float minElevation, float maxElevation) { ActiveObject::wreckDebris(index, minElevation, maxElevation, centre, r); };
     while (block.step < 7 && t >= WreckTimes[block.step])
     {
@@ -645,7 +553,7 @@ void CargoShip::updateBlock(int index, float elapsedTime)
             if (util::random()%3 != 0)
                 sfx::SampleMap::playAt(sfx::Sample::Sample18, centre.x, centre.y, centre.z);
             for (int i = 0; i < half; i++)
-                destroyTurret(*turrets[i]);
+                turrets[i]->unit->blowUpTurret();
             break;
         case 2:
             for (int index : { 2, 2, 1 })
@@ -653,7 +561,7 @@ void CargoShip::updateBlock(int index, float elapsedTime)
             break;
         case 4:
             for (int i = half; i < int(turrets.size()); i++)
-                destroyTurret(*turrets[i]);
+                turrets[i]->unit->blowUpTurret();
             break;
         case 5:
             {
@@ -661,16 +569,23 @@ void CargoShip::updateBlock(int index, float elapsedTime)
                     debris(index, 0, fifth);
                 // one body: 14 or 15 two times in five, 16 once
                 debris(14 + util::random()%5%3, 0, glm::half_pi<float>());
-                // and a big one on its side towards the player
-                const Vector3D way = m_scenario->player() ? m_scenario->player()->position() - centre : Vector3D(0);
-                const Vector3D at = centre + (glm::length(way) > 1.0f ? glm::normalize(way)*r : Vector3D(0));
-                Billboard *billboard = m_scenario->effectManager().getBillboard(Effects::Explosion_2);
-                m_scenario->effectManager().addEffect(Effects::Explosion_2, at, 0, 0.35f*r/std::max(billboard->sizeScale(), 1e-3f));
-                sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
-                m_scenario->explosionAt(at, 1.0f);
+                // and 0.6 s later a big one of 0.35 of its radius, half its height up and its flat
+                // radius out towards the eye, as large as the block itself
+                const Vector3D middle = centre + Vector3D(0, 0, 0.5f*block.top);
+                const Vector3D way = m_scenario->eye() - middle;
+                const Vector3D at = middle + (glm::length(way) > 1.0f ? glm::normalize(way)*block.flatRadius : Vector3D(0));
+                addLaterExplosion(0.6f, 2, at, 0.35f*r);
             }
             break;
         case 6:
+            // it goes with its last turret
+            for (ShipTurret *turret : turrets)
+                if (turret->unit->isPresent())
+                {
+                    block.step = 6;
+                    block.sinkAcceleration = 0;
+                    return;
+                }
             block.destroyed = true;
             if (block.segment)
                 block.segment->remove();

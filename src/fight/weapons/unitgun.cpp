@@ -81,6 +81,11 @@ void UnitGun::update(float elapsedTime, bool trigger, const Vector3D &position, 
         if (active && m_gun.ready())
             m_gun.fire(position, dir, up, right);
     }
+    else if (m_restartOnRelease)
+    {
+        m_phase = 0;
+        m_phaseTime = 0;
+    }
     if (!m_countFirst)
         m_gun.update(elapsedTime);
 }

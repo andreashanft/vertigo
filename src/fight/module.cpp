@@ -56,6 +56,8 @@ Module::Module(gfx::TextureManager &texMan, const String &name)
         stream >> index >> v.x >> v.y >> v.z;
         vertices.push_back(v);
         m_box.add(v);
+        m_radius = std::max(m_radius, glm::length(v));
+        m_flatRadius = std::max(m_flatRadius, glm::length(Vector2D(v)));
     }
 
     for (i = 0; i < numFaces; i++) {

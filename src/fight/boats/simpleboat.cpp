@@ -20,6 +20,7 @@
 #include "fight/effects/effect.h"
 #include "fight/effects/effectmanager.h"
 #include "fight/objects/mine.h"
+#include "fight/objects/mountedturret.h"
 #include "fight/scenario.h"
 #include "fight/module.h"
 #include "fight/orders.h"
@@ -39,15 +40,13 @@
 namespace fight {
 
 
-// a paralysed boat (docs/ROADMAP.md, appendix J): the most it turns about each axis (rad/s), how
-// long it turns and coasts and how fast its way runs out meanwhile (1/s)
+// a paralysed boat (docs/ROADMAP.md, appendix J): the most it turns about each axis (rad/s) and
+// how long it turns and loses its way, braking at three times its retardation
 const float ParalysedSpin = 0.227f;
-const float ParalysedCoast = 3.0f;
-const float ParalysedBrake = 1.5f;
-// a boat's hull banks into its turn as it is drawn, up to this much at its full turn rate, and
-// follows the turn by this share of the way a second (docs/ROADMAP.md, appendix V)
-const float MaxBank = glm::radians(40.0f);
-const float BankFollow = 4.0f;
+const float ParalysedCoast = 5.0f;
+const float ParalysedBrake = 3.0f;
+// the AI's turn leaves errors within a degree to the damping (docs/ROADMAP.md, appendix J)
+const float TurnDeadZone = glm::radians(1.0f);
 
 
 SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo &info, float yaw) :
@@ -68,9 +67,11 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
     m_orientationFriction = Vector3D(-file.value("OrientationFrictionX").toFloat(), -file.value("OrientationFrictionY").toFloat(), -file.value("OrientationFrictionZ").toFloat());
 
     m_maxAngleVelocity = Vector3D(file.value("MaxAngleVelocityB").toFloat(), file.value("MaxAngleVelocityC").toFloat(), file.value("MaxAngleVelocityA").toFloat());
+    m_maxAngleAcceleration = Vector3D(file.value("MaxAngleAccelerationB").toFloat(), file.value("MaxAngleAccelerationC").toFloat(), file.value("MaxAngleAccelerationA").toFloat());
     m_angleFriction = Vector3D(-file.value("AngleFrictionB").toFloat(), -file.value("AngleFrictionC").toFloat(), -file.value("AngleFrictionA").toFloat());
-    file.setSection("fluid");
-    m_currentFactor = file.value("Current", 1).toFloat();
+    // the units of the missions don't drift in the currents, only the player's boat does
+    // (its [Kinematics] Current; docs/ROADMAP.md, appendix D)
+    m_currentFactor = 0;
     file.setSection("buzzermagazine");
     if (file.contains("Type"))
     {
@@ -80,8 +81,11 @@ SimpleBoat::SimpleBoat(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
         m_buzzers.probability = file.value("EjectProbability").toFloat();
         m_buzzers.speed = file.value("EjectVelocity").toFloat()/32.0f;
         m_buzzers.delay = file.value("EjectDelay").toFloat();
-        m_buzzers.interval = std::min(m_buzzers.delay, 1.0f);
     }
+    file.setSection("torpedomagazine");
+    for (int i = 0; file.contains(String("relative%1x").arg(i)); i++)
+        m_torpedoTubes.push_back(Vector3D(file.value(String("relative%1x").arg(i)).toFloat(), file.value(String("relative%1y").arg(i)).toFloat(),
+                                          file.value(String("relative%1z").arg(i)).toFloat())*m_scale);
     file.setSection("kinematics");
     m_minClimbingAngle = glm::radians(file.value("MinClimbingAngle", 20).toFloat());
     m_maxClimbingAngle = glm::radians(file.value("MaxClimbingAngle", 20).toFloat());
@@ -141,7 +145,7 @@ SimpleBoat::~SimpleBoat()
 
 void SimpleBoat::steerTo(const Vector3D &point, float speed)
 {
-    steer(point, speed, 40.0f);
+    steer(point, speed, glm::length(Vector2D(point - m_position)));
 }
 
 
@@ -153,7 +157,8 @@ void SimpleBoat::pointAt(const Vector3D &point, float speed)
 }
 
 
-// the pitch makes for the point's height over this horizontal way
+// the pitch makes for the point's height over this horizontal way; big ships climb no steeper
+// than their climbing angles, boats at any angle
 void SimpleBoat::steer(const Vector3D &point, float speed, float reach)
 {
     const Vector3D way = point - m_position;
@@ -162,19 +167,38 @@ void SimpleBoat::steer(const Vector3D &point, float speed, float reach)
     // positive turns to the right (yaw) and pitch the nose down
     const float yawError = std::atan2(local.x, local.y);
     const float pitch = std::asin(glm::clamp(dir().z, -1.0f, 1.0f));
-    const float targetPitch = glm::clamp(std::atan2(way.z, reach), -m_minClimbingAngle, m_maxClimbingAngle);
+    float targetPitch = std::atan2(way.z, std::max(reach, 1e-3f));
+    if (isBigShip())
+        targetPitch = glm::clamp(targetPitch, -m_minClimbingAngle, m_maxClimbingAngle);
     m_turnVelocity = Vector3D(glm::clamp(2.0f*(pitch - targetPitch), -1.0f, 1.0f), 0, glm::clamp(1.5f*yawError, -1.0f, 1.0f));
-
-    // slow down while turning towards a point to the side or behind
-    m_velocityTarget = speed*std::max(0.3f, std::cos(std::min(glm::abs(yawError), glm::half_pi<float>())));
+    turnBy(yawError, pitch - targetPitch, speed);
 }
 
 
+void SimpleBoat::turnBy(float yawError, float pitchError, float speed)
+{
+    m_turnError = Vector3D(pitchError, 0, yawError);
+    m_steered = true;
+    m_velocityTarget = speed;
+}
+
+
+// the heading held, the pitch going for half its present value
 void SimpleBoat::hold()
 {
     const float pitch = std::asin(glm::clamp(dir().z, -1.0f, 1.0f));
     m_turnVelocity = Vector3D(glm::clamp(2.0f*pitch, -1.0f, 1.0f), 0, 0);
-    m_velocityTarget = 0;
+    turnBy(0, 0.5f*pitch, 0);
+}
+
+
+Vector3D SimpleBoat::nextTorpedoTube()
+{
+    if (m_torpedoTubes.empty())
+        return m_position + dir()*(m_localBox.maxPoint().y + 1.0f);
+    const Vector3D tube = m_torpedoTubes[m_nextTube];
+    m_nextTube = (m_nextTube + 1) % int(m_torpedoTubes.size());
+    return m_position + m_orientationInverted*tube;
 }
 
 
@@ -202,11 +226,20 @@ void SimpleBoat::updateBox()
 }
 
 
-// boats fire from the nose; their object files have no gun data
+// boats fire from their [StaticGun] mountings (the nose without any) in the rhythm of their
+// [VolleyGun], which starts again whenever the target leaves the aim (docs/ROADMAP.md, appendix J);
+// the mission's gun replaces the file's model, with that model's own ammunition
 void SimpleBoat::arm(int model, txt::DesFile &file)
 {
-    if (UnitGun::isGun(model))
-        m_unitGun.reset(new UnitGun(m_scenario, this, model, { Vector3D(0, m_localBox.maxPoint().y + 0.5f, 0) }));
+    if (!UnitGun::isGun(model))
+        return;
+    std::vector<Vector3D> muzzles;
+    for (const Vector3D &muzzle : UnitGun::readMount(file).muzzles)
+        muzzles.push_back(muzzle*m_scale);
+    if (muzzles.empty())
+        muzzles.push_back(Vector3D(0, m_localBox.maxPoint().y + 0.5f, 0));
+    m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &file));
+    m_unitGun->setRestartOnRelease(true);
 }
 
 
@@ -229,13 +262,15 @@ bool SimpleBoat::update(float elapsedTime)
     move(m_velocity*elapsedTime);
     if (m_unitGun)
         m_unitGun->update(elapsedTime, m_trigger, m_position, dir(), up(), right());
-    updateBuzzers();
+    // the buzzer magazine works only in patrols, attacks, ambushes and escorts
+    if (m_orders && m_orders->usesBuzzers())
+        updateBuzzers();
 
     return false;
 }
 
 
-// it looks every interval; the buzzer leaves its place (the tail if none is given) upwards and
+// it looks every frame until the first buzzer, then every EjectDelay; the buzzer leaves its place (the tail if none is given) upwards and
 // backwards at the magazine's speed on top of the boat's own velocity, of the boat's faction
 void SimpleBoat::updateBuzzers()
 {
@@ -275,8 +310,10 @@ Vector3D SimpleBoat::slideAlongObjects(const Vector3D &position, const Vector3D 
     if (!collidesWithObjects())
         return delta;
     const Object *docking = m_orders ? m_orders->dockingTarget() : nullptr;
+    // (a bomber's turrets ride on its hull, which is the obstacle)
     auto obstacle = [docking](const Object *object) {
-        return object != docking && !dynamic_cast<const Mine *>(object) && !dynamic_cast<const Effect *>(object);
+        return object != docking && !dynamic_cast<const Mine *>(object) && !dynamic_cast<const Effect *>(object) &&
+               !dynamic_cast<const MountedTurret *>(object);
     };
     if (!m_scenario->collisionManager().testCollision(position, position + delta, m_collisionRadius, contact, normal, nullptr, this, obstacle))
         return delta;
@@ -346,8 +383,8 @@ void SimpleBoat::updateVelocity(float elapsedTime)
 {
     Vector3D velocity = m_orientation * m_velocity;
     // the water's drag, and a current's push: a steady push is held by the drag across the boat
-    // and by the cap along its axis (docs/ROADMAP.md, appendix D)
-    Vector3D acceleration = velocity*m_orientationFriction + m_orientation*(m_scenario->current(m_position)*m_currentFactor);
+    // and by the engine along its axis (docs/ROADMAP.md, appendix D)
+    Vector3D acceleration = velocity*m_orientationFriction + m_orientation*(m_scenario->current(m_position)*m_currentFactor + m_push);
 
     // the booster pushes the boat to twice its top speed whatever the throttle says
     const float target = m_speedBoost > 1.0f ? m_maxVelocity*m_speedBoost : m_velocityTarget;
@@ -359,14 +396,12 @@ void SimpleBoat::updateVelocity(float elapsedTime)
     acceleration.y += orientationAcceleration;
 
     velocity += acceleration*elapsedTime;
-    // nothing pushes the boat past twice its top speed along its axis
-    velocity.y = glm::clamp(velocity.y, 2*m_minVelocity, 2*m_maxVelocity);
     m_velocity = m_orientationInverted * velocity;
 }
 
 
 // the drift after an energy defence's collapse (docs/ROADMAP.md, appendix J): the boat turns
-// about its three axes at random rates up to 0.227 rad/s and loses its way for 3 s, then stays
+// about its three axes at random rates up to 0.227 rad/s and brakes to a stop for 5 s, then stays
 // still where it is, to be boarded or finished off
 bool SimpleBoat::startTumbling()
 {
@@ -393,27 +428,54 @@ void SimpleBoat::updateTumble(float elapsedTime)
     m_orientation *= glm::mat3(glm::rotate(m_spin.x*elapsedTime, Vector3D(1, 0, 0))) * glm::mat3(glm::rotate(m_spin.y*elapsedTime, Vector3D(0, 1, 0)))
                    * glm::mat3(glm::rotate(m_spin.z*elapsedTime, Vector3D(0, 0, 1)));
     m_orientationInverted = glm::transpose(m_orientation);
-    m_velocity *= std::exp(-ParalysedBrake*elapsedTime);
+    // the engine brakes along the nose at three times its retardation, the water across it
+    Vector3D local = m_orientation*m_velocity;
+    local += local*m_orientationFriction*elapsedTime;
+    const float brake = -ParalysedBrake*m_maxOrientationRetardation*elapsedTime;
+    local.y -= glm::clamp(local.y, -brake, brake);
+    m_velocity = m_orientationInverted*local;
     move(m_velocity*elapsedTime);
 }
 
 
 void SimpleBoat::updateOrientation(float elapsedTime)
 {
-    m_angleVelocity += m_angleVelocity*m_angleFriction*elapsedTime;
-    // turning in either direction
-    const Vector3D turn = m_turnVelocity*m_maxAngleVelocity;
-    if (glm::abs(m_angleVelocity.x) < glm::abs(turn.x))
-        m_angleVelocity.x = turn.x;
-    if (glm::abs(m_angleVelocity.z) < glm::abs(turn.z))
-        m_angleVelocity.z = turn.z;
+    if (!m_steered || isBigShip())
+    {
+        m_angleVelocity += m_angleVelocity*m_angleFriction*elapsedTime;
+        // turning in either direction
+        const Vector3D turn = m_turnVelocity*m_maxAngleVelocity;
+        if (glm::abs(m_angleVelocity.x) < glm::abs(turn.x))
+            m_angleVelocity.x = turn.x;
+        if (glm::abs(m_angleVelocity.z) < glm::abs(turn.z))
+            m_angleVelocity.z = turn.z;
+        m_orientation *= glm::mat3(glm::rotate(m_angleVelocity.x*elapsedTime, right())) * glm::mat3(glm::rotate(m_angleVelocity.z*elapsedTime, Vector3D(0, 0, 1)));
+        m_orientationInverted = glm::transpose(m_orientation);
+        return;
+    }
 
-    m_orientation *= glm::mat3(glm::rotate(m_angleVelocity.x*elapsedTime, right())) * glm::mat3(glm::rotate(m_angleVelocity.z*elapsedTime, Vector3D(0, 0, 1)));
+    // the AI's turn (docs/ROADMAP.md, appendix J): an error beyond a degree accelerates the turn by
+    // MaxAngleAcceleration times the error over pi, AngleFriction damps it, and the rate is held
+    // to MaxAngleVelocity afterwards
+    const float damping = elapsedTime > 0 ? 1/elapsedTime : 0;
+    Vector3D turned(0);
+    for (int axis : { 0, 2 })
+    {
+        const float error = m_turnError[axis];
+        float acceleration = glm::abs(error) > TurnDeadZone ? m_maxAngleAcceleration[axis]*error/glm::pi<float>() : 0.0f;
+        acceleration -= m_angleVelocity[axis]*std::min(-m_angleFriction[axis], damping);
+        turned[axis] = m_angleVelocity[axis]*elapsedTime + 0.5f*acceleration*elapsedTime*elapsedTime;
+        m_angleVelocity[axis] += acceleration*elapsedTime;
+        const float most = glm::abs(m_maxAngleVelocity[axis]);
+        m_angleVelocity[axis] = glm::clamp(m_angleVelocity[axis], -most, most);
+    }
+    m_orientation *= glm::mat3(glm::rotate(turned.x, right())) * glm::mat3(glm::rotate(turned.z, Vector3D(0, 0, 1)));
     m_orientationInverted = glm::transpose(m_orientation);
 
-    // (the boat itself stays level: it steers, aims and is hit as before)
-    const float turning = m_maxAngleVelocity.z != 0 ? glm::clamp(m_angleVelocity.z/std::abs(m_maxAngleVelocity.z), -1.0f, 1.0f) : 0.0f;
-    m_bank += (MaxBank*turning - m_bank)*std::min(1.0f, BankFollow*elapsedTime);
+    // the hull banks into the turn by as many radians as it turns radians a second, following
+    // the turn within about a second (docs/ROADMAP.md, appendix V); the boat itself stays level:
+    // it steers, aims and is hit as before
+    m_bank += (m_angleVelocity.z - m_bank)*std::min(1.0f, elapsedTime);
 }
 
 
@@ -477,6 +539,7 @@ void SimpleBoat::nextWreckStep()
 {
     const bool player = this == m_scenario->player();
     const float fifth = glm::pi<float>()/5;
+    wreckStepped(m_wreckStep);
     wreckBursts(m_wreckStep, m_position, hullRadius());
     // the next step after the times' gap, but see step 4
     float delay = m_wreckStep >= 0 && m_wreckStep < 6 ? WreckTimes[m_wreckStep + 1] - WreckTimes[m_wreckStep] : 0;
@@ -504,44 +567,61 @@ void SimpleBoat::nextWreckStep()
         break;
     case 5:
     {
+        if (!player)
+        {
+            wreckLastDebris();
+            m_wreckGone = true;
+            m_wreckStep = 6;
+            wreckEnd();
+            return;
+        }
         for (int index : { 2, 2, 2, 1, 3, 3 })
             wreckDebris(index, -fifth, fifth);
-        // the wreck: the player's boat leaves one body, another boat none to three
+        // the wreck: the player's boat leaves one body
         const int roll = std::min(3, int(uniform()*4));
-        if (player)
+        wreckDebris(roll == 3 ? 14 : roll == 2 ? 15 : 16, 0, glm::half_pi<float>());
+        // and blows up at both ends of its hull
+        for (float end : { m_localBox.maxPoint().y, m_localBox.minPoint().y })
         {
-            wreckDebris(roll == 3 ? 14 : roll == 2 ? 15 : 16, 0, glm::half_pi<float>());
-            // and blows up at both ends of its hull
-            for (float end : { m_localBox.maxPoint().y, m_localBox.minPoint().y })
-            {
-                const Vector3D at = m_position + m_orientationInverted*Vector3D(0, 0.5f*end, 0);
-                m_scenario->effectManager().addEffect(Effects::Explosion_2, at);
-                sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
-            }
-        }
-        else
-        {
-            for (int body = 17 - roll; body <= 16; body++)
-                wreckDebris(body, 0, glm::half_pi<float>());
+            const Vector3D at = m_position + m_orientationInverted*Vector3D(0, 0.5f*end, 0);
+            m_scenario->effectManager().addEffect(Effects::Explosion_2, at);
+            sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, at.x, at.y, at.z);
         }
         m_wreckGone = true;
         m_wreckStep = 6;
-        if (!player)
-        {
-            vanish();
-            // (not after an Explode order, which leaves the armour alone)
-            if (m_kineticShield < 0)
-                countDestroyed();
-        }
         return;
     }
     default:
         return;
     }
-    m_wreckAcceleration = randomVector(30.0f)/32.0f;
-    m_wreckSpinAcceleration = randomVector(0.2f);
+    if (wreckKicks())
+    {
+        m_wreckAcceleration = randomVector(30.0f)/32.0f;
+        m_wreckSpinAcceleration = randomVector(0.2f);
+    }
     m_wreckNext = m_scenario->time() + delay;
     m_wreckStep++;
+}
+
+
+// the last step's debris: a boat leaves none to three wreck bodies
+void SimpleBoat::wreckLastDebris()
+{
+    const float fifth = glm::pi<float>()/5;
+    for (int index : { 2, 2, 2, 1, 3, 3 })
+        wreckDebris(index, -fifth, fifth);
+    const int roll = std::min(3, int(uniform()*4));
+    for (int body = 17 - roll; body <= 16; body++)
+        wreckDebris(body, 0, glm::half_pi<float>());
+}
+
+
+void SimpleBoat::wreckEnd()
+{
+    vanish();
+    // (not after an Explode order, which leaves the armour alone)
+    if (m_kineticShield < 0)
+        countDestroyed();
 }
 
 

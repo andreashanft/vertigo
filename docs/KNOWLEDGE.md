@@ -35,18 +35,20 @@ describes the original.
   - [5.1 Sleeping units](#51-sleeping-units)
   - [5.2 Attacker lists](#52-attacker-lists)
   - [5.3 Order slots and squadron events](#53-order-slots-and-squadron-events)
-  - [5.4 Flying to a point and patrolling](#54-flying-to-a-point-and-patrolling)
-  - [5.5 Sensors](#55-sensors)
-  - [5.6 Choosing a target](#56-choosing-a-target)
-  - [5.7 The boats' attack manoeuvre](#57-the-boats-attack-manoeuvre)
-  - [5.8 Shooting](#58-shooting)
-  - [5.9 Ambush](#59-ambush)
-  - [5.10 Escort](#510-escort)
-  - [5.11 Tanks](#511-tanks)
-  - [5.12 Towers](#512-towers)
-  - [5.13 Big ships](#513-big-ships)
-  - [5.14 Explode orders](#514-explode-orders)
-  - [5.15 Paralysis](#515-paralysis)
+  - [5.4 Turning and banking](#54-turning-and-banking)
+  - [5.5 Flying to a point and patrolling](#55-flying-to-a-point-and-patrolling)
+  - [5.6 Sensors](#56-sensors)
+  - [5.7 Choosing a target](#57-choosing-a-target)
+  - [5.8 The boats' attack manoeuvre](#58-the-boats-attack-manoeuvre)
+  - [5.9 Shooting](#59-shooting)
+  - [5.10 Ambush](#510-ambush)
+  - [5.11 Escort](#511-escort)
+  - [5.12 GotoWithInfiltrate and Explode](#512-gotowithinfiltrate-and-explode)
+  - [5.13 Bombers and their turrets](#513-bombers-and-their-turrets)
+  - [5.14 Towers](#514-towers)
+  - [5.15 Tanks and crawlers](#515-tanks-and-crawlers)
+  - [5.16 Big ships](#516-big-ships)
+  - [5.17 Paralysis](#517-paralysis)
 - [6. Weapons](#6-weapons)
   - [6.1 Gun models](#61-gun-models)
   - [6.2 The units' weapons](#62-the-units-weapons)
@@ -118,16 +120,17 @@ stock movables of each in parentheses).
 | typ | Class | dtyp → file |
 |---|---|---|
 | 2049 | Scout → SimpleBoat | 1, 8, 9, 10, 11 prscout1 (56), 12, 13 prscout2 (73), 14 moghboot (95), 15 indrboot (20), 39, 67, 88 anscout3 (60), 89 anscout4 (76; also the default) |
-| 2050 | Bomber → SimpleBoat | 16, 40, 41, 42 prbomber (18), 43 biobombr (52), 44 russbomb (46) |
+| 2050 | Bomber → SimpleBoat with turrets ([5.13](#513-bombers-and-their-turrets)) | 16, 40, 41, 42 prbomber (18), 43 biobombr (52), 44 russbomb (46) |
 | 2051 | Tank | 2 tank0 (29), 3 tank1 (57), 4 tank2 (38), 65 tank3 (11); 66 tank4 unused |
 | 2052 | GunTower → TurretBase | 5, 6 guntow1 (12), 7, 90 guntow3 (96) |
 | 2059 | TorpedoTower | 36; 37/38 have no files and are unused |
-| 2058 | Mine | 27 passive (`MINE0.DES`), 28 active (`MINE1.DES`); a mine entry is a column of `num` mines `dis` height units apart, the lowest at `hei` (407 mines in 10 scenarios) |
+| 2058 | Mine | 27 passive (`MINE0.DES`), 28 active (`MINE1.DES`); a mine entry is a column of `num` mines `dis` metres apart upwards, the lowest `hei` metres over the ground (407 mines in 10 scenarios) |
 | 2062 | Building → SimpleObject | 45 build0 (73), 46 build1 (145), 47, 48, 49 build4 (7), 50, 51 build6 (19), 52 build7 (55) |
 | 2063 | CargoShip | 68–77 cship0–9, 78–87 bship0–9, 91 bship10 (72 in total) |
 
-Bombers behave like boats in everything below. Ground plans (the `GP*`
-clusters) can't be destroyed.
+Bombers behave like boats and carry turrets on top
+([5.13](#513-bombers-and-their-turrets)). Ground plans (the `GP*` clusters)
+can't be destroyed.
 
 ### 2.2 Cargo ships
 
@@ -139,21 +142,25 @@ block touches the side of its reference block, with right as +x and front as
 `RelativePositionX/Y` on the hull surface below it (`Z` +1000) or hangs under
 it (`Z` −1000), turned by `Alpha` counter-clockwise from the bow, at its own
 `[Size] Scale`/32. The mission position is the middle of the hull. The block
-layout is inferred from the data.
+layout is inferred from the data. The turrets are the bombers' kind and
+follow the ship's order ([5.16](#516-big-ships)).
 
 Each block is a sonar contact and a target of its own. A big ship takes hits
 as a whole on its own `[Defense]` shield (cargo ships 20,000–60,000, Big Fat
 Mama 10,000,000). The block hit takes them on its own shield as well
-(`BBLOCK*.DES`, e.g. 10,000), which only shows a small explosion (entry 1)
-where it was hit when 60 % and again 80 % of it are gone, and then it is whole
-again; a block never goes on its own. What happens when the ship's shield is
-used up is in [7.7](#77-big-ships-destruction).
+(`BBLOCK*.DES`, e.g. 10,000): when 60 % and again 80 % of it are gone it
+shows 6 to 11 small explosions over 1.5 s (entries 8, 5, 0 and 5 alike), each
+0.05 to 0.1 of the block's radius (at most 20 m) in size, spread over 0.8 of
+that in the plane of the screen about a point 0.6 radii from the block's
+origin towards the eye and raised by 0.15 to 0.5 of its height, and then it
+is whole again; a block never goes on its own. What happens when the ship's
+shield is used up is in [7.7](#77-big-ships-destruction).
 
 The master monitor shows a picture chosen by the ship file's comment:
 `SHPSEACO` (bship0), `SHPTRITO` (1, 8), `SHPPOLAR` (2, 9), `SHPINDER` (3, 10),
 `SHPBIONT` (4, 7), `SHPBFM` (5, 6), `SHPCONTF` (cship0–9). Big ships turn at
 most 0.15 rad/s and climb at most 5°. Their orders are in
-[5.13](#513-big-ships).
+[5.16](#516-big-ships).
 
 ### 2.3 Unit keys
 
@@ -169,7 +176,7 @@ most 0.15 rad/s and climb at most 5°. Their orders are in
 - `gun`, `tor`, `ntor`: the gun model, the torpedo type and the number of
   torpedoes ([6.2](#62-the-units-weapons)).
 - `sen` and `senr`: the sensor type and its range in metres
-  ([5.5](#55-sensors)); without the keys a passive sonar of 100 m.
+  ([5.6](#56-sensors)); without the keys a passive sonar of 100 m.
 - `card`: turns the player and active buildings a quarter turn per two steps
   (0, 2, 4, 6; any other value leaves them as 0, and STRAI3's player has 7),
   cargo ships one eighth turn per step. Ground plans are in
@@ -205,11 +212,11 @@ files) means "no condition".
   (100000 or 1000000 means forever); `rad`, the escort offsets and the
   escort's `ran` (how far from its place it fights, 150 m if missing, as it
   is in every mission) are metres.
-- `car` takes 0/2/4/6/10, a quarter turn ([5.12](#512-towers)). Explode
+- `car` takes 0/2/4/6/10, a quarter turn ([5.14](#514-towers)). Explode
   `con=2` is used 71 times, `con=1` once (S00202)
-  ([5.14](#514-explode-orders)).
+  ([5.12](#512-gotowithinfiltrate-and-explode)).
 - `[Attack]` in boat and bomber files drives the attack manoeuvre
-  ([5.7](#57-the-boats-attack-manoeuvre)):
+  ([5.8](#58-the-boats-attack-manoeuvre)):
   `AlignProbabilityFront/Back/Left/Right`, `Min/MaxAlignRadius` (game units,
   32 per metre), `Min/MaxAlignGamma` (radians), `Min/MaxAlignTime`;
   `AttackProbabilityTurn`,
@@ -218,11 +225,10 @@ files) means "no condition".
   `FlightPointProbabilityUL/UR/DL/DR`, `FlightProbabilityHit` (the chance to
   break off when hit); `*ProbabilityTorpedoFire` per phase. The files' own
   comments (in German) describe them. Tanks use Hook/Cross/Retain/Change/Hit
-  variants ([5.11](#511-tanks)). Also `Min/MaxClimbingAngle` and the turret
-  `[Kinematics]` `MaxAngleVelocityA/B`.
+  variants ([5.15](#515-tanks-and-crawlers)). Also `Min/MaxClimbingAngle`
+  (read but never used) and the turret `[Kinematics]` `MaxAngleVelocityA/B`.
 - The boats' and tanks' object files have a negative `MaxAngleVelocityC`
-  (−1.0; the torpedoes −1.8) beside their turn rates; what it does is not
-  known.
+  (−1.0; the torpedoes −1.8) beside their turn rates; it does nothing.
 
 ### 2.5 Conditions and events
 
@@ -231,7 +237,7 @@ files) means "no condition".
 | destroy | armour below zero | 2, 5, 9 |
 | attack | first hit by another unit | 3 |
 | identify | sonar | 4 |
-| paralyze | energy defence below zero ([5.15](#515-paralysis)) | 6 |
+| paralyze | energy defence below zero ([5.17](#517-paralysis)) | 6 |
 | finish ("ist angekommen") | own GotoWithArrive reaches its point | 7 |
 | board ("wurde infiltriert") | target of another unit's GotoWithInfiltrate | 8 |
 
@@ -253,7 +259,7 @@ files) means "no condition".
   player's boat at once. A big ship counts as destroyed when its first block
   is gone ([7.7](#77-big-ships-destruction)).
 - A unit set off by an Explode order is not destroyed for the mission's
-  conditions: its armour is untouched ([5.14](#514-explode-orders)).
+  conditions: its armour is untouched ([5.12](#512-gotowithinfiltrate-and-explode)).
 - The squadron events: "attacked" on the first hit on any of its units,
   "arrived" and "boarded" once every unit has, "destroyed" once every one is
   destroyed.
@@ -261,11 +267,16 @@ files) means "no condition".
 ### 2.6 Mission failure and friendly fire
 
 - Mission failure plays its message once and ends the mission 10 s later.
-- Friendly fire: the player's hits (gun, turrets, torpedoes) on units whose
-  faction isn't hostile to the player count, leaving out destroy objectives
-  and mines. FIGHTEXT 67–70 are escalating warnings (at most every 3 s), 71
-  comes for each friend destroyed, and 89 with the mission failed at the
-  third friendly kill. Texts starting with `~` or `#` are red.
+- Friendly fire: the game notes each frame in which the player's shots or
+  torpedoes hit a unit friendly to the player (faction 8), destroy
+  objectives too (in s01805 three of the friendly tanks the mission wants
+  destroyed fail it); ramming counts only on a big ship. Every tenth such
+  frame shows one of FIGHTEXT 67, 68 and 69 at random, after the unit's name
+  in brackets, on the radio line in green, unless another message is on it
+  (then it is lost). Each friendly kill goes only to the radio log, in
+  amber: 71 with the name, at the second also 70 ("one more and you are
+  out"), at the third 89, and from the third on the mission counts as
+  failed, even an accomplished one.
 - The player is faction 8, which no unit in the missions shares, so the
   player's shots hit friends.
 
@@ -340,17 +351,18 @@ left. A fade at a mission's start and end scales the whole brightness
 ([8.6](#86-fades)). The energy shots' lights add to the vectors of the cell's
 corners under them, so they brighten the ground through the same rows.
 
-The models follow the same rule: every vertex gets the brightness of its
-normal, turned into the camera, against the same point 8 m above and 4 m
-ahead of the eye, clamped and rounded the same way, and the polygons pick the
-row per pixel from the brightness interpolated between the corners. There is
-no other light on them, neither a headlight nor an ambient colour. Their own
-shading tables (`MOD_nnn.S16`) hold the palette itself in the last row, not
-twice it, with the same blue F in the first, so a model at the eye shows its
-texture as it is and one 60 m ahead, facing the boat, keeps 1.9 of it clamped
-to the texture. The model files carry no normals; the flat-shaded objects of
-the descriptions (`ShadingMode f`, the ground plans and blocks) take their
-faces'.
+The models follow the same rule, clamped and rounded the same way, and the
+polygons pick the row per pixel from the brightness interpolated between the
+corners, but with their own light: models with `ShadingMode f` (every unit,
+turret, shot and explosion, buildings, most ground plans and the container
+freighters' blocks) are lit from the eye itself, so every face turned to the
+viewer is lit, undersides too; those with `ShadingMode g` (the battleship
+blocks and a few ground plans) from a point 4 m above and 8 m behind the
+eye. There is no other light on them, neither a headlight nor an ambient
+colour. Their own shading tables (`MOD_nnn.S16`) hold the palette itself in
+the last row, not twice it, with the same blue F in the first, so a model at
+the eye shows its texture as it is and one 60 m ahead, facing the boat,
+keeps 1.9 of it clamped to the texture. The model files carry no normals.
 
 ### 3.2 Buildings and the ground under them
 
@@ -399,18 +411,21 @@ faces'.
   `card` 0–9, `spd` 0 or 2. 1,266 entries in 20 scenarios. The direction is
   (sin(card·45°), cos(card·45°), 0); 8 is up and 9 down. A cell covers the
   two map cells from `px`,`py` upwards, with no fade at its edges.
-- With the boat at rest in current cells: `spd` 2 takes the boat from rest to
-  about 41 m/s (HUD 141 km/h) within about 5 s facing along the current, to
-  about 19 m/s facing across it; `spd` 0 to about 5 m/s; downward cells push
-  9 m/s (`spd` 2) or 4.5 m/s (`spd` 0), upward ones about 5 m/s (`spd` 0).
-  The engine's state doesn't matter, and a boat that leaves the cells coasts
-  and slows at 3.5–4.7 m/s².
-- Affected: the player (`[Kinematics] Current`), AI boats
-  (`[Fluid] Current`) and torpedoes at a factor of 1 like the boats; not mines or
-  shots.
+- The push is an acceleration of 200 units/s² (6.25 m/s²) for `spd` 0 and
+  400 (12.5 m/s²) for `spd` 2, with no falloff, held across the boat by its
+  drag and along it only by its engine (no cap). So with the boat at rest in
+  current cells, `spd` 2 takes it from rest to about 41 m/s (HUD 141 km/h)
+  within about 5 s facing along the current, to about 19 m/s facing across
+  it; `spd` 0 to about 5 m/s; downward cells push 9 m/s (`spd` 2) or 4.5 m/s
+  (`spd` 0), upward ones about 5 m/s (`spd` 0). The engine's state doesn't
+  matter, and a boat that leaves the cells coasts and slows at 3.5–4.7 m/s².
+- Affected: the player (`[Kinematics] Current`) and torpedoes at a factor of
+  1. The missions' units don't drift (mines would at a factor of 0.2); shots
+  don't either.
 - The HUD shows the current symbol (`HUDSYM3`) while the boat is in a cell
-  ([9.3](#93-symbols-alert-threat-and-pause)), and the voxel radar draws the
-  cells as one turquoise sheet ([9.4](#94-the-voxel-radar)).
+  ([9.3](#93-symbols-alert-threat-and-pause)), and the voxel radar colours a
+  current's four map cells as ground, dark teal for `spd` 0 and light cyan
+  for `spd` 2 ([9.4](#94-the-voxel-radar)).
 
 ### 3.4 Radiation and the surface
 
@@ -566,47 +581,73 @@ A unit with `sle` 1 (or no key) is put to sleep while its horizontal distance
 from the player exceeds the player's sonar range plus 3 map cells (48 m on
 most maps): its engine sound stops and it is not updated at all until the
 player comes back, when it starts its current order slot again. Boats don't
-sleep while dying, exploding or in an Explode order, a tower not while it
-attacks.
+sleep while dying, exploding or in an Explode order; towers sleep even while
+they fight, and a bomber's or a big ship's turrets rest while it sleeps.
 
 ### 5.2 Attacker lists
 
-A unit that takes the player as its target joins the player's list of
-attackers, 4 units on easy, 6 on normal, 8 on hard; when the list is full the
-unit gets no target. Ground plans take at most 4 at any difficulty; units on
-a torpedo run against a target have a list of their own, 8 for every target.
-The attacker list also drives the marker under fire and the "lock-on located"
-voice ([9.3](#93-symbols-alert-threat-and-pause)) and the `u` key
-([9.8](#98-target-lock-and-keys)).
+Every target keeps a list of its attackers. A unit that takes the player as
+its target joins the player's list, 4 units on easy, 6 on normal, 8 on hard;
+every other unit's list takes 4 at any difficulty, a ground plan's too, and
+towers and turrets count as attackers as well. A unit that finds the list
+full gets no target. A unit takes at most 4 homing torpedoes on it
+([5.9](#59-shooting)). The player's list also drives the marker under fire
+and the "lock-on located" voice ([9.3](#93-symbols-alert-threat-and-pause))
+and the `u` key ([9.8](#98-target-lock-and-keys)).
 
 ### 5.3 Order slots and squadron events
 
 Order slots end in two ways: the break condition is checked every frame, and
-the orders finish on their own (Wait, Patrol, Ambush, Escort and
-CardinalPatrol after `dur`, Goto and GotoWithArrive at their point,
-GotoWithInfiltrate once the boat has sat at its target for `dur` seconds,
-when the target counts as boarded). A unit's 8 slots are taken in turn,
-skipping empty ones, round and round. Boats skip CardinalPatrol and
-CardinalAttack slots at once. The squadron events are in
+the orders finish on their own (Wait, Patrol, Attack, Ambush, Escort,
+CardinalPatrol and CardinalAttack after `dur`, Goto and GotoWithArrive at
+their point, GotoWithInfiltrate once the boat has sat at its target for
+`dur` seconds, when the target counts as boarded). A unit's 8 slots are taken
+in turn, skipping empty ones, round and round. Boats skip CardinalPatrol and
+CardinalAttack slots at once; a tower's Wait faces the centre of its last
+cardinal order. The squadron events are in
 [2.5](#25-conditions-and-events).
 
-### 5.4 Flying to a point and patrolling
+### 5.4 Turning and banking
 
-- **Flying to a point** (Goto, GotoWithArrive, the patrol points, the ambush
-  point). The point is `hei` (or `mih`) metres over the ground; on the way the
-  boat keeps at least that plus 0.6 of its hull radius over the ground ahead
-  and, where a `mah` is given, at most `mah`. It slows down proportionally
-  within 2 cells (or its hull radius) of the point and counts as there within
+A boat turns like a damped spring: an error in heading or pitch beyond 1°
+accelerates the turn by its `MaxAngleAcceleration` times the error over π,
+its `AngleFriction` damps the turn rate, and the rate is held to
+`MaxAngleVelocity` (an ANSCOUT1 turns 0.8 rad/s per radian of error, builds
+up within about 0.8 s and overshoots by about 9 %). Within 1° only the
+damping acts, so the boat stops turning without sitting exactly on its aim.
+The pitch goes for the true elevation of the point: `Min/MaxClimbingAngle`
+are read but never used, so a boat under or over its target pitches straight
+at it. The speed is the order's, with no slowing down in turns. The hull
+banks by as many radians as it turns radians a second, following within
+about a second (69° for an ANSCOUT1 at its full rate); `MaxAngleVelocityC`
+does nothing. Bombers turn and fly exactly as boats do.
+
+### 5.5 Flying to a point and patrolling
+
+- **Flying to a point** (Goto, GotoWithArrive, the patrol points, the align
+  and flight points, the ambush point). The point is `hei` (or `mih`) metres
+  over the ground. The boat flies straight at it, height and all, as long as
+  the front bottom corners of its hull, half a cell plus the way it flies in
+  0.75 s ahead, stay within a band of `mih` plus 0.6 hull radii to `mah` over
+  the ground under them (Goto and GotoWithArrive have no top). Below the band
+  it turns aside towards the corner with more room and up, to a point
+  31.25 m off at the band's floor; above it, it goes down to the top; both at
+  once, it turns aside. In patrols, attacks and ambushes other boats ahead
+  bend the way: one within 3.5 hull radii (plus its own) of the boat pushes
+  the steering point away, fully within 1.5. It slows down proportionally
+  within 2 cells (or its hull radius) of a point and counts as there within
   1.25 cells, its hull radius or the way it flies in a second, whichever is
   largest.
 - **Patrol.** The first point is the area's centre; a new one is picked when
-  the point is reached or after the time it takes to fly the radius at the
-  order's speed: a random point of the circle at least half the radius away
-  (an Attack order patrolling its area: 0.3 of the radius from the last
-  point), its height wandering by up to half the horizontal way, clamped to
-  the `mih`–`mah` band.
+  the point is reached, and once the time it takes to fly the radius at the
+  order's speed has passed since the patrol began (or resumed after a
+  fight), a new one every frame, so the boat wanders: a random point of the
+  circle at least half the radius away (an Attack order patrolling its area:
+  0.3 of the radius from the last point), its height wandering by up to half
+  the horizontal way, clamped to the `mih` (plus 0.6 hull radii) to `mah`
+  band.
 
-### 5.5 Sensors
+### 5.6 Sensors
 
 Every unit has one; the default is type 1 with 100 m. The range check is the
 same for all: the other unit within the range.
@@ -624,25 +665,25 @@ what it found while that lives. Types 1 and 4 also hear a hostile Torch's
 torch at noise level 4 ([6.6](#66-the-cluster-bomb-and-the-torch)); no other
 type takes buzzers or torches, and dummy buzzers draw nobody. The scenarios
 set `sen` and `senr` on most boats, always type 1 or 2 (`sen 2` with 60–200 m
-is common). A fighting unit doesn't look again: it keeps its target by the
-rules below. Towers take the nearest hostile in their radius.
+is common). Towers and turrets use theirs the same way.
 
-### 5.6 Choosing a target
+### 5.7 Choosing a target
 
-Patrol, Attack, Escort and Ambush orders fight; Wait, Goto, GotoWithArrive and
-GotoWithInfiltrate never do. Each frame: the order's enemy (`ene`) if the
-sensor has it within its range; else, in the moment the unit is hit, the
-player if hostile and within twice the range; else what the scan found. While
+Patrol, Attack and Ambush orders fight; Wait, Goto, GotoWithArrive and
+GotoWithInfiltrate never do; an escort defends only itself and its charge
+([5.11](#511-escort)). Each frame: the order's enemy (`ene`) if the sensor
+has it within its range; else, in the moment the unit is hit, whoever fired
+that hit (a shot's or a torpedo's owner, any unit, not only the player) if
+hostile and within twice the range; else what the scan found. While
 fighting, the range counts double: the target is dropped once it is beyond
 that (or no longer heard or seen by the type's rule), and the order goes on
 where it was with its time still running; the enemy takes over again once in
-range; a player who hits the unit takes over if nearer than the current
-target. "Hit" is a change of the energy defence in that frame, so a hit by
-shells without shock strength (`SHOOT.DES` 3 to 5, the guns that use rounds)
-goes unnoticed. The attacker lists ([5.2](#52-attacker-lists)) cap how many
-fight the player.
+range; whoever hits the unit takes over if nearer than the current target.
+"Hit" is a change of the armour in that frame; shells without shock strength
+count. A unit that finds the target's attacker list full gets no target
+([5.2](#52-attacker-lists)).
 
-### 5.7 The boats' attack manoeuvre
+### 5.8 The boats' attack manoeuvre
 
 Boats and bombers fight in three phases with their `[Attack]` keys.
 
@@ -655,132 +696,222 @@ Boats and bombers fight in three phases with their `[Attack]` keys.
   once, otherwise a new side is picked.
 - *Run* – lasts an attack time; with `AttackProbabilityTurn` the boat stops
   and turns on the spot, otherwise it flies at the target at 40–100 % of its
-  speed, straight at it whatever the order's `mih`–`mah` band; if the terrain
-  comes between it and the target it turns on the spot instead for the rest
-  of the run. It ends when the target has come within a flight radius, when
-  the time is up, or, with `FlightProbabilityHit` decided at the start, with
-  the first hit taken after the boat has fired.
+  speed, bent away from other boats; once its hull's way ahead leaves the
+  band of `mih` plus a hull radius to `mah` over the ground it turns on the
+  spot instead for the rest of the run. It ends when the target has come
+  within a flight radius, when the time is up, or, with
+  `FlightProbabilityHit` decided at the start, with the first hit taken after
+  the boat has fired.
 - *Flight* – to one of four points by the UL/UR/DL/DR probabilities, 850 m
   left or right, 500 m ahead and 500 m above or below the target in its
   frame, for a flight time; after 1.5 s the point drops to the target's
   height, and a boat sitting in the target's line of fire (within 8°) for
   1.5 s swaps sides; then it aligns again.
 
-An ambusher skips the first alignment and runs at once. Other boats bank
-into their turns, about 40° at a sharp one.
+An ambusher skips the first alignment and runs at once.
 
-### 5.8 Shooting
+### 5.9 Shooting
 
-- A boat fires whenever its gun is ready, the volley timer allows and the
-  target lies within 14° of its nose, at any distance and at the target's
-  position with no lead (a ground unit 0.4 hull radii higher). The shot
-  leaves along the nose, so what makes it hit is the turning: in the turn and
-  the run the boat points its nose at that position, the yaw and the pitch
-  each turned towards the point's own direction (the pitch to its true
-  elevation over the horizontal distance) in proportion to the error, which
-  they leave alone within 1°. A boat that has turned towards a standing
-  player keeps hitting it.
-- Torpedo towers launch only with a clear line of sight to the target; their
-  active sonar hears through hills.
-- A tank's muzzles (`[StaticGun] Relative*`) sit on its gun module
-  (`GunOffset*` or the `[GunTurret]` position) and turn with it; measured
-  from the hull's origin they would lie under the hull (TANK0's at −13
-  units).
-- A torpedo goes, once per phase when that phase's `*ProbabilityTorpedoFire`
-  came up, when the nose points at the target within 18° in the horizontal
-  plane (45° for homing types) and the tube has reloaded (2–3.5 s); a target
-  with 8 torpedo attackers takes no more.
+- A boat fires whenever its gun is ready, its `[VolleyGun]` is in an active
+  phase and the target lies within 14° of its nose, at any distance, whatever
+  the terrain between, at the target's position with no lead (a ground unit
+  0.4 hull radii higher). The volley starts again at its first phase whenever
+  the target leaves the 14°. The shots leave from the `[StaticGun]` mountings
+  along the nose; the mission's `gun` replaces the file's model, with that
+  model's own ammunition. What makes a shot hit is the turning
+  ([5.4](#54-turning-and-banking)): a boat that has turned towards a
+  standing player keeps hitting it.
+- A torpedo is tried, once per phase when that phase's
+  `*ProbabilityTorpedoFire` came up, whenever the tube has reloaded, and
+  every try reloads it (2–3.5 s), whether a torpedo goes or not: it goes from
+  the next `[TorpedoMagazine]` tube when the nose points at the target within
+  18° in the horizontal plane (`tor` 0 and 1), or within 45° for the others,
+  as long as the target has fewer than 4 homing torpedoes on it.
+- The buzzer magazine ([6.5](#65-decoys-and-buzzers)) works only in patrols,
+  attacks, ambushes and escorts, looking every frame until it has thrown its
+  first buzzer.
 
-### 5.9 Ambush
+### 5.10 Ambush
 
 The boat flies to its point, then lies there without any noise (so passive
-sonars don't hear it), two half hull heights over the ground, pointing the way
-`car` says, until the sensor finds something; being hit makes the player
-known at double range, as everywhere.
+sonars don't hear it), level and pointing the way `car` says, its centre held
+at twice its hull's depth over the ground by a push of 0.05 to 0.5 g up or
+down, until the sensor finds something; being hit makes the shooter known at
+double range, as everywhere. Losing the target sends it back to its point to
+lie in wait again.
 
-### 5.10 Escort
+### 5.11 Escort
 
 The place is the escorted unit's position plus the offsets in its frame,
-measured from hull to hull, a negative `yof` moved to −1 m (the escort never
-sits behind); the escort closes in at the order's speed, slower over the last
-75 m and never much faster than the escorted unit, counts as in place within
-its hull, 1.25 cells or its top speed in a second, and is then moved to the
-place outright, matching the escorted unit's heading and speed; it leaves
-formation beyond 1.3 of that. It fights only within `ran` (150 m) of its
-place and ends the order when the escorted unit is destroyed.
+each axis measured from the face of the escorted unit's hull box to the face
+of the escort's, so (7, −2, −6) m puts it 7 m clear to the side, 2 m behind
+the tail and 6 m below. While closing in, a place ahead of the escorted unit
+(`yof` > 0) is taken 1 m behind it. The escort closes in at the order's
+speed, slower over the last 75 m and never faster than 1.1 times the
+escorted unit (so the escort of a unit standing still doesn't move), counts
+as in place within its hull, 1.25 cells or its top speed in a second, and
+then matches the escorted unit's heading, pitch and speed, pulled into its
+place; it leaves formation beyond 1.3 of that. It doesn't look for targets:
+it takes on whoever hits it, whoever hits its charge, or the first of its
+charge's attackers it detects, all at double range, and fights only within
+`ran` (150 m) of its place; the order ends when the escorted unit is
+destroyed.
 
-### 5.11 Tanks
+### 5.12 GotoWithInfiltrate and Explode
+
+- **GotoWithInfiltrate.** The boat flies to a point beside its target, on
+  the side it comes from, half its own hull radius clear of the target's, and
+  sits there with its nose to the target, counting `dur` down while it is
+  within 1.5 times its top speed in a second (or its hull, or 1.25 cells) of
+  that place; leaving it doesn't reset the count. Then the target counts as
+  boarded.
+- **Explode.** `con` (with `dur` in seconds): 0 explodes when `dur` is over
+  unless the unit has been boarded by then; 1 waits to be boarded and
+  explodes `dur` seconds after that; 2 explodes when `dur` is over no matter
+  what. The order freezes the boat where it is. The explosion is the
+  destruction sequence of a destroyed unit ([7.4](#74-a-boats-destruction));
+  the armour is untouched, so the unit is not "destroyed" for the mission's
+  conditions. Of the ground units only buildings follow an Explode order; a
+  big ship's Explode is its block sequence ([7.7](#77-big-ships-destruction)).
+
+### 5.13 Bombers and their turrets
+
+Bombers fight, fly and obey their orders exactly as boats do; on top of that
+each carries the gun turrets of its file's `[Turret0]` to `[Turret7]`
+(ANBOMBR1 4, ANBOMBR2 8, ATBOMBER 3, PRBOMBER 4, BIOBOMBR 6, RUSSBOMB 4),
+each on the hull at `RelativePositionX/Y` (z ±1000: on top or hanging under
+it), facing `Alpha` (counter-clockwise from the bow).
+
+- A turret (`TURRET*.DES`) is a unit of its own, of the bomber's faction,
+  with its own `[Defense]`, `[Noise]` and `[Sensor]` (`sen 1`, 90–120 m);
+  hits on it are attacks on the bomber, and losing it doesn't count as a
+  loss of the bomber's squadron.
+- It follows the bomber's order: on Wait, Ambush, the cardinal orders or
+  none it rests, facing its mount's forward, without looking for anyone; on
+  Patrol (for the order's `dur`), Goto, GotoWithArrive, GotoWithInfiltrate
+  and Escort it sweeps the half circle about its mount's forward (to an
+  angle, a pause of 0.5–2.5 s once there, then a step of 15°–90°, back from
+  the edges) and takes on whoever hits it or what its sensor finds, dropping
+  a target it no longer detects (Goto and the like keep the first one); on
+  Attack it faces forward and takes the order's enemy whenever it detects
+  it, else whoever hits it or what it finds, chosen anew every frame.
+- It tracks within 90° of its mount's forward (beyond, it turns back to it),
+  its yaw a damped spring as a boat's (at a fixed rate on TURRET9 and
+  BTURRET7, `SoftBodyAdjust = no`), its guns at `MaxAngleVelocityB` from 2°
+  down to straight up, leads the target exactly with the shot's speed and
+  fires both arms' guns within 14° of it in its volley's rhythm, never with
+  its guns at their lowest.
+- Paralysed, on its own or with the bomber, it turns level along its mount
+  for good; its armour gone, it blows up in two seconds and is gone. A
+  sleeping bomber lets its turrets rest.
+- A bomber's destruction is in [7.4](#74-a-boats-destruction).
+
+### 5.14 Towers
+
+- `car` (CardinalPatrol, CardinalAttack, Ambush) is a quarter turn: 2 is 90°
+  one way, 4 is 180°, 6 the other way; 0, odd values and the frequent 10 are
+  straight ahead. A tower sweeps about that heading; a boat in ambush points
+  its nose that way.
+- Towers look with their own sensor (`sen`, `senr`; the order's `rad` is
+  never read), keep a target while they detect it and take whoever hits them
+  if nearer; CardinalAttack takes its enemy (the first living unit of `ene`
+  at the order's start) whenever it detects it and otherwise any hostile its
+  sensor finds. Without a target both orders sweep: the turret turns to the
+  centre (the `car` heading), pauses 0.5–2.5 s once there, then steps 15°–90°
+  either way; for `car` 0, 2, 4 and 6 the sweep and the tracking keep within
+  the half circle about the centre, bouncing off its edges (a target beyond
+  it sends the turret back to the centre), for any other `car` all round.
+  After losing a target the turret turns back to the centre first.
+- A gun turret (`GUNTUR*.DES`) turns as a bomber's, its guns from 5° down
+  (15° when turned to an angle), leads exactly and fires each arm's gun
+  within 14° at any distance and whatever the terrain.
+- A torpedo turret turns only about the vertical and tries a torpedo every
+  2–3.5 s from its next tube (TORTUR0 has 6) along its level forward: within
+  18° for `tor` 0 and 1, within 21.6° for the others while the target has
+  fewer than 4 homing torpedoes on it, and only with the terrain clear
+  between the tube and the target, although its active sonar hears through
+  hills.
+- Towers sleep while they fight, too. A tower blowing up
+  ([7.6](#76-ground-units-destruction)) looks for no one, but its turret goes
+  on as it was: tracking the target it had and firing or launching at it
+  while that lives, for the two seconds until the tower is gone; a paralysed
+  tower's turret stays still.
+- Towers flatten and darken their cell when they appear
+  ([3.2](#32-buildings-and-the-ground-under-them)).
+
+### 5.15 Tanks and crawlers
 
 Tanks drive on the ground and fight in two phases with their own `[Attack]`
 keys.
 
 - *Align*: the point lies at a distance between the align radii, 20–30° round
   the target from the tank's present bearing; which way round is decided by
-  the probabilities `AlignProbabilityHook` (the way the target has turned),
-  `Cross` (towards the target's nose), `Retain` and `Change` (by which way
-  the two vehicles point relative to each other, one or the other). The tank
-  drives there at the order's speed, half of it at both ends of the way,
-  without firing, until it is there or the align time is up; when hit,
-  `AlignProbabilityHit` says whether it aligns anew or attacks at once.
-- *Attack*: it drives at the target for an attack time (or until it reaches
-  it), its turret firing whenever the gun points within 14° of the target,
-  then aligns again. The attack speed is drawn between two of the unit's
-  speeds, of which the lower is not identified.
+  the probabilities `AlignProbabilityHook` (against the way the target turned
+  in the last frame), `Cross` (round towards the target's tail), `Retain` and
+  `Change` (by which way the two vehicles point relative to each other, one
+  or the other). The tank drives there at the order's speed, half of it at
+  both ends of the way, until it is within its top speed in a second of it
+  or the align time is up; when hit, `AlignProbabilityHit` says whether it
+  aligns anew or attacks at once.
+- *Attack*: it drives at the target for an attack time (or until it is
+  within its top speed in a second), at a speed between its `MinVelocity`
+  and `MaxVelocity` times the order's percentage, so most tanks back away in
+  about a third of their runs, nose on the target.
+- A fixed `Gun` module (all tanks but TANK2) points along the hull and only
+  tilts, to the target's elevation over the hull's plane, from 5° down to
+  straight up, as a damped spring by the hull's `MaxAngleAccelerationB`,
+  `AngleFrictionB` and `MaxAngleVelocityB`, and only at a target ahead, else
+  back to level at once; it fires only in the run. TANK2's `GunTurret`
+  (TANTUR2, whose `[StaticGun]` and `[VolleyGun]` it fires, not TANK2's own)
+  turns within 90° of the front, leads the target and fires by itself the
+  whole fight. Both fire within 14°, whatever the terrain.
+- Goto, GotoWithArrive and Patrol drive at full speed to the end; a tank is
+  there within its top speed in a second (Goto), its hull (GotoWithArrive) or
+  twice its top speed (a patrol point) horizontally; a patrol point lies on
+  the arc, inside the area, of a circle round the tank between half the
+  radius and the far side of the area, and is given up after four times the
+  time to drive there.
+- In patrols, attacks and ambushes the way bends around units ahead (one
+  within three of the tank's radii plus its own pushes the steering point
+  away, fully within one), and a tank tilted more than its climbing angle
+  (15°; a crawler 5°) looks at the ground a cell to either side, 1.5 cells
+  ahead, and makes for a point one cell to the side that is flatter there,
+  if either is flat enough, else lower.
+- A ground vehicle stands at the mean height of the ground under its base's
+  four corners, each corner's height taken between the map's points, tilted
+  by their differences front to back and right to left, without limit, at
+  once every frame.
+- The crawlers (`GVEHICLE.DES`) never leave their orders to fight. Tank dust
+  is in [8.4](#84-tank-dust).
 
-A fixed `Gun` module (all tanks but TANK2) points along the hull and only
-tilts, from 5° down to straight up at the hull's `MaxAngleVelocityB`, and
-only at a target ahead; TANK2's `GunTurret` turns as well. The crawlers
-(`GVEHICLE.DES`) are ground vehicles like the tanks. Tank dust is in
-[8.4](#84-tank-dust).
-
-### 5.12 Towers
-
-- `car` (CardinalPatrol, CardinalAttack, Ambush) is a quarter turn: 2 is 90°
-  one way, 4 is 180°, 6 the other way; 0, odd values and the frequent 10 are
-  straight ahead. A tower starts its patrol with the turret turned by it
-  from its front, then every 0.5–2.5 s turns it by a random 15° to 90° either
-  way, unbounded. A boat in ambush points its nose that way.
-- A gun tower takes the nearest hostile in its radius and fires like a boat,
-  on the frame after its gun is ready ([4.3](#43-firing-the-gun)).
-- A torpedo tower (TORTUR0 has 6 tubes) launches only with a clear line of
-  sight to the target, although its active sonar hears through hills.
-- Towers flatten and darken their cell when they appear
-  ([3.2](#32-buildings-and-the-ground-under-them)).
-
-### 5.13 Big ships
+### 5.16 Big ships
 
 A big ship's orders differ from a boat's: Patrol and Attack take it to the
 order's cell centre at `mih` over the ground, where it stops once within reach
 and waits out `dur` (so the Big Fat Mama, whose patrol is its own cell, never
 moves); Escort, Ambush, the cardinal orders and GotoWithInfiltrate leave it
 where it is (no scenario gives a big ship an Escort or GotoWithInfiltrate);
-Wait, Goto, GotoWithArrive and Explode work as for boats. Its turrets fire as
-the player's would ([4.3](#43-firing-the-gun)).
+Wait, Goto and GotoWithArrive work as for boats, and Explode runs its block
+sequence ([7.7](#77-big-ships-destruction)). Its turrets are the bombers'
+kind ([5.13](#513-bombers-and-their-turrets)), on the blocks
+(`BBLOCK*.DES`), handed the ship's order the same way; they blow up with
+their block.
 
-### 5.14 Explode orders
-
-`con` on Explode (with `dur` in seconds): 0 explodes when `dur` is over
-unless the unit has been boarded by then; 1 waits to be boarded and explodes
-`dur` seconds after that; 2 explodes when `dur` is over no matter what. The
-explosion is the destruction sequence of a destroyed unit
-([7.4](#74-a-boats-destruction)); the armour is untouched, so the unit is not
-"destroyed" for the mission's conditions. Of the ground units only buildings
-follow an Explode order.
-
-### 5.15 Paralysis
+### 5.17 Paralysis
 
 A boat whose energy defence collapses (a Flash Shark or a Leech) shows "ist
 paralysiert" and starts turning about its three axes at random rates of up
 to 0.227 rad/s each, without explosions or debris; the hit itself shows only
-the torpedo's blue flash. After 3 s it has lost its way and stops turning,
-and then hangs still where it is, neither sinking nor going away, so it can
-still be boarded, identified or destroyed; destroying it starts the
-destruction sequence. A tank or crawler brakes to a stop for 5 s and then
-stays as it is for good; a gun tower turns its gun to the front and lowers it
-to −14° for good; a torpedo tower never launches again; buildings have no
-energy defence to collapse. None of them blows up. Paralysis effectively
-needs the Flash or Leech torpedoes; gun shock damage is far below the shock
-shields.
+the torpedo's blue flash. For 5 s it brakes at three times its
+`MaxOrientationRetardation`, then it stops turning and hangs still where it
+is, neither sinking nor going away, so it can still be boarded, identified or
+destroyed; destroying it starts the destruction sequence. A tank or crawler
+brakes to a stop for 5 s and then stays as it is for good; a gun tower turns
+its gun to the front and lowers it to −14° for good; a torpedo tower's turret
+stops where it is and never launches again; a bomber's turrets are paralysed
+with it; a big ship stops dead; buildings have no energy defence to collapse.
+None of them blows up. Paralysis effectively needs the Flash or Leech
+torpedoes; gun shock damage is far below the shock shields.
 
 ## 6. Weapons
 
@@ -927,8 +1058,7 @@ All 22 types share one behaviour, with their `TORPEDO.DES` values.
 - A unit with a passive sonar (`sen` 1) hears a hostile torch like a boat, at
   noise level 4, and takes it for its target when it is the loudest thing it
   hears while it looks for one; it fights the torch until it goes out. A unit
-  already fighting doesn't look, and towers, which take the nearest hostile
-  in their radius, don't either.
+  already fighting doesn't look, and towers don't either.
 
 ### 6.7 End of a torpedo's life
 
@@ -1045,6 +1175,9 @@ offense (strength) off its armour.
   are the player, boats, bombers, tanks, ground vehicles, towers, turrets,
   buildings, ship modules, debris, shots and torpedoes, never another mine.
   On contact the mine goes up and the unit loses 2000 or 1500 armour.
+- Every mine turns about the vertical at 0.5 to 1 rad/s from a random
+  heading, and nods: its pitch is 0.25 rad times the cosine of a phase that
+  runs at a random 0 to 0.5 rad/s.
 - It goes in one explosion of its kind, sized to 1.5 times its radius and
   without debris, `EXPLOSIO.DES` entry 5 (Explosion1L) for a passive mine,
   entry 1 (Explosion0M) for an active one, each with its sound
@@ -1121,6 +1254,17 @@ elevations, at the piece's own speed.
 - The master monitor shows "Explodiert" (FIGHTEXT 72) through the sequence
   and keeps the lock until the hull is gone.
 
+A bomber runs the boats' steps without their kicks: its hull gets no random
+push or spin at the steps (a runner still spins). Half its turrets (the first
+ones in its file) blow up with the first step and the rest with the fifth,
+each in two seconds of its own explosions (entries 0 and 3 twice, 4, 0 and 3
+twice with debris 17, 2 and 1, 4, 1, then 4 and 1 with debris 0, 17, 2 and
+1). Its last step flings debris 2, 17, 1, 3 and 3 and, each case one time in
+four, the wreck bodies 16, 15 and 16, 14 to 16, or none (the bio bomber none
+at all). Then the hull hangs still where it is until its last turret is gone,
+blows up at both ends (entry 2, half its length fore and aft, moved towards
+the player by its radius) and only then is gone and counts as destroyed.
+
 ### 7.5 The death view
 
 The player's boat is then watched from outside, without the cockpit: the
@@ -1169,14 +1313,18 @@ its turrets keep firing, and its blocks blow up in their order, the first at
 once and each next one 0.5 to 1.5 s after the one before. A block takes
 2.7 s: it shakes by up to 5 cm, sinks faster and faster (10 to 40 units/s²)
 and turns slowly (up to 0.07 rad/s about two axes), with the boats' bursts
-and the debris 2, 2, 1 at 0.9 s (36° to 72°) and 2, 1, 2, 1 at 2.0 s (0° to
-36°) plus one body (14 or 15 two times in five each, 16 once), sample 18 two
-times in three at the start, and a big blast (entry 2, sized 0.35 of its
-radius) on its side towards the player at 2.0 s; half of its turrets go up at
-the start and the rest at 1.6 s. Ship and blocks stay sonar contacts and
-targets until each is gone; the ship counts as destroyed when its first
-block is gone (in a squadron of several ships every block that goes is
-counted), and is gone with its last.
+about the block's model origin within its farthest vertex and the debris 2,
+2, 1 at 0.9 s (36° to 72°) and 2, 1, 2, 1 at 2.0 s (0° to 36°) plus one body
+(14 or 15 two times in five each, 16 once), sample 18 two times in three at
+the start, and 0.6 s after the last step a big blast (entry 2) of 0.35 of
+that radius, half the block's height up and its flat radius out towards the
+eye, which at its largest covers the whole block. Half of the block's
+turrets (rounded down) go up at the start and the rest at 1.6 s, each in its
+own two seconds of explosions, and the block goes only with its last turret.
+Ship and blocks stay sonar contacts and targets until each is gone; the ship
+counts as destroyed when its first block is gone (in a squadron of several
+ships every block that goes is counted), and is gone with its last. An
+Explode order runs the same sequence, and a paralysed big ship stops dead.
 
 ## 8. Effects
 
@@ -1238,6 +1386,9 @@ where it was made. The crawlers (`GVEHICLE.DES`) do the same every 0.16 to
 Where the game gives an explosion a size of its own (the building's and big
 ship's last blast, a building's explosions under fire, the dust, the mines'),
 that size is the sprite's scale, which comes out in metres as with the mines.
+An explosion "of a size" is scaled so that its last frame's farthest corner
+lies that far from its centre (for entries 0 to 2 a third of their first
+frames' reach).
 
 ### 8.6 Fades
 
@@ -1325,8 +1476,9 @@ half as wide as the near one and the boat sits in the lower third (`FlightY`);
 no background, so the monitor's grid shows through; light grey ground, low
 ground dark, with `VOX_000.S16`; buildings as their models in orange, units as
 vertical lines from the ground (red hostile, green friendly, blue neutral,
-grey the locked target), debris green, the boat orange, water currents as one
-turquoise sheet over their cells. Torpedoes are in
+grey the locked target), debris green, the boat orange, the ground of water
+currents dark teal (the shading table's entry 65) for `spd` 0 and light cyan
+(66) for `spd` 2. Torpedoes are in
 [9.11](#911-torpedoes-on-the-radars).
 
 ### 9.5 The master monitor
@@ -1500,7 +1652,9 @@ names are FIGHTEXT 14–19 (chase, fly around, pass by, look, death, look at).
   along it to the nose. At the first zoom the Gator at rest is 185 pixels
   wide, at the furthest 49. The look-at view's camera starts in front of the
   boat, 45° above it, looking at it, the Gator 154 pixels wide.
-- **Other boats** bank into their turns, about 40° at a sharp one.
+- **Other boats** bank into their turns by as many radians as they turn
+  radians a second, following within about a second (69° for an ANSCOUT1 at
+  its full rate, [5.4](#54-turning-and-banking)).
 
 ## 11. Texts and sounds
 
@@ -1521,14 +1675,15 @@ names are FIGHTEXT 14–19 (chase, fly around, pass by, look, death, look at).
 | 49–56 | Esc menu |
 | 57/58, 61–66 | death and game-over menu (58 "GAME OVER", 64 abort, 65 restart, 66 load the last game); the autopilot menu follows |
 | 59/60 | the radio log's footer and title |
-| 67–70 | escalating friendly-fire warnings |
+| 67–69 | friendly-fire warnings, one at random |
+| 70 | "one more and you are out", at the second friendly kill |
 | 71 | friendly object destroyed |
 | 72 | "Explodiert" (a target in its destruction sequence) |
 | 77–84 | what the target does (its orders; 81 paralysed) |
 | 89 | mission failed after three friendly kills |
 
-Texts starting with `~` or `#` are red in the HUD; in the radio log a
-leading `#` is red and a `~` amber.
+On the radio line a text starting with `#` is red; `~` only colours the
+log, where a leading `#` is red and a `~` amber.
 
 `TXT/DEEPTEXT.DES` holds the menus' and the notebook's texts
 ([12](#12-menus-saved-games-and-training)).

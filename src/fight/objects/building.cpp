@@ -44,6 +44,8 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, int card, i
     m_size(size),
     m_angle(card % 2 == 0 ? (card/2 % 4)*90.0f : 0.0f)
 {
+    file.setSection("display");
+    m_gouraud = file.value("ShadingMode", "f").toString().trimmed().toLower() == "g";
     int i = 0;
     Vector3D scale = scenario->surface().scale();
     const float middle = 0.5f*size;
@@ -129,6 +131,8 @@ Building::Building(Scenario *scenario, txt::DesFile &file, int size, int card, i
 
 void Building::draw()
 {
+    if (m_gouraud)
+        m_scenario->shadeModels(true);
     for (Cluster &cluster : m_clusters)
     {
         gfx::Pipeline::pushMatrix();
@@ -136,6 +140,8 @@ void Building::draw()
         cluster.module->draw();
         gfx::Pipeline::popMatrix();
     }
+    if (m_gouraud)
+        m_scenario->shadeModels(false);
 }
 
 
