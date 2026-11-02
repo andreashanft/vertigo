@@ -17,7 +17,11 @@
 #
 #   xcrun devicectl device install app --device <udid> build-ios/RelWithDebInfo/Vertigo.app
 #   xcrun devicectl device process launch --device <udid> <bundle id> \
-#       strai0 --boat 2050 --cockpit 3d --fixed-step --start 213,191,30,6 --screenshot 29.5=ipad-moghs.png
+#       strai0 --boat 2050 --cockpit 3d --fixed-step --start 213,191,30,6 \
+#       --touch "26=0.13,0.81>0.23,0.81/1.0" --screenshot 30=ipad-moghs.png
+#
+# The touch drags the on-screen stick right for a second, turning the boat towards
+# the Mogh boats (a key or a game controller would hide the touch controls).
 #   (wait for the shot, then stop the app: devicectl device info processes / process terminate)
 #   xcrun devicectl device copy from --device <udid> --domain-type appDataContainer \
 #       --domain-identifier <bundle id> --source Documents/ipad-moghs.png --destination ipad-moghs.png
