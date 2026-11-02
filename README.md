@@ -2,24 +2,26 @@
 
 [![Build](https://github.com/andreashanft/vertigo/actions/workflows/build.yml/badge.svg)](https://github.com/andreashanft/vertigo/actions/workflows/build.yml)
 
-In November 1996, "[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)", better known under its German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)", was released by *Massive Development*.
+In November 1996, "[Archimedean Dynasty](https://en.wikipedia.org/wiki/Archimedean_Dynasty)", better known under its German title "[Schleichfahrt](https://de.wikipedia.org/wiki/Schleichfahrt_%28Computerspiel%29)", was released by *Massive Development* and loved by many. Vertigo is an open-source clone that faithfully recreates the 30 year old classic. This repository builds on the abandoned [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo).
 
-This repository is an open-source clone that faithfully recreates this 30 year old classic. It builds on [github.com/pnordhus/vertigo](https://github.com/pnordhus/vertigo), where many parts had been reimplemented already years ago before the project was abandoned.
+The remake let's you play "Schleichfahrt" on current hardware in modern resolutions, with an improved look (e.g. upscaled graphics) but stays faithful to the original. For copyright reasons the repository contains no game data or binaries: the assets of an original English or German version (CD or GOG) are required.
 
-With the help of Claude Code, most open TODOs and missing features are now implemented. There is also an iPad version and a feasibility study of real 3D cockpits for an eventual VR port.
+To run, either download a build from the [Releases section](https://github.com/andreashanft/vertigo/releases) or clone the repository and [compile](#compiling) it.
 
-The game runs on current hardware and systems in modern resolutions, with an improved look (e.g. upscaled graphics) that stays faithful to the original. For copyright reasons the repository contains no game data or binaries: the assets of an original English or German version (CD or GOG) are required.
+Features:
 
-The implementation is about **99% done**:
-
-* Modern codebase and renderer for macOS, iOS (iPad), Linux and Windows (not playtested yet)
+* Supports macOS, iOS (iPad), Linux and Windows (Windows not playtested yet)
+* HD look by upscaling many of the original game assets, see [Upscaled graphics](#upscaled-graphics)
+* Modern codebase and renderer
 * Support of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data
 * Menus, stations, dialogs, dock, upgrades, notebook, movies and music all work
 * Missions are playable and the story can be progressed
-* Keyboard, game controllers and touch on the iPad
+* Input: Keyboard, game controllers and touch on the iPad
 * Experimental: 3D cockpits for widescreen and, in the future, VR
 
-What's still missing are details I might have missed and thorough playtesting, see [docs/ROADMAP.md](docs/ROADMAP.md).
+While the rewrite is fairly done, some details are still open as well as thorough playtesting, see [docs/TODO.md](docs/TODO.md).
+
+How the original behaves is collected in [docs/KNOWLEDGE.md](docs/KNOWLEDGE.md).
 
 ## Contents
 
@@ -78,7 +80,7 @@ make
 
 ![Screenshot from the iPad version showing a battle](docs/iPad-Schleichfahrt.jpg)
 
-The iPad version needs Xcode, CMake 3.24 or newer and GLM's headers
+The iPad version requires Xcode, CMake 3.24 or newer and GLM's headers
 (`brew install cmake glm`), and runs on iPadOS 18.6 or later. CMake downloads
 SDL's source release (checked against its SHA-256) and builds it for iOS;
 OpenAL and OpenGL ES are the system's. To build for the simulator and install
@@ -185,7 +187,7 @@ loaded from one keeps its own autosave up to date. Each save is a
 
 ### AI upscale
 
-An optional upscale with a newer AI model (Qwen Image 2.1 in ComfyUI) redraws
+An optional upscale with a modern AI model (Qwen Image 2.1 in ComfyUI) redraws
 the pictures and textures with more detail and clean lettering. It runs outside
 the game as a script, takes a few hours on a strong graphics card and builds on
 the Real-ESRGAN upscale below. See [data/AI-upscale](data/AI-upscale/README.md).
