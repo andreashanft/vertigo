@@ -20,8 +20,7 @@ missions feel.
 | T4 | Platforms | M | macOS, Linux and the iPad are played; Windows is built, packed and tested by CI but not played. Play a few missions on each |
 | T5 | S00705: Schwartz's infiltration | S | The AD Augmented Mod's notes say Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
 | T6 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model. Compare a salvo in the original |
-| T7 | Torpedoes as sonar contacts | S | In the original every torpedo on its way is a sonar contact (KNOWLEDGE.md 9.11): the round radars show it blinking red and the player's turrets take it from the sonar. Vertigo draws torpedoes in the voxel radar only, its sonar lists none, and its turrets ask the sight test of the units alone |
-| T8 | iPad: OpenGL ES and OpenAL | M | Both are deprecated but still in the iOS 27 SDK. ANGLE and OpenAL Soft would replace them |
+| T7 | iPad: OpenGL ES and OpenAL | M | Both are deprecated but still in the iOS 27 SDK. ANGLE and OpenAL Soft would replace them |
 
 ## Open comparisons
 
@@ -48,6 +47,8 @@ Units' behaviour:
 - Whether the player's turrets fire through friends (Vertigo's don't).
 - Whether the player's sonar lists the bombers' and big ships' turrets as
   contacts of their own (Vertigo's doesn't).
+- Whether a torpedo, a sonar contact, can be locked as the target and shows
+  among the master monitor's HUD marks (Vertigo's torpedoes do neither).
 - How many homing torpedoes the player can have on it at once (every AI
   unit takes at most 4; Vertigo keeps 8 for the player).
 - Whether the player takes damage running into buildings, towers or boats
@@ -118,7 +119,6 @@ comparisons above.
   original's do at 60 frames a second.
 - Vertigo's ground plans can't be attacked, so their attacker lists have no
   effect.
-- The sonar lists no torpedoes (T7).
 
 ## Notes
 

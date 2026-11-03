@@ -50,6 +50,7 @@ SonarMonitor::SonarMonitor(HUD *hud, const txt::DesFile &file, int scale, fight:
     m_nav.fromImage(dot(0xff205c98), true);
     m_friend.fromImage(dot(0xff408038), true);
     m_enemy.fromImage(dot(0xffa00000), true);
+    m_torpedo.fromImage(dot(0xfff80c00), true);
     m_target.fromImage(dot(0xff888c88), true);
 }
 
@@ -91,6 +92,8 @@ void SonarMonitor::drawAt(const Point &at, int viewRadius)
             }
         }
 
+    // a torpedo, friend or foe, blinks between two reds (KNOWLEDGE.md 9.11)
+    const bool bright = m_hud->scenario()->sonar().torpedoesBright();
     for (const auto &entry : m_hud->scenario()->sonar())
     {
         // the original draws no neutral contact here once the sonar tells friend from foe
@@ -101,7 +104,7 @@ void SonarMonitor::drawAt(const Point &at, int viewRadius)
         if (distance < m_scale)
         {
             rect.setPos(center - dir*scale);
-            (entry.isFriend ? m_friend : m_enemy).draw(rect);
+            (entry.isTorpedo ? (bright ? m_torpedo : m_enemy) : entry.isFriend ? m_friend : m_enemy).draw(rect);
         }
     }
 
