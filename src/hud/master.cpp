@@ -83,11 +83,9 @@ void Master::draw()
     Matrix m = m_hud->hudProjectionMatrixInverted() * m_hud->scenario()->projectionMatrix() * m_hud->scenario()->cameraMatrix();
     fight::Target &target = m_hud->scenario()->target();
 
+    // the torpedoes among them, framed like the units by friend or foe (KNOWLEDGE.md 9.11)
     for (const auto &entry : m_hud->scenario()->sonar())
     {
-        // the units only; whether the original marks the torpedoes here too is open (TODO.md)
-        if (entry.isTorpedo)
-            continue;
         Vector4D point4 = m * Vector4D(entry.object->center(), 1);
         drawPoint(point4, rect, entry.object == target.locked(), entry.isFriend, entry.isPassive);
     }

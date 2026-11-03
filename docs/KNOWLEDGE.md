@@ -420,8 +420,9 @@ keeps 1.9 of it clamped to the texture. The model files carry no normals.
   (`spd` 0), upward ones about 5 m/s (`spd` 0). The engine's state doesn't
   matter, and a boat that leaves the cells coasts and slows at 3.5–4.7 m/s².
 - Affected: the player (`[Kinematics] Current`) and torpedoes at a factor of
-  1. The missions' units don't drift (mines would at a factor of 0.2); shots
-  don't either.
+  1. The missions' units don't drift, nor do shots. Passive mines stay where
+  they are laid, in a current too; an active mine's drive has a current
+  factor of 0.2, and whether that shows while it chases is open.
 - The HUD shows the current symbol (`HUDSYM3`) while the boat is in a cell
   ([9.3](#93-symbols-alert-threat-and-pause)), and the voxel radar colours a
   current's four map cells as ground, dark teal for `spd` 0 and light cyan
@@ -1096,6 +1097,9 @@ rearming, jammed, empty and waiting.
   voice says "torpedo ready" (77).
 - A homing torpedo's lock only runs while the magazine is ready, for the
   loaded torpedo's `lockdelay`; it starts again after every wait and loading.
+  The heading plays no part: the locked target may be behind the boat, it
+  only has to stay a contact of the sonar, and a contact lost and found
+  again starts the lock from the beginning.
   A lock's completion plays the torpedo lock beep (9) and the "target locked"
   voice (67). The HUD shows the lock and countdown in green after the
   target's distance on its line ("72M  0:5S", seconds to one decimal with a
@@ -1122,7 +1126,8 @@ rearming, jammed, empty and waiting.
   `hit`) times the target's size off its centre on each axis (half that for
   ground units and buildings), led exactly for the target's motion and the
   shot's speed; a shot that can't catch up isn't fired but counts. There is
-  no turning: the direction is worked out at each shot.
+  no turning: the direction is worked out at each shot. A friend in the line
+  of fire doesn't stop a turret: it fires through a friendly freighter.
 - **Keeping the target:** a turret leaves it (back to SCA, searching again
   after `scan`) once it is on the other half, out of sight or gone; Claw and
   Eraser leave a vessel as soon as a torpedo is after the player, Punisher
@@ -1160,7 +1165,9 @@ offense (strength) off its armour.
 
 - The player is a faction of its own (8), which no unit in the missions
   shares. The contact table pairs the player with shots, debris, torpedoes
-  and mines.
+  and mines. Ramming a boat, a building or a tower damages the player and
+  the rammed unit all the same, and a friend rammed a few times gives the
+  friendly-fire warning ([2.6](#26-mission-failure-and-friendly-fire)).
 - Objects without an `iff` in the mission (the plain buildings) have no
   faction, so every shot touches them. Trash without a faction is faction
   10, as debris is.
@@ -1614,7 +1621,9 @@ Every torpedo on its way is a sonar contact, friend or foe and without being
 detected; its colour blinks between 248,12,0 and 160,0,0 (RGB565 `F860` and
 `A000`), 0.15 s each, so the voxel radar shows it as a blinking red column.
 The units keep their colours (hostile `A060`, friendly or without IFF `4407`,
-the locked target `8C71`).
+the locked target `8C71`). The HUD frames a torpedo as it frames the units:
+green for the player's own and a friend's, red for a hostile one, and green
+for all without IFF.
 
 ## 10. Views from outside
 

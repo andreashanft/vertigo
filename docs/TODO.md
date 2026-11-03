@@ -48,16 +48,15 @@ Units' behaviour:
   round's barrels), and whether an energy gun on a tower fires all the
   mountings in one go too (Vertigo's fires one shot per rearming time,
   through the mountings in turn).
-- Whether the player's turrets fire through friends (Vertigo's don't).
 - Whether the player's sonar lists the bombers' and big ships' turrets as
   contacts of their own (Vertigo's doesn't).
-- Whether a torpedo, a sonar contact, can be locked as the target and shows
-  among the master monitor's HUD marks (Vertigo's torpedoes do neither).
+- Whether a torpedo, a sonar contact, can be locked as the target (Vertigo's
+  can't).
 - How many homing torpedoes the player can have on it at once (every AI
   unit takes at most 4; Vertigo keeps 8 for the player).
-- Whether the player takes damage running into buildings, towers or boats
-  (the contact table pairs the player only with shots, debris, torpedoes and
-  mines; Vertigo's player takes their strength).
+- Which rammed friends give the friendly-fire warning: KNOWLEDGE.md 2.6 has
+  only the big ships, but boats gave it in play (Vertigo counts the big
+  ships).
 
 Sensors, HUD and views:
 
@@ -78,8 +77,9 @@ Sensors, HUD and views:
 World, physics and effects:
 
 - Why one of S00202's two upward current cells does nothing.
-- Whether mines drift in currents: their data has a factor of 0.2, but the
-  missions' units don't drift (KNOWLEDGE.md 3.3); Vertigo's mines don't.
+- Whether an active mine drifts while it chases (its drive takes currents at
+  a factor of 0.2, KNOWLEDGE.md 3.3; passive mines stay put, as Vertigo's
+  all do).
 - What else the original scales with the radiation's strength between 100
   and 40 m below the surface.
 - Whether the keyboard ramps the stick value when turning the boat.
@@ -121,6 +121,9 @@ comparisons above.
   lifted cell and its eight neighbours.
 - The barrels of a round fire 1/60 s apart whatever the frame rate, as the
   original's do at 60 frames a second.
+- The player's turrets hold their fire while a friend is in the line, in
+  front of the target or behind it; the original's fire through friends.
+  This one is kept on purpose.
 - Vertigo's ground plans can't be attacked, so their attacker lists have no
   effect.
 
