@@ -136,6 +136,8 @@ private:
     // the band's check: the hull's front bottom corners a little ahead against the ground; true
     // and the point moved if they leave it
     bool bandPoint(Vector3D &point, float zmin, float zmax) const;
+    // the side of the last detour (-1 left, 1 right), kept while the corners have about the same room
+    mutable int m_bandSide = 0;
     Vector3D avoidUnits(const Vector3D &point) const;
     // a ground vehicle's way (appendix J): bent around units ahead, and sideways off ground steeper
     // than its climbing angle

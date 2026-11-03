@@ -440,7 +440,7 @@ void SimpleBoat::updateTumble(float elapsedTime)
 
 void SimpleBoat::updateOrientation(float elapsedTime)
 {
-    if (!m_steered || isBigShip())
+    if (!m_steered)
     {
         m_angleVelocity += m_angleVelocity*m_angleFriction*elapsedTime;
         // turning in either direction
@@ -474,8 +474,9 @@ void SimpleBoat::updateOrientation(float elapsedTime)
 
     // the hull banks into the turn by as many radians as it turns radians a second, following
     // the turn within about a second (docs/ROADMAP.md, appendix V); the boat itself stays level:
-    // it steers, aims and is hit as before
-    m_bank += (m_angleVelocity.z - m_bank)*std::min(1.0f, elapsedTime);
+    // it steers, aims and is hit as before. A big ship doesn't bank
+    if (!isBigShip())
+        m_bank += (m_angleVelocity.z - m_bank)*std::min(1.0f, elapsedTime);
 }
 
 

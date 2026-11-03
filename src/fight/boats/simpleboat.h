@@ -106,6 +106,9 @@ public:
     virtual bool engagesHostiles() const { return true; }
     // a big ship: patrols and attacks go to the order's cell and stay there (Orders)
     virtual bool isBigShip() const { return false; }
+    // the hull's roll into its turn (rad, about its length), which only the drawing and whatever
+    // is mounted on the hull follow
+    float bank() const { return m_bank; }
     // where the gun points; units with a turret turn it with aimAt()
     virtual Vector3D gunDirection() const { return dir(); }
 
@@ -172,7 +175,7 @@ protected:
     Vector3D m_push;
     std::vector<Vector3D> m_torpedoTubes;   // metres in the hull's frame
     int m_nextTube = 0;
-    float m_bank = 0;           // the hull's roll into its turn, as it is drawn
+    float m_bank = 0;           // the hull's roll into its turn, as it is drawn (bank())
     Vector3D m_spin;            // the paralysed drift's angular velocity
     float m_tumbleEnd = 0;      // and when its way has run out
 
