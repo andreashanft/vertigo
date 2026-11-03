@@ -24,6 +24,7 @@
 #include "colortable.h"
 #include "texture.h"
 #include "image.h"
+#include <future>
 #include <memory>
 #include <vector>
 #include "util/string.hpp"
@@ -43,6 +44,9 @@ public:
     int height() const { return m_height; }
     int height(int w, const StringList &strings) const;
     int width(const String &text) const;
+    // starts drawing a silver font's glyphs from the vector font on worker threads, if not yet
+    // started
+    void startVector();
 
 private:
     struct Symbol
@@ -52,8 +56,8 @@ private:
         int height;
     };
 
-    // the silver fonts' glyphs drawn from the vector font (gfx::VectorFont), made on first
-    // use; false without it
+    // the silver fonts' glyphs drawn from the vector font (gfx::VectorFont), put into the texture
+    // on first use, all fonts' drawn from then on; false without it
     bool prepareVector();
 
     Texture m_texture;
@@ -67,6 +71,7 @@ private:
     // its glyphs as the file has them, and a texture of them drawn (the game's scaled where the
     // vector font has none) with their places in it
     std::vector<Image> m_images;
+    std::future<std::vector<Image>> m_vectorGlyphs;
     Texture m_vectorTexture;
     std::vector<RectF> m_vectorRects;
     int m_vectorState = 0;  // 0 not tried yet, 1 made, -1 not to be had
@@ -104,6 +109,7 @@ public:
     Rect draw(const String &text, const Rect &dstRect, bool alignHCenter, bool alignBottom, const ClipRect *clipRect = nullptr);
     int height() const;
     int width(const String &text) const;
+    void startVector() { d->startVector(); }
 
 private:
     // shared by the copies

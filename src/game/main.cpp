@@ -280,6 +280,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("headless", "Run the mission without a window and sound, as fast as possible (test mode; use with --timeout).");
     parser.addOption("check", "Load all missions, or the given ones, and report what the loader skips or ignores.");
     parser.addOption("list-items", "List the item models for --equip.");
+    parser.addOption("list-upscaled", "List the images the upscaler makes copies of: the key (the copy's name), the data file and a movie's picture, separated by tabs.");
     parser.addOption("upscale", "Make the upscaled graphics (as Options in the main menu does), printing the progress, and switch them on; downloads the Real-ESRGAN upscaler first if it isn't there.");
     parser.addOption("difficulty", "Difficulty in test mode: 0 easy, 1 normal (default), 2 hard.", "level");
     parser.addOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
@@ -619,6 +620,12 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
         }
         gfx::Upscaled::setEnabled(true);
         std::cout << "Upscaled graphics in " << gfx::Upscaled::directory() << ", switched on" << std::endl;
+        return end(game::Vertigo::ExitSuccess);
+    }
+
+    if (parser.isSet("list-upscaled")) {
+        for (const game::Upscaler::Source &source : game::Upscaler::sources())
+            std::cout << gfx::Upscaled::keyName(source.key) << "\t" << source.file << "\t" << source.picture << "\n";
         return end(game::Vertigo::ExitSuccess);
     }
 

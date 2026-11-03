@@ -57,4 +57,11 @@ Font FontManager::font(Font::Name name) const
 }
 
 
+void FontManager::startVectors()
+{
+    for (auto &[name, font] : m_fonts)
+        font.startVector();
+}
+
+
 } // namespace gfx

@@ -9,6 +9,24 @@ KEEP = ('Keep the composition, every object with its position, shape and size, t
 PROMPTS = {
     'scene': ('Upscale and restore this image to high resolution. ' + STYLE + ' ' + KEEP +
               ' Add only fine, crisp detail and clean edges, and remove noise, dithering and compression artefacts.'),
+    # richer colours and more luminous lights, still in the dark of the deep sea (config/vibrant.json)
+    'vibrant': ('Upscale and restore this image to high resolution, with richer colours and more luminous lights, like '
+                'a modern high-dynamic-range render. ' + STYLE + ' It is so deep that no daylight reaches it: the water '
+                'is dark, with no light from above, no sun rays and no light shafts. All light comes from the stations '
+                'themselves: their lamps, windows and searchlight beams, which glow in the dark water and light the hulls '
+                'and the sea floor near them. Keep the composition and every object, sign and letter with its position, '
+                'shape and size exactly as they are. Do not add, remove, move or enlarge anything. Keep the dark '
+                'background as it is: do not add buildings, domes, towers, vehicles or submarines, and do not repeat or '
+                'echo the outlines of the buildings in it; far objects stay as faint as they are. Make the water a deep, '
+                'dark teal and blue, the metal hull plates crisp with clear highlights where the lamps light them, and '
+                'the windows, lamps and beams brightly glowing with a gentle bloom. Add fine, crisp detail and clean '
+                'edges, and remove noise, dithering and compression artefacts.'),
+    # four pictures of a depot movie, an item turning, on a sheet
+    'movie': ('Upscale and restore this image to high resolution. It is a sheet of four pre-rendered 3D computer '
+              'graphics pictures from a 1996 underwater science-fiction game, in a 2x2 grid: the same piece of submarine '
+              'equipment (a torpedo, a gun, a module or the like) turning step by step, on a plain black background. '
+              'Draw it the same way in all four pictures, with the same parts, markings and surface detail. ' + KEEP +
+              ' Add only fine, crisp detail and clean edges, and remove noise, dithering and compression artefacts.'),
     'texture': ('Upscale and restore this texture atlas to high resolution. It is the texture map of 3D models of '
                 'submarines from a 1996 underwater science-fiction game: hull plates, panels, pipes, lights and '
                 'markings, laid out side by side. Keep every part, edge and seam exactly where it is, and the '
