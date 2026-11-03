@@ -42,6 +42,7 @@ public:
         bool isFriend;      // without friend-or-foe detection every contact counts as a friend
         bool isNeutral;     // neither friend nor hostile, told apart (the round radars skip it)
         bool isPassive;
+        bool isTorpedo;     // a torpedo on its way (never passive, never neutral)
     };
 
     std::vector<SonarEntry>::const_iterator begin() const { return m_sonarEntries.cbegin(); }
@@ -63,6 +64,8 @@ public:
     // the player's own passive range, without a unit's noise
     float passiveRange() const { return m_passiveRange; }
     float activeRange(const ActiveObject *object) const;
+    // the torpedo contacts' colour blinks between two reds, 0.15 s each: whether the bright one is on
+    bool torpedoesBright() const;
 
 public:
     void update(float elapsedTime);

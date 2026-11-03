@@ -85,6 +85,9 @@ void Master::draw()
 
     for (const auto &entry : m_hud->scenario()->sonar())
     {
+        // the units only; whether the original marks the torpedoes here too is open (TODO.md)
+        if (entry.isTorpedo)
+            continue;
         Vector4D point4 = m * Vector4D(entry.object->center(), 1);
         drawPoint(point4, rect, entry.object == target.locked(), entry.isFriend, entry.isPassive);
     }

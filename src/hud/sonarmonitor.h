@@ -61,6 +61,7 @@ private:
     gfx::Texture m_nav;
     gfx::Texture m_friend;
     gfx::Texture m_enemy;
+    gfx::Texture m_torpedo;      // the bright of a torpedo's two reds (the dark one is m_enemy's)
     gfx::Texture m_target;
     Lamp m_lamp;
 };

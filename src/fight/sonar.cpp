@@ -19,6 +19,7 @@
 #include "scenario.h"
 #include "objects/activeobject.h"
 #include "objects/navpoint.h"
+#include "weapons/torpedo.h"
 #include "sfx/samplemap.h"
 
 #include <glm/geometric.hpp>
@@ -88,6 +89,12 @@ float Sonar::activeRange(const ActiveObject *object) const
 }
 
 
+bool Sonar::torpedoesBright() const
+{
+    return static_cast<int>(m_scenario->time()/0.15f)%2 == 0;
+}
+
+
 void Sonar::update(float elapsedTime)
 {
     if (!m_active && m_activatingDelay > 0)
@@ -139,6 +146,23 @@ void Sonar::update(float elapsedTime)
         entry.isFriend = !m_iff || m_scenario->isFriend(Scenario::PlayerFaction, object->iff());
         entry.isNeutral = m_iff && !entry.isFriend && !m_scenario->isHostile(Scenario::PlayerFaction, object->iff());
         entry.isPassive = passive;
+        entry.isTorpedo = false;
+    }
+
+    // every torpedo on its way is a contact, friend or foe, without being detected (KNOWLEDGE.md
+    // 9.11); one that has gone off is no longer on its way
+    for (const auto &torpedo : m_scenario->torpedoes())
+    {
+        if (torpedo->isDone() || torpedo->isBursting())
+            continue;
+        m_sonarEntries.emplace_back();
+        SonarEntry &entry = m_sonarEntries.back();
+        entry.object = torpedo.get();
+        entry.distance = glm::length(torpedo->center() - m_scenario->position());
+        entry.isFriend = !m_iff || m_scenario->isFriend(Scenario::PlayerFaction, torpedo->iff());
+        entry.isNeutral = false;
+        entry.isPassive = false;
+        entry.isTorpedo = true;
     }
 
     if (!lockNotLost)

@@ -202,14 +202,14 @@ bool PlayerTurret::torpedoAfterPlayer() const
 
 // the nearest torpedo after the player (Claw, Eraser first), else the nearest unit attacking the
 // player (Punisher, Eraser), else the target of an attack order; each on the turret's side, in
-// sight and, a vessel, a contact of the sonar (Vertigo's sonar lists no torpedoes)
+// sight and a contact of the sonar (every torpedo on its way is one, KNOWLEDGE.md 9.11)
 ActiveObject* PlayerTurret::search() const
 {
     auto contact = [this](const ActiveObject *object) {
         return std::any_of(m_scenario->sonar().begin(), m_scenario->sonar().end(), [object](const Sonar::SonarEntry &entry) { return entry.object == object; });
     };
     auto usable = [&](ActiveObject *object) {
-        return isValid(object) && onSide(object) && inSight(object) && (isTorpedo(object) || contact(object));
+        return isValid(object) && onSide(object) && inSight(object) && contact(object);
     };
     auto nearer = [this](ActiveObject *a, ActiveObject *b) {
         return !b || glm::length(a->center() - m_player->position()) < glm::length(b->center() - m_player->position());
@@ -217,9 +217,9 @@ ActiveObject* PlayerTurret::search() const
 
     ActiveObject *nearest = nullptr;
     if (m_software.torpedoes)
-        for (const auto &torpedo : m_scenario->torpedoes())
-            if (torpedo->target() == m_player && usable(torpedo.get()) && nearer(torpedo.get(), nearest))
-                nearest = torpedo.get();
+        for (const Sonar::SonarEntry &entry : m_scenario->sonar())
+            if (entry.isTorpedo && static_cast<Torpedo *>(entry.object)->target() == m_player && usable(entry.object) && nearer(entry.object, nearest))
+                nearest = entry.object;
     if (!nearest && m_software.vessels)
         for (ActiveObject *unit : m_scenario->playerAttackerList())
             if (!isTorpedo(unit) && usable(unit) && nearer(unit, nearest))
