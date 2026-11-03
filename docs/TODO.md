@@ -32,6 +32,8 @@ Missions and the campaign:
 - Whether the next mission starts with the damage the boat kept, and whether
   buying new armour mends the sides.
 - What AutoEnd and InstantEnd look like (T3).
+- Whether the training boats have Titanium Armor (their setups' armour 3,
+  counted from 0 like the other items; KNOWLEDGE.md 12.4).
 - Whether the autopilot menu lists the start station.
 - Whether the death menu adds loading the last game in the campaign (it
   showed abort and restart; Vertigo always offers all three).

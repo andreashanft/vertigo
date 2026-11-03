@@ -1778,6 +1778,22 @@ TRAINING in the main menu lists the four training missions (`strai0`–`strai3`
 with their setups `dat/save/ftrai0`–`3.des`), each starting with its
 briefing. Their `[End] Type` is 2, InstantEnd.
 
+A setup gives the boat by name and its items numbered within their kind
+from 0, as `GLOBWEAP.DES` lists them: the gun and a turret's gun by `[GunN]`
+(3 is Plasma Death II), the magazine by `[TorpedoMagazineN]` (7 is
+Revolver IV), the torpedoes by `[TorpedoN]` (18 is the Cluster Bomb), the turret software by `[SoftwareN]`
+(5 is Punisher V2.2), the engine from 0 for the Small Block and the sensor
+from 0 for Spy I (3 is Spy IV: the trainings' sonar takes 6 s to come up).
+The armour is taken to count from 0 the same way (3 is Titanium Armor; open
+in TODO.md). The four boats:
+
+| Training | Boat | Armour, sensor, engine | Gun | Magazine | Turret | Torpedoes |
+|---|---|---|---|---|---|---|
+| 0 Moghs | Gator | Titanium, Spy IV, Big Block | Plasma Death II | Revolver IV | – | 12 Man Eater II |
+| 1 Panzerschlacht | Hiob | Titanium, Spy IV, Big Block | Plasma Death III | Revolver IV | – | Stanley II, Cluster Bomb, Torch |
+| 2 Rette Hilfstransport | Gator | Titanium, Spy IV, Big Block | Plasma Death II | Revolver IV | Max. Impact II, Punisher V2.2 | Tiger Shark II, Man Eater II, Hammerhead |
+| 3 Befreie Vespucci | Gator | Titanium, Spy IV, Big Block | Plasma Death II | Revolver IV | Max. Impact II, Punisher V2.2 | Stanley II, Man Eater II, Big Bang II, Cluster Bomb, Torch |
+
 ### 12.5 Music
 
 A scenario's `[CD] Track` n plays the CD's audio track n+1 (1–4; 0 none).
