@@ -58,6 +58,9 @@ RETRIES = 3
 TEXT_RETRIES = 5  # for tiles with text, which must also read back right
 MIN_CONTRAST = 15
 VIBRANT_COLOURS = 0.75  # how far a vibrant picture's broad colours are the original's
+CALM_AI = 0.15  # how much of the AI's own detail stays in the calm space round a logo
+CALM_REACH = 31  # how far round a logo the space is calm (original pixels), before it fades out
+CALM_FADE = 40  # the blur over which it fades (original pixels)
 STEADY_WORKERS = max(1, min(8, (os.cpu_count() or 2) - 2))  # movies steadied side by side
 LIKENESS = 0.8  # a text drawn less like the original (another size, doubled) is drawn again
 STREAKY = 1.6  # from this ratio of column to row changes the open water counts as streaked
@@ -451,6 +454,39 @@ def held(image, source, clean, strength=VIBRANT_COLOURS, radius=8*SCALE, floor=0
     return Image.fromarray(np.clip(result, 0, 255).round().astype(np.uint8))
 
 
+def logo(source, texts):
+    """A picture's logo: the boxes of its texts and the warm-coloured parts joined to them (the
+    title's red emblem), widened by two pixels."""
+    rgb = np.asarray(source, dtype=np.float64)
+    boxes = np.zeros(rgb.shape[:2], bool)
+    for item in texts:
+        x1, y1, x2, y2 = item['box']
+        boxes[y1:y2, x1:x2] = True
+    warm = (rgb[..., 0] > rgb[..., 2] + 30) & (rgb[..., 0] > 60)
+    ys, xs = np.nonzero(boxes)
+    found = Image.fromarray((flood(boxes | warm, list(zip(xs, ys)))*255).astype(np.uint8)).filter(ImageFilter.MaxFilter(5))
+    return np.asarray(found) > 0
+
+
+def calm(result, drawn, source, clean, texts, radius=8*SCALE):
+    """A vibrant picture with a calm space round its logo, so that the logo stands free: there the
+    original's broad light and mostly the clean copy's fine detail (CALM_AI of the AI's), as busy as
+    the original is; it fades out with the distance, and the logo itself stays as drawn."""
+    found = logo(source, texts)
+    near = Image.fromarray((found*255).astype(np.uint8)).filter(ImageFilter.MaxFilter(2*CALM_REACH + 1))
+    w = np.asarray(near.filter(ImageFilter.GaussianBlur(CALM_FADE)), dtype=np.float64)/255
+    w[found] = 0
+    w = Image.fromarray((w*255).astype(np.uint8)).resize(result.size, Image.BILINEAR).filter(ImageFilter.GaussianBlur(2*SCALE))
+    w = np.asarray(w, dtype=np.float64)[..., None]/255
+    blur = ImageFilter.GaussianBlur(radius)
+    a, c = np.asarray(drawn, dtype=np.float64), np.asarray(clean, dtype=np.float64)
+    reference = source.resize(result.size, Image.LANCZOS)
+    low_a, low_r, low_c = (np.asarray(i.filter(blur), dtype=np.float64) for i in (drawn, reference, clean))
+    quiet = low_r + CALM_AI*(a - low_a) + (1 - CALM_AI)*(c - low_c)
+    mixed = np.asarray(result, dtype=np.float64)*(1 - w) + quiet*w
+    return Image.fromarray(np.clip(mixed, 0, 255).round().astype(np.uint8))
+
+
 def match_colours(image, reference, radius=2*SCALE):
     """The image's detail with the reference's colours above the radius."""
     blur = ImageFilter.GaussianBlur(radius)
@@ -626,8 +662,13 @@ def run(keys):
             if item.get('zoom'):
                 result = close_up(comfy, key, 'vibrant' if vibrant else k, big, result, item, folder, i)
         result = result.crop((0, 0) + size)
-        result = (held(result, source, esrgan_image(key).convert('RGB')) if vibrant
-                  else match_colours(result, source.resize(size, Image.LANCZOS)))
+        if vibrant:
+            clean = esrgan_image(key).convert('RGB')
+            drawn, result = result, held(result, source, clean)
+            if load(VIBRANT)[key].get('calm'):
+                result = calm(result, drawn, source, clean, texts.get(key, []))
+        else:
+            result = match_colours(result, source.resize(size, Image.LANCZOS))
         if k == 'map':
             copy = esrgan_image(key).convert('RGB')
             result.paste(copy, (0, 0), map_overlay(source))

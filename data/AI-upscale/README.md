@@ -137,7 +137,10 @@ Run the steps in this order. Each one can be stopped and started again.
   Its broad colours stay three quarters the original's, and what the AI adds where the original
   is flat (dark water, empty background) is held back, so that no buildings appear there. Its
   fine detail there comes from Real-ESRGAN's copy, which has no dithering, so its water isn't
-  smoothed, and what stands in the distance stays sharp.
+  smoothed, and what stands in the distance stays sharp. Round the logo the space stays calm, so
+  that the logo stands free: there the light is the original's and the fine detail mostly
+  Real-ESRGAN's, as busy as the original is, fading out with the distance. A prompt can't do
+  this: told of a logo, the model draws more logos.
 - Some images keep the Real-ESRGAN copy: the effects' sprites with transparency, smoke and
   fire (the AI does not improve them), the autopilot's destinations, the credits, the cursor,
   the depot's smallest marks and its boats turning over (less noisy with Real-ESRGAN).
@@ -154,7 +157,8 @@ All of them are keyed by the image's hash, the name of its file in the set.
   `"all"`.
 - `config/streaks.json`: pictures whose water to smooth, with points in the water. Usually
   empty: the pipeline finds the streaks by itself.
-- `config/vibrant.json`: the pictures drawn with richer colours and more luminous lights.
+- `config/vibrant.json`: the pictures drawn with richer colours and more luminous lights, with
+  `"calm": true` for a calm space round the logo (its texts' boxes and the red joined to them).
 - `config/names.json`: which picture file each hash is.
 
 The config was made with the German GOG version. With other game data a few images may have
