@@ -1560,7 +1560,10 @@ draws friends green and everything else red, and the round radars draw
 friends and hostiles with their two symbols and skip neutral contacts
 altogether. Chapter 1's Spy I has no IFF, so every contact shows as a friend
 there. Each block of a cargo ship is a contact of its own; mines are never
-contacts.
+contacts, nor are the bombers' turrets, which the sonar skips outright. The
+big ships' turrets are of another kind the sonar doesn't skip, but they make
+no noise, so a passive sonar never hears them; whether the active sonar
+lists them is open.
 
 ### 9.8 Target lock and keys
 

@@ -48,8 +48,9 @@ Units' behaviour:
   round's barrels), and whether an energy gun on a tower fires all the
   mountings in one go too (Vertigo's fires one shot per rearming time,
   through the mountings in turn).
-- Whether the player's sonar lists the bombers' and big ships' turrets as
-  contacts of their own (Vertigo's doesn't).
+- Whether the active sonar lists the big ships' turrets as contacts of their
+  own (the passive one never does, and no sonar lists the bombers' turrets;
+  Vertigo's lists neither, KNOWLEDGE.md 9.7).
 - Whether a torpedo, a sonar contact, can be locked as the target (Vertigo's
   can't).
 - How many homing torpedoes the player can have on it at once (every AI
