@@ -74,6 +74,12 @@ public:
     // a mounting (metres, x right, y ahead, z up); each round fires from the next one, its
     // barrels around it
     void addMuzzle(const Vector3D &muzzle);
+    // a gun tower's, a vehicle's or a mounted turret's gun fires each round from all its mountings:
+    // a boat gun model (0-10) all its barrels at each of them, a turret model (11-13) one shot at
+    // each (KNOWLEDGE.md 4.3)
+    void setAllMountings(bool all) { m_allMountings = all; }
+    // the shots of one round
+    int roundShots() const;
     // the barrels a gun model fires in turn (appendix K): 1, 2, 1, 2, 4, 1 for the energy guns,
     // 2, 2, 2, 3, 4, 2, 2, 2 for the others
     static int barrels(int model);
@@ -108,8 +114,9 @@ protected:
 
     Effects m_projectile;
     std::vector<Vector3D> m_muzzles;  // the mountings
+    bool m_allMountings = false;
     size_t m_mounting = 0;    // the mounting of the current round
-    int m_barrel = 0;         // the round's next barrel
+    int m_barrel = 0;         // the round's next shot
     float m_nextBarrel = 0;   // when an ammo gun's next barrel may fire
     int m_shots = 0;
     sfx::Sample m_sample;

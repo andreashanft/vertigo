@@ -19,8 +19,7 @@ missions feel.
 | T3 | Mission end types | S | `[End] Type` (KNOWLEDGE.md 2.7): 1 AutoEnd in 26 missions, 2 InstantEnd in the four training missions, 3 the freighter st1703 after S00704, 4 st9901 after S02205. Vertigo uses it only to leave out the "accomplished" voice; every mission waits for Alt+A and the autopilot menu, which lists the area's open stations. The freighter, station 3 of chapter 7, is closed at the chapter's start and opened by dialogue 007008; whether the story gets there without type 3 is for T1. Watch what AutoEnd and InstantEnd look like in the original |
 | T4 | Platforms | M | macOS, Linux and the iPad are played; Windows is built, packed and tested by CI but not played. Play a few missions on each |
 | T5 | S00705: Schwartz's infiltration | S | The AD Augmented Mod's notes say Schwartz (2066) infiltrates only the first control unit and waits until Marquez is dead; in Vertigo he infiltrates all three in turn. Watch the original: a slot with a break condition may not end on its own there |
-| T6 | Towers and vehicles with boat guns | S | The AD Augmented Mod's readme: a gun tower or vehicle whose `gun` is a boat gun model (0–10, as some missions have) fires all of that gun's barrels from each of its own, so a one-barrel tower with a Vendetta III fires four shots a salvo and a four-barrel one 16; with the models meant for them (11–13) it fires one per barrel. Vertigo's unit guns fire one of the tower's barrels per pull, in turn, whatever the model. Compare a salvo in the original |
-| T7 | iPad: OpenGL ES and OpenAL | M | Both are deprecated but still in the iOS 27 SDK. ANGLE and OpenAL Soft would replace them |
+| T6 | iPad: OpenGL ES and OpenAL | M | Both are deprecated but still in the iOS 27 SDK. ANGLE and OpenAL Soft would replace them |
 
 ## Open comparisons
 
@@ -44,6 +43,11 @@ Missions and the campaign:
 Units' behaviour:
 
 - Which of `car` 2 and 6 is left (Vertigo turns 2 left).
+- A tower's salvo in detail (KNOWLEDGE.md 4.3): whether its mountings fire
+  in the same frame or one after the other (Vertigo's one per frame, as a
+  round's barrels), and whether an energy gun on a tower fires all the
+  mountings in one go too (Vertigo's fires one shot per rearming time,
+  through the mountings in turn).
 - Whether the player's turrets fire through friends (Vertigo's don't).
 - Whether the player's sonar lists the bombers' and big ships' turrets as
   contacts of their own (Vertigo's doesn't).
@@ -74,6 +78,8 @@ Sensors, HUD and views:
 World, physics and effects:
 
 - Why one of S00202's two upward current cells does nothing.
+- Whether mines drift in currents: their data has a factor of 0.2, but the
+  missions' units don't drift (KNOWLEDGE.md 3.3); Vertigo's mines don't.
 - What else the original scales with the radiation's strength between 100
   and 40 m below the surface.
 - Whether the keyboard ramps the stick value when turning the boat.
@@ -93,8 +99,6 @@ Sound:
 Deviations a player may notice. Each is deliberate or waits for one of the
 comparisons above.
 
-- Mines don't drift in currents (the original pushes them at a factor of
-  0.2).
 - Some explosions' sizes: the mines' explosions keep their own size (within
   about 10 % of the original's), the destruction sequence's come in sizes
   Vertigo's effects don't take, and Vertigo sizes the explosions by the

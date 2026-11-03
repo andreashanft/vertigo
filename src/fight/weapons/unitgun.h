@@ -58,6 +58,8 @@ public:
     float projectileSpeed() const { return m_gun.projectileSpeed(); }
     const String& shortName() const { return m_gun.shortName(); }
     void setAmmunition(int ammunition) { m_gun.setAmmo(ammunition); }
+    // a tower, a vehicle or a mounted turret fires each round from all its mountings (Gun::setAllMountings)
+    void setAllMountings(bool all) { m_gun.setAllMountings(all); }
     // how many shots it has fired
     int shots() const { return m_gun.shots(); }
     // most units fire before their gun counts its rearming time down, so on the frame after it is

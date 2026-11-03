@@ -87,7 +87,7 @@ TurretBase::TurretBase(Scenario *scenario, txt::DesFile &file, const ObjectInfo 
 
 
 // the gun is in the turret's file: [StaticGun] and [VolleyGun], one on each arm, the barrels
-// relative to the arm; the volley starts again whenever the aim is lost
+// relative to the arm, each round from all of them; the volley starts again whenever the aim is lost
 void TurretBase::arm(int model, txt::DesFile &file)
 {
     if (m_turretName.isEmpty())
@@ -109,6 +109,7 @@ void TurretBase::arm(int model, txt::DesFile &file)
     {
         gun->reset(new UnitGun(m_scenario, this, model, muzzles, &turretFile));
         (*gun)->setRestartOnRelease(true);
+        (*gun)->setAllMountings(true);
         if (mount.ammunition >= 0)
             (*gun)->setAmmunition(mount.ammunition);
         if (!twoArms)

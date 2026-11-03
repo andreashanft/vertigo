@@ -93,6 +93,14 @@ void Gun::addMuzzle(const Vector3D &muzzle)
 }
 
 
+int Gun::roundShots() const
+{
+    if (!m_allMountings)
+        return barrels(m_model);
+    return int(std::max<size_t>(1, m_muzzles.size()))*(m_model <= 10 ? barrels(m_model) : 1);
+}
+
+
 Vector3D Gun::barrelOffset(int model, int barrel)
 {
     // 0.75 m to either side, the lower pair of four 0.8 m down; the Vendetta II's third barrel
@@ -153,18 +161,22 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
         m_stateTime = m_scenario->time() + m_defectDelay*(0.5f + random());
         return;
     }
-    // a round fires the model's barrels in turn around the next mounting (appendix K)
-    const int barrelCount = barrels(m_model);
-    if (m_barrel == 0 && !m_muzzles.empty())
+    // a round fires the model's barrels in turn around the next mounting (appendix K); a unit's
+    // gun with all its mountings goes through them in turn, each with its share of the round
+    const int roundShots = this->roundShots();
+    const int perMounting = m_allMountings ? roundShots/int(std::max<size_t>(1, m_muzzles.size())) : roundShots;
+    if (!m_allMountings && m_barrel == 0 && !m_muzzles.empty())
         m_mounting = (m_mounting + 1) % m_muzzles.size();
-    const Vector3D mounting = m_muzzles.empty() ? Vector3D(0) : m_muzzles[m_mounting];
-    const int barrelsFired = allBarrels ? barrelCount - m_barrel : 1;
+    const int barrelsFired = allBarrels ? roundShots - m_barrel : 1;
     for (int i = 0; i < barrelsFired; i++)
     {
-        const Vector3D muzzle = mounting + barrelOffset(m_model, m_barrel + i);
+        const int shot = m_barrel + i;
+        const size_t mounting = m_allMountings ? shot/perMounting : m_mounting;
+        const Vector3D muzzle = (m_muzzles.empty() ? Vector3D(0) : m_muzzles[mounting]) +
+                                (perMounting > 1 ? barrelOffset(m_model, shot % perMounting) : Vector3D(0));
         m_scenario->effectManager().addProjectile(m_projectile, pos + right*muzzle.x + dir*muzzle.y + up*muzzle.z, dir, m_owner);
     }
-    m_barrel = (m_barrel + barrelsFired) % barrelCount;
+    m_barrel = (m_barrel + barrelsFired) % roundShots;
     m_shots++;
     // the player's guns sound in the cockpit, others where they fire
     if (m_owner && m_owner != m_scenario->player())
@@ -190,7 +202,7 @@ void Gun::fire(const Vector3D &pos, const Vector3D &dir, const Vector3D &up, con
         // however little is left; the gun then waits for its rearming time and for the pool to
         // hold more than the whole demand again
         if (m_owner)
-            m_owner->drawEnergy(m_energyDemand*barrelsFired/barrelCount);
+            m_owner->drawEnergy(m_energyDemand*barrelsFired/roundShots);
         m_state = StateEnergyDelay;
     }
     m_stateTime = m_scenario->time() + m_rearmingTime;

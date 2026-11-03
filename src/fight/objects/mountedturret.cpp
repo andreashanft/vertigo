@@ -108,7 +108,8 @@ MountedTurret::MountedTurret(Scenario *scenario, SimpleBoat *carrier, txt::DesFi
     m_info.sensorRange = file.value("senr", 100).toInt();
     m_info.sleeps = false;
 
-    // a gun on each arm, each with all the barrels, firing in the volley's rhythm
+    // a gun on each arm, each with all the barrels and each round from all of them, firing in the
+    // volley's rhythm
     const UnitGun::Mount mount = UnitGun::readMount(file);
     if (UnitGun::isGun(mount.model))
     {
@@ -119,6 +120,7 @@ MountedTurret::MountedTurret(Scenario *scenario, SimpleBoat *carrier, txt::DesFi
         {
             m_guns[arm].reset(new UnitGun(scenario, this, mount.model, muzzles, &file));
             m_guns[arm]->setRestartOnRelease(true);
+            m_guns[arm]->setAllMountings(true);
             if (mount.ammunition >= 0)
                 m_guns[arm]->setAmmunition(mount.ammunition);
         }
