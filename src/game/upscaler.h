@@ -19,9 +19,11 @@
 #define GAME_UPSCALER_H
 
 #include <atomic>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace game {
 
@@ -35,6 +37,15 @@ class Upscaler
 {
 public:
     enum class State { Idle, Running, Finished, Failed };
+    // an image it makes a copy of: its key (gfx::Upscaled::key), the data file it comes from, with
+    // " (transparent)" or " (greyed out)" for a second copy in other colours, and a movie's picture
+    // from 0 (-1 for others)
+    struct Source
+    {
+        std::uint64_t key;
+        std::string file;
+        int picture;
+    };
 
     static Upscaler& get();
     ~Upscaler();
@@ -46,6 +57,8 @@ public:
     static bool hasTool();
     // the size of the download, for asking first
     static int downloadMegabytes();
+    // what it makes copies of, by key
+    static std::vector<Source> sources();
 
     void start();
     // stops a run; what is done is kept

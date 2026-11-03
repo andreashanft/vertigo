@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np  # noqa: E402
 from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
-from paths import (ESRGAN_SET, FOLDER, NAMES, ORIGINALS, OUT, SETS, TEXTS, UPSCALED,  # noqa: E402
+from paths import (ESRGAN_SET, FOLDER, NAMES, ORIGINALS, OUT, SETS, SOURCES, TEXTS, UPSCALED,  # noqa: E402
                    UPSCALED_ASIDE, WORK, app_dir, data_dir, esrgan, keys, original)
 
 FOUND = os.path.join(WORK, 'texts-found.json')
@@ -83,6 +83,10 @@ def export(args):
     shutil.rmtree(ORIGINALS, ignore_errors=True)
     env = dict(os.environ, CFFIXED_USER_HOME=home, HOME=home, XDG_DATA_HOME=os.path.join(home, '.local', 'share'))
     subprocess.run([vertigo, '--upscale', '--timeout', '1800'], env=env, check=True)
+    # where each comes from: its file and, for a movie's, the picture
+    listed = subprocess.run([vertigo, '--list-upscaled', '--timeout', '60'], env=env, check=True, capture_output=True, text=True)
+    with open(SOURCES, 'w', encoding='utf-8') as file:
+        file.write(listed.stdout)
     shutil.rmtree(home)
     print(f'{len(keys())} originals in {ORIGINALS}')
 
@@ -229,9 +233,20 @@ for (const radio of document.querySelectorAll('input[name=other]')) {
   radio.checked = radio.value === other;
   radio.addEventListener('change', () => { other = radio.value; try { localStorage.setItem('other', other); } catch (e) {} });
 }
+// a movie plays its pictures as the depot does, of the AI copies or, held, of the other ones
+const movies = [...document.querySelectorAll('img[data-frames]')].map(img => ({img, frames: JSON.parse(img.dataset.frames), fps: +img.dataset.fps, shown: 'ai'}));
+const play = (now) => {
+  for (const m of movies) {
+    const list = m.frames[m.shown];
+    m.img.src = list[Math.floor(now/1000*m.fps) % list.length];
+  }
+  requestAnimationFrame(play);
+};
+requestAnimationFrame(play);
 for (const img of document.querySelectorAll('section img')) {
-  const show = (e) => { e.preventDefault(); img.src = img.dataset[other]; img.classList.toggle('pixels', other === 'original'); };
-  const back = () => { img.src = img.dataset.ai; img.classList.remove('pixels'); };
+  const movie = movies.find(m => m.img === img);
+  const show = (e) => { e.preventDefault(); if (movie) movie.shown = other; else img.src = img.dataset[other]; img.classList.toggle('pixels', other === 'original'); };
+  const back = () => { if (movie) movie.shown = 'ai'; else img.src = img.dataset.ai; img.classList.remove('pixels'); };
   img.addEventListener('mousedown', show);
   img.addEventListener('touchstart', show);
   for (const e of ['mouseup', 'mouseleave', 'touchend', 'touchcancel']) img.addEventListener(e, back);
@@ -245,11 +260,16 @@ def review(args):
     from pipeline import kind
     known = load(NAMES)
     rows = []
+    movies = {}
     for path in sorted(glob.glob(os.path.join(OUT, '*.json')), key=lambda p: (json.load(open(p))['kind'], p)):
         key = os.path.basename(path)[:-5]
         if kind(key) == 'keep':
             continue
         report = json.load(open(path))
+        # a movie's pictures in one place, playing
+        if report['kind'] == 'movie':
+            movies.setdefault(report['movie'], []).append((report['picture'], key))
+            continue
         ai = os.path.join(OUT, key + '.png')
         width, height = Image.open(original(key)).size
         title = f'{key} · {report["kind"]} · {known.get(key, "")}'
@@ -260,6 +280,14 @@ def review(args):
         rows.append(f'<section><h2>{html.escape(title)}</h2><p>{html.escape(note)}{" · text: " + html.escape(said) if said else ""}</p>'
                     f'<img src="{files["ai"]}" width="{width*4}" height="{height*4}" data-ai="{files["ai"]}" '
                     f'data-esrgan="{files["esrgan"]}" data-original="{files["original"]}"></section>')
+    for movie, pictures in sorted(movies.items()):
+        keys = [key for _, key in sorted(pictures)]
+        width, height = Image.open(original(keys[0])).size
+        frames = {name: ['file://' + where(key) for key in keys]
+                  for name, where in (('ai', lambda k: os.path.join(OUT, k + '.png')), ('esrgan', esrgan), ('original', original))}
+        rows.append(f'<section><h2>{html.escape(movie)} · movie · {len(keys)} pictures</h2><p>steadied, as the depot plays it</p>'
+                    f'<img src="{html.escape(frames["ai"][0])}" width="{width*4}" height="{height*4}" data-fps="13" '
+                    f'data-frames="{html.escape(json.dumps(frames))}"></section>')
     out = os.path.join(WORK, 'review.html')
     open(out, 'w').write(REVIEW_PAGE.replace('ROWS', '\n'.join(rows)))
     print(f'{out}: {len(rows)} images')

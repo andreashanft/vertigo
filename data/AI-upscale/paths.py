@@ -1,4 +1,5 @@
 """Where things are: this folder, its work folder, the game data and Vertigo's own folder."""
+import functools
 import os
 import re
 import sys
@@ -8,6 +9,8 @@ CONFIG = os.path.join(FOLDER, 'config')
 # everything the pipeline makes (ignored by git)
 WORK = os.environ.get('VERTIGO_AI_WORK') or os.path.join(FOLDER, 'work')
 ORIGINALS = os.path.join(WORK, 'originals')
+# each original's data file and, for a movie's, its picture (from Vertigo's --list-upscaled)
+SOURCES = os.path.join(ORIGINALS, 'sources.tsv')
 ESRGAN_SET = os.path.join(WORK, 'esrgan')
 OUT = os.path.join(WORK, 'out')
 TILES = os.path.join(WORK, 'tiles')
@@ -16,6 +19,7 @@ SETS = os.path.join(WORK, 'sets')
 TEXTS = os.path.join(CONFIG, 'texts.json')
 REGIONS = os.path.join(CONFIG, 'esrgan-regions.json')
 STREAKS = os.path.join(CONFIG, 'streaks.json')
+VIBRANT = os.path.join(CONFIG, 'vibrant.json')
 NAMES = os.path.join(CONFIG, 'names.json')
 
 UPSCALED = 'Game Data Upscaled'
@@ -78,6 +82,27 @@ def esrgan_image(key):
         image = image.convert('RGB')
         image.putalpha(Image.open(alpha).convert('L'))
     return image
+
+
+@functools.lru_cache(maxsize=None)
+def sources():
+    """Each original's data file, with " (transparent)" or " (greyed out)" for a copy in other colours,
+    and the picture of a movie (-1 for others), by key; empty for an export without the list."""
+    found = {}
+    if os.path.exists(SOURCES):
+        for line in open(SOURCES, encoding='utf-8'):
+            key, file, picture = line.rstrip('\n').split('\t')
+            found[key] = (file, int(picture))
+    return found
+
+
+def movies():
+    """Each movie's pictures in order, by its file."""
+    found = {}
+    for key, (file, picture) in sources().items():
+        if picture >= 0:
+            found.setdefault(file, []).append((picture, key))
+    return {file: [key for _, key in sorted(pictures)] for file, pictures in found.items()}
 
 
 def keys():

@@ -35,3 +35,12 @@ def measure(source, image):
     a = np.asarray(source.convert('RGB').filter(blur), dtype=np.float64)
     b = np.asarray(small.filter(blur), dtype=np.float64)
     return sx, sy, np.abs(a - b).mean(), (b - a).reshape(-1, 3).mean(axis=0)
+
+
+def likeness(a, b, blur=4):
+    """How alike two images of one size are in their shapes, -1 to 1: the correlation of their
+    slightly blurred grey images (brightness and contrast don't count)."""
+    x = gray(a.filter(ImageFilter.GaussianBlur(blur)))
+    y = gray(b.filter(ImageFilter.GaussianBlur(blur)))
+    x, y = x - x.mean(), y - y.mean()
+    return float((x*y).sum()/np.sqrt((x*x).sum()*(y*y).sum() + 1e-9))

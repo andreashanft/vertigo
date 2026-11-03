@@ -652,7 +652,9 @@
     139,
     259,
     157
-   ]
+   ],
+   "note": "in red capitals on a small sign framed in red, above two lines of small print",
+   "zoom": true
   }
  ],
  "7ce0687af35c9b10": [
@@ -772,8 +774,7 @@
     360,
     229
    ],
-   "note": "the boat's name, in dark letters on its hull, seen at a slant",
-   "zoom": true
+   "note": "the boat's name, in large dark capitals on a plate of its hull, seen at a slant; the M is wide, and the small plate below has nothing written on it"
   }
  ],
  "c975c9bc0345e450": [
@@ -800,6 +801,37 @@
    ],
    "note": "in green capitals on the wing, written sideways, reading from bottom to top",
    "zoom": true
+  }
+ ],
+ "181f6b5600944077": [
+  {
+   "text": "D E P O T",
+   "box": [
+    172,
+    8,
+    383,
+    53
+   ],
+   "note": "large dark grey capitals spaced wide apart, at the top, dull and hardly lighter than the dark background, without glow, outline or shine"
+  },
+  {
+   "text": "S H I P",
+   "box": [
+    197,
+    296,
+    359,
+    341
+   ],
+   "note": "large dark grey capitals spaced wide apart, at the bottom, dull and hardly lighter than the dark background, without glow, outline or shine"
+  },
+  {
+   "hint": "a stack of torpedo crates with faint, worn stencilled marks that are hardly visible",
+   "box": [
+    465,
+    180,
+    555,
+    350
+   ]
   }
  ]
 }

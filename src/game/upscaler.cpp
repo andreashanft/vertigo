@@ -126,6 +126,9 @@ struct Item
     bool sharp;
     std::uint64_t pixels;
     std::function<gfx::Image()> decode;
+    // where it comes from (Upscaler::Source)
+    std::string file;
+    int picture;
 };
 
 // the item's copy, or null if it is missing or of the wrong size
@@ -160,13 +163,13 @@ gfx::Image moviePicture(const String &file, int index)
 std::vector<Item> collect()
 {
     std::map<std::uint64_t, Item> items;
-    auto add = [&items](bool sharp, std::function<gfx::Image()> decode) {
+    auto add = [&items](bool sharp, const std::string &file, std::function<gfx::Image()> decode, int picture = -1) {
         const gfx::Image image = decode();
         if (image.isNull() || image.width() < 8 || image.height() < 8)
             return;
         const std::uint64_t key = gfx::Upscaled::key(image);
         if (!items.count(key))
-            items[key] = Item{ key, sharp, std::uint64_t(image.width())*image.height(), std::move(decode) };
+            items[key] = Item{ key, sharp, std::uint64_t(image.width())*image.height(), std::move(decode), file, picture };
     };
 
     // the effects' textures with their transparent colour (gfx::TextureManager)
@@ -194,9 +197,9 @@ std::vector<Item> collect()
         if (!util::exists(util::DataPath::resolve(base + ".s16")))
             continue;
         const String image = String::fromUtf8(name.c_str()), shading = String::fromUtf8((base + ".s16").c_str());
-        add(false, [image, shading]() { return gfx::Image::load(image, gfx::ColorTable(shading)); });
+        add(false, name, [image, shading]() { return gfx::Image::load(image, gfx::ColorTable(shading)); });
         if (effects.count(util::fileName(base)))
-            add(false, [image, shading]() {
+            add(false, name + " (transparent)", [image, shading]() {
                 gfx::ColorTable table(shading);
                 table[0] = gfx::rgba(0, 0, 0, 0);
                 return gfx::Image::load(image, table);
@@ -211,22 +214,22 @@ std::vector<Item> collect()
         const String file = String::fromUtf8(name.c_str());
         if (endsWith(name, ".pcx")) {
             if (startsWith(name, "gfx/pic/room/") || startsWith(name, "gfx/pic/bground/"))
-                add(false, [file]() { return gfx::Image::loadPCX(file).toRgb565(); });
+                add(false, name, [file]() { return gfx::Image::loadPCX(file).toRgb565(); });
             else
-                add(startsWith(name, "gfx/pic/apilot/"), [file]() { return gfx::Image::loadPCX(file); });
+                add(startsWith(name, "gfx/pic/apilot/"), name, [file]() { return gfx::Image::loadPCX(file); });
         } else if (endsWith(name, ".r16")) {
             if (startsWith(name, "gfx/pic/area/"))
-                add(true, [file]() { return gfx::Image::load(file, 304, 284, true); });
+                add(true, name, [file]() { return gfx::Image::load(file, 304, 284, true); });
             else if (startsWith(name, "gfx/pic/notebook/"))
-                add(true, [file]() { return gfx::Image::load(file, 304, 284); });
+                add(true, name, [file]() { return gfx::Image::load(file, 304, 284); });
             else if (startsWith(name, "gfx/pic/title/credits"))
-                add(true, [file]() { return gfx::Image::load(file, 640, 480); });
+                add(true, name, [file]() { return gfx::Image::load(file, 640, 480); });
         }
     }
     for (const std::string &name : dataFiles("vfx:cockpit"))
         if (endsWith(name, "/cockpit.r16")) {
             const String file = String::fromUtf8(name.c_str());
-            add(false, [file]() { return gfx::Image::load(file, 640, 480, true); });
+            add(false, name, [file]() { return gfx::Image::load(file, 640, 480, true); });
         }
 
     // the depot's pictures (game/depot.cpp, ui/itemlist.cpp), the buttons also greyed out
@@ -239,14 +242,14 @@ std::vector<Item> collect()
         if (!endsWith(name, ".img"))
             continue;
         const String file = String::fromUtf8(name.c_str());
-        add(false, [file, border]() { return gfx::Image::load(file, border); });
+        add(false, name, [file, border]() { return gfx::Image::load(file, border); });
         if (greyedOut.count(util::fileName(name.substr(0, name.size() - 4))))
-            add(false, [file, greyed]() { return gfx::Image::load(file, greyed); });
+            add(false, name + " (greyed out)", [file, greyed]() { return gfx::Image::load(file, greyed); });
     }
     // the items' icons, each with its palette (game/items.cpp; the table is made when a run starts)
     for (const auto &entry : Items::all()) {
         const gfx::Image icon = entry.second.icon;
-        add(false, [icon]() { return icon; });
+        add(false, "gfx/img/icon/" + lower(entry.second.imgname.toUtf8()) + ".img", [icon]() { return icon; });
     }
     // the depot's movies, the boats turning over and the items turning: every picture
     for (const char *part : { "gfx:mvi/sflip", "gfx:mvi/thing" })
@@ -257,11 +260,11 @@ std::vector<Item> collect()
             gfx::Video video(file);
             for (int index = 0; !video.atEnd(); index++)
                 if (!video.nextFrame().isNull())
-                    add(false, [file, index]() { return moviePicture(file, index); });
+                    add(false, name, [file, index]() { return moviePicture(file, index); }, index);
         }
 
     // the cursor, whose edges the model for animation keeps crisp
-    add(true, []() {
+    add(true, "gfx/img/desktop/gui/cur_norm.img", []() {
         return gfx::Image::loadCursor("gfx:img/desktop/gui/cur_norm.img", gfx::ColorTable("gfx:pal/gui/cursor.pal")).convertToFormat(gfx::Image::RGBA8888);
     });
 
@@ -327,6 +330,15 @@ bool Upscaler::hasTool()
 int Upscaler::downloadMegabytes()
 {
     return int((ToolDownload.size + 999999)/1000000);
+}
+
+
+std::vector<Upscaler::Source> Upscaler::sources()
+{
+    std::vector<Source> result;
+    for (const Item &item : collect())
+        result.push_back(Source{ item.key, item.file, item.picture });
+    return result;
 }
 
 

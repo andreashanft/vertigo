@@ -239,7 +239,8 @@ computer into Vertigo's folder (On My iPad › Vertigo in the Files app) and
 switch it on in Options.
 
 `vertigo --upscale` makes the set in a terminal, printing the progress. The
-upscaler needs Vulkan (on macOS through Metal).
+upscaler needs Vulkan (on macOS through Metal). `vertigo --list-upscaled` lists
+what it makes copies of, each with its file and, for a movie, its picture.
 
 #### Caveats
 
@@ -253,8 +254,9 @@ Small lettering on models and buildings can come out garbled.
 
 ### AI upscale
 
-An optional second step redraws the pictures and textures with a modern AI
-model (Qwen Image 2.1 in ComfyUI), with more detail and clean lettering. It
+An optional second step redraws the pictures and textures, and the depot's icons
+and item movies, with a modern AI model (Qwen Image 2.1 in ComfyUI), with more
+detail and clean lettering. It
 starts from the simple upscale's set, runs outside the game as a script and
 takes a few hours on a strong graphics card; the result takes the place of
 `Game Data Upscaled` and is switched on the same way. See

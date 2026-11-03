@@ -79,9 +79,9 @@ Run the steps in this order. Each one can be stopped and started again.
 
 1. `venv/bin/python aiupscale.py export`
    Gets the game's pictures and textures as the game decodes them (3444 files, most of them the
-   depot's movie pictures), into `work/originals`. It runs Vertigo's own upscale with a stand-in
-   for Real-ESRGAN, in a throwaway home folder. It finds the game data like Vertigo does, or
-   takes `--data DIR`.
+   depot's movie pictures), into `work/originals`, with the file each comes from in
+   `work/originals/sources.tsv`. It runs Vertigo's own upscale with a stand-in for Real-ESRGAN,
+   in a throwaway home folder. It finds the game data like Vertigo does, or takes `--data DIR`.
 2. `venv/bin/python aiupscale.py prepare`
    Copies the game's Real-ESRGAN set into `work/esrgan`. The AI set is built on it.
 3. `venv/bin/python aiupscale.py names` (optional)
@@ -97,7 +97,7 @@ Run the steps in this order. Each one can be stopped and started again.
 7. `venv/bin/python aiupscale.py review`
    Makes `work/review.html`. Open it in a browser. Hold the mouse button on an image to see
    the original instead, enlarged to the same size, or the Real-ESRGAN copy. Choose which at
-   the top of the page.
+   the top of the page. The depot's movies play there as in the depot.
 8. `venv/bin/python aiupscale.py use ai`
    Switches the game to the set (quit the game first). The Real-ESRGAN set is kept aside.
    `use esrgan` switches back. For the iPad, copy `work/sets/ai` to Vertigo's folder there
@@ -113,19 +113,34 @@ Run the steps in this order. Each one can be stopped and started again.
   each tile anew, with the tile as its reference. At this size nothing moves.
 - Textures (256×256) are one tile. Most rooms fit into one tile too. Full-screen pictures take
   nine tiles, blended at their overlaps.
-- Texts are named in the prompt. Qwen3-VL reads each one back. If it doesn't read right, the
-  tile is drawn again with another seed, up to five times.
+- Texts are named in the prompt of the tile that draws them. A tile with only the end of a text
+  isn't told of it, or it continues the text. Qwen3-VL reads each one back, and its shape is
+  compared with the original's. If it doesn't read right, or comes out in another size, the tile is drawn again with
+  another seed, up to five times.
 - Small texts can get a close-up of their own. Upside-down ones are turned upright for it and
   turned back.
-- Each tile's position is measured against its input. A tile that moved is drawn again.
+- Each tile's position is measured against its input. A tile drawn a little off as a whole is moved
+  back; one that still doesn't fit is drawn again.
 - The colours are matched to the original, so that the result keeps its look.
 - Some station pictures have vertical streaks or a dotted dithering in their open water. The
   pipeline finds both and smooths them away.
 - On the sea maps only the terrain is redrawn. Labels, lines and frames stay from Real-ESRGAN.
+- The items' icons and the depot's buttons are too small to be redrawn alone. They are
+  enlarged onto sheets of 16, each sheet is redrawn as one tile and cut apart again. A
+  greyed-out button takes its button's copy.
+- The depot's movies of the items turning are drawn four pictures in a row to a sheet. Drawn
+  one by one, each picture gets its own fine detail, which flickers when they play. So the
+  detail the AI adds over Real-ESRGAN (which doesn't flicker) is averaged over the neighbouring
+  pictures, each moved onto the picture by the motion measured between the Real-ESRGAN copies
+  (`steady.py`). What the AI draws alike in every picture stays, the rest fades.
+- The title picture is drawn with richer colours and more luminous lights (`config/vibrant.json`).
+  Its broad colours stay three quarters the original's, and what the AI adds where the original
+  is flat (dark water, empty background) is held back, so that no buildings appear there. Its
+  fine detail there comes from Real-ESRGAN's copy, which has no dithering, so its water isn't
+  smoothed, and what stands in the distance stays sharp.
 - Some images keep the Real-ESRGAN copy: the effects' sprites with transparency, smoke and
-  fire (the AI does not improve them), the autopilot's destinations, the credits, the cursor
-  and the depot's pictures, icons and movies (a movie's pictures redrawn one by one would
-  flicker).
+  fire (the AI does not improve them), the autopilot's destinations, the credits, the cursor,
+  the depot's smallest marks and its boats turning over (less noisy with Real-ESRGAN).
 
 ## The config files
 
@@ -139,6 +154,7 @@ All of them are keyed by the image's hash, the name of its file in the set.
   `"all"`.
 - `config/streaks.json`: pictures whose water to smooth, with points in the water. Usually
   empty: the pipeline finds the streaks by itself.
+- `config/vibrant.json`: the pictures drawn with richer colours and more luminous lights.
 - `config/names.json`: which picture file each hash is.
 
 The config was made with the German GOG version. With other game data a few images may have

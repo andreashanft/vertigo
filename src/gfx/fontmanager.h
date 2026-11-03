@@ -35,6 +35,9 @@ public:
 
 public:
     Font font(Font::Name name) const;
+    // starts drawing the silver fonts' vector glyphs, together, so that each is ready when first
+    // needed
+    void startVectors();
 
 public:
     static FontManager* get() { assert(m_singleton); return m_singleton; }

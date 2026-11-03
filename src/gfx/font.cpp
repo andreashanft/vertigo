@@ -25,12 +25,15 @@
 
 #include <SDL3/SDL_filesystem.h>
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 namespace gfx {
@@ -78,6 +81,94 @@ Image vectorGlyph(const VectorFont &font, int index, const Image &image, int sca
                 texel[3] = std::uint8_t(texel[3]*opacity/255);
         }
     return glyph;
+}
+
+// runs f(0) to f(n - 1) on all processors
+void parallel(int n, const std::function<void(int)> &f)
+{
+    const int threads = std::max(1, std::min(n, int(std::thread::hardware_concurrency())));
+    std::atomic<int> next(0);
+    std::vector<std::thread> pool;
+    for (int t = 0; t < threads; t++)
+        pool.emplace_back([&]() {
+            for (int i; (i = next++) < n; )
+                f(i);
+        });
+    for (std::thread &thread : pool)
+        thread.join();
+}
+
+// a silver font's glyphs as the vector texture takes them, VectorFont::Scale times as large: the
+// vector font's where it has one for the game glyph, the game glyph scaled up elsewhere
+std::vector<Image> vectorGlyphs(const VectorFont &font, const std::vector<Image> &images, bool large, double size,
+                                double gamma)
+{
+    // the character (CP437 code) of each game glyph: its place in the file, but the large font has
+    // Ö and Ü at 0x95 and 0x96, and other glyphs at their codes
+    std::vector<int> codes(images.size());
+    for (std::size_t i = 0; i < images.size(); i++) {
+        const int index = int(i) + 32;
+        codes[i] = !large ? index : index == 0x95 ? 0x99 : index == 0x96 ? 0x9a
+                 : index == 0x99 || index == 0x9a ? 0 : index;
+    }
+
+    // the game's palette for the style that snaps to it: the colours of the glyphs the vector font
+    // redraws, those that occur at least eight times
+    std::map<Rgb, int> counts;
+    for (std::size_t i = 0; i < images.size(); i++) {
+        if (!font.has(codes[i]))
+            continue;
+        const Image &image = images[i];
+        for (int y = 0; y < image.height(); y++)
+            for (int x = 0; x < image.width(); x++) {
+                const Rgb c = image.pixel(x, y);
+                if (alpha(c) > 0)
+                    counts[c | 0xff000000]++;
+            }
+    }
+    std::vector<Rgb> palette;
+    for (const auto &[c, n] : counts)
+        if (n >= 8)
+            palette.push_back(c);
+
+    // the vector glyph of each game glyph: its own, that of a glyph that looks the same, or for a
+    // small letter its capital's (the fonts' small letters are their capitals, some a pixel off)
+    auto same = [](const Image &a, const Image &b) {
+        if (a.width() != b.width() || a.height() != b.height())
+            return false;
+        for (int y = 0; y < a.height(); y++)
+            for (int x = 0; x < a.width(); x++)
+                if (a.pixel(x, y) != b.pixel(x, y))
+                    return false;
+        return true;
+    };
+    std::vector<int> drawnAs(images.size(), 0);
+    for (std::size_t i = 0; i < images.size(); i++) {
+        if (font.has(codes[i])) {
+            drawnAs[i] = codes[i];
+            continue;
+        }
+        for (std::size_t j = 0; j < images.size() && !drawnAs[i]; j++)
+            if (font.has(codes[j]) && same(images[i], images[j]))
+                drawnAs[i] = codes[j];
+        if (drawnAs[i])
+            continue;
+        static const std::map<int, int> umlauts = { { 0x81, 0x9a }, { 0x84, 0x8e }, { 0x94, 0x99 } };
+        const auto umlaut = umlauts.find(codes[i]);
+        const int capital = codes[i] >= 'a' && codes[i] <= 'z' ? codes[i] - 32
+                          : umlaut != umlauts.end() ? umlaut->second : 0;
+        if (capital && font.has(capital))
+            drawnAs[i] = capital;
+    }
+
+    const int scale = VectorFont::Scale;
+    std::vector<Image> glyphs(images.size());
+    parallel(int(images.size()), [&](int i) {
+        const Image &image = images[i];
+        glyphs[i] = drawnAs[i] ? vectorGlyph(font, drawnAs[i], image, scale, size, gamma, palette)
+                               : image.scaled(image.width()*scale, image.height()*scale);
+    });
+    return glyphs;
 }
 
 } // namespace
@@ -182,80 +273,36 @@ void FontPrivate::load(const String &filename, const ColorTable &colorTable, boo
     m_height = maxHeight / scaleFactor;
 }
 
+void FontPrivate::startVector()
+{
+    if (m_vectorState != 0 || m_vectorGlyphs.valid() || m_images.empty() || vectorFont() == nullptr)
+        return;
+    m_vectorGlyphs = std::async(std::launch::async, [font = vectorFont(), images = m_images, large = m_vectorLarge,
+                                                     size = m_vectorSize, gamma = m_vectorGamma]() {
+        return vectorGlyphs(*font, images, large, size, gamma);
+    });
+}
+
 bool FontPrivate::prepareVector()
 {
     if (m_vectorState != 0)
         return m_vectorState > 0;
+    // the other silver fonts are drawn along with this one, so that they are ready when they are
+    // first needed (the depot needs all three at once)
+    FontManager::get()->startVectors();
+    startVector();
     m_vectorState = -1;
-    const VectorFont *font = vectorFont();
-    if (font == nullptr || m_images.empty())
+    if (!m_vectorGlyphs.valid())
         return false;
-
-    // the character (CP437 code) of each game glyph: its place in the file, but the large font has
-    // Ö and Ü at 0x95 and 0x96, and other glyphs at their codes
-    std::vector<int> codes(m_images.size());
-    for (std::size_t i = 0; i < m_images.size(); i++) {
-        const int index = int(i) + 32;
-        codes[i] = !m_vectorLarge ? index : index == 0x95 ? 0x99 : index == 0x96 ? 0x9a
-                 : index == 0x99 || index == 0x9a ? 0 : index;
-    }
-
-    // the game's palette for the style that snaps to it: the colours of the glyphs the vector font
-    // redraws, those that occur at least eight times
-    std::map<Rgb, int> counts;
-    for (std::size_t i = 0; i < m_images.size(); i++) {
-        if (!font->has(codes[i]))
-            continue;
-        const Image &image = m_images[i];
-        for (int y = 0; y < image.height(); y++)
-            for (int x = 0; x < image.width(); x++) {
-                const Rgb c = image.pixel(x, y);
-                if (alpha(c) > 0)
-                    counts[c | 0xff000000]++;
-            }
-    }
-    std::vector<Rgb> palette;
-    for (const auto &[c, n] : counts)
-        if (n >= 8)
-            palette.push_back(c);
-
-    // the vector glyph of each game glyph: its own, that of a glyph that looks the same, or for a
-    // small letter its capital's (the fonts' small letters are their capitals, some a pixel off)
-    auto same = [](const Image &a, const Image &b) {
-        if (a.width() != b.width() || a.height() != b.height())
-            return false;
-        for (int y = 0; y < a.height(); y++)
-            for (int x = 0; x < a.width(); x++)
-                if (a.pixel(x, y) != b.pixel(x, y))
-                    return false;
-        return true;
-    };
-    std::vector<int> drawnAs(m_images.size(), 0);
-    for (std::size_t i = 0; i < m_images.size(); i++) {
-        if (font->has(codes[i])) {
-            drawnAs[i] = codes[i];
-            continue;
-        }
-        for (std::size_t j = 0; j < m_images.size() && !drawnAs[i]; j++)
-            if (font->has(codes[j]) && same(m_images[i], m_images[j]))
-                drawnAs[i] = codes[j];
-        if (drawnAs[i])
-            continue;
-        static const std::map<int, int> umlauts = { { 0x81, 0x9a }, { 0x84, 0x8e }, { 0x94, 0x99 } };
-        const auto umlaut = umlauts.find(codes[i]);
-        const int capital = codes[i] >= 'a' && codes[i] <= 'z' ? codes[i] - 32
-                          : umlaut != umlauts.end() ? umlaut->second : 0;
-        if (capital && font->has(capital))
-            drawnAs[i] = capital;
-    }
+    const std::vector<Image> glyphs = m_vectorGlyphs.get();
 
     // the glyphs in rows, a game pixel apart so the smaller mipmap levels keep them apart
-    const int scale = VectorFont::Scale, pad = scale;
+    const int pad = VectorFont::Scale;
     for (const int res : { 2048, 4096 }) {
         std::vector<Point> places;
         int x = pad, y = pad, rowHeight = 0;
-        for (const Image &image : m_images) {
-            const int w = image.width()*scale, h = image.height()*scale;
+        for (const Image &glyph : glyphs) {
+            const int w = glyph.width(), h = glyph.height();
             if (x + w + pad > res) {
                 x = pad;
                 y += rowHeight + pad;
@@ -269,16 +316,13 @@ bool FontPrivate::prepareVector()
             continue;
 
         m_vectorTexture.createEmpty(res, res, Texture::RGBA, true);
-        for (std::size_t i = 0; i < m_images.size(); i++) {
-            const Image &image = m_images[i];
-            m_vectorTexture.update(places[i].x, places[i].y, drawnAs[i]
-                ? vectorGlyph(*font, drawnAs[i], image, scale, m_vectorSize, m_vectorGamma, palette)
-                : image.scaled(image.width()*scale, image.height()*scale));
+        for (std::size_t i = 0; i < glyphs.size(); i++) {
+            m_vectorTexture.update(places[i].x, places[i].y, glyphs[i]);
             RectF rect;
             rect.x = places[i].x / float(res);
             rect.y = places[i].y / float(res);
-            rect.width = image.width()*scale / float(res);
-            rect.height = image.height()*scale / float(res);
+            rect.width = glyphs[i].width() / float(res);
+            rect.height = glyphs[i].height() / float(res);
             m_vectorRects.push_back(rect);
         }
         m_vectorTexture.generateMipmaps();
@@ -296,15 +340,18 @@ Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCente
 
     Rect drawRect(dstRect.pos(), Size(0, m_height));
 
+    // a rectangle with room for one line only (the depot's item name) keeps a longer text on it,
+    // centred over its edges, rather than breaking it onto what is drawn below
+    const bool oneLine = dstRect.height > 0 && dstRect.height < 2*m_height + 1;
     if (alignHCenter) {
         const int totalW = width(text);
-        if (dstRect.width > totalW)
+        if (dstRect.width > totalW || oneLine)
             drawRect.x += (dstRect.width - totalW) / 2;
     }
 
     StringList strings = text.split(" ");
     if (alignBottom) {
-        const int totalH = height(dstRect.width, strings);
+        const int totalH = height(oneLine ? 0 : dstRect.width, strings);
         if (dstRect.height > totalH)
             drawRect.y += (dstRect.height - totalH);
     }
@@ -332,7 +379,7 @@ Rect FontPrivate::draw(const String &text, const Rect &dstRect, bool alignHCente
         if (++current < strings.size())
             word += " ";
         const int wordWidth = width(word);
-        if (dstRect.width > 0 && lineWidth + wordWidth > dstRect.width) {
+        if (dstRect.width > 0 && !oneLine && lineWidth + wordWidth > dstRect.width) {
             pos.x -= lineWidth;
             pos.y += m_height + 1;
             drawRect.width = std::max(drawRect.width, lineWidth);
