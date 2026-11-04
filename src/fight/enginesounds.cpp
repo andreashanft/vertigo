@@ -18,6 +18,7 @@
 #include "enginesounds.h"
 #include "scenario.h"
 #include "boats/simpleboat.h"
+#include "objects/decoycontact.h"
 #include "sfx/samplemap.h"
 
 #include <glm/geometric.hpp>
@@ -52,7 +53,8 @@ EngineSounds::~EngineSounds()
 
 void EngineSounds::update()
 {
-    // the nearest moving units, with the engine sound of their class
+    // the nearest moving units, with the engine sound of their class, and the Torch's burning
+    // torches with theirs (sample 33, at full volume)
     struct Candidate
     {
         const Object *object;
@@ -60,6 +62,13 @@ void EngineSounds::update()
         float distance;
     };
     std::vector<Candidate> candidates;
+    for (const auto &contact : m_scenario->decoyContacts())
+        if (contact->isTorch() && contact->isEnabled())
+        {
+            const float distance = glm::length(contact->center() - m_scenario->eye());
+            if (distance < MaxDistance)
+                candidates.push_back({ contact.get(), sfx::Sample::Torch, distance });
+        }
     for (const auto &record : m_scenario->objectRecords())
     {
         const Object *object = record.object;
@@ -115,7 +124,7 @@ void EngineSounds::update()
         it->second->setPosition(position.x, position.y, position.z);
         // higher with speed, as for the player's engine
         float speed = 0;
-        if (const ActiveObject *unit = dynamic_cast<const ActiveObject *>(candidate.object))
+        if (const ActiveObject *unit = dynamic_cast<const ActiveObject *>(candidate.object); unit && candidate.sample != sfx::Sample::Torch)
             speed = glm::length(unit->velocity());
         it->second->setPitch(1.0f + std::min(speed*0.036f, 1.0f));
     }

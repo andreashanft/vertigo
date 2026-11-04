@@ -49,9 +49,10 @@ public:
     NavPoint* lockedNavPoint() const { return m_lockedNavPoint; }
 
     void lockReset();
-    void lockReticle();
-    // the nearest hostile unit the sonar detects (and can tell apart)
-    void lockNearestEnemy();
+    // the contact or nav point in the reticle; true if a contact was locked
+    bool lockReticle();
+    // the nearest hostile unit the sonar detects (and can tell apart); true if one was locked
+    bool lockNearestEnemy();
     void lockNavPoint(NavPoint *navPoint);
 
 private:

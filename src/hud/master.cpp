@@ -185,19 +185,22 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
         const fight::Player *player = m_hud->scenario()->player();
         const bool torpedoLock = target.locked() && player->lockTarget() == target.locked() && player->lockProgress() > 0;
 
-        if (torpedoLock && player->lockProgress() >= 1)
-            // a homing torpedo would follow this target
-            tex = isPassive ? &m_lockPassiveYellow : &m_lockActiveYellow;
-        else if (!isPassive)
-            tex = isFriend && m_hud->scenario()->blink() ? &m_lockActiveGreen : &m_lockActiveRed;
+        // the ring red once a torpedo could leave at the target (always without torpedoes), yellow
+        // while the magazine changes or loads one or a homing one locks on; a friend's blinks
+        // between green and that colour
+        if (isFriend && m_hud->scenario()->blink())
+            tex = isPassive ? &m_lockPassiveGreen : &m_lockActiveGreen;
+        else if (player->torpedoArmed())
+            tex = isPassive ? &m_lockPassiveRed : &m_lockActiveRed;
         else
-            tex = isFriend && m_hud->scenario()->blink() ? &m_lockPassiveGreen : &m_lockPassiveRed;
+            tex = isPassive ? &m_lockPassiveYellow : &m_lockActiveYellow;
         tex->draw(point.x - tex->width()/2, point.y - tex->height()/2, &m_clipRect);
 
         // the distance, and while a homing torpedo locks on the seconds left to one decimal on the
-        // same line ("72M  0:5S", the original's separator is a colon), the two centred together
+        // same line ("72M  0:5S", the original's separator is a colon), the two centred together;
+        // a far contact's ring (passive) has neither
         String line = isPassive ? String() : String("%1M").arg(static_cast<int>(glm::round(target.distance())));
-        if (torpedoLock && player->lockProgress() < 1)
+        if (torpedoLock && player->lockProgress() < 1 && !isPassive)
         {
             const int tenths = static_cast<int>(std::ceil(10*player->lockRemaining()));
             line += String("%1%2:%3S").arg(line.isEmpty() ? "" : "  ").arg(tenths/10).arg(tenths % 10);

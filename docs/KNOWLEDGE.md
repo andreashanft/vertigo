@@ -1063,7 +1063,9 @@ All 22 types share one behaviour, with their `TORPEDO.DES` values.
   light of 700 units' reach (the shots' 701) whose brightness flickers every
   frame between 0.5 and 1.5 times 2.11 (the shots have 5). It never goes out
   on the ground or when hit; once its time is up it shrinks away within a
-  second. From the seabed it is back down after about 5 s.
+  second. From the seabed it is back down after about 5 s. While it burns it
+  makes a loud sound of its own (sample 33, `torch`, at full volume), heard
+  close by.
 - A unit with a passive sonar (`sen` 1) hears a hostile torch like a boat, at
   noise level 4, and takes it for its target when it is the loudest thing it
   hears while it looks for one; it fights the torch until it goes out. A unit
@@ -1084,26 +1086,28 @@ selected. Its states are GLOBWEAP's `[TorpedoMagazineStateN]`: ready,
 rearming, jammed, empty and waiting.
 
 - Tab (with a click, sample 5, whether or not anything leaves) fires the
-  loaded torpedo while the magazine is ready or waiting; it may jam first as
-  a gun does (the condition, at least 0.2, against a random share of the
+  loaded torpedo while the magazine is ready or waiting, a homing one only
+  once its lock is complete (never early, never without a target); it may
+  jam first as a gun does (the condition, at least 0.2, against a random share of the
   magazine's `defectdamping`; jammed for `defectdelay` times 0.5 to 1.5, then
   ready).
 - Enter (also a click) selects the next torpedo: one of the loaded type is
   simply ready unless the magazine is waiting or rearming, any other makes it
   wait. After a launch the selection moves on past itself and the magazine
   waits as well.
-- Waiting lasts 2 s; then the selected torpedo is loaded with the revolver's
-  sound (sample 20) for the magazine's `rearmingtime`, and once it is in, the
-  voice says "torpedo ready" (77).
+- Waiting lasts 2 s; then the selected torpedo is loaded, without a sound,
+  for the magazine's `rearmingtime`, and once it is in, the voice says
+  "torpedo ready" (77) and nothing else.
 - A homing torpedo's lock only runs while the magazine is ready, for the
   loaded torpedo's `lockdelay`; it starts again after every wait and loading.
   The heading plays no part: the locked target may be behind the boat, it
   only has to stay a contact of the sonar, and a contact lost and found
   again starts the lock from the beginning.
-  A lock's completion plays the torpedo lock beep (9) and the "target locked"
-  voice (67). The HUD shows the lock and countdown in green after the
-  target's distance on its line ("72M  0:5S", seconds to one decimal with a
-  colon).
+  The lock's start has no sound of its own (the beep of locking the target
+  is in [9.8](#98-target-lock-and-keys)); its completion plays the torpedo
+  lock beep (9) and the "target locked" voice (67). The HUD shows the
+  countdown in green after the target's distance on its line ("72M  0:5S",
+  seconds to one decimal with a colon); a far contact's ring shows neither.
 - The magazine's condition wears with hits on the front armour
   ([4.6](#46-armour-wear-and-the-fixer)).
 
@@ -1478,8 +1482,15 @@ The in-mission help is `VFX/COCKPIT/HELP0-2.TXT`.
   crosshair. The pause fade is in [8.6](#86-fades).
 - **Aim help:** drawn ahead of a moving target where the shot has to go,
   clamped to the HUD frame.
-- **Lock ring:** name, distance, shield bars and sensor icon. Heading tape,
-  the lamps beside the sonar monitors, D/H/V/N and R readouts.
+- **Lock ring:** name, distance, shield bars and sensor icon; a near contact
+  has the ring of four segments (`HUDLOCAA`), a far one the single solid ring
+  (`HUDLOCPA`) without distance or countdown. The ring is red once a torpedo
+  could leave at the target (the magazine ready with a straight-running
+  torpedo, or a homing one locked on) and always without torpedoes; yellow
+  while the magazine changes or loads a torpedo and while a homing one locks
+  on. A friend's ring blinks between green and that colour, a hostile's
+  stays in it. Heading tape, the lamps beside the sonar monitors, D/H/V/N
+  and R readouts.
 
 ### 9.4 The voxel radar
 
@@ -1576,7 +1587,14 @@ destroyed on its own by shooting at it.
   nearest enemy, Tab fires a torpedo, Enter selects the next, H the help, M
   the radio log, B the briefing, Alt+A the autopilot menu, the number pad the
   outside views ([10](#10-views-from-outside)).
-- Tab and Enter click (sample 5).
+- The commands that set something click (sample 5): Tab and Enter, the speed steps and stop (S, X, C), the
+  engine, the sonar and its zoom (R, Alt+R), the locks (L, U, Alt+N), the
+  next nav point (N), the status pages (F1–F4, I), the Fixer (Alt+I) and
+  the turret orders (F5–F12). The keys held for a while (full ahead and
+  astern, the booster, the gun) don't click.
+- Locking a contact with L or U beeps (sample 7, "lock on") along with the
+  click, whatever torpedo is loaded, with none too; a homing torpedo's lock
+  starts then ([6.8](#68-the-players-torpedo-magazine)).
 
 ### 9.9 Help, radio log and briefing
 
@@ -1721,7 +1739,8 @@ From GLOBWEAP `TurretState0–8`: ARM, SCA, FIR, JAM, EMP, LOC, STP, SYN, VOL
 | # | Use |
 |---|---|
 | 6 / 7 / 9 / 10 | threat / lock-on / torpedo lock-on / alert beeps |
-| 5 / 20 | keyboard click (Tab, Enter and the F keys among others) / the magazine loading a torpedo ("revolver reload") |
+| 5 / 20 | keyboard click (the commands of [9.8](#98-target-lock-and-keys)) / "revolver reload", not heard when a torpedo is loaded |
+| 33 | the Torch's burning torch |
 | 18 | a building's or block's collapse |
 | 29 | booster |
 | 67 / 72 / 77 / 81 / 82 | voices: target locked / system collapse / torpedo ready / lock-on located / torpedo threat |

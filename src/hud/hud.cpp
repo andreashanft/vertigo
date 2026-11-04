@@ -1073,6 +1073,15 @@ void HUD::press(input::KeyEvent *e)
             default: break;
             }
     }
+    // the commands that set something click (sample 5): the speed steps and stop, the engine, the
+    // sonar and its zoom, the locks, the nav point, the armour and system page and the turret
+    // orders; the keys held for a while (full ahead and astern, the booster, the gun) don't. Tab,
+    // Enter, F1-F4 and Alt+I click where they are handled
+    const bool command = (e->key() >= input::Key_F5 && e->key() <= input::Key_F12) || e->key() == input::Key_S || e->key() == input::Key_X ||
+                         e->key() == input::Key_C || e->key() == input::Key_QuoteLeft || e->key() == input::Key_R ||
+                         e->key() == input::Key_L || e->key() == input::Key_U || e->key() == input::Key_N || e->key() == input::Key_I;
+    if (command && !(e->modifiers() & input::ControlModifier))
+        sfx::SampleMap::get(sfx::Sample::Click).play();
     if (e->key() == input::Key_N)
     {
         if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
@@ -1104,10 +1113,10 @@ void HUD::press(input::KeyEvent *e)
         else
             m_scenario->sonar().toggle();
     }
-    if (e->key() == input::Key_L)
-        m_scenario->target().lockReticle();
-    if (e->key() == input::Key_U)
-        m_scenario->target().lockNearestEnemy();
+    // a contact locked beeps (sample 7), whatever torpedo is loaded; a homing torpedo's lock
+    // starts with it (fight::Player)
+    if ((e->key() == input::Key_L && m_scenario->target().lockReticle()) || (e->key() == input::Key_U && m_scenario->target().lockNearestEnemy()))
+        sfx::SampleMap::get(sfx::Sample::LockOn).play();
     if (e->key() == input::Key_I && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.back();

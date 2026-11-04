@@ -63,7 +63,7 @@ void Target::lockReset()
 }
 
 
-void Target::lockReticle()
+bool Target::lockReticle()
 {
     ActiveObject *object = nullptr;
     float minAngle = -1.0f;
@@ -80,10 +80,12 @@ void Target::lockReticle()
         }
     }
 
+    bool locked = false;
     if (minAngle > 0.98f)
     {
         m_locked = object;
         m_lockedNavPoint = nullptr;
+        locked = true;
     }
 
     for (NavPoint *navPoint : m_scenario->navPoints())
@@ -97,12 +99,14 @@ void Target::lockReticle()
             minAngle = dir.z;
             m_lockedNavPoint = navPoint;
             m_locked = nullptr;
+            locked = false;
         }
     }
+    return locked;
 }
 
 
-void Target::lockNearestEnemy()
+bool Target::lockNearestEnemy()
 {
     // the nearest of the units attacking the player that the sonar has as a contact, whatever
     // the sonar's friend-or-foe (the original's u works with Spy I too; a hostile unit that has
@@ -112,11 +116,11 @@ void Target::lockNearestEnemy()
     for (const auto &entry : m_scenario->sonar())
         if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && (!nearest || entry.distance < nearest->distance))
             nearest = &entry;
-    if (nearest)
-    {
-        m_locked = nearest->object;
-        m_lockedNavPoint = nullptr;
-    }
+    if (!nearest)
+        return false;
+    m_locked = nearest->object;
+    m_lockedNavPoint = nullptr;
+    return true;
 }
 
 

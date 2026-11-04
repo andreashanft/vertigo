@@ -32,7 +32,8 @@ class Object;
 class Scenario;
 
 
-// The engines of the nearest moving units, as looping sounds from where the units are.
+// The engines of the nearest moving units and the Torch's burning torches, as looping sounds from
+// where they are.
 class EngineSounds
 {
 public:
