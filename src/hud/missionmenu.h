@@ -56,6 +56,8 @@ public:
     int turret() const { return m_turret; }
     int turretOrder() const { return m_turretOrder; }
     void setTurrets(int count) { m_turretCount = count; }
+    // the last saved game can be loaded (in the campaign): the Esc, death and game-over menus offer it
+    void setLoadOffered(bool offered) { m_loadOffered = offered; }
     // the master monitor's rect (in the 640x480 art)
     void setScreen(const Rect &rect) { m_screen = rect; }
     // whether the master monitor shows a menu now, and drawing it there
@@ -107,6 +109,7 @@ private:
     int m_turret = 0;
     int m_turretOrder = 0;
     int m_turretCount = 0;
+    bool m_loadOffered = false;
     StringList m_destinations;
     int m_destination = -1;
     // the option highlighted for a game controller, while it is used

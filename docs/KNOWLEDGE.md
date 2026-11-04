@@ -86,6 +86,7 @@ describes the original.
   - [9.9 Help, radio log and briefing](#99-help-radio-log-and-briefing)
   - [9.10 Terrain colours and fog](#910-terrain-colours-and-fog)
   - [9.11 Torpedoes on the radars](#911-torpedoes-on-the-radars)
+  - [9.12 Cockpit shake](#912-cockpit-shake)
 - [10. Views from outside](#10-views-from-outside)
 - [11. Texts and sounds](#11-texts-and-sounds)
   - [11.1 FIGHTEXT](#111-fightext)
@@ -580,7 +581,8 @@ magazine jams the same way ([6.8](#68-the-players-torpedo-magazine)).
 The save file keeps each armour side (`[Defect]` `FArm`, `LArm`, `RArm`,
 `BArm`) as a share from 0 to 1 beside the gun, the torpedo magazine and the
 turrets, and the depot repairs them, so a mission's damage stays with the
-boat. What the Fixer mends stays with the boat as well.
+boat: the next mission of the campaign starts with the damage that wasn't
+repaired. What the Fixer mends stays with the boat as well.
 
 ## 5. Units' behaviour
 
@@ -1298,7 +1300,9 @@ rest of those rows in the water's dark blue; above and below are black bars
 with a grey line in rows 60 and 419. "DEATH VIEW" (FIGHTEXT 18) is at column
 8, row 405, and the menu at the end has no box, all in the green font and
 centred over the world: "GAME OVER" (FIGHTEXT 58) at row 152, the options at
-rows 172 and 187 (abort and restart, FIGHTEXT 64 and 65). The camera starts
+rows 172 and 187 (abort and restart, FIGHTEXT 64 and 65) and, in the
+campaign, at row 202 loading the last saved game (66). Aborting goes back to
+the title. The camera starts
 in the hull and keeps moving a tenth of a second's worth (a factor of 10 per
 second) towards its place three hull radii out, 45° above the hull and
 circling it at 45° a second, measured in the hull's own frame, and it always
@@ -1525,7 +1529,8 @@ currents dark teal (the shading table's entry 65) for `spd` 0 and light cyan
 - `G:` is its gun's short name and `T:` its torpedoes, `R:` its sensor range
   ([9.7](#97-sonars)). A hostile target's name is red.
 - The mission menus (the Esc menu, the autopilot menu) are FIGHTEXT texts
-  ([11.1](#111-fightext)).
+  ([11.1](#111-fightext)). The Esc menu has 0 continue, 1 abort and 2
+  restart (50–52), and in the campaign 3 the last saved game (62).
 
 ### 9.6 The slave monitors and their pages
 
@@ -1673,6 +1678,15 @@ The units keep their colours (hostile `A060`, friendly or without IFF `4407`,
 the locked target `8C71`). The HUD frames a torpedo as it frames the units:
 green for the player's own and a friend's, red for a hostile one, and green
 for all without IFF.
+
+### 9.12 Cockpit shake
+
+The cockpit art and its instruments shake when the boat is hit, bounces off
+something or an explosion goes off nearby; the world and the HUD in the
+window don't. The movement is small. The art is shown a little enlarged, so
+only hard shakes show its edges. It can't be switched off (the installed
+files' `DEEPTEXT.DES` has "Cockpit Rütteln: JA/NEIN", 191/192, for an
+option).
 
 ## 10. Views from outside
 

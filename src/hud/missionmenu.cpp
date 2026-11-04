@@ -162,7 +162,7 @@ MissionMenu::Action MissionMenu::pressOnPage(int key)
             m_page = Page::ConfirmAbort;
         if (key == input::Key_2)
             m_page = Page::ConfirmRestart;
-        if (key == input::Key_3)
+        if (key == input::Key_3 && m_loadOffered)
             m_page = Page::ConfirmLoad;
         break;
 
@@ -234,7 +234,7 @@ MissionMenu::Action MissionMenu::pressOnPage(int key)
             return Action::Abort;
         if (key == input::Key_2)
             return Action::Restart;
-        if (key == input::Key_3)
+        if (key == input::Key_3 && m_loadOffered)
             return Action::Load;
         break;
     }
@@ -253,6 +253,9 @@ std::vector<MissionMenu::Line> MissionMenu::lines() const
     case Page::None:
         break;
     case Page::Main:
+        // the last saved game only in the campaign, as in the menus at the end
+        if (!m_loadOffered)
+            return { { text(49), title }, { text(50), option }, { text(51), option }, { text(52), option } };
         return { { text(49), title }, { text(50), option }, { text(51), option }, { text(52), option }, { text(62), option } };
     case Page::ConfirmAbort:
         return { { text(53), title }, { text(54), option }, { text(55), option } };
@@ -262,8 +265,12 @@ std::vector<MissionMenu::Line> MissionMenu::lines() const
         return { { text(61), title }, { text(54), option }, { text(55), option } };
     case Page::GameOver:
         // ("------ MISSION ERFOLGLOS ------", too wide for the monitor)
+        if (!m_loadOffered)
+            return { { text(12).remove('-').trimmed(), red }, { text(63), red }, { text(64), option }, { text(65), option } };
         return { { text(12).remove('-').trimmed(), red }, { text(63), red }, { text(64), option }, { text(65), option }, { text(66), option } };
     case Page::Died:
+        if (!m_loadOffered)
+            return { { text(58), red }, { text(64), option }, { text(65), option } };
         return { { text(58), red }, { text(64), option }, { text(65), option }, { text(66), option } };
     case Page::Turrets:
         if (m_turretCount == 0)

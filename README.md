@@ -362,7 +362,8 @@ use (Real-ESRGAN's or the AI upscale's). The texture is cached in
   pilot's head. `--look=60,-10` fixes the head at 60° left and
   10° down for the whole run, e.g. for screenshots.
 - Cockpit shake: `--shake 0.5` (setting `cockpit/shake`, default 1) scales it,
-  0 turns it off. `--trace` with the player's id prints the head offset.
+  in the 2D cockpit too, and 0 turns it off. `--trace` with the player's id
+  prints the head offset.
 
 
 # Testing

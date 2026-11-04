@@ -29,14 +29,13 @@ independently; the answer goes into KNOWLEDGE.md.
 
 Missions and the campaign:
 
-- Whether the next mission starts with the damage the boat kept, and whether
-  buying new armour mends the sides.
+- Whether buying new armour mends the sides.
 - What AutoEnd and InstantEnd look like (T3).
 - Whether the training boats have Titanium Armor (their setups' armour 3,
   counted from 0 like the other items; KNOWLEDGE.md 12.4).
 - Whether the autopilot menu lists the start station.
-- Whether the death menu adds loading the last game in the campaign (it
-  showed abort and restart; Vertigo always offers all three).
+- Whether the Esc menu outside the campaign (trainings, the open mission)
+  leaves out the last saved game as the death menu does (Vertigo's does).
 - `wccond 9` (56 units, s00303 and s02006 among them).
 - Whether a slot with a break condition ends on its own (T5).
 - In a squadron of several big ships the original counts every block that
