@@ -514,6 +514,14 @@ The HUD's energy bar shows the level, never less than 4 pixels.
   cargo ships', TANK2's) fire before their gun counts down, so like the
   player on the frame after it is ready again; a tank's fixed gun counts down
   first and fires on the frame it is ready.
+- **Towers, vehicles and turrets** fire each round from all their mountings
+  (the `Relative` keys, on each arm of a two-armed gun tower). With one of
+  the turret models 11–13 a mounting fires one shot, so a tower's salvo has
+  as many shots as it has barrels: one from GUNTOW1, two from GUNTOW0, four
+  from GUNTOW2's two arms. A mission's `gun` can put a boat gun model 0–10 on
+  them instead, and then every mounting fires all of that model's barrels: a
+  one-barrel tower with a Vendetta III fires four shots a salvo, GUNTOW2
+  sixteen.
 - The main gun and each turret's gun count their barrels on their own, both
   from the same barrel, so a cut-short burst or a volley of an odd number of
   shots leaves them firing from opposite barrels. The displays count one

@@ -126,6 +126,7 @@ void Tank::arm(int model, txt::DesFile &file)
     m_unitGun.reset(new UnitGun(m_scenario, this, model, muzzles, &gunFile));
     m_unitGun->setCountFirst(!m_turret);
     m_unitGun->setRestartOnRelease(true);
+    m_unitGun->setAllMountings(true);
     if (mount.ammunition >= 0)
         m_unitGun->setAmmunition(mount.ammunition);
 }
