@@ -94,7 +94,10 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     gfx::Font fontMedium("gfx:fnt/dpmedium.fnt", colorTable);
     gfx::Font fontLarge("gfx:fnt/dplarge.fnt", colorTable);
 
-    m_presents.setTexture(gfx::Image::loadPCX("gfx:pic/title/present.pcx"));
+    // its upscaled copy found by the file's name: a set made from either version of the picture
+    // (the CD's or the installed one) shows on game data with the other
+    m_presents.setTexture(gfx::Texture(gfx::Image::loadPCX("gfx:pic/title/present.pcx"), true,
+                                       gfx::Upscaled::fileKey("gfx/pic/title/present.pcx")));
     m_title.setTexture(gfx::Image::loadPCX("gfx:pic/title/title.pcx"));
 
     m_backgroundSound.load("sfx:snd/bground/b02.pcl", "sfx:snd/bground/b02.pcr");

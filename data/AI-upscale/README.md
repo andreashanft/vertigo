@@ -108,7 +108,9 @@ Run the steps in this order. Each one can be stopped and started again.
 ## How it works
 
 - The game finds an upscaled copy by a hash of the image it decodes. So the pipeline makes
-  files with the same names, at exactly four times the size.
+  files with the same names, at exactly four times the size. The presents picture is the
+  exception: its key is a hash of its file's name, as the CD's and the installed one differ, so
+  a set made from either shows on game data with the other.
 - Each image is enlarged 4× and cut into tiles of about one megapixel. Qwen Image 2.1 draws
   each tile anew, with the tile as its reference. At this size nothing moves.
 - Textures (256×256) are one tile. Most rooms fit into one tile too. Full-screen pictures take

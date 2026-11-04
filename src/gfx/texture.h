@@ -40,7 +40,9 @@ public:
 
 public:
     Texture();
-    Texture(const Image &image, bool smooth = true);
+    // with an upscaled copy (gfx::Upscaled) in its place while they are used: the one under
+    // upscaledKey if it is given and the set has it, else the image's own
+    Texture(const Image &image, bool smooth = true, std::uint64_t upscaledKey = 0);
 
 public:
     bool isValid() const;
@@ -49,7 +51,7 @@ public:
     Size size() const;
     unsigned int id() const;
     void bind();
-    void fromImage(const Image &image, bool smooth = true);
+    void fromImage(const Image &image, bool smooth = true, std::uint64_t upscaledKey = 0);
     void createEmpty(int w, int h, Texture::Format format, bool smooth = true);
     void createEmpty(const Size &size, Texture::Format format, bool smooth = true);
     // for images put in with update() that have upscaled copies (a movie's pictures, icons in a
@@ -90,7 +92,7 @@ public:
     unsigned int id() const { return m_texture; }
     void bind();
     void setFilter(bool smooth);
-    void fromImage(const Image &image, bool smooth);
+    void fromImage(const Image &image, bool smooth, std::uint64_t upscaledKey);
     void createEmpty(int w, int h, Texture::Format format, bool smooth);
     void createEmptyUpscaled(int w, int h, Texture::Format format);
     void update(int x, int y, const Image &image);
@@ -124,10 +126,10 @@ inline Texture::Texture() :
 }
 
 
-inline Texture::Texture(const Image &image, bool smooth) :
+inline Texture::Texture(const Image &image, bool smooth, std::uint64_t upscaledKey) :
     d(new TexturePrivate)
 {
-    d->fromImage(image, smooth);
+    d->fromImage(image, smooth, upscaledKey);
 }
 
 
@@ -167,9 +169,9 @@ inline void Texture::bind()
 }
 
 
-inline void Texture::fromImage(const Image &image, bool smooth)
+inline void Texture::fromImage(const Image &image, bool smooth, std::uint64_t upscaledKey)
 {
-    d->fromImage(image, smooth);
+    d->fromImage(image, smooth, upscaledKey);
 }
 
 

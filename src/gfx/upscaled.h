@@ -49,6 +49,11 @@ public:
 
     // the hash of an image as a texture takes it (its size and RGBA pixels)
     static std::uint64_t key(const Image &image);
+    // the key of a picture whose copy stands for its file, whichever version of the picture the
+    // game data has: the presents picture, which differs between the CD and the installed files
+    // (the hash of the file's name); 0 for the others, which are found by their pixels. The file
+    // is named relative to the data directory, in lower case, as "gfx/pic/title/present.pcx"
+    static std::uint64_t fileKey(const std::string &file);
     static std::string keyName(std::uint64_t key);
     // a copy's file: the hash in hex and ".jpg", or ".png" (with transparency, from an older
     // Vertigo); a JPEG's transparency, where it has some, is in alphaName()
