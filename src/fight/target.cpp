@@ -68,11 +68,9 @@ void Target::lockReticle()
     ActiveObject *object = nullptr;
     float minAngle = -1.0f;
 
+    // any contact, a torpedo too (KNOWLEDGE.md 9.8)
     for (const auto &entry : m_scenario->sonar())
     {
-        // the units only; whether the original locks a torpedo is open (TODO.md)
-        if (entry.isTorpedo)
-            continue;
         Vector3D dir = Vector3D(m_scenario->cameraMatrix() * Vector4D(entry.object->center(), 1));
         dir /= -glm::length(dir);
         if (minAngle < dir.z)

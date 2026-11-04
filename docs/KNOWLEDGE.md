@@ -1569,7 +1569,8 @@ destroyed on its own by shooting at it.
 
 - `u` locks the nearest of the units attacking the player that the sonar has
   as a contact, so a hostile unit that has not attacked yet is not locked. L
-  locks what is in the reticle, N the next nav point.
+  locks what is in the reticle, a torpedo as well as a unit, N the next nav
+  point.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
   `i` armour/system status, Alt+I the Fixer, F5–F12 turret orders, `u`
   nearest enemy, Tab fires a torpedo, Enter selects the next, H the help, M

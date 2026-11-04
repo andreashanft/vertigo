@@ -50,8 +50,6 @@ Units' behaviour:
   round's barrels), and whether an energy gun on a tower fires all the
   mountings in one go too (Vertigo's fires one shot per rearming time,
   through the mountings in turn).
-- Whether a torpedo, a sonar contact, can be locked as the target (Vertigo's
-  can't).
 - How many homing torpedoes the player can have on it at once (every AI
   unit takes at most 4; Vertigo keeps 8 for the player).
 - Which rammed friends give the friendly-fire warning: KNOWLEDGE.md 2.6 has
@@ -77,9 +75,13 @@ Sensors, HUD and views:
 World, physics and effects:
 
 - Why one of S00202's two upward current cells does nothing.
-- Whether an active mine drifts while it chases (its drive takes currents at
-  a factor of 0.2, KNOWLEDGE.md 3.3; passive mines stay put, as Vertigo's
-  all do).
+- How an active mine moves while it chases: how fast, and how far a current
+  carries it. Its drive takes currents at a factor of 0.2 against its own
+  drag, so a current would carry it along noticeably if its chase is driven
+  by a force, and hardly at all if by a set speed; Vertigo's chases at a set
+  0.3 of `MaxVelocity` (0.94 m/s) and ignores currents, and passive mines
+  stay put in both. Watching one active mine chase through a current settles
+  it (KNOWLEDGE.md 3.3).
 - What else the original scales with the radiation's strength between 100
   and 40 m below the surface.
 - Whether the keyboard ramps the stick value when turning the boat.
