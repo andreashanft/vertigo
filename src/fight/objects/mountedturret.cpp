@@ -143,23 +143,31 @@ MountedTurret::~MountedTurret()
 }
 
 
-Vector3D MountedTurret::pivot() const
+// the carrier's hull frame to the world: its orientation and the bank its hull is drawn with,
+// so that the turret stays on the hull as it rolls into a turn
+glm::mat3 MountedTurret::carrierFrame() const
 {
-    return m_carrier->position() + glm::transpose(m_carrier->orientation())*m_mountPosition;
+    return glm::transpose(m_carrier->orientation())*glm::mat3(glm::rotate(m_carrier->bank(), Vector3D(0, 1, 0)));
 }
 
 
-// the mount's frame is the carrier's, turned over about its length for a turret under the hull
+Vector3D MountedTurret::pivot() const
+{
+    return m_carrier->position() + carrierFrame()*m_mountPosition;
+}
+
+
+// the mount's frame is the carrier's hull's, turned over about its length for a turret under it
 Vector3D MountedTurret::toWorldDirection(const Vector3D &mount) const
 {
     const Vector3D local = m_below ? Vector3D(-mount.x, mount.y, -mount.z) : mount;
-    return glm::transpose(m_carrier->orientation())*local;
+    return carrierFrame()*local;
 }
 
 
 Vector3D MountedTurret::toMountDirection(const Vector3D &world) const
 {
-    const Vector3D local = m_carrier->orientation()*world;
+    const Vector3D local = glm::transpose(carrierFrame())*world;
     return m_below ? Vector3D(-local.x, local.y, -local.z) : local;
 }
 
@@ -385,7 +393,7 @@ void MountedTurret::updateExplosion()
 
 void MountedTurret::fire(float elapsedTime)
 {
-    const glm::mat3 toWorld = glm::transpose(m_carrier->orientation());
+    const glm::mat3 toWorld = carrierFrame();
     const glm::mat3 flip = m_below ? glm::mat3(glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, -1)) : glm::mat3(1);
     const glm::mat3 body = toWorld*flip*glm::mat3(glm::rotate(-m_yaw, Vector3D(0, 0, 1)));
     const Vector3D dir = aim();
@@ -570,7 +578,7 @@ void MountedTurret::draw()
         return;
     gfx::Pipeline::pushMatrix();
     gfx::Pipeline::translate(m_carrier->position());
-    gfx::Pipeline::multiply(Matrix(glm::transpose(m_carrier->orientation())));
+    gfx::Pipeline::multiply(Matrix(carrierFrame()));
     gfx::Pipeline::translate(m_mountPosition);
     if (m_below)
         gfx::Pipeline::rotate(180, Vector3D(0, 1, 0));

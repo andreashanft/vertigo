@@ -78,6 +78,7 @@ private:
 
     // the turret's pivot and directions in the world
     Vector3D pivot() const;
+    glm::mat3 carrierFrame() const;
     Vector3D toWorldDirection(const Vector3D &mount) const;
     Vector3D toMountDirection(const Vector3D &world) const;
     Vector3D aim() const;

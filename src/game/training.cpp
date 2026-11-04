@@ -44,15 +44,16 @@ String setupFile(int index)
 
 
 // The boat of a training setup as a saved game has it. The setups have it as the fight engine
-// takes it: the boat by name, and its items numbered within their kind (armor 3 is the third
-// armor, 5123), where saved games have the boat's type and the items' models.
+// takes it: the boat by name, and its items numbered within their kind from 0, as globweap.des
+// lists the guns, magazines, torpedoes and turret software (gun 3 is the fourth, Plasma Death II,
+// 3076), where saved games have the boat's type and the items' models.
 txt::DesFile savedBoat(txt::DesFile &setup)
 {
     static const std::map<String, int> types = { { "hiob", 2049 }, { "gator", 2050 }, { "zorn", 2051 }, { "succubus", 2052 } };
     // the first model of a kind, by key; "model" depends on the mounting: a magazine, a gun or
     // a turret's gun
-    static const std::map<String, int> bases = { { "armor", 5120 }, { "sensor", 6144 }, { "engine", 4096 }, { "software", 7168 } };
-    static const std::map<int, int> modelBases = { { 0, 1024 }, { 1, 3072 }, { 2, 3072 } };
+    static const std::map<String, int> bases = { { "armor", 5121 }, { "sensor", 6145 }, { "engine", 4097 }, { "software", 7169 } };
+    static const std::map<int, int> modelBases = { { 0, 1025 }, { 1, 3073 }, { 2, 3073 } };
 
     txt::DesFile saved;
     setup.setSection("Ship");
@@ -74,7 +75,7 @@ txt::DesFile savedBoat(txt::DesFile &setup)
             else if (key == "model" && modelBases.count(mountingType))
                 model = modelBases.at(mountingType) + number;
             else if (key.startsWith("torpedo"))
-                model = number;
+                model = number + 1;
             if (model >= 0 && Items::all().count(model) == 0) {
                 std::cerr << "Training: no item " << key << " = " << number << std::endl;
                 continue;

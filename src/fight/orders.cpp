@@ -78,6 +78,7 @@ const float Gravity = 9.81f;
 // flown in 0.75 s ahead of the hull, and a point 31.25 m off
 const float BandAheadTime = 0.75f;
 const float BandTurnAway = 31.25f;
+const float BandSideMargin = 0.5f;   // m of room one corner must have over the other to pick its side
 // other units ahead bend the way within 3.5 hull radii, fully within 1.5, looking 2 hulls plus
 // the way flown in 1.5 s ahead; the bent point lies 93.75 m off
 const float AvoidNear = 1.5f;
@@ -394,8 +395,18 @@ bool Orders::bandPoint(Vector3D &point, float zmin, float zmax) const
         point.z = ground + zmax;
         return true;
     }
-    // aside towards the corner with more room under it
-    const Vector3D side = clearance[0] > clearance[1] ? -m_boat->right() : m_boat->right();
+    // a big ship, slow and clamped to its climbing angle, only climbs over the ground ahead and
+    // keeps its heading; a sideways detour would have it hunting from side to side
+    if (m_boat->isBigShip())
+    {
+        point.z = ground + zmin;
+        return true;
+    }
+    // aside towards the corner with more room under it; with about the same room under both (level
+    // ground ahead) the last side is kept, so that the detour doesn't flap from side to side
+    if (glm::abs(clearance[0] - clearance[1]) > BandSideMargin || m_bandSide == 0)
+        m_bandSide = clearance[0] > clearance[1] ? -1 : 1;
+    const Vector3D side = float(m_bandSide)*m_boat->right();
     if (high)
     {
         point = position + side*BandTurnAway;
