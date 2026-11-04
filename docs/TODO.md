@@ -65,9 +65,6 @@ Sensors, HUD and views:
 - Whether big buildings show as blocks or as ground on the radar.
 - What the turrets' aim cross does for a target behind the boat (Vertigo puts
   it on the edge away from the target).
-- What decides whether a locked torpedo that has gone off shows
-  "Explodiert", and for how long (a split second at most, sometimes not at
-  all; Vertigo: always 0.3 s).
 - In the outside views: where the radio message sits in the bar, whether the
   pause shows, what the target's views do when the sonar loses the target
   (Vertigo goes back to the cockpit), and what the camera does the moment a
