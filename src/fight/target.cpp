@@ -63,6 +63,23 @@ void Target::lockReset()
 }
 
 
+bool Target::lockNext(const std::vector<Object *> &objects)
+{
+    if (objects.empty())
+        return false;
+    const auto current = std::find(objects.begin(), objects.end(), object());
+    Object *next = current == objects.end() || current + 1 == objects.end() ? objects.front() : *(current + 1);
+    if (NavPoint *navPoint = dynamic_cast<NavPoint *>(next))
+        lockNavPoint(navPoint);
+    else
+    {
+        m_locked = static_cast<ActiveObject *>(next);
+        m_lockedNavPoint = nullptr;
+    }
+    return true;
+}
+
+
 bool Target::lockReticle()
 {
     ActiveObject *object = nullptr;
@@ -99,7 +116,7 @@ bool Target::lockReticle()
             minAngle = dir.z;
             m_lockedNavPoint = navPoint;
             m_locked = nullptr;
-            locked = false;
+            locked = true;
         }
     }
     return locked;
@@ -121,6 +138,40 @@ bool Target::lockNearestEnemy()
     m_locked = nearest->object;
     m_lockedNavPoint = nullptr;
     return true;
+}
+
+
+bool Target::lockNextAttacker()
+{
+    const std::vector<ActiveObject*> &attackers = m_scenario->playerAttackerList();
+    std::vector<Object *> objects;
+    for (const auto &entry : m_scenario->sonar())
+        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end())
+            objects.push_back(entry.object);
+    return lockNext(objects);
+}
+
+
+bool Target::lockNextTorpedo()
+{
+    std::vector<Object *> objects;
+    for (const auto &entry : m_scenario->sonar())
+        if (entry.isTorpedo && m_scenario->isHostile(Scenario::PlayerFaction, entry.object->iff()))
+            objects.push_back(entry.object);
+    return lockNext(objects);
+}
+
+
+bool Target::lockNextObject()
+{
+    std::vector<Object *> objects;
+    for (const auto &entry : m_scenario->sonar())
+        if (!entry.isTorpedo)
+            objects.push_back(entry.object);
+    for (NavPoint *navPoint : m_scenario->navPoints())
+        if (navPoint->isEnabled())
+            objects.push_back(navPoint);
+    return lockNext(objects);
 }
 
 

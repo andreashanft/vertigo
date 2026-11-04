@@ -389,7 +389,9 @@ void VoxelRadar::render(fight::Scenario *scenario)
     {
         if (entry.isTorpedo)
         {
-            drawLine(entry.object->center(), bright ? gfx::rgb(248, 12, 0) : gfx::rgb(160, 0, 0));
+            // Alt+T hides the torpedoes of the player's side
+            if (scenario->sonar().showsFriendlyTorpedoes() || !scenario->isFriend(fight::Scenario::PlayerFaction, entry.object->iff()))
+                drawLine(entry.object->center(), bright ? gfx::rgb(248, 12, 0) : gfx::rgb(160, 0, 0));
             continue;
         }
         const bool hostile = scenario->isHostile(fight::Scenario::PlayerFaction, entry.object->iff());

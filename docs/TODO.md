@@ -65,10 +65,12 @@ Sensors, HUD and views:
 - Whether big buildings show as blocks or as ground on the radar.
 - What the turrets' aim cross does for a target behind the boat (Vertigo puts
   it on the edge away from the target).
-- Which other keys click (KNOWLEDGE.md 9.8): D (buzzer), V and Alt+V, H, M
-  and B, P, Alt+A, O and Esc (Vertigo doesn't click for them), and whether
-  locking a nav point with L or Alt+N beeps as a contact does (Vertigo's
-  doesn't).
+- Which units J goes through: the help calls them attackers, which Vertigo
+  takes as the units U chooses from; and whether G takes every hostile
+  torpedo (Vertigo's) or only those after the player (KNOWLEDGE.md 9.8).
+- Whether Alt+T also hides the friendly torpedoes' frames on the HUD
+  (Vertigo's only leaves them off the radars), and whether it is kept from
+  mission to mission (Vertigo's is).
 - In the outside views: where the radio message sits in the bar, whether the
   pause shows, what the target's views do when the sonar loses the target
   (Vertigo goes back to the cockpit), and what the camera does the moment a
@@ -78,9 +80,6 @@ Sensors, HUD and views:
 
 World, physics and effects:
 
-- Whether the Torch's torch sounds all the time it burns (Vertigo loops
-  sample 33 there) or once, and from how far it is heard (Vertigo's reaches
-  as far as the engines', 300 m).
 - Why one of S00202's two upward current cells does nothing.
 - How an active mine moves while it chases: how fast, and how far a current
   carries it. Its drive takes currents at a factor of 0.2 against its own

@@ -97,7 +97,10 @@ void Particles::decoys(std::vector<DecoyInfo> &decoys) const
 {
     for (const Particle &particle : m_particles)
         if (particle.decoy != Decoy::None)
-            decoys.push_back(DecoyInfo{ particle.id, particle.decoy, particle.faction, particle.billboard->noiseLevel(), particle.position, particle.velocity });
+        {
+            const float fade = particle.decoy == Decoy::Torch ? glm::clamp(1 - (particle.time - particle.life), 0.0f, 1.0f) : 1.0f;
+            decoys.push_back(DecoyInfo{ particle.id, particle.decoy, particle.faction, particle.billboard->noiseLevel(), particle.position, particle.velocity, fade });
+        }
 }
 
 

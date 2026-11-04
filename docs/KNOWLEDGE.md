@@ -1063,9 +1063,9 @@ All 22 types share one behaviour, with their `TORPEDO.DES` values.
   light of 700 units' reach (the shots' 701) whose brightness flickers every
   frame between 0.5 and 1.5 times 2.11 (the shots have 5). It never goes out
   on the ground or when hit; once its time is up it shrinks away within a
-  second. From the seabed it is back down after about 5 s. While it burns it
-  makes a loud sound of its own (sample 33, `torch`, at full volume), heard
-  close by.
+  second. From the seabed it is back down after about 5 s. It makes a loud
+  sound of its own (sample 33, `torch`, at full volume), heard as long as the
+  torch can be seen, fainter with distance, and fading as it shrinks away.
 - A unit with a passive sonar (`sen` 1) hears a hostile torch like a boat, at
   noise level 4, and takes it for its target when it is the loudest thing it
   hears while it looks for one; it fights the torch until it goes out. A unit
@@ -1582,19 +1582,29 @@ destroyed on its own by shooting at it.
   as a contact, so a hostile unit that has not attacked yet is not locked. L
   locks what is in the reticle, a torpedo as well as a unit (the master
   monitor then names it by its type, HAMMERHEAD), N the next nav point.
+- Three keys go on to the next one with each press, round all there are in
+  range: T the next object, friend or foe (buildings such as the oxygen
+  tanks, crawlers, any contact but the torpedoes), then the nav points; J
+  the next attacker (the units U chooses from); G the next attacking
+  torpedo.
+- Alt+T hides the friendly torpedoes on the radars, and shows them again.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
   `i` armour/system status, Alt+I the Fixer, F5–F12 turret orders, `u`
-  nearest enemy, Tab fires a torpedo, Enter selects the next, H the help, M
-  the radio log, B the briefing, Alt+A the autopilot menu, the number pad the
-  outside views ([10](#10-views-from-outside)).
-- The commands that set something click (sample 5): Tab and Enter, the speed steps and stop (S, X, C), the
-  engine, the sonar and its zoom (R, Alt+R), the locks (L, U, Alt+N), the
-  next nav point (N), the status pages (F1–F4, I), the Fixer (Alt+I) and
-  the turret orders (F5–F12). The keys held for a while (full ahead and
-  astern, the booster, the gun) don't click.
-- Locking a contact with L or U beeps (sample 7, "lock on") along with the
-  click, whatever torpedo is loaded, with none too; a homing torpedo's lock
-  starts then ([6.8](#68-the-players-torpedo-magazine)).
+  nearest enemy, `j` next attacker, `t` next object, `g` next attacking
+  torpedo, Alt+T no friendly torpedoes, Alt+S only enemies, Tab fires a
+  torpedo, Enter selects the next, H the help, M the radio log, B the
+  briefing, Alt+A the autopilot menu, the number pad the outside views
+  ([10](#10-views-from-outside)).
+- The commands that set something click (sample 5): Tab and Enter, the speed
+  steps and stop (S, X, C), the engine, the sonar and its zoom (R, Alt+R),
+  the locks (L, U, J, G, T, Alt+N), the next nav point (N), the friendly
+  torpedoes (Alt+T), the status pages (F1–F4, I), the Fixer (Alt+I), the
+  turret orders (F5–F12), and O and Alt+A whatever they do. P clicks when it
+  pauses. The keys held for a while (full ahead and astern, the booster, the
+  gun) don't click, nor do D, V, H, M, B and Esc.
+- A lock beeps (sample 7, "lock on") along with the click: a contact's
+  whatever torpedo is loaded, with none too (a homing torpedo's lock starts
+  then, [6.8](#68-the-players-torpedo-magazine)), and a nav point's.
 
 ### 9.9 Help, radio log and briefing
 

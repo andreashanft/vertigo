@@ -18,7 +18,7 @@
 #include "enginesounds.h"
 #include "scenario.h"
 #include "boats/simpleboat.h"
-#include "objects/decoycontact.h"
+#include "effects/particles.h"
 #include "sfx/samplemap.h"
 
 #include <glm/geometric.hpp>
@@ -34,6 +34,8 @@ namespace {
 // how many engines are heard at once, and how far
 const size_t MaxEngines = 4;
 const float MaxDistance = 300.0f;
+// a torch's sound fades out over the last fifth of the particles' range
+const float TorchEdge = 0.2f;
 
 }
 
@@ -48,13 +50,49 @@ EngineSounds::~EngineSounds()
 {
     for (auto &playing : m_playing)
         playing.second->stop(); // deletes the copy
+    for (auto &torch : m_torches)
+        torch.second->stop();
+}
+
+
+// The Torch's torches (sample 33, at full volume) are heard as long as they are drawn, quieter
+// with distance and silent where the particles are no longer drawn, and they fade as they shrink
+// away
+void EngineSounds::updateTorches()
+{
+    std::map<int, sfx::Sound *> playing;
+    for (const Particles::DecoyInfo &decoy : m_scenario->decoys())
+    {
+        if (decoy.kind != Particles::Decoy::Torch)
+            continue;
+        const float distance = glm::length(decoy.position - m_scenario->eye());
+        const float edge = glm::clamp((Particles::Range - distance)/(TorchEdge*Particles::Range), 0.0f, 1.0f);
+        if (edge <= 0 || decoy.fade <= 0)
+            continue;
+        auto it = m_torches.find(decoy.id);
+        sfx::Sound *sound = it != m_torches.end() ? it->second : nullptr;
+        if (it != m_torches.end())
+            m_torches.erase(it);
+        else
+            sound = sfx::SampleMap::loopAt(sfx::Sample::Torch, decoy.position.x, decoy.position.y, decoy.position.z);
+        if (!sound)
+            continue;
+        sound->setPosition(decoy.position.x, decoy.position.y, decoy.position.z);
+        sound->setVolume(sfx::SampleMap::get(sfx::Sample::Torch).volume()*decoy.fade*edge);
+        playing[decoy.id] = sound;
+    }
+    // those gone, shrunk away or out of reach
+    for (auto &torch : m_torches)
+        torch.second->stop();
+    m_torches.swap(playing);
 }
 
 
 void EngineSounds::update()
 {
-    // the nearest moving units, with the engine sound of their class, and the Torch's burning
-    // torches with theirs (sample 33, at full volume)
+    updateTorches();
+
+    // the nearest moving units, with the engine sound of their class
     struct Candidate
     {
         const Object *object;
@@ -62,13 +100,6 @@ void EngineSounds::update()
         float distance;
     };
     std::vector<Candidate> candidates;
-    for (const auto &contact : m_scenario->decoyContacts())
-        if (contact->isTorch() && contact->isEnabled())
-        {
-            const float distance = glm::length(contact->center() - m_scenario->eye());
-            if (distance < MaxDistance)
-                candidates.push_back({ contact.get(), sfx::Sample::Torch, distance });
-        }
     for (const auto &record : m_scenario->objectRecords())
     {
         const Object *object = record.object;
@@ -124,7 +155,7 @@ void EngineSounds::update()
         it->second->setPosition(position.x, position.y, position.z);
         // higher with speed, as for the player's engine
         float speed = 0;
-        if (const ActiveObject *unit = dynamic_cast<const ActiveObject *>(candidate.object); unit && candidate.sample != sfx::Sample::Torch)
+        if (const ActiveObject *unit = dynamic_cast<const ActiveObject *>(candidate.object))
             speed = glm::length(unit->velocity());
         it->second->setPitch(1.0f + std::min(speed*0.036f, 1.0f));
     }

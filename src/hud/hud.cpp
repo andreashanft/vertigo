@@ -424,6 +424,7 @@ void HUD::start(fight::Scenario *scenario)
     m_countLongest = 0;
     m_countWork = 0;
     m_navPoint = -1;
+    m_scenario->sonar().setFriendlyTorpedoesShown(!m_friendlyTorpedoesHidden);
     m_paused = false;
     m_frozen = false;
     m_dimming = 1;
@@ -953,6 +954,10 @@ void HUD::press(input::KeyEvent *e)
     if (!m_scenario)
         return;
 
+    // O and Alt+A click whatever they do (sample 5)
+    if (e->key() == input::Key_O || (e->key() == input::Key_A && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier))
+        sfx::SampleMap::get(sfx::Sample::Click).play();
+
     // the turret and autopilot menus only take digits, Esc and O; everything else still steers the boat
     const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
     const bool menuKey = (e->key() >= input::Key_0 && e->key() <= input::Key_9) || e->key() == input::Key_Escape || e->key() == input::Key_O;
@@ -1074,12 +1079,14 @@ void HUD::press(input::KeyEvent *e)
             }
     }
     // the commands that set something click (sample 5): the speed steps and stop, the engine, the
-    // sonar and its zoom, the locks, the nav point, the armour and system page and the turret
-    // orders; the keys held for a while (full ahead and astern, the booster, the gun) don't. Tab,
-    // Enter, F1-F4 and Alt+I click where they are handled
+    // sonar and its zoom, the locks, the nav point, the armour and system page, the friendly
+    // torpedoes on the radars and the turret orders; the keys held for a while (full ahead and
+    // astern, the booster, the gun) don't. Tab, Enter, F1-F4, Alt+I, O and Alt+A click where they
+    // are handled
     const bool command = (e->key() >= input::Key_F5 && e->key() <= input::Key_F12) || e->key() == input::Key_S || e->key() == input::Key_X ||
                          e->key() == input::Key_C || e->key() == input::Key_QuoteLeft || e->key() == input::Key_R ||
-                         e->key() == input::Key_L || e->key() == input::Key_U || e->key() == input::Key_N || e->key() == input::Key_I;
+                         e->key() == input::Key_L || e->key() == input::Key_U || e->key() == input::Key_J || e->key() == input::Key_G ||
+                         e->key() == input::Key_T || e->key() == input::Key_N || e->key() == input::Key_I;
     if (command && !(e->modifiers() & input::ControlModifier))
         sfx::SampleMap::get(sfx::Sample::Click).play();
     if (e->key() == input::Key_N)
@@ -1087,7 +1094,10 @@ void HUD::press(input::KeyEvent *e)
         if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_navPoint >= 0)
+            {
                 m_scenario->target().lockNavPoint(m_scenario->navPoints()[m_navPoint]);
+                sfx::SampleMap::get(sfx::Sample::LockOn).play();
+            }
         }
         else
         {
@@ -1113,10 +1123,20 @@ void HUD::press(input::KeyEvent *e)
         else
             m_scenario->sonar().toggle();
     }
-    // a contact locked beeps (sample 7), whatever torpedo is loaded; a homing torpedo's lock
-    // starts with it (fight::Player)
-    if ((e->key() == input::Key_L && m_scenario->target().lockReticle()) || (e->key() == input::Key_U && m_scenario->target().lockNearestEnemy()))
+    // a lock beeps (sample 7), a contact's whatever torpedo is loaded (a homing torpedo's lock
+    // starts with it, fight::Player) and a nav point's; J, G and T go on to the next one each time
+    fight::Target &target = m_scenario->target();
+    const bool alt = (e->modifiers() & ~input::KeypadModifier) == input::AltModifier;
+    if ((e->key() == input::Key_L && target.lockReticle()) || (e->key() == input::Key_U && target.lockNearestEnemy()) ||
+        (e->key() == input::Key_J && target.lockNextAttacker()) || (e->key() == input::Key_G && target.lockNextTorpedo()) ||
+        (e->key() == input::Key_T && !alt && target.lockNextObject()))
         sfx::SampleMap::get(sfx::Sample::LockOn).play();
+    // Alt+T hides the friendly torpedoes on the radars, or shows them again
+    if (e->key() == input::Key_T && alt)
+    {
+        m_friendlyTorpedoesHidden = !m_friendlyTorpedoesHidden;
+        m_scenario->sonar().setFriendlyTorpedoesShown(!m_friendlyTorpedoesHidden);
+    }
     if (e->key() == input::Key_I && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.back();
