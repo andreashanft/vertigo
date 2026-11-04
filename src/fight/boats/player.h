@@ -45,7 +45,7 @@ public:
     const Gun& playerGun() const { return m_gun; }
 
     // torpedoes: Tab fires the loaded one, Enter selects the next; homing ones need the target
-    // locked (and in front) for their lock time; Backspace/D drops a buzzer (a decoy)
+    // locked for their lock time; Backspace/D drops a buzzer (a decoy)
     void fireTorpedo();
     void selectNextTorpedo();
     void dropBuzzer();

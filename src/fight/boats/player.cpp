@@ -571,15 +571,16 @@ bool Player::update(float elapsedTime)
         m_speed = -m_speed;
 
 
-    // torpedo lock: the target must stay locked and in front for the loaded torpedo's lock time,
-    // which only runs once the torpedo is in and the magazine ready (appendix S)
+    // torpedo lock: the target must stay locked for the loaded torpedo's lock time, which only
+    // runs once the torpedo is in and the magazine ready; the heading plays no part, a locked
+    // target behind the boat locks as well (KNOWLEDGE.md 6.8)
     ActiveObject *target = m_scenario->target().locked();
     if (target != m_lockTarget)
     {
         m_lockTarget = target;
         m_lockTime = 0;
     }
-    if (m_lockTarget && torpedoReady() && glm::dot(dir(), glm::normalize(m_lockTarget->center() - m_position)) > std::cos(glm::radians(40.0f)))
+    if (m_lockTarget && torpedoReady())
         m_lockTime += elapsedTime;
     else
         m_lockTime = 0;
