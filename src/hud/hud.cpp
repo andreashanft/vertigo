@@ -424,7 +424,9 @@ void HUD::start(fight::Scenario *scenario)
     m_countLongest = 0;
     m_countWork = 0;
     m_navPoint = -1;
-    m_scenario->sonar().setFriendlyTorpedoesShown(!m_friendlyTorpedoesHidden);
+    // the sonar's zoom as at the start of every mission
+    m_sonar1->setScale(360);
+    m_sonar2->setScale(180);
     m_paused = false;
     m_frozen = false;
     m_dimming = 1;
@@ -1079,8 +1081,8 @@ void HUD::press(input::KeyEvent *e)
             }
     }
     // the commands that set something click (sample 5): the speed steps and stop, the engine, the
-    // sonar and its zoom, the locks, the nav point, the armour and system page, the friendly
-    // torpedoes on the radars and the turret orders; the keys held for a while (full ahead and
+    // sonar and its zoom, the locks, the nav point, the armour and system page, what the radars
+    // show (Alt+T, Alt+S) and the turret orders; the keys held for a while (full ahead and
     // astern, the booster, the gun) don't. Tab, Enter, F1-F4, Alt+I, O and Alt+A click where they
     // are handled
     const bool command = (e->key() >= input::Key_F5 && e->key() <= input::Key_F12) || e->key() == input::Key_S || e->key() == input::Key_X ||
@@ -1108,6 +1110,13 @@ void HUD::press(input::KeyEvent *e)
                 m_navPoint = -1;
         }
     }
+    // Alt+S shows only the enemies on the radars and the HUD, or everything again (not the next
+    // speed step)
+    if (e->key() == input::Key_S && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
+    {
+        m_scenario->sonar().toggleOnlyEnemies();
+        return;
+    }
     if (e->key() == input::Key_R)
     {
         if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
@@ -1131,12 +1140,9 @@ void HUD::press(input::KeyEvent *e)
         (e->key() == input::Key_J && target.lockNextAttacker()) || (e->key() == input::Key_G && target.lockNextTorpedo()) ||
         (e->key() == input::Key_T && !alt && target.lockNextObject()))
         sfx::SampleMap::get(sfx::Sample::LockOn).play();
-    // Alt+T hides the friendly torpedoes on the radars, or shows them again
+    // Alt+T hides the friendly torpedoes on the radars and the HUD, or shows them again
     if (e->key() == input::Key_T && alt)
-    {
-        m_friendlyTorpedoesHidden = !m_friendlyTorpedoesHidden;
-        m_scenario->sonar().setFriendlyTorpedoesShown(!m_friendlyTorpedoesHidden);
-    }
+        m_scenario->sonar().toggleFriendlyTorpedoes();
     if (e->key() == input::Key_I && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.back();

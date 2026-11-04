@@ -22,6 +22,8 @@
 #include "scenario.h"
 #include "objects/activeobject.h"
 #include "objects/navpoint.h"
+#include "weapons/torpedo.h"
+#include "boats/player.h"
 
 #include <glm/geometric.hpp>
 
@@ -156,7 +158,7 @@ bool Target::lockNextTorpedo()
 {
     std::vector<Object *> objects;
     for (const auto &entry : m_scenario->sonar())
-        if (entry.isTorpedo && m_scenario->isHostile(Scenario::PlayerFaction, entry.object->iff()))
+        if (entry.isTorpedo && static_cast<const Torpedo *>(entry.object)->target() == m_scenario->player())
             objects.push_back(entry.object);
     return lockNext(objects);
 }

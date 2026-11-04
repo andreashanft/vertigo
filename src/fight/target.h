@@ -58,7 +58,7 @@ public:
     bool lockNearestEnemy();
     // the next of the same units, in the sonar's order, the first one after the last (J)
     bool lockNextAttacker();
-    // the next hostile torpedo on its way (G)
+    // the next torpedo on its way after the player (G)
     bool lockNextTorpedo();
     // the next contact, friend or foe, that is no torpedo, then the enabled nav points (T)
     bool lockNextObject();

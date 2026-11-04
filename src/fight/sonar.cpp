@@ -180,4 +180,14 @@ void Sonar::update(float elapsedTime)
 }
 
 
+bool Sonar::isShown(const SonarEntry &entry) const
+{
+    if (entry.object == m_scenario->target().locked())
+        return true;
+    if (entry.isTorpedo)
+        return !m_scenario->isFriend(Scenario::PlayerFaction, entry.object->iff()) || (m_friendlyTorpedoes && !m_onlyEnemies);
+    return !m_onlyEnemies || (!entry.isFriend && !entry.isNeutral);
+}
+
+
 } // namespace fight

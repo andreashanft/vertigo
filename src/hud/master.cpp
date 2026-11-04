@@ -23,6 +23,7 @@
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/player.h"
+#include "fight/weapons/torpedo.h"
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 
@@ -83,9 +84,12 @@ void Master::draw()
     Matrix m = m_hud->hudProjectionMatrixInverted() * m_hud->scenario()->projectionMatrix() * m_hud->scenario()->cameraMatrix();
     fight::Target &target = m_hud->scenario()->target();
 
-    // the torpedoes among them, framed like the units by friend or foe (KNOWLEDGE.md 9.11)
+    // the torpedoes among them, framed like the units by friend or foe (KNOWLEDGE.md 9.11); Alt+T
+    // and Alt+S leave some out
     for (const auto &entry : m_hud->scenario()->sonar())
     {
+        if (!m_hud->scenario()->sonar().isShown(entry))
+            continue;
         Vector4D point4 = m * Vector4D(entry.object->center(), 1);
         drawPoint(point4, rect, entry.object == target.locked(), entry.isFriend, entry.isPassive);
     }
@@ -213,7 +217,10 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
 
         if (!isPassive)
         {
-            m_hud->fontGreen().draw(target.locked()->name(), Rect(point.x - 100, point.y - 34, 200, -1), true, false, &m_clipRect);
+            // a torpedo has no designation there (in English, in the German version too)
+            const bool torpedo = dynamic_cast<const fight::Torpedo *>(target.locked()) != nullptr;
+            m_hud->fontGreen().draw(torpedo ? String("NO DESIGNATION") : target.locked()->name(), Rect(point.x - 100, point.y - 34, 200, -1),
+                                    true, false, &m_clipRect);
 
             if (m_hud->scenario()->sonar().detectArmor())
             {

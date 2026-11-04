@@ -65,12 +65,11 @@ Sensors, HUD and views:
 - Whether big buildings show as blocks or as ground on the radar.
 - What the turrets' aim cross does for a target behind the boat (Vertigo puts
   it on the edge away from the target).
-- Which units J goes through: the help calls them attackers, which Vertigo
-  takes as the units U chooses from; and whether G takes every hostile
-  torpedo (Vertigo's) or only those after the player (KNOWLEDGE.md 9.8).
-- Whether Alt+T also hides the friendly torpedoes' frames on the HUD
-  (Vertigo's only leaves them off the radars), and whether it is kept from
-  mission to mission (Vertigo's is).
+- What Alt+S shows with a sonar that can't tell friend from foe (Spy I):
+  Vertigo's shows only the contacts the sonar takes for hostile, so none
+  but the hostile torpedoes and the locked target (KNOWLEDGE.md 9.8).
+- What a locked torpedo's action is once its engine has stopped (Vertigo's
+  stays "Greift An").
 - In the outside views: where the radio message sits in the bar, whether the
   pause shows, what the target's views do when the sonar loses the target
   (Vertigo goes back to the cockpit), and what the camera does the moment a

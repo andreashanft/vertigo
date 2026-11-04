@@ -1580,14 +1580,20 @@ destroyed on its own by shooting at it.
 
 - `u` locks the nearest of the units attacking the player that the sonar has
   as a contact, so a hostile unit that has not attacked yet is not locked. L
-  locks what is in the reticle, a torpedo as well as a unit (the master
-  monitor then names it by its type, HAMMERHEAD), N the next nav point.
+  locks what is in the reticle, a torpedo as well as a unit, N the next nav
+  point.
+- A locked torpedo has `NO DESIGNATION` over its ring (in English in the
+  German version too) and its distance under it; the master monitor names it
+  by its type (CLUSTER BOMB, HAMMERHEAD), its action is "Greift An"
+  (FIGHTEXT 77) and its cargo `???`.
 - Three keys go on to the next one with each press, round all there are in
   range: T the next object, friend or foe (buildings such as the oxygen
   tanks, crawlers, any contact but the torpedoes), then the nav points; J
-  the next attacker (the units U chooses from); G the next attacking
-  torpedo.
-- Alt+T hides the friendly torpedoes on the radars, and shows them again.
+  the next attacker (the units U chooses from, never a hostile unit that
+  has not attacked yet); G the next torpedo after the player.
+- Alt+T hides the friendly torpedoes on the radars and their frames on the
+  HUD, and shows them again; Alt+S shows only the enemies there. Both go
+  back at the start of every mission, as the sonar's zoom (Alt+R) does.
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
   `i` armour/system status, Alt+I the Fixer, F5–F12 turret orders, `u`
   nearest enemy, `j` next attacker, `t` next object, `g` next attacking
@@ -1597,8 +1603,8 @@ destroyed on its own by shooting at it.
   ([10](#10-views-from-outside)).
 - The commands that set something click (sample 5): Tab and Enter, the speed
   steps and stop (S, X, C), the engine, the sonar and its zoom (R, Alt+R),
-  the locks (L, U, J, G, T, Alt+N), the next nav point (N), the friendly
-  torpedoes (Alt+T), the status pages (F1–F4, I), the Fixer (Alt+I), the
+  the locks (L, U, J, G, T, Alt+N), the next nav point (N), what the radars
+  show (Alt+T, Alt+S), the status pages (F1–F4, I), the Fixer (Alt+I), the
   turret orders (F5–F12), and O and Alt+A whatever they do. P clicks when it
   pauses. The keys held for a while (full ahead and astern, the booster, the
   gun) don't click, nor do D, V, H, M, B and Esc.
