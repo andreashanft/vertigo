@@ -645,8 +645,14 @@ void HUD::setRect(const Rect &rect)
         h += 480;
     }
     m_integerScaleProjectionMatrix = glm::ortho(0.0f, m_rectHUD.width*640/w, m_rectHUD.height*480/h, 0.0f);
-    m_integerScaleProjectionMatrixInverted = glm::inverse(m_integerScaleProjectionMatrix);
     m_noScaleProjectionMatrix = glm::ortho(0.0f, m_rectHUD.width, m_rectHUD.height, 0.0f);
+    // the monitors, the HUD and its marks on the targets and the crosshair scaled as the cockpit
+    // art is, filling their screens as in the original; settings.ini HUD/fill=false brings back
+    // the monitors in whole-number steps and the marks unscaled
+    if (util::Settings::boolValue("HUD/fill", true) && m_rectHUD.height > 0)
+        m_integerScaleProjectionMatrix = m_noScaleProjectionMatrix
+            = glm::ortho(0.0f, m_rectHUD.width*480/m_rectHUD.height, 480.0f, 0.0f);
+    m_integerScaleProjectionMatrixInverted = glm::inverse(m_integerScaleProjectionMatrix);
     m_noScaleProjectionMatrixInverted = glm::inverse(m_noScaleProjectionMatrix);
 }
 

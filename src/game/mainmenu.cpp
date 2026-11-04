@@ -304,6 +304,13 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
 
 void MainMenu::draw()
 {
+    // the presents picture for a second (its loading is done when it first shows), then the menu
+    if (m_state == Presents) {
+        if (!m_presentsTime.isValid())
+            m_presentsTime.start();
+        else if (m_presentsTime.elapsed() >= 1000)
+            changeState(Title);
+    }
     // each picture of the credits for twelve seconds, then back to the menu
     if (m_state == Credits && m_creditsTime.elapsed() >= 12000) {
         if (m_creditsPage < 3)
@@ -410,8 +417,8 @@ void MainMenu::mousePressEvent(input::MouseEvent *event)
 
 void MainMenu::keyPressEvent(input::KeyEvent *event)
 {
-    // any key ends the credits
-    if (m_state == Credits) {
+    // any key ends the credits and the presents picture
+    if (m_state == Credits || m_state == Presents) {
         changeState(Title);
         return;
     }
