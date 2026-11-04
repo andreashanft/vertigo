@@ -44,6 +44,14 @@ const float ShardsFar = 6.25f;
 const float ShardsDelay = 1.0f;
 // a torpedo that has gone off stays a locked target, exploding, for this long (s)
 const float Exploding = 0.3f;
+// the sound of an explosion by its EXPLOSIO.DES entry: 0-2 the big explosion, 3-8 the small one,
+// 9-11 the metal hit, 12-14 the ground explosion, 15-17 the EMS explosion
+sfx::Sample explosionSound(Effects explosion)
+{
+    const int entry = int(explosion) - int(Effects::Explosion_0);
+    return entry < 3 ? sfx::Sample::Explosion_Big : entry < 9 ? sfx::Sample::Explosion_Small : entry < 12 ? sfx::Sample::Hit_Metal
+         : entry < 15 ? sfx::Sample::Explosion_Ground : sfx::Sample::Explosion_EMS;
+}
 // a homing torpedo looks for the ground between it and its goal this often (s)
 const float LookInterval = 0.5f;
 // and climbs this far over it (m)
@@ -371,15 +379,16 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit, bool ground)
         m_scenario->effectManager().addEffect(effect, position, 0, factor*radius()/std::max(sprite, 0.01f));
     };
     const Effects flash = ground ? Effects::Explosion_2 : Effects::Explosion_17;
-    bool big = false;
+    // the explosion shown, which also gives the sound
+    Effects explosion = Effects::Explosion_1;
     switch (m_type.index)
     {
-    case 11: case 19: sized(flash, 1.6f); big = true; break;
-    case 12: case 20: sized(flash, 2.0f); big = true; break;
-    case 13: sized(flash, 2.4f); big = true; break;
+    case 11: case 19: sized(explosion = flash, 1.6f); break;
+    case 12: case 20: sized(explosion = flash, 2.0f); break;
+    case 13: sized(explosion = flash, 2.4f); break;
     case 21:
         {
-            sized(Effects::Explosion_2, 0.9f);
+            sized(explosion = Effects::Explosion_2, 0.9f);
             m_scenario->effectManager().addDecoy(Effects::Debris_22, Particles::Decoy::Torch, iff(), position, Vector3D(0, 0, TorchSpeed));
         }
         break;
@@ -390,17 +399,17 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit, bool ground)
         m_burstHeading = std::atan2(m_dir.y, m_dir.x);
         setPosition(position);
         shards(ShardsNear, 0);
-        sfx::SampleMap::playAt(sfx::Sample::Explosion_Big, position.x, position.y, position.z);
+        sfx::SampleMap::playAt(explosionSound(Effects::Explosion_5), position.x, position.y, position.z);
         m_scenario->explosionAt(position, 1.0f);
         return;
     default:
-        m_scenario->effectManager().addEffect(Effects::Explosion_1, position);
+        m_scenario->effectManager().addEffect(explosion, position);
     }
     // exploding for a moment, unseen, where it went off
     m_target = nullptr;
     m_burstTime = m_time;
     setPosition(position);
-    sfx::SampleMap::playAt(big ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, position.x, position.y, position.z);
+    sfx::SampleMap::playAt(explosionSound(explosion), position.x, position.y, position.z);
     m_scenario->explosionAt(position, 0.7f);
 }
 

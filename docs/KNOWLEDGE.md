@@ -1009,7 +1009,12 @@ All 22 types share one behaviour, with their `TORPEDO.DES` values.
   III) times their hull's radius; the Torch in a large flash 0.9 times its
   radius, leaving its torch; the Cluster Bomb in a large puff (5) 0.9 times
   its radius and its shards; all others in a medium explosion (1) at its own
-  size.
+  size. Each sounds as its explosion does, by the entry: 0–2 the big
+  explosion (sample 1), 3–8 the small one (16), 9–11 the metal hit (2),
+  12–14 the ground explosion (15), 15–17 the EMS explosion (17). So the
+  ordinary torpedoes and the Torch go off with the big explosion, the Cluster
+  Bomb with the small one, and the Flash Sharks and Leeches with the big one
+  on the ground and the EMS explosion elsewhere.
 - Bubbles (`EXPLOSIO.DES` 22) trail it every 0.16 s (twice the entry's
   `DisplayTime`), from half a second after the launch, while its engine runs.
 - A spent torpedo can still hit a unit ([6.7](#67-end-of-a-torpedos-life)).
