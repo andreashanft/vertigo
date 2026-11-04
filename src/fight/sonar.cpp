@@ -188,9 +188,11 @@ void Sonar::update(float elapsedTime)
 
 bool Sonar::isShown(const SonarEntry &entry) const
 {
+    // Alt+S does nothing with a sonar that can't tell friend from foe
+    const bool onlyEnemies = m_onlyEnemies && m_iff;
     if (entry.isTorpedo)
-        return !m_scenario->isFriend(Scenario::PlayerFaction, entry.object->iff()) || (m_friendlyTorpedoes && !m_onlyEnemies);
-    return !m_onlyEnemies || (!entry.isFriend && !entry.isNeutral);
+        return !m_scenario->isFriend(Scenario::PlayerFaction, entry.object->iff()) || (m_friendlyTorpedoes && !onlyEnemies);
+    return !onlyEnemies || (!entry.isFriend && !entry.isNeutral);
 }
 
 

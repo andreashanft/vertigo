@@ -1595,7 +1595,8 @@ destroyed on its own by shooting at it.
   the next attacker (the units U chooses from, never a hostile unit that
   has not attacked yet); G the next torpedo after the player.
 - Alt+T hides the friendly torpedoes on the radars and their frames on the
-  HUD, and shows them again; Alt+S shows only the enemies there. Both go
+  HUD, and shows them again; Alt+S shows only the enemies there, but does
+  nothing with a sonar that can't tell friend from foe (Spy I). Both go
   back at the start of every mission, as the sonar's zoom (Alt+R) does. A
   locked contact they leave out is lost, with the "target lost" voice (71).
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,

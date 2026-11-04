@@ -65,9 +65,6 @@ Sensors, HUD and views:
 - Whether big buildings show as blocks or as ground on the radar.
 - What the turrets' aim cross does for a target behind the boat (Vertigo puts
   it on the edge away from the target).
-- What Alt+S shows with a sonar that can't tell friend from foe (Spy I):
-  Vertigo's shows only the contacts the sonar takes for hostile, so none
-  but the hostile torpedoes and the locked target (KNOWLEDGE.md 9.8).
 - How long a locked torpedo shows "Explodiert" before the "target destroyed"
   voice (Vertigo: a second, as long as the Cluster Bomb's burst).
 - In the outside views: where the radio message sits in the bar, whether the
