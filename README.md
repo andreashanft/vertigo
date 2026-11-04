@@ -292,7 +292,7 @@ in brackets, and LB held gives a second set:
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
 | D-pad left | stop (C) | the booster, while held (Q) |
 | D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
-| L3, R3 (press a stick) | full ahead, full astern while held (A, Z) | |
+| L3, R3 (press a stick) | full ahead, full astern while held (A, and the key below it: Z, or Y on a German keyboard) | |
 | Start | mission menu (Esc) | pause (P) |
 | Back | turret menu (O) | the next cockpit or view from outside (V) |
 

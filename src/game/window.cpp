@@ -42,10 +42,14 @@ namespace {
 // digits (with KeypadModifier); minus, equal and period by their place
 input::Key key(SDL_Keycode code, SDL_Scancode place, int &modifiers)
 {
+    // a few keys by their place on the keyboard, whatever the layout: full astern (Z) is the key
+    // below A, which a German keyboard labels Y, as in the original
     switch (place) {
     case SDL_SCANCODE_MINUS: return input::Key_Minus;
     case SDL_SCANCODE_EQUALS: return input::Key_Equal;
     case SDL_SCANCODE_PERIOD: return input::Key_Period;
+    case SDL_SCANCODE_Z: return input::Key_Z;
+    case SDL_SCANCODE_Y: return input::Key_Y;
     default: break;
     }
     if (code >= SDLK_0 && code <= SDLK_9)
