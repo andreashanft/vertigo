@@ -90,6 +90,8 @@ bool Target::lockReticle()
     // any contact, a torpedo too (KNOWLEDGE.md 9.8)
     for (const auto &entry : m_scenario->sonar())
     {
+        if (!m_scenario->sonar().isShown(entry))
+            continue;
         Vector3D dir = Vector3D(m_scenario->cameraMatrix() * Vector4D(entry.object->center(), 1));
         dir /= -glm::length(dir);
         if (minAngle < dir.z)
@@ -133,7 +135,8 @@ bool Target::lockNearestEnemy()
     const std::vector<ActiveObject*> &attackers = m_scenario->playerAttackerList();
     const Sonar::SonarEntry *nearest = nullptr;
     for (const auto &entry : m_scenario->sonar())
-        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && (!nearest || entry.distance < nearest->distance))
+        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && m_scenario->sonar().isShown(entry) &&
+            (!nearest || entry.distance < nearest->distance))
             nearest = &entry;
     if (!nearest)
         return false;
@@ -148,7 +151,7 @@ bool Target::lockNextAttacker()
     const std::vector<ActiveObject*> &attackers = m_scenario->playerAttackerList();
     std::vector<Object *> objects;
     for (const auto &entry : m_scenario->sonar())
-        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end())
+        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && m_scenario->sonar().isShown(entry))
             objects.push_back(entry.object);
     return lockNext(objects);
 }
@@ -158,7 +161,7 @@ bool Target::lockNextTorpedo()
 {
     std::vector<Object *> objects;
     for (const auto &entry : m_scenario->sonar())
-        if (entry.isTorpedo && static_cast<const Torpedo *>(entry.object)->target() == m_scenario->player())
+        if (entry.isTorpedo && static_cast<const Torpedo *>(entry.object)->target() == m_scenario->player() && m_scenario->sonar().isShown(entry))
             objects.push_back(entry.object);
     return lockNext(objects);
 }
@@ -168,7 +171,7 @@ bool Target::lockNextObject()
 {
     std::vector<Object *> objects;
     for (const auto &entry : m_scenario->sonar())
-        if (!entry.isTorpedo)
+        if (!entry.isTorpedo && m_scenario->sonar().isShown(entry))
             objects.push_back(entry.object);
     for (NavPoint *navPoint : m_scenario->navPoints())
         if (navPoint->isEnabled())

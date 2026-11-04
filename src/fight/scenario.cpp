@@ -786,9 +786,13 @@ void Scenario::update(float elapsedTime)
         if (!torpedo->isDone())
             return false;
         m_collisionManager.removeObject(torpedo.get());
-        // a locked torpedo that is gone (the sonar would drop it, but only after this)
+        // a locked torpedo that has exploded is destroyed (the sonar would drop it, but only after
+        // this)
         if (m_target.locked() == torpedo.get())
+        {
             m_target.lockReset();
+            sfx::SampleMap::get(sfx::Sample::TargetDestroyed).play();
+        }
         return true;
     });
 

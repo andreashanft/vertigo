@@ -60,7 +60,7 @@ public:
     bool detectActivity() const { return m_detectActivity; }
     // what the radars and the HUD's frames show, for the mission: Alt+T leaves out the torpedoes
     // of the player's side, Alt+S everything but the hostile contacts (as the sonar tells them) and
-    // hostile torpedoes; the locked target is always shown
+    // hostile torpedoes; nothing left out can be locked
     void toggleFriendlyTorpedoes() { m_friendlyTorpedoes = !m_friendlyTorpedoes; }
     void toggleOnlyEnemies() { m_onlyEnemies = !m_onlyEnemies; }
     bool isShown(const SonarEntry &entry) const;

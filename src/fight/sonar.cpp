@@ -150,10 +150,11 @@ void Sonar::update(float elapsedTime)
     }
 
     // every torpedo on its way is a contact, friend or foe, without being detected (KNOWLEDGE.md
-    // 9.11); one that has gone off is no longer on its way
+    // 9.11); one that has gone off is no longer on its way, but stays the locked target while it
+    // explodes
     for (const auto &torpedo : m_scenario->torpedoes())
     {
-        if (torpedo->isDone() || torpedo->isBursting())
+        if (torpedo->isDone() || (torpedo->isBursting() && target.locked() != torpedo.get()))
             continue;
         const float dist = glm::length(torpedo->center() - m_scenario->position());
         // a locked torpedo stays locked while it is on its way
@@ -172,6 +173,11 @@ void Sonar::update(float elapsedTime)
         entry.isTorpedo = true;
     }
 
+    // a locked contact the radars no longer show (Alt+T, Alt+S) is lost as well
+    for (const SonarEntry &entry : m_sonarEntries)
+        if (entry.object == target.locked() && !isShown(entry))
+            lockNotLost = false;
+
     if (!lockNotLost)
     {
         target.lockReset();
@@ -182,8 +188,6 @@ void Sonar::update(float elapsedTime)
 
 bool Sonar::isShown(const SonarEntry &entry) const
 {
-    if (entry.object == m_scenario->target().locked())
-        return true;
     if (entry.isTorpedo)
         return !m_scenario->isFriend(Scenario::PlayerFaction, entry.object->iff()) || (m_friendlyTorpedoes && !m_onlyEnemies);
     return !m_onlyEnemies || (!entry.isFriend && !entry.isNeutral);

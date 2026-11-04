@@ -1077,7 +1077,8 @@ When its `LifeTime` is up, or its target is gone, the engine stops and the
 homing with it. The torpedo sinks at half a g, its nose following the way it
 moves a little below it, and it keeps its way along the nose, so it noses
 over and falls faster and faster until it hits the ground, where it goes
-off. A spent torpedo can still hit a unit.
+off as it would anywhere else: a spent Torch still leaves its torch, a spent
+Cluster Bomb still bursts. A spent torpedo can still hit a unit.
 
 ### 6.8 The player's torpedo magazine
 
@@ -1584,8 +1585,10 @@ destroyed on its own by shooting at it.
   point.
 - A locked torpedo has `NO DESIGNATION` over its ring (in English in the
   German version too) and its distance under it; the master monitor names it
-  by its type (CLUSTER BOMB, HAMMERHEAD), its action is "Greift An"
-  (FIGHTEXT 77) and its cargo `???`.
+  by its type (CLUSTER BOMB, HAMMERHEAD) with its cargo `???`, and its
+  action is "Greift An" (FIGHTEXT 77) while it runs, "Sinkt ab" (78) once
+  its engine has stopped and "Explodiert" (72) when it has gone off. Once it
+  is gone the voice says "target destroyed" (69), as for a unit.
 - Three keys go on to the next one with each press, round all there are in
   range: T the next object, friend or foe (buildings such as the oxygen
   tanks, crawlers, any contact but the torpedoes), then the nav points; J
@@ -1593,7 +1596,8 @@ destroyed on its own by shooting at it.
   has not attacked yet); G the next torpedo after the player.
 - Alt+T hides the friendly torpedoes on the radars and their frames on the
   HUD, and shows them again; Alt+S shows only the enemies there. Both go
-  back at the start of every mission, as the sonar's zoom (Alt+R) does.
+  back at the start of every mission, as the sonar's zoom (Alt+R) does. A
+  locked contact they leave out is lost, with the "target lost" voice (71).
 - Keys from `HELP0-2.TXT`: `p` pause, `o` turret menu, F1–F4 status pages,
   `i` armour/system status, Alt+I the Fixer, F5–F12 turret orders, `u`
   nearest enemy, `j` next attacker, `t` next object, `g` next attacking

@@ -38,7 +38,8 @@ namespace fight {
 namespace {
 
 // the Cluster Bomb's shards (SHOOT.DES 7 and 8, "KineticStrength Area = 7600" in TORPEDO.DES): a ring
-// a metre out at the burst, another 6.25 m out a second later
+// a metre out at the burst, another 6.25 m out a second later; every torpedo explodes for that
+// second, still a locked target meanwhile
 const float ShardsNear = 1.0f;
 const float ShardsFar = 6.25f;
 const float ShardsDelay = 1.0f;
@@ -211,7 +212,8 @@ bool Torpedo::update(float elapsedTime)
     {
         if (m_time >= m_burstTime + ShardsDelay)
         {
-            shards(ShardsFar, glm::radians(30.0f));
+            if (m_type.index == 18)
+                shards(ShardsFar, glm::radians(30.0f));
             disable();
         }
         return false;
@@ -392,7 +394,10 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit, bool ground)
     default:
         m_scenario->effectManager().addEffect(Effects::Explosion_1, position);
     }
-    disable();
+    // exploding for a second, unseen, where it went off
+    m_target = nullptr;
+    m_burstTime = m_time;
+    setPosition(position);
     sfx::SampleMap::playAt(big ? sfx::Sample::Explosion_Big : sfx::Sample::Explosion_Small, position.x, position.y, position.z);
     m_scenario->explosionAt(position, 0.7f);
 }
