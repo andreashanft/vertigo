@@ -1685,7 +1685,8 @@ for all without IFF.
 
 The cockpit art and its instruments shake when the boat is hit (by a gun's
 shot too), bounces off something or an explosion goes off nearby, and
-rattle while the booster fires; the world and the HUD in the window don't. The movement is small. The art is shown a little enlarged, so
+rattle as the booster fires, fading away again; the world and the HUD in the
+window don't. The movement is small. The art is shown a little enlarged, so
 only hard shakes show its edges. It can't be switched off (the installed
 files' `DEEPTEXT.DES` has "Cockpit Rütteln: JA/NEIN", 191/192, for an
 option).

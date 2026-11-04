@@ -458,13 +458,11 @@ bool Player::update(float elapsedTime)
         m_boosting = true;
         drawEnergy(0.15f);
         sfx::SampleMap::get(sfx::Sample::Booster).play();
+        // a rattle of the cockpit as it fires, fading away
+        m_scenario->headMotion().shake(0.4f);
     }
-    // and rattles the cockpit while it fires
     if (m_boosting)
-    {
         drawEnergy(1.2f*elapsedTime);
-        m_scenario->headMotion().shake(0.5f);
-    }
     m_speedBoost = m_boosting ? 2.0f : 1.0f;
     m_accelerationBoost = m_boosting ? 2.5f : 1.0f;
 
