@@ -783,6 +783,13 @@ void Scenario::update(float elapsedTime)
     for (const auto &torpedo : m_torpedoes)
         torpedo->update(elapsedTime);
     m_torpedoes.remove_if([this](const std::unique_ptr<Torpedo> &torpedo) {
+        // a locked torpedo that has exploded is destroyed (the sonar would drop it, but only after
+        // this)
+        if (m_target.locked() == torpedo.get() && torpedo->isGone())
+        {
+            m_target.lockReset();
+            sfx::SampleMap::get(sfx::Sample::TargetDestroyed).play();
+        }
         if (!torpedo->isDone())
             return false;
         m_collisionManager.removeObject(torpedo.get());

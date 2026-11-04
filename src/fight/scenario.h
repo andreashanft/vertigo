@@ -173,6 +173,8 @@ public:
     bool decoy(int id, Vector3D &position, Vector3D &velocity) const;
     // the buzzers and the Torches' torches as contacts for the units' sensors; those gone stay, disabled
     const std::vector<std::unique_ptr<DecoyContact>>& decoyContacts() const { return m_decoyContacts; }
+    // the buzzers and torches out this frame
+    const std::vector<Particles::DecoyInfo>& decoys() const { return m_decoys; }
 
     // the water current's push at a position (m/s²), that of the cell the position is in
     Vector3D current(const Vector3D &position) const;

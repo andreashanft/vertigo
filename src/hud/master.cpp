@@ -23,6 +23,7 @@
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
 #include "fight/boats/player.h"
+#include "fight/weapons/torpedo.h"
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 
@@ -83,9 +84,12 @@ void Master::draw()
     Matrix m = m_hud->hudProjectionMatrixInverted() * m_hud->scenario()->projectionMatrix() * m_hud->scenario()->cameraMatrix();
     fight::Target &target = m_hud->scenario()->target();
 
-    // the torpedoes among them, framed like the units by friend or foe (KNOWLEDGE.md 9.11)
+    // the torpedoes among them, framed like the units by friend or foe (KNOWLEDGE.md 9.11); Alt+T
+    // and Alt+S leave some out
     for (const auto &entry : m_hud->scenario()->sonar())
     {
+        if (!m_hud->scenario()->sonar().isShown(entry))
+            continue;
         Vector4D point4 = m * Vector4D(entry.object->center(), 1);
         drawPoint(point4, rect, entry.object == target.locked(), entry.isFriend, entry.isPassive);
     }
@@ -185,19 +189,22 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
         const fight::Player *player = m_hud->scenario()->player();
         const bool torpedoLock = target.locked() && player->lockTarget() == target.locked() && player->lockProgress() > 0;
 
-        if (torpedoLock && player->lockProgress() >= 1)
-            // a homing torpedo would follow this target
-            tex = isPassive ? &m_lockPassiveYellow : &m_lockActiveYellow;
-        else if (!isPassive)
-            tex = isFriend && m_hud->scenario()->blink() ? &m_lockActiveGreen : &m_lockActiveRed;
+        // the ring red once a torpedo could leave at the target (always without torpedoes), yellow
+        // while the magazine changes or loads one or a homing one locks on; a friend's blinks
+        // between green and that colour
+        if (isFriend && m_hud->scenario()->blink())
+            tex = isPassive ? &m_lockPassiveGreen : &m_lockActiveGreen;
+        else if (player->torpedoArmed())
+            tex = isPassive ? &m_lockPassiveRed : &m_lockActiveRed;
         else
-            tex = isFriend && m_hud->scenario()->blink() ? &m_lockPassiveGreen : &m_lockPassiveRed;
+            tex = isPassive ? &m_lockPassiveYellow : &m_lockActiveYellow;
         tex->draw(point.x - tex->width()/2, point.y - tex->height()/2, &m_clipRect);
 
         // the distance, and while a homing torpedo locks on the seconds left to one decimal on the
-        // same line ("72M  0:5S", the original's separator is a colon), the two centred together
+        // same line ("72M  0:5S", the original's separator is a colon), the two centred together;
+        // a far contact's ring (passive) has neither
         String line = isPassive ? String() : String("%1M").arg(static_cast<int>(glm::round(target.distance())));
-        if (torpedoLock && player->lockProgress() < 1)
+        if (torpedoLock && player->lockProgress() < 1 && !isPassive)
         {
             const int tenths = static_cast<int>(std::ceil(10*player->lockRemaining()));
             line += String("%1%2:%3S").arg(line.isEmpty() ? "" : "  ").arg(tenths/10).arg(tenths % 10);
@@ -210,7 +217,10 @@ void Master::drawPoint(const Vector4D &point4, const Rect &rect, bool isLocked, 
 
         if (!isPassive)
         {
-            m_hud->fontGreen().draw(target.locked()->name(), Rect(point.x - 100, point.y - 34, 200, -1), true, false, &m_clipRect);
+            // a torpedo has no designation there (in English, in the German version too)
+            const bool torpedo = dynamic_cast<const fight::Torpedo *>(target.locked()) != nullptr;
+            m_hud->fontGreen().draw(torpedo ? String("NO DESIGNATION") : target.locked()->name(), Rect(point.x - 100, point.y - 34, 200, -1),
+                                    true, false, &m_clipRect);
 
             if (m_hud->scenario()->sonar().detectArmor())
             {

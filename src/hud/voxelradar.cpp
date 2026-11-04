@@ -387,6 +387,9 @@ void VoxelRadar::render(fight::Scenario *scenario)
     const bool bright = scenario->sonar().torpedoesBright();
     for (const auto &entry : scenario->sonar())
     {
+        // (Alt+T and Alt+S leave some out)
+        if (!scenario->sonar().isShown(entry))
+            continue;
         if (entry.isTorpedo)
         {
             drawLine(entry.object->center(), bright ? gfx::rgb(248, 12, 0) : gfx::rgb(160, 0, 0));

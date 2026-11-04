@@ -45,6 +45,7 @@ public:
     void load(const String &file, int rate = 0);
     void load(const String &leftFile, const String &rightFile);
     void setVolume(float volume);
+    float volume() const { return m_volume; }
     void setRandomPitch(float randomPitch);
     void setPitch(float pitch);
     // makes the sound come from a point in the world (sounds are attached to the listener otherwise)

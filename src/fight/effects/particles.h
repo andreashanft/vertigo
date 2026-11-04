@@ -87,6 +87,7 @@ public:
         float noise;
         Vector3D position;
         Vector3D velocity;
+        float fade;     // the Torch's torch: 1 while it burns, down to 0 as it shrinks away
     };
     // adds a piece of debris as a decoy; false if it wasn't added
     bool addDecoy(Billboard *billboard, Decoy kind, int faction, const Vector3D &position, const Vector3D &velocity, float angle);

@@ -18,6 +18,7 @@
 #include "enginesounds.h"
 #include "scenario.h"
 #include "boats/simpleboat.h"
+#include "effects/particles.h"
 #include "sfx/samplemap.h"
 
 #include <glm/geometric.hpp>
@@ -33,6 +34,8 @@ namespace {
 // how many engines are heard at once, and how far
 const size_t MaxEngines = 4;
 const float MaxDistance = 300.0f;
+// a torch's sound fades out over the last fifth of the particles' range
+const float TorchEdge = 0.2f;
 
 }
 
@@ -47,11 +50,48 @@ EngineSounds::~EngineSounds()
 {
     for (auto &playing : m_playing)
         playing.second->stop(); // deletes the copy
+    for (auto &torch : m_torches)
+        torch.second->stop();
+}
+
+
+// The Torch's torches (sample 33, at full volume) are heard as long as they are drawn, quieter
+// with distance and silent where the particles are no longer drawn, and they fade as they shrink
+// away
+void EngineSounds::updateTorches()
+{
+    std::map<int, sfx::Sound *> playing;
+    for (const Particles::DecoyInfo &decoy : m_scenario->decoys())
+    {
+        if (decoy.kind != Particles::Decoy::Torch)
+            continue;
+        const float distance = glm::length(decoy.position - m_scenario->eye());
+        const float edge = glm::clamp((Particles::Range - distance)/(TorchEdge*Particles::Range), 0.0f, 1.0f);
+        if (edge <= 0 || decoy.fade <= 0)
+            continue;
+        auto it = m_torches.find(decoy.id);
+        sfx::Sound *sound = it != m_torches.end() ? it->second : nullptr;
+        if (it != m_torches.end())
+            m_torches.erase(it);
+        else
+            sound = sfx::SampleMap::loopAt(sfx::Sample::Torch, decoy.position.x, decoy.position.y, decoy.position.z);
+        if (!sound)
+            continue;
+        sound->setPosition(decoy.position.x, decoy.position.y, decoy.position.z);
+        sound->setVolume(sfx::SampleMap::get(sfx::Sample::Torch).volume()*decoy.fade*edge);
+        playing[decoy.id] = sound;
+    }
+    // those gone, shrunk away or out of reach
+    for (auto &torch : m_torches)
+        torch.second->stop();
+    m_torches.swap(playing);
 }
 
 
 void EngineSounds::update()
 {
+    updateTorches();
+
     // the nearest moving units, with the engine sound of their class
     struct Candidate
     {

@@ -96,8 +96,9 @@ void SonarMonitor::drawAt(const Point &at, int viewRadius)
     const bool bright = m_hud->scenario()->sonar().torpedoesBright();
     for (const auto &entry : m_hud->scenario()->sonar())
     {
-        // the original draws no neutral contact here once the sonar tells friend from foe
-        if (entry.isNeutral)
+        // the original draws no neutral contact here once the sonar tells friend from foe; Alt+T
+        // and Alt+S leave out more
+        if (entry.isNeutral || !m_hud->scenario()->sonar().isShown(entry))
             continue;
         Vector2D dir = Vector2D(m * Vector4D(entry.object->position(), 1));
         float distance = glm::length(dir);

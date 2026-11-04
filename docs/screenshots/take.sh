@@ -47,8 +47,8 @@ shot() {
     echo "$name.jpg"
 }
 
-# the main menu (a click ends the title sequence)
-shot main-menu --click 1=320,240 --screenshot 3=main-menu.png --timeout 4
+# the main menu (after the presents picture, which shows for a second)
+shot main-menu --screenshot 3=main-menu.png --timeout 4
 # Topo's Asylum: a new game taken to the station, without the intro, movies and dialogues
 shot topos-asylum --new-game --station st0203 --screenshot 3=topos-asylum.png --timeout 4
 # the depot with a Succubus: the open mission's depot

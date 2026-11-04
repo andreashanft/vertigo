@@ -80,16 +80,23 @@ void MasterMonitor::draw()
         txtName = object->name();
         // what it does: exploding through its destruction sequence, paralyzed, or its orders
         // (docs/ROADMAP.md, appendix P)
+        const fight::Torpedo *torpedo = dynamic_cast<const fight::Torpedo *>(object);
         if (m_hud->scenario()->sonar().detectActivity())
         {
-            if (object->isDying())
+            // a torpedo attacks ("GREIFT AN"), sinks once its engine has stopped ("SINKT AB") and
+            // explodes ("EXPLODIERT")
+            if (torpedo && !torpedo->isDying())
+                txtAction = txt::StringTable::get(torpedo->isSpent() ? txt::Fight78 : txt::Fight77);
+            else if (object->isDying())
                 txtAction = txt::StringTable::get(txt::Fight72);
             else if (object->eventParalyze()->isCompleted() && object->shockShield() < 0)
                 txtAction = txt::StringTable::get(txt::Fight81);
             else if (object->orders())
                 txtAction = txt::StringTable::get(object->orders()->activity());
         }
-        if (object->isIdentified())
+        if (torpedo)
+            txtCargo = "???";
+        else if (object->isIdentified())
             txtCargo = object->cargo();
         else
             txtCargo = txt::StringTable::get(txt::Target_NotIdentified);

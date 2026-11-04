@@ -32,7 +32,8 @@ class Object;
 class Scenario;
 
 
-// The engines of the nearest moving units, as looping sounds from where the units are.
+// The engines of the nearest moving units and the Torch's burning torches, as looping sounds from
+// where they are.
 class EngineSounds
 {
 public:
@@ -43,8 +44,12 @@ public:
     void update();
 
 private:
+    void updateTorches();
+
+private:
     Scenario *m_scenario;
     std::map<const Object *, sfx::Sound *> m_playing;
+    std::map<int, sfx::Sound *> m_torches;     // by the decoy's id
 };
 
 

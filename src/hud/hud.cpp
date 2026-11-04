@@ -424,6 +424,9 @@ void HUD::start(fight::Scenario *scenario)
     m_countLongest = 0;
     m_countWork = 0;
     m_navPoint = -1;
+    // the sonar's zoom as at the start of every mission
+    m_sonar1->setScale(360);
+    m_sonar2->setScale(180);
     m_paused = false;
     m_frozen = false;
     m_dimming = 1;
@@ -645,8 +648,14 @@ void HUD::setRect(const Rect &rect)
         h += 480;
     }
     m_integerScaleProjectionMatrix = glm::ortho(0.0f, m_rectHUD.width*640/w, m_rectHUD.height*480/h, 0.0f);
-    m_integerScaleProjectionMatrixInverted = glm::inverse(m_integerScaleProjectionMatrix);
     m_noScaleProjectionMatrix = glm::ortho(0.0f, m_rectHUD.width, m_rectHUD.height, 0.0f);
+    // the monitors, the HUD and its marks on the targets and the crosshair scaled as the cockpit
+    // art is, filling their screens as in the original; settings.ini HUD/fill=false brings back
+    // the monitors in whole-number steps and the marks unscaled
+    if (util::Settings::boolValue("HUD/fill", true) && m_rectHUD.height > 0)
+        m_integerScaleProjectionMatrix = m_noScaleProjectionMatrix
+            = glm::ortho(0.0f, m_rectHUD.width*480/m_rectHUD.height, 480.0f, 0.0f);
+    m_integerScaleProjectionMatrixInverted = glm::inverse(m_integerScaleProjectionMatrix);
     m_noScaleProjectionMatrixInverted = glm::inverse(m_noScaleProjectionMatrix);
 }
 
@@ -947,6 +956,10 @@ void HUD::press(input::KeyEvent *e)
     if (!m_scenario)
         return;
 
+    // O and Alt+A click whatever they do (sample 5)
+    if (e->key() == input::Key_O || (e->key() == input::Key_A && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier))
+        sfx::SampleMap::get(sfx::Sample::Click).play();
+
     // the turret and autopilot menus only take digits, Esc and O; everything else still steers the boat
     const bool turretMenu = m_menu->page() != MissionMenu::Page::None && !m_menu->pauses();
     const bool menuKey = (e->key() >= input::Key_0 && e->key() <= input::Key_9) || e->key() == input::Key_Escape || e->key() == input::Key_O;
@@ -1067,12 +1080,26 @@ void HUD::press(input::KeyEvent *e)
             default: break;
             }
     }
+    // the commands that set something click (sample 5): the speed steps and stop, the engine, the
+    // sonar and its zoom, the locks, the nav point, the armour and system page, what the radars
+    // show (Alt+T, Alt+S) and the turret orders; the keys held for a while (full ahead and
+    // astern, the booster, the gun) don't. Tab, Enter, F1-F4, Alt+I, O and Alt+A click where they
+    // are handled
+    const bool command = (e->key() >= input::Key_F5 && e->key() <= input::Key_F12) || e->key() == input::Key_S || e->key() == input::Key_X ||
+                         e->key() == input::Key_C || e->key() == input::Key_QuoteLeft || e->key() == input::Key_R ||
+                         e->key() == input::Key_L || e->key() == input::Key_U || e->key() == input::Key_J || e->key() == input::Key_G ||
+                         e->key() == input::Key_T || e->key() == input::Key_N || e->key() == input::Key_I;
+    if (command && !(e->modifiers() & input::ControlModifier))
+        sfx::SampleMap::get(sfx::Sample::Click).play();
     if (e->key() == input::Key_N)
     {
         if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_navPoint >= 0)
+            {
                 m_scenario->target().lockNavPoint(m_scenario->navPoints()[m_navPoint]);
+                sfx::SampleMap::get(sfx::Sample::LockOn).play();
+            }
         }
         else
         {
@@ -1082,6 +1109,13 @@ void HUD::press(input::KeyEvent *e)
             if (m_navPoint >= m_scenario->navPoints().size())
                 m_navPoint = -1;
         }
+    }
+    // Alt+S shows only the enemies on the radars and the HUD, or everything again (not the next
+    // speed step)
+    if (e->key() == input::Key_S && (e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
+    {
+        m_scenario->sonar().toggleOnlyEnemies();
+        return;
     }
     if (e->key() == input::Key_R)
     {
@@ -1098,10 +1132,17 @@ void HUD::press(input::KeyEvent *e)
         else
             m_scenario->sonar().toggle();
     }
-    if (e->key() == input::Key_L)
-        m_scenario->target().lockReticle();
-    if (e->key() == input::Key_U)
-        m_scenario->target().lockNearestEnemy();
+    // a lock beeps (sample 7), a contact's whatever torpedo is loaded (a homing torpedo's lock
+    // starts with it, fight::Player) and a nav point's; J, G and T go on to the next one each time
+    fight::Target &target = m_scenario->target();
+    const bool alt = (e->modifiers() & ~input::KeypadModifier) == input::AltModifier;
+    if ((e->key() == input::Key_L && target.lockReticle()) || (e->key() == input::Key_U && target.lockNearestEnemy()) ||
+        (e->key() == input::Key_J && target.lockNextAttacker()) || (e->key() == input::Key_G && target.lockNextTorpedo()) ||
+        (e->key() == input::Key_T && !alt && target.lockNextObject()))
+        sfx::SampleMap::get(sfx::Sample::LockOn).play();
+    // Alt+T hides the friendly torpedoes on the radars and the HUD, or shows them again
+    if (e->key() == input::Key_T && alt)
+        m_scenario->sonar().toggleFriendlyTorpedoes();
     if (e->key() == input::Key_I && !m_slaveMonitors.empty())
     {
         SlaveMonitor *monitor = m_slaveMonitors.back();

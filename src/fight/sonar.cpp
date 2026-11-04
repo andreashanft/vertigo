@@ -150,26 +150,49 @@ void Sonar::update(float elapsedTime)
     }
 
     // every torpedo on its way is a contact, friend or foe, without being detected (KNOWLEDGE.md
-    // 9.11); one that has gone off is no longer on its way
+    // 9.11); one that has gone off is no longer on its way, but stays the locked target while it
+    // explodes
     for (const auto &torpedo : m_scenario->torpedoes())
     {
-        if (torpedo->isDone() || torpedo->isBursting())
+        if (torpedo->isDone() || (torpedo->isBursting() && target.locked() != torpedo.get()))
             continue;
+        const float dist = glm::length(torpedo->center() - m_scenario->position());
+        // a locked torpedo stays locked while it is on its way
+        if (target.locked() == torpedo.get())
+        {
+            lockNotLost = true;
+            target.update(dist, false);
+        }
         m_sonarEntries.emplace_back();
         SonarEntry &entry = m_sonarEntries.back();
         entry.object = torpedo.get();
-        entry.distance = glm::length(torpedo->center() - m_scenario->position());
+        entry.distance = dist;
         entry.isFriend = !m_iff || m_scenario->isFriend(Scenario::PlayerFaction, torpedo->iff());
         entry.isNeutral = false;
         entry.isPassive = false;
         entry.isTorpedo = true;
     }
 
+    // a locked contact the radars no longer show (Alt+T, Alt+S) is lost as well
+    for (const SonarEntry &entry : m_sonarEntries)
+        if (entry.object == target.locked() && !isShown(entry))
+            lockNotLost = false;
+
     if (!lockNotLost)
     {
         target.lockReset();
         sfx::SampleMap::get(sfx::Sample::TargetLost).play();
     }
+}
+
+
+bool Sonar::isShown(const SonarEntry &entry) const
+{
+    // Alt+S does nothing with a sonar that can't tell friend from foe
+    const bool onlyEnemies = m_onlyEnemies && m_iff;
+    if (entry.isTorpedo)
+        return !m_scenario->isFriend(Scenario::PlayerFaction, entry.object->iff()) || (m_friendlyTorpedoes && !onlyEnemies);
+    return !onlyEnemies || (!entry.isFriend && !entry.isNeutral);
 }
 
 

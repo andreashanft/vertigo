@@ -155,7 +155,8 @@ gfx::Image moviePicture(const String &file, int index)
     return frame;
 }
 
-// What gets upscaled, decoded as the game decodes it (each key as the texture made from it has):
+// What gets upscaled, decoded as the game decodes it (each key as the texture made from it has,
+// the presents picture's from its file's name):
 // the full-screen pictures, the model and effect textures, the depot's pictures, icons and movies
 // and the cursor. The fonts and the HUD's own art keep their pixels, as does the terrain: its
 // tiles meet their neighbours at their edges' pixels, which the upscaler changes, and it trades
@@ -167,7 +168,9 @@ std::vector<Item> collect()
         const gfx::Image image = decode();
         if (image.isNull() || image.width() < 8 || image.height() < 8)
             return;
-        const std::uint64_t key = gfx::Upscaled::key(image);
+        std::uint64_t key = gfx::Upscaled::fileKey(file);
+        if (!key)
+            key = gfx::Upscaled::key(image);
         if (!items.count(key))
             items[key] = Item{ key, sharp, std::uint64_t(image.width())*image.height(), std::move(decode), file, picture };
     };

@@ -21,6 +21,8 @@
 
 #include "util/geometry3d.h"
 
+#include <vector>
+
 
 namespace fight {
 
@@ -49,10 +51,22 @@ public:
     NavPoint* lockedNavPoint() const { return m_lockedNavPoint; }
 
     void lockReset();
-    void lockReticle();
-    // the nearest hostile unit the sonar detects (and can tell apart)
-    void lockNearestEnemy();
+    // Each lock returns whether it locked anything.
+    // the contact or nav point in the reticle (L)
+    bool lockReticle();
+    // the nearest of the units attacking the player that the sonar has (U)
+    bool lockNearestEnemy();
+    // the next of the same units, in the sonar's order, the first one after the last (J)
+    bool lockNextAttacker();
+    // the next torpedo on its way after the player (G)
+    bool lockNextTorpedo();
+    // the next contact, friend or foe, that is no torpedo, then the enabled nav points (T)
+    bool lockNextObject();
     void lockNavPoint(NavPoint *navPoint);
+
+private:
+    // locks the one after the locked one among these, the first if none of them is locked
+    bool lockNext(const std::vector<Object *> &objects);
 
 private:
     Scenario *m_scenario;

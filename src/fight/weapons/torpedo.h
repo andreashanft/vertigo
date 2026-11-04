@@ -83,8 +83,13 @@ public:
     const Vector3D& dir() const { return m_dir; }
     // done: exploded or run out; the scenario removes it
     bool isDone() const { return !m_enabled; }
-    // gone off but still at work (the Cluster Bomb's second ring of shards)
+    // gone off: exploding for a moment, the Cluster Bomb with its second ring of shards to come
     bool isBursting() const { return m_burstTime >= 0; }
+    bool isDying() const override { return isBursting(); }
+    // gone as a target: done, or exploding for that moment already
+    bool isGone() const;
+    // its engine has stopped: it sinks until it hits the ground
+    bool isSpent() const { return m_spent; }
 
 public:
     bool update(float elapsedTime);
@@ -128,7 +133,7 @@ private:
     Object *m_inside = nullptr;     // what a torpedo that outlasts its hits (the Subsonics) is passing through
     bool m_blocked = false;         // the ground between it and its goal at the last look
     float m_nextLook = 0;           // when it looks again (every half second)
-    float m_burstTime = -1;         // the Cluster Bomb's burst, -1 before it
+    float m_burstTime = -1;         // when it went off, -1 before
     float m_burstHeading = 0;
 };
 

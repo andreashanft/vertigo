@@ -160,6 +160,20 @@ std::uint64_t Upscaled::key(const Image &image)
 }
 
 
+// FNV-1a over the file's name
+std::uint64_t Upscaled::fileKey(const std::string &file)
+{
+    if (file != "gfx/pic/title/present.pcx")
+        return 0;
+    std::uint64_t hash = 14695981039346656037ull;
+    for (char c : file) {
+        hash ^= static_cast<unsigned char>(c);
+        hash *= 1099511628211ull;
+    }
+    return hash;
+}
+
+
 std::string Upscaled::keyName(std::uint64_t key)
 {
     char name[17];

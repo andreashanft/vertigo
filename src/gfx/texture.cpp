@@ -83,7 +83,7 @@ void TexturePrivate::setFilter(bool smooth)
 }
 
 
-void TexturePrivate::fromImage(const Image &image, bool smooth)
+void TexturePrivate::fromImage(const Image &image, bool smooth, std::uint64_t upscaledKey)
 {
     Texture::Format format = Texture::RGB;
     if (image.format() != Image::RGB888)
@@ -92,8 +92,13 @@ void TexturePrivate::fromImage(const Image &image, bool smooth)
     // an upscaled copy of the image takes its place, smoothed and with mipmaps, as the window
     // shows it at any size
     if (Upscaled::isActive()) {
-        const Image copy = Upscaled::find(Upscaled::key(image));
-        if (copy.width() == image.width()*Upscaled::Scale && copy.height() == image.height()*Upscaled::Scale) {
+        const auto fits = [&image](const Image &copy) {
+            return copy.width() == image.width()*Upscaled::Scale && copy.height() == image.height()*Upscaled::Scale;
+        };
+        Image copy = upscaledKey ? Upscaled::find(upscaledKey) : Image();
+        if (!fits(copy))
+            copy = Upscaled::find(Upscaled::key(image));
+        if (fits(copy)) {
             createEmptyScaled(image.width(), image.height(), format, Upscaled::Scale);
             updateScaled(0, 0, copy);
             generateMipmaps();

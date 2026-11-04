@@ -132,6 +132,8 @@ private:
     ui::Label m_lblLoading;
     ui::Label m_lblLoadingTitle;
     ui::Label m_lblLoadingWait;
+    // the presents picture at the start, shown for a second from its first frame
+    util::ElapsedTimer m_presentsTime;
     // the credits: four full-screen pictures, twelve seconds each
     ui::Label m_credits;
     int m_creditsPage = 0;

@@ -22,6 +22,8 @@
 #include "scenario.h"
 #include "objects/activeobject.h"
 #include "objects/navpoint.h"
+#include "weapons/torpedo.h"
+#include "boats/player.h"
 
 #include <glm/geometric.hpp>
 
@@ -63,15 +65,32 @@ void Target::lockReset()
 }
 
 
-void Target::lockReticle()
+bool Target::lockNext(const std::vector<Object *> &objects)
+{
+    if (objects.empty())
+        return false;
+    const auto current = std::find(objects.begin(), objects.end(), object());
+    Object *next = current == objects.end() || current + 1 == objects.end() ? objects.front() : *(current + 1);
+    if (NavPoint *navPoint = dynamic_cast<NavPoint *>(next))
+        lockNavPoint(navPoint);
+    else
+    {
+        m_locked = static_cast<ActiveObject *>(next);
+        m_lockedNavPoint = nullptr;
+    }
+    return true;
+}
+
+
+bool Target::lockReticle()
 {
     ActiveObject *object = nullptr;
     float minAngle = -1.0f;
 
+    // any contact, a torpedo too (KNOWLEDGE.md 9.8)
     for (const auto &entry : m_scenario->sonar())
     {
-        // the units only; whether the original locks a torpedo is open (TODO.md)
-        if (entry.isTorpedo)
+        if (!m_scenario->sonar().isShown(entry))
             continue;
         Vector3D dir = Vector3D(m_scenario->cameraMatrix() * Vector4D(entry.object->center(), 1));
         dir /= -glm::length(dir);
@@ -82,10 +101,12 @@ void Target::lockReticle()
         }
     }
 
+    bool locked = false;
     if (minAngle > 0.98f)
     {
         m_locked = object;
         m_lockedNavPoint = nullptr;
+        locked = true;
     }
 
     for (NavPoint *navPoint : m_scenario->navPoints())
@@ -99,12 +120,14 @@ void Target::lockReticle()
             minAngle = dir.z;
             m_lockedNavPoint = navPoint;
             m_locked = nullptr;
+            locked = true;
         }
     }
+    return locked;
 }
 
 
-void Target::lockNearestEnemy()
+bool Target::lockNearestEnemy()
 {
     // the nearest of the units attacking the player that the sonar has as a contact, whatever
     // the sonar's friend-or-foe (the original's u works with Spy I too; a hostile unit that has
@@ -112,13 +135,48 @@ void Target::lockNearestEnemy()
     const std::vector<ActiveObject*> &attackers = m_scenario->playerAttackerList();
     const Sonar::SonarEntry *nearest = nullptr;
     for (const auto &entry : m_scenario->sonar())
-        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && (!nearest || entry.distance < nearest->distance))
+        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && m_scenario->sonar().isShown(entry) &&
+            (!nearest || entry.distance < nearest->distance))
             nearest = &entry;
-    if (nearest)
-    {
-        m_locked = nearest->object;
-        m_lockedNavPoint = nullptr;
-    }
+    if (!nearest)
+        return false;
+    m_locked = nearest->object;
+    m_lockedNavPoint = nullptr;
+    return true;
+}
+
+
+bool Target::lockNextAttacker()
+{
+    const std::vector<ActiveObject*> &attackers = m_scenario->playerAttackerList();
+    std::vector<Object *> objects;
+    for (const auto &entry : m_scenario->sonar())
+        if (std::find(attackers.begin(), attackers.end(), entry.object) != attackers.end() && m_scenario->sonar().isShown(entry))
+            objects.push_back(entry.object);
+    return lockNext(objects);
+}
+
+
+bool Target::lockNextTorpedo()
+{
+    std::vector<Object *> objects;
+    for (const auto &entry : m_scenario->sonar())
+        if (entry.isTorpedo && static_cast<const Torpedo *>(entry.object)->target() == m_scenario->player() && m_scenario->sonar().isShown(entry))
+            objects.push_back(entry.object);
+    return lockNext(objects);
+}
+
+
+bool Target::lockNextObject()
+{
+    std::vector<Object *> objects;
+    for (const auto &entry : m_scenario->sonar())
+        if (!entry.isTorpedo && m_scenario->sonar().isShown(entry))
+            objects.push_back(entry.object);
+    for (NavPoint *navPoint : m_scenario->navPoints())
+        if (navPoint->isEnabled())
+            objects.push_back(navPoint);
+    return lockNext(objects);
 }
 
 

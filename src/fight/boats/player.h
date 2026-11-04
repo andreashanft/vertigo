@@ -60,6 +60,9 @@ public:
     ActiveObject* lockTarget() const { return m_lockTarget; }
     float lockProgress() const; // 0-1, 1 when a homing torpedo would follow the target
     float lockRemaining() const; // seconds until the lock is complete
+    // a torpedo could leave at the locked target now (the magazine ready, a homing one locked on),
+    // or the boat has none: the lock ring red rather than yellow
+    bool torpedoArmed() const;
     PlayerTurret* turret(int index) const { return index >= 0 && index < 2 ? m_turrets[index].get() : nullptr; }
     int shieldMax(int index) const { return m_shieldMax[index]; };
     bool engineRunning() const { return m_engineState == EngineRunning || m_engineState == EngineStartup; }

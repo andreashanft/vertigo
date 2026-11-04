@@ -58,6 +58,12 @@ public:
     bool detectArmor() const { return m_detectArmor; }
     bool detectWeapons() const { return m_detectWeapons; }
     bool detectActivity() const { return m_detectActivity; }
+    // what the radars and the HUD's frames show, for the mission: Alt+T leaves out the torpedoes
+    // of the player's side, Alt+S everything but the hostile contacts and torpedoes (only with a
+    // sonar that tells friend from foe); nothing left out can be locked
+    void toggleFriendlyTorpedoes() { m_friendlyTorpedoes = !m_friendlyTorpedoes; }
+    void toggleOnlyEnemies() { m_onlyEnemies = !m_onlyEnemies; }
+    bool isShown(const SonarEntry &entry) const;
 
     // distance at which an object is detected passively / actively
     float passiveRange(const ActiveObject *object) const;
@@ -72,6 +78,8 @@ public:
 
 private:
     Scenario *m_scenario;
+    bool m_friendlyTorpedoes = true;
+    bool m_onlyEnemies = false;
     float m_delay;
     float m_passiveRange;
     float m_passiveRangeMult;

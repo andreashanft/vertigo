@@ -94,7 +94,10 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     gfx::Font fontMedium("gfx:fnt/dpmedium.fnt", colorTable);
     gfx::Font fontLarge("gfx:fnt/dplarge.fnt", colorTable);
 
-    m_presents.setTexture(gfx::Image::loadPCX("gfx:pic/title/present.pcx"));
+    // its upscaled copy found by the file's name: a set made from either version of the picture
+    // (the CD's or the installed one) shows on game data with the other
+    m_presents.setTexture(gfx::Texture(gfx::Image::loadPCX("gfx:pic/title/present.pcx"), true,
+                                       gfx::Upscaled::fileKey("gfx/pic/title/present.pcx")));
     m_title.setTexture(gfx::Image::loadPCX("gfx:pic/title/title.pcx"));
 
     m_backgroundSound.load("sfx:snd/bground/b02.pcl", "sfx:snd/bground/b02.pcr");
@@ -304,6 +307,13 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
 
 void MainMenu::draw()
 {
+    // the presents picture for a second (its loading is done when it first shows), then the menu
+    if (m_state == Presents) {
+        if (!m_presentsTime.isValid())
+            m_presentsTime.start();
+        else if (m_presentsTime.elapsed() >= 1000)
+            changeState(Title);
+    }
     // each picture of the credits for twelve seconds, then back to the menu
     if (m_state == Credits && m_creditsTime.elapsed() >= 12000) {
         if (m_creditsPage < 3)
@@ -410,8 +420,8 @@ void MainMenu::mousePressEvent(input::MouseEvent *event)
 
 void MainMenu::keyPressEvent(input::KeyEvent *event)
 {
-    // any key ends the credits
-    if (m_state == Credits) {
+    // any key ends the credits and the presents picture
+    if (m_state == Credits || m_state == Presents) {
         changeState(Title);
         return;
     }
