@@ -155,10 +155,17 @@ void Sonar::update(float elapsedTime)
     {
         if (torpedo->isDone() || torpedo->isBursting())
             continue;
+        const float dist = glm::length(torpedo->center() - m_scenario->position());
+        // a locked torpedo stays locked while it is on its way
+        if (target.locked() == torpedo.get())
+        {
+            lockNotLost = true;
+            target.update(dist, false);
+        }
         m_sonarEntries.emplace_back();
         SonarEntry &entry = m_sonarEntries.back();
         entry.object = torpedo.get();
-        entry.distance = glm::length(torpedo->center() - m_scenario->position());
+        entry.distance = dist;
         entry.isFriend = !m_iff || m_scenario->isFriend(Scenario::PlayerFaction, torpedo->iff());
         entry.isNeutral = false;
         entry.isPassive = false;
