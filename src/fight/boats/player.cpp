@@ -199,9 +199,9 @@ void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObje
     m_shield[side] -= kinetic;
     if (kinetic > 0 && m_shieldMax[side] > 0)
         damageSystems(side, float(before)/m_shieldMax[side], float(m_shield[side])/m_shieldMax[side]);
-    // a shot rattles the cockpit a little, a torpedo fully
+    // every hit rattles the cockpit, a gun's shot by half, a torpedo fully
     if (kinetic > 0)
-        m_scenario->headMotion().shake(std::min(1.0f, std::sqrt(kinetic/2000.0f)));
+        m_scenario->headMotion().shake(std::clamp(std::sqrt(kinetic/2000.0f), 0.5f, 1.0f));
     storeCondition();
     if (m_shield[side] < 0)
         destroy();
@@ -459,8 +459,12 @@ bool Player::update(float elapsedTime)
         drawEnergy(0.15f);
         sfx::SampleMap::get(sfx::Sample::Booster).play();
     }
+    // and rattles the cockpit while it fires
     if (m_boosting)
+    {
         drawEnergy(1.2f*elapsedTime);
+        m_scenario->headMotion().shake(0.5f);
+    }
     m_speedBoost = m_boosting ? 2.0f : 1.0f;
     m_accelerationBoost = m_boosting ? 2.5f : 1.0f;
 

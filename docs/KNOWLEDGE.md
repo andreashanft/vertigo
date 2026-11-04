@@ -1530,7 +1530,9 @@ currents dark teal (the shading table's entry 65) for `spd` 0 and light cyan
   ([9.7](#97-sonars)). A hostile target's name is red.
 - The mission menus (the Esc menu, the autopilot menu) are FIGHTEXT texts
   ([11.1](#111-fightext)). The Esc menu has 0 continue, 1 abort and 2
-  restart (50–52), and in the campaign 3 the last saved game (62).
+  restart (50–52), and in the campaign 3 the last saved game (62); the
+  trainings and the open mission have no saved game to load and leave it
+  out of all the menus.
 
 ### 9.6 The slave monitors and their pages
 
@@ -1681,9 +1683,9 @@ for all without IFF.
 
 ### 9.12 Cockpit shake
 
-The cockpit art and its instruments shake when the boat is hit, bounces off
-something or an explosion goes off nearby; the world and the HUD in the
-window don't. The movement is small. The art is shown a little enlarged, so
+The cockpit art and its instruments shake when the boat is hit (by a gun's
+shot too), bounces off something or an explosion goes off nearby, and
+rattle while the booster fires; the world and the HUD in the window don't. The movement is small. The art is shown a little enlarged, so
 only hard shakes show its edges. It can't be switched off (the installed
 files' `DEEPTEXT.DES` has "Cockpit Rütteln: JA/NEIN", 191/192, for an
 option).
