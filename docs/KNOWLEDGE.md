@@ -1587,8 +1587,9 @@ destroyed on its own by shooting at it.
   German version too) and its distance under it; the master monitor names it
   by its type (CLUSTER BOMB, HAMMERHEAD) with its cargo `???`, and its
   action is "Greift An" (FIGHTEXT 77) while it runs, "Sinkt ab" (78) once
-  its engine has stopped and "Explodiert" (72) when it has gone off. Once it
-  is gone the voice says "target destroyed" (69), as for a unit.
+  its engine has stopped and, when it has gone off, "Explodiert" (72) for a
+  split second at most, sometimes not at all. Then the voice says "target
+  destroyed" (69), as for a unit.
 - Three keys go on to the next one with each press, round all there are in
   range: T the next object, friend or foe (buildings such as the oxygen
   tanks, crawlers, any contact but the torpedoes), then the nav points; J

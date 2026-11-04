@@ -83,9 +83,11 @@ public:
     const Vector3D& dir() const { return m_dir; }
     // done: exploded or run out; the scenario removes it
     bool isDone() const { return !m_enabled; }
-    // gone off: exploding for a second, the Cluster Bomb with its second ring of shards to come
+    // gone off: exploding for a moment, the Cluster Bomb with its second ring of shards to come
     bool isBursting() const { return m_burstTime >= 0; }
     bool isDying() const override { return isBursting(); }
+    // gone as a target: done, or exploding for that moment already
+    bool isGone() const;
     // its engine has stopped: it sinks until it hits the ground
     bool isSpent() const { return m_spent; }
 

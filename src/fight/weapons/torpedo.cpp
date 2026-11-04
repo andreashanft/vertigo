@@ -38,11 +38,12 @@ namespace fight {
 namespace {
 
 // the Cluster Bomb's shards (SHOOT.DES 7 and 8, "KineticStrength Area = 7600" in TORPEDO.DES): a ring
-// a metre out at the burst, another 6.25 m out a second later; every torpedo explodes for that
-// second, still a locked target meanwhile
+// a metre out at the burst, another 6.25 m out a second later
 const float ShardsNear = 1.0f;
 const float ShardsFar = 6.25f;
 const float ShardsDelay = 1.0f;
+// a torpedo that has gone off stays a locked target, exploding, for this long (s)
+const float Exploding = 0.3f;
 // a homing torpedo looks for the ground between it and its goal this often (s)
 const float LookInterval = 0.5f;
 // and climbs this far over it (m)
@@ -210,12 +211,13 @@ bool Torpedo::update(float elapsedTime)
     m_time += elapsedTime;
     if (isBursting())
     {
-        if (m_time >= m_burstTime + ShardsDelay)
+        if (m_type.index == 18 && m_time >= m_burstTime + ShardsDelay)
         {
-            if (m_type.index == 18)
-                shards(ShardsFar, glm::radians(30.0f));
+            shards(ShardsFar, glm::radians(30.0f));
             disable();
         }
+        else if (m_type.index != 18 && m_time >= m_burstTime + Exploding)
+            disable();
         return false;
     }
     // a decoy can draw a homing torpedo away once, and only with the type's InfluenceProbability;
@@ -394,7 +396,7 @@ void Torpedo::detonate(const Vector3D &position, ActiveObject *hit, bool ground)
     default:
         m_scenario->effectManager().addEffect(Effects::Explosion_1, position);
     }
-    // exploding for a second, unseen, where it went off
+    // exploding for a moment, unseen, where it went off
     m_target = nullptr;
     m_burstTime = m_time;
     setPosition(position);
@@ -469,6 +471,12 @@ bool Torpedo::intersect(const Vector3D &start, const Vector3D &dir, float radius
 
 
 // shot down
+bool Torpedo::isGone() const
+{
+    return isDone() || (isBursting() && m_time >= m_burstTime + Exploding);
+}
+
+
 void Torpedo::destroy()
 {
     detonate(m_position, nullptr);
