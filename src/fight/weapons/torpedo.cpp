@@ -136,6 +136,7 @@ Torpedo::Torpedo(Scenario *scenario, int type, const Vector3D &position, const V
     m_kineticStrength = m_type.kineticStrength;
     m_shockStrength = m_type.shockStrength;
     m_info.iff = owner ? owner->iff() : 0;
+    m_info.name = m_type.name.toUpper(); // the master monitor names a locked torpedo by its type
     m_box = BoundingBox(position - Vector3D(1.5f), position + Vector3D(1.5f));
     m_static = false;
     if (m_target)
