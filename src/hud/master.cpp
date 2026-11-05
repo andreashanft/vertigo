@@ -114,9 +114,12 @@ void Master::draw()
         const Vector4D point4 = m * Vector4D(turret->target()->center(), 1);
         const Vector2D centre(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
         const Vector2D half(rect.width/2.0f, rect.height/2.0f);
-        Vector2D offset = Vector2D(point4)/std::max(std::abs(point4.w), 1e-4f) - centre;
+        // (behind the eye the projection mirrors the way to the target, so it is turned back and
+        // pushed out to the edge; straight behind, the cross goes to the bottom edge)
+        const float w = std::abs(point4.w) > 1e-4f ? point4.w : 1e-4f;
+        Vector2D offset = Vector2D(point4)/w - centre;
         if (point4.z > 0)
-            offset = -offset*1000.0f;
+            offset = glm::length(offset) > 1e-3f ? -offset*1000.0f : Vector2D(0, half.y);
         const float reach = std::max(std::abs(offset.x)/half.x, std::abs(offset.y)/half.y);
         if (reach > 1)
             offset /= reach;

@@ -199,9 +199,9 @@ void Player::damage(int kinetic, int shock, const Vector3D &position, ActiveObje
     m_shield[side] -= kinetic;
     if (kinetic > 0 && m_shieldMax[side] > 0)
         damageSystems(side, float(before)/m_shieldMax[side], float(m_shield[side])/m_shieldMax[side]);
-    // a shot rattles the cockpit a little, a torpedo fully
+    // every hit rattles the cockpit, a gun's shot by half, a torpedo fully
     if (kinetic > 0)
-        m_scenario->headMotion().shake(std::min(1.0f, std::sqrt(kinetic/2000.0f)));
+        m_scenario->headMotion().shake(std::clamp(std::sqrt(kinetic/2000.0f), 0.5f, 1.0f));
     storeCondition();
     if (m_shield[side] < 0)
         destroy();
@@ -458,6 +458,8 @@ bool Player::update(float elapsedTime)
         m_boosting = true;
         drawEnergy(0.15f);
         sfx::SampleMap::get(sfx::Sample::Booster).play();
+        // a rattle of the cockpit as it fires, fading away
+        m_scenario->headMotion().shake(0.4f);
     }
     if (m_boosting)
         drawEnergy(1.2f*elapsedTime);
@@ -535,11 +537,7 @@ bool Player::update(float elapsedTime)
         {
             ActiveObject *activeObject = dynamic_cast<ActiveObject *>(colObject);
             if (activeObject)
-            {
-                m_scenario->setPlayerRamming(true);
                 activeObject->damage(m_kineticStrength, m_shockStrength, posObject - normObject*1.5f, this);
-                m_scenario->setPlayerRamming(false);
-            }
             damage(colObject->kineticStrength(), colObject->shockStrength(), posObject - normObject*1.5f);
             sfx::SampleMap::get(sfx::Sample::Boat_Collision).playInstance();
             const Vector3D bounce = -2*glm::dot(m_velocity, normObject)*normObject;

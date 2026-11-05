@@ -107,6 +107,11 @@ const float LookCentred = glm::radians(1.0f);
 const float LookFollow = 0.08f;
 // the d-pad changes the speed again and again while held: after this long, then at this interval
 const float RepeatDelay = 0.4f;
+// the 2D cockpit's shake (HUD::cockpitShake): the panel's distance (m), the share of the head's
+// jolts and rattle it shows and its enlargement
+const float ShakePanel = 0.6f;
+const float ShakeShare = 0.5f;
+const float ShakeEnlarge = 1.02f;
 const float RepeatInterval = 0.1f;
 
 void readSettings()
@@ -328,6 +333,7 @@ void HUD::load(game::Boat *boat)
     m_pause = pause;
 
     m_menu = new MissionMenu(this, m_center);
+    m_menu->setLoadOffered(m_loadOffered);
     m_children.emplace_back(m_menu);
     m_pages = new Pages(this);
     m_children.emplace_back(m_pages);
@@ -770,11 +776,14 @@ void HUD::drawFrame()
 
     m_scenario->draw();
 
+    // the cockpit and its instruments shake, the world and the HUD in the window don't
+    const Matrix shake = cockpitShake();
     setupGL(false);
+    gfx::Pipeline::setProjection(m_projectionMatrix*shake);
     m_cockpit.doDraw();
 
     m_integerScale = true;
-    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix);
+    gfx::Pipeline::setProjection(m_integerScaleProjectionMatrix*shake);
     m_integerScaleWidget.doDraw();
 
     m_integerScale = false;
@@ -790,6 +799,39 @@ void HUD::drawFrame()
     if (rect().x != m_rectGL.x || rect().y != m_rectGL.y)
         glViewport(m_rectGL.x*pixelRatio, m_rectGL.y*pixelRatio, m_rectGL.width*pixelRatio, m_rectGL.height*pixelRatio);
     drawTouchControls(pixelRatio);
+}
+
+
+void HUD::setLoadOffered(bool offered)
+{
+    m_loadOffered = offered;
+    if (m_menu)
+        m_menu->setLoadOffered(offered);
+}
+
+
+// The 2D cockpit's shake: its art and instruments are a panel ShakePanel in front of the eye, seen
+// from the head as the jolts and the rattle move it (half as far as the 3D cockpit's), while the
+// world stays; drawn ShakeEnlarge times as large about the art's centre, so that only hard shakes
+// show its edges. A map in the art's pixels, applied before its projection
+Matrix HUD::cockpitShake() const
+{
+    const Matrix head = glm::inverse(m_scenario->headMotion().shakeTransform());
+    const Vector2D center(m_center);
+    auto seen = [&](const Vector2D &point) {
+        const Vector3D panel((point.x - center.x)/m_focal*ShakePanel, -(point.y - center.y)/m_focal*ShakePanel, -ShakePanel);
+        const Vector3D eye = glm::mix(panel, Vector3D(head*Vector4D(panel, 1)), ShakeShare);
+        return center + Vector2D(eye.x, -eye.y)*(m_focal/-eye.z);
+    };
+    const Vector2D origin = seen(center);
+    const Vector2D x = (seen(center + Vector2D(100, 0)) - origin)/100.0f;
+    const Vector2D y = (seen(center + Vector2D(0, 100)) - origin)/100.0f;
+    // u' = origin + x*(u - center) + y*(v - center), after the enlargement about (320, 240)
+    Matrix shake(1);
+    shake[0] = Vector4D(x, 0, 0);
+    shake[1] = Vector4D(y, 0, 0);
+    shake[3] = Vector4D(origin - x*center.x - y*center.y, 0, 1);
+    return shake*glm::translate(Vector3D(320, 240, 0))*glm::scale(Vector3D(ShakeEnlarge, ShakeEnlarge, 1))*glm::translate(Vector3D(-320, -240, 0));
 }
 
 
@@ -985,9 +1027,11 @@ void HUD::press(input::KeyEvent *e)
             return;
         }
     }
+    // (no Esc menu while a view from outside is shown)
     if (e->key() == input::Key_Escape)
     {
-        m_menu->open(MissionMenu::Page::Main);
+        if (!m_scenario->outside())
+            m_menu->open(MissionMenu::Page::Main);
         return;
     }
     if (e->key() == input::Key_H && !(e->modifiers() & ~input::KeypadModifier))

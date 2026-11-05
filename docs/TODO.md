@@ -29,18 +29,19 @@ independently; the answer goes into KNOWLEDGE.md.
 
 Missions and the campaign:
 
-- Whether the next mission starts with the damage the boat kept, and whether
-  buying new armour mends the sides.
+- Whether buying new armour mends the sides.
 - What AutoEnd and InstantEnd look like (T3).
 - Whether the training boats have Titanium Armor (their setups' armour 3,
   counted from 0 like the other items; KNOWLEDGE.md 12.4).
 - Whether the autopilot menu lists the start station.
-- Whether the death menu adds loading the last game in the campaign (it
-  showed abort and restart; Vertigo always offers all three).
 - `wccond 9` (56 units, s00303 and s02006 among them).
 - Whether a slot with a break condition ends on its own (T5).
-- In a squadron of several big ships the original counts every block that
-  goes; Vertigo counts the ship.
+- A squadron is the units with the same name. Where several big ships share
+  one (the six freighters of Rette Hilfstransport, the two of S01203), the
+  original counts every destroyed block towards the squadron's "destroyed"
+  count, so a condition on that squadron can be met after a few blocks;
+  Vertigo counts each ship once, when its first block goes. Whether the
+  mission reacts that early in the original.
 
 Units' behaviour:
 
@@ -52,25 +53,9 @@ Units' behaviour:
   through the mountings in turn).
 - How many homing torpedoes the player can have on it at once (every AI
   unit takes at most 4; Vertigo keeps 8 for the player).
-- Which rammed friends give the friendly-fire warning: KNOWLEDGE.md 2.6 has
-  only the big ships, but boats gave it in play (Vertigo counts the big
-  ships).
 
 Sensors, HUD and views:
 
-- The sonars' detection ranges.
-- Whether the units' event messages show as they happen (they are in the
-  radio log).
-- What the monitors' lamps show.
-- Whether big buildings show as blocks or as ground on the radar.
-- What the turrets' aim cross does for a target behind the boat (Vertigo puts
-  it on the edge away from the target).
-- In the outside views: where the radio message sits in the bar, whether the
-  pause shows, what the target's views do when the sonar loses the target
-  (Vertigo goes back to the cockpit), and what the camera does the moment a
-  view opens. At the furthest zoom Vertigo's boat shows about 10 rows lower
-  than the original's, in the look-at view about 16 rows lower.
-- Whether tanks and torpedoes roll in their turns.
 
 World, physics and effects:
 
@@ -128,6 +113,65 @@ comparisons above.
   This one is kept on purpose.
 - Vertigo's ground plans can't be attacked, so their attacker lists have no
   effect.
+- PAUSE shows over the views from outside too.
+- The master monitor's terrain radar draws every building as its model, in
+  more detail than the original's reduced picture.
+- The lamps beside the monitors light up with the monitor's mode; the
+  original's never change.
+
+## New features
+
+Feature ideas beyond the original, not needed for 1.0.
+
+| # | Item | Notes |
+|---|---|---|
+| F1 | Upscaled art for owners of the game | Share the AI-upscaled art in a way that it can be used only when the original data is present |
+
+### F1: Upscaled art for owners of the game
+
+Distribute an encrypted package that uses the original game data as a key to open it. Its download
+link can then be public, and sharing the link should not violate any copyright law.
+
+1. Encrypt each upscaled image with a key taken from its own original image,
+   for example `SHA-256("vertigo-art-v1" ‖ the source's pixels and palette)`,
+   with AES-256-GCM or ChaCha20-Poly1305. The file keeps its public name, the
+   64-bit `gfx::Upscaled::key` of its source, so the game knows which file
+   belongs to which image.
+2. Publish the encrypted pack anywhere: a GitHub release asset, a static page
+   or a shared folder. No database, expiring links or server logic.
+3. Decrypt it in Vertigo, which already has the original data loaded: an
+   Options button such as **Upscaled graphics: IMPORT PACK**, and
+   `vertigo --import-pack FILE` for the terminal and the iPad's workflow. For
+   each image it computes the key, decrypts the matching file and writes it
+   to `Game Data Upscaled`, as the upscaler does.
+4. Building the pack: A script uses the installed data and the according AI-upscaled set,
+   mapping the set's files to their sources by their names. The key must be
+   derived as in the game.
+
+#### English and German Data Sets
+
+The language versions sort themselves out. Images that are the same in the
+German and English versions (most textures, models and backgrounds) open for
+everyone. Images with German lettering open only with the German data, and
+English owners keep their original images for those, which is right, as the
+German upscale shows German text. Upscales of the English images can be added
+to the pack later without changing anything else.
+
+#### Caveats
+
+- A tiny or plain image (one colour) could be guessed. Leave images under a
+  size threshold unencrypted, or mix a few large files that are the same in
+  both versions (the main menu's art) into every key.
+- Anyone can still pass on the decrypted images; no download scheme prevents
+  that.
+- It's a technical barrier, not a licence: the pack is still derived from the
+  original's art.
+
+#### Alternatives considered
+
+A hash challenge on a web page. It is weaker and needs more: one owner can publish
+every file's hash, and stopping shared links needs signed, expiring URLs and a
+running server.
 
 ## Notes
 

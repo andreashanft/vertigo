@@ -27,8 +27,9 @@ namespace fight {
 
 // The pilot's head moving inside the cockpit: held by a spring (the neck), it lags behind the
 // boat's accelerations and turns, is thrown about when the boat bounces off something and
-// rattles on hits and nearby explosions. Only the 3D cockpit shows it, as parallax between the
-// instruments and the window; the simulation never looks at it.
+// rattles on hits and nearby explosions. The 3D cockpit shows it as parallax between the
+// instruments and the window, the 2D cockpit only its jolts and rattle (shakeTransform()); the
+// simulation never looks at it.
 // Everything is in the boat's camera frame (x right, y up, -z forward), in metres and radians.
 class HeadMotion
 {
@@ -51,6 +52,8 @@ public:
     const Vector3D& angles() const { return m_angles; }
     // the head's pose in the boat's camera frame
     Matrix transform() const;
+    // the same from the jolts and the rattle alone, without the lag behind turns and accelerations
+    Matrix shakeTransform() const;
 
 private:
     float m_strength = 1;
@@ -65,9 +68,15 @@ private:
     Vector3D m_rotation;        // and rotation (pitch, yaw, roll)
     Vector3D m_rotationVelocity;
     float m_rattle = 0;         // envelope of the rattle
+    Vector3D m_joltPosition;    // the same neck thrown about by the jolts alone
+    Vector3D m_joltVelocity;
+    Vector3D m_joltRotation;
+    Vector3D m_joltRotationVelocity;
 
     Vector3D m_offset;          // position and rotation including the rattle
     Vector3D m_angles;
+    Vector3D m_shakeOffset;     // those of the jolts and the rattle alone
+    Vector3D m_shakeAngles;
 };
 
 

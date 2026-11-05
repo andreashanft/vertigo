@@ -93,6 +93,7 @@ Chapter::Chapter(const String &name, std::function<void(Renderer*)> funcSetRende
     m_HUD->eventAbort() += [this]() { abortMission(); };
     m_HUD->eventRestart() += [this]() { restartMission(); };
     m_HUD->eventLoad() += [this]() { loadLastSave(); };
+    m_HUD->setLoadOffered(true);
 }
 
 

@@ -77,10 +77,13 @@ void HeadMotion::jolt(const Vector3D &velocityChange)
 {
     // into the camera frame; the head keeps going while the boat is stopped or pushed
     const Vector3D change = glm::transpose(m_lastBasis)*velocityChange;
-    m_velocity -= change*JoltPosition;
     // hitting something in front nods the head forward, from the side tilts it
-    m_rotationVelocity.x -= (change.z + 0.4f*change.y)*JoltNod;
-    m_rotationVelocity.z += change.x*JoltRoll;
+    const Vector3D thrown = -change*JoltPosition;
+    const Vector3D turn(-(change.z + 0.4f*change.y)*JoltNod, 0, change.x*JoltRoll);
+    m_velocity += thrown;
+    m_rotationVelocity += turn;
+    m_joltVelocity += thrown;
+    m_joltRotationVelocity += turn;
     shake(std::min(1.0f, glm::length(velocityChange)/10.0f));
 }
 
@@ -130,18 +133,43 @@ void HeadMotion::update(float elapsedTime, const Vector3D &velocity, const glm::
     m_rotationVelocity += torque*elapsedTime;
     m_rotation = clampLength(m_rotation + m_rotationVelocity*elapsedTime, MaxAngle);
 
+    const Vector3D joltForce = -PositionOmega*PositionOmega*m_joltPosition - 2*PositionDamping*PositionOmega*m_joltVelocity;
+    m_joltVelocity += joltForce*elapsedTime;
+    m_joltPosition = clampLength(m_joltPosition + m_joltVelocity*elapsedTime, MaxOffset);
+    const Vector3D joltTorque = -RotationOmega*RotationOmega*m_joltRotation - 2*RotationDamping*RotationOmega*m_joltRotationVelocity;
+    m_joltRotationVelocity += joltTorque*elapsedTime;
+    m_joltRotation = clampLength(m_joltRotation + m_joltRotationVelocity*elapsedTime, MaxAngle);
+
     m_rattle *= std::exp(-elapsedTime/RattleDecay);
     const Vector3D rattlePosition = m_rattle*RattlePosition*Vector3D(noise(m_time, 0.0f), noise(m_time, 1.7f), noise(m_time, 3.1f));
     const Vector3D rattleAngles = m_rattle*RattleAngle*Vector3D(noise(m_time, 4.3f), noise(m_time, 5.9f), noise(m_time, 7.7f));
 
     m_offset = m_strength*clampLength(m_position + rattlePosition, MaxOffset);
     m_angles = m_strength*clampLength(m_rotation + rattleAngles, MaxAngle);
+    m_shakeOffset = m_strength*clampLength(m_joltPosition + rattlePosition, MaxOffset);
+    m_shakeAngles = m_strength*clampLength(m_joltRotation + rattleAngles, MaxAngle);
+}
+
+
+namespace {
+
+Matrix pose(const Vector3D &offset, const Vector3D &angles)
+{
+    return glm::translate(offset) * glm::rotate(angles.y, Vector3D(0, 1, 0)) * glm::rotate(angles.x, Vector3D(1, 0, 0)) * glm::rotate(angles.z, Vector3D(0, 0, 1));
+}
+
 }
 
 
 Matrix HeadMotion::transform() const
 {
-    return glm::translate(m_offset) * glm::rotate(m_angles.y, Vector3D(0, 1, 0)) * glm::rotate(m_angles.x, Vector3D(1, 0, 0)) * glm::rotate(m_angles.z, Vector3D(0, 0, 1));
+    return pose(m_offset, m_angles);
+}
+
+
+Matrix HeadMotion::shakeTransform() const
+{
+    return pose(m_shakeOffset, m_shakeAngles);
 }
 
 

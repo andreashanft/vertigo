@@ -86,6 +86,7 @@ describes the original.
   - [9.9 Help, radio log and briefing](#99-help-radio-log-and-briefing)
   - [9.10 Terrain colours and fog](#910-terrain-colours-and-fog)
   - [9.11 Torpedoes on the radars](#911-torpedoes-on-the-radars)
+  - [9.12 Cockpit shake](#912-cockpit-shake)
 - [10. Views from outside](#10-views-from-outside)
 - [11. Texts and sounds](#11-texts-and-sounds)
   - [11.1 FIGHTEXT](#111-fightext)
@@ -270,7 +271,8 @@ files) means "no condition".
 - Friendly fire: the game notes each frame in which the player's shots or
   torpedoes hit a unit friendly to the player (faction 8), destroy
   objectives too (in s01805 three of the friendly tanks the mission wants
-  destroyed fail it); ramming counts only on a big ship. Every tenth such
+  destroyed fail it); ramming any friend counts as well, a boat, a big ship
+  or a building. Every tenth such
   frame shows one of FIGHTEXT 67, 68 and 69 at random, after the unit's name
   in brackets, on the radio line in green, unless another message is on it
   (then it is lost). Each friendly kill goes only to the radio log, in
@@ -580,7 +582,8 @@ magazine jams the same way ([6.8](#68-the-players-torpedo-magazine)).
 The save file keeps each armour side (`[Defect]` `FArm`, `LArm`, `RArm`,
 `BArm`) as a share from 0 to 1 beside the gun, the torpedo magazine and the
 turrets, and the depot repairs them, so a mission's damage stays with the
-boat. What the Fixer mends stays with the boat as well.
+boat: the next mission of the campaign starts with the damage that wasn't
+repaired. What the Fixer mends stays with the boat as well.
 
 ## 5. Units' behaviour
 
@@ -629,7 +632,8 @@ are read but never used, so a boat under or over its target pitches straight
 at it. The speed is the order's, with no slowing down in turns. The hull
 banks by as many radians as it turns radians a second, following within
 about a second (69° for an ANSCOUT1 at its full rate); `MaxAngleVelocityC`
-does nothing. Bombers turn and fly exactly as boats do.
+does nothing. Bombers turn and fly exactly as boats do. Tanks and torpedoes
+don't lean into their turns.
 
 ### 5.5 Flying to a point and patrolling
 
@@ -1158,7 +1162,9 @@ rearming, jammed, empty and waiting.
   yellow inside) sits on each turret's target from the lock-on through
   firing, rearming and the volley pause; for a target off to the side its
   centre sits on the HUD's edge towards it and the HUD clips the outer half,
-  so only the two inner strokes show. Never while scanning, stopped, in sync
+  so only the two inner strokes show. A target behind the boat puts it in
+  the part of the HUD on the target's side (behind, below and to the left:
+  the lower left), on the edge towards it. Never while scanning, stopped, in sync
   or empty.
 - The turret and overview pages are in
   [9.6](#96-the-slave-monitors-and-their-pages).
@@ -1298,7 +1304,9 @@ rest of those rows in the water's dark blue; above and below are black bars
 with a grey line in rows 60 and 419. "DEATH VIEW" (FIGHTEXT 18) is at column
 8, row 405, and the menu at the end has no box, all in the green font and
 centred over the world: "GAME OVER" (FIGHTEXT 58) at row 152, the options at
-rows 172 and 187 (abort and restart, FIGHTEXT 64 and 65). The camera starts
+rows 172 and 187 (abort and restart, FIGHTEXT 64 and 65) and, in the
+campaign, at row 202 loading the last saved game (66). Aborting goes back to
+the title. The camera starts
 in the hull and keeps moving a tenth of a second's worth (a factor of 10 per
 second) towards its place three hull radii out, 45° above the hull and
 circling it at 45° a second, measured in the hull's own frame, and it always
@@ -1525,7 +1533,10 @@ currents dark teal (the shading table's entry 65) for `spd` 0 and light cyan
 - `G:` is its gun's short name and `T:` its torpedoes, `R:` its sensor range
   ([9.7](#97-sonars)). A hostile target's name is red.
 - The mission menus (the Esc menu, the autopilot menu) are FIGHTEXT texts
-  ([11.1](#111-fightext)).
+  ([11.1](#111-fightext)). The Esc menu has 0 continue, 1 abort and 2
+  restart (50–52), and in the campaign 3 the last saved game (62); the
+  trainings and the open mission have no saved game to load and leave it
+  out of all the menus.
 
 ### 9.6 The slave monitors and their pages
 
@@ -1564,7 +1575,20 @@ currents dark teal (the shading table's entry 65) for `spd` 0 and light cyan
 ### 9.7 Sonars
 
 The four sonars (items 6145–6148, Spy I–IV) take 12, 10, 8 and 6 seconds to
-come up and differ in four abilities: Spy I has none, Spy II tells friend from
+come up and differ in their sensitivity and four abilities.
+
+- **Passive:** a contact is heard as far as the sensitivity (1.4, 1.6, 1.8
+  and 2 for Spy I–IV) × 180 m × √(L / 3), L being its noise level (the
+  `[Noise] Level` of its file, one more while its own active sensor is on),
+  and never beyond 360 m, the first round radar's range: a scout of level 3
+  at 252 m with the Spy I and 360 m with the Spy IV, a tank of level 2 at
+  206 and 294 m. Silent things (level 0) are never heard.
+- **Active:** once up, the active sonar finds anything within 180 m, the
+  second round radar's range, whatever its noise, and identifies the locked
+  target within 36 m. Switching it on makes the player one noise level louder
+  at once.
+
+The four abilities: Spy I has none, Spy II tells friend from
 foe and shows the target's armour, Spy III and IV also show its weapons (`G:`
 and `T:` on the master monitor) and what it does (the second line). The
 target's sensor range (`R:`) shows with any sonar once the contact is active.
@@ -1641,7 +1665,8 @@ Three pages lie over the view, the mission going on underneath.
   angegriffen / zerstört / identifiziert / paralysiert / infiltriert", "ist
   angekommen", FIGHTEXT 5–10) in amber. An event is logged only for a unit
   with a name, when the mission uses that event for it (something depends on
-  it) and its count is reached. The mission's end lines (FIGHTEXT 11–13) go
+  it) and its count is reached; the events only go to the log and never show
+  on the radio line during the mission. The mission's end lines (FIGHTEXT 11–13) go
   through the same rule without a unit, so they are not logged in normal
   play; only a hidden switch that logs every event (a Ctrl key combination)
   logs them.
@@ -1674,6 +1699,16 @@ the locked target `8C71`). The HUD frames a torpedo as it frames the units:
 green for the player's own and a friend's, red for a hostile one, and green
 for all without IFF.
 
+### 9.12 Cockpit shake
+
+The cockpit art and its instruments shake when the boat is hit (by a gun's
+shot too), bounces off something or an explosion goes off nearby, and
+rattle as the booster fires, fading away again; the world and the HUD in the
+window don't. The movement is small. The art is shown a little enlarged, so
+only hard shakes show its edges. It can't be switched off (the installed
+files' `DEEPTEXT.DES` has "Cockpit Rütteln: JA/NEIN", 191/192, for an
+option).
+
 ## 10. Views from outside
 
 The keys are in the in-mission help (`VFX/COCKPIT/HELP2.TXT`), the views'
@@ -1690,7 +1725,8 @@ names are FIGHTEXT 14–19 (chase, fly around, pass by, look, death, look at).
   chase view they do nothing. The zoom and the place round the boat are
   kept, the same for the player's boat and the target. The help's torpedo
   camera (Entf) does nothing, and the fly-around, pass-by and look views
-  (15–17) can't be called up.
+  (15–17) can't be called up. While a view from outside is shown, Esc
+  doesn't open the mission menu; O still opens the turret menu.
 - **The mission goes on.** The boat is flown, fires and locks as from the
   cockpit, and the help, the radio log and the briefing open over the view.
   The sounds are heard where the camera is.

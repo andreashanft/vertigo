@@ -95,6 +95,8 @@ public:
     util::event<>& eventAbort() { return m_eventAbort; }
     util::event<>& eventRestart() { return m_eventRestart; }
     util::event<>& eventLoad() { return m_eventLoad; }
+    // whether the mission menus offer the last saved game (the campaign's)
+    void setLoadOffered(bool offered);
     // where the autopilot can take the boat once the mission is accomplished, chosen in its menu
     // (none: it leaves at once, as in test mode and training); after eventSuccess the one chosen
     void setDestinations(const StringList &names);
@@ -167,6 +169,8 @@ private:
     void engageAutopilot();
     bool drawModel(double pixelRatio);
     void drawOutsideView(double pixelRatio);
+    // the 2D cockpit's shake, in the art's pixels
+    Matrix cockpitShake() const;
     void drawChaseInstruments();
     void updateLook(float elapsedTime);
     // the views from outside (docs/ROADMAP.md, appendix V): a view's key shows it or, if it is
@@ -272,6 +276,7 @@ private:
     gfx::Texture m_shade;   // half dark, under the chase view's sonar
 
     bool m_paused;
+    bool m_loadOffered = false;     // setLoadOffered(), for the menu made in load()
     bool m_frozen;          // mission time and sounds stopped (pause or menu)
     float m_dimming = 1;    // the pause's fade: 1 normally, 0 when paused
     sfx::Music m_music;     // the mission's CD track
