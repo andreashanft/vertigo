@@ -632,7 +632,8 @@ are read but never used, so a boat under or over its target pitches straight
 at it. The speed is the order's, with no slowing down in turns. The hull
 banks by as many radians as it turns radians a second, following within
 about a second (69° for an ANSCOUT1 at its full rate); `MaxAngleVelocityC`
-does nothing. Bombers turn and fly exactly as boats do.
+does nothing. Bombers turn and fly exactly as boats do. Tanks and torpedoes
+don't lean into their turns.
 
 ### 5.5 Flying to a point and patrolling
 
@@ -1161,7 +1162,9 @@ rearming, jammed, empty and waiting.
   yellow inside) sits on each turret's target from the lock-on through
   firing, rearming and the volley pause; for a target off to the side its
   centre sits on the HUD's edge towards it and the HUD clips the outer half,
-  so only the two inner strokes show. Never while scanning, stopped, in sync
+  so only the two inner strokes show. A target behind the boat puts it in
+  the part of the HUD on the target's side (behind, below and to the left:
+  the lower left), on the edge towards it. Never while scanning, stopped, in sync
   or empty.
 - The turret and overview pages are in
   [9.6](#96-the-slave-monitors-and-their-pages).

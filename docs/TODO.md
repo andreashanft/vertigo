@@ -56,14 +56,6 @@ Units' behaviour:
 
 Sensors, HUD and views:
 
-- How the master monitor's terrain radar shows a big building (the
-  stations' domes, halls and pipes, built from ground plans): as an orange
-  model, as Vertigo draws it, or as part of the grey ground.
-- Which HUD edge a turret's aim cross takes when the turret fires at a
-  target straight behind the boat or behind to one side (Vertigo: the edge on
-  the target's side, the bottom one straight behind).
-- Whether tanks and torpedoes lean to the side in their turns, as the boats
-  bank (Vertigo's don't).
 
 World, physics and effects:
 
@@ -122,6 +114,8 @@ comparisons above.
 - Vertigo's ground plans can't be attacked, so their attacker lists have no
   effect.
 - PAUSE shows over the views from outside too.
+- The master monitor's terrain radar draws every building as its model, in
+  more detail than the original's reduced picture.
 - The lamps beside the monitors light up with the monitor's mode; the
   original's never change.
 
