@@ -36,8 +36,12 @@ Missions and the campaign:
 - Whether the autopilot menu lists the start station.
 - `wccond 9` (56 units, s00303 and s02006 among them).
 - Whether a slot with a break condition ends on its own (T5).
-- In a squadron of several big ships the original counts every block that
-  goes; Vertigo counts the ship.
+- A squadron is the units with the same name. Where several big ships share
+  one (the six freighters of Rette Hilfstransport, the two of S01203), the
+  original counts every destroyed block towards the squadron's "destroyed"
+  count, so a condition on that squadron can be met after a few blocks;
+  Vertigo counts each ship once, when its first block goes. Whether the
+  mission reacts that early in the original.
 
 Units' behaviour:
 
@@ -49,25 +53,17 @@ Units' behaviour:
   through the mountings in turn).
 - How many homing torpedoes the player can have on it at once (every AI
   unit takes at most 4; Vertigo keeps 8 for the player).
-- Which rammed friends give the friendly-fire warning: KNOWLEDGE.md 2.6 has
-  only the big ships, but boats gave it in play (Vertigo counts the big
-  ships).
 
 Sensors, HUD and views:
 
-- The sonars' detection ranges.
-- Whether the units' event messages show as they happen (they are in the
-  radio log).
-- What the monitors' lamps show.
-- Whether big buildings show as blocks or as ground on the radar.
-- What the turrets' aim cross does for a target behind the boat (Vertigo puts
-  it on the edge away from the target).
-- In the outside views: where the radio message sits in the bar, whether the
-  pause shows, what the target's views do when the sonar loses the target
-  (Vertigo goes back to the cockpit), and what the camera does the moment a
-  view opens. At the furthest zoom Vertigo's boat shows about 10 rows lower
-  than the original's, in the look-at view about 16 rows lower.
-- Whether tanks and torpedoes roll in their turns.
+- How the master monitor's terrain radar shows a big building (the
+  stations' domes, halls and pipes, built from ground plans): as an orange
+  model, as Vertigo draws it, or as part of the grey ground.
+- Which HUD edge a turret's aim cross takes when the turret fires at a
+  target straight behind the boat or behind to one side (Vertigo: the edge on
+  the target's side, the bottom one straight behind).
+- Whether tanks and torpedoes lean to the side in their turns, as the boats
+  bank (Vertigo's don't).
 
 World, physics and effects:
 
@@ -125,6 +121,9 @@ comparisons above.
   This one is kept on purpose.
 - Vertigo's ground plans can't be attacked, so their attacker lists have no
   effect.
+- PAUSE shows over the views from outside too.
+- The lamps beside the monitors light up with the monitor's mode; the
+  original's never change.
 
 ## New features
 

@@ -1027,9 +1027,11 @@ void HUD::press(input::KeyEvent *e)
             return;
         }
     }
+    // (no Esc menu while a view from outside is shown)
     if (e->key() == input::Key_Escape)
     {
-        m_menu->open(MissionMenu::Page::Main);
+        if (!m_scenario->outside())
+            m_menu->open(MissionMenu::Page::Main);
         return;
     }
     if (e->key() == input::Key_H && !(e->modifiers() & ~input::KeypadModifier))

@@ -67,7 +67,7 @@ public:
 
     // distance at which an object is detected passively / actively
     float passiveRange(const ActiveObject *object) const;
-    // the player's own passive range, without a unit's noise
+    // the reach that puts units to sleep beyond it (with 3 cells more), not the sonar's own
     float passiveRange() const { return m_passiveRange; }
     float activeRange(const ActiveObject *object) const;
     // the torpedo contacts' colour blinks between two reds, 0.15 s each: whether the bright one is on
@@ -82,9 +82,7 @@ private:
     bool m_onlyEnemies = false;
     float m_delay;
     float m_passiveRange;
-    float m_passiveRangeMult;
-    float m_activeRange;
-    float m_activeRangeMult;
+    float m_sensitivity;
     bool m_iff;
     bool m_detectArmor;
     bool m_detectWeapons;

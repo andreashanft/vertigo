@@ -271,7 +271,8 @@ files) means "no condition".
 - Friendly fire: the game notes each frame in which the player's shots or
   torpedoes hit a unit friendly to the player (faction 8), destroy
   objectives too (in s01805 three of the friendly tanks the mission wants
-  destroyed fail it); ramming counts only on a big ship. Every tenth such
+  destroyed fail it); ramming any friend counts as well, a boat, a big ship
+  or a building. Every tenth such
   frame shows one of FIGHTEXT 67, 68 and 69 at random, after the unit's name
   in brackets, on the radio line in green, unless another message is on it
   (then it is lost). Each friendly kill goes only to the radio log, in
@@ -1571,7 +1572,20 @@ currents dark teal (the shading table's entry 65) for `spd` 0 and light cyan
 ### 9.7 Sonars
 
 The four sonars (items 6145–6148, Spy I–IV) take 12, 10, 8 and 6 seconds to
-come up and differ in four abilities: Spy I has none, Spy II tells friend from
+come up and differ in their sensitivity and four abilities.
+
+- **Passive:** a contact is heard as far as the sensitivity (1.4, 1.6, 1.8
+  and 2 for Spy I–IV) × 180 m × √(L / 3), L being its noise level (the
+  `[Noise] Level` of its file, one more while its own active sensor is on),
+  and never beyond 360 m, the first round radar's range: a scout of level 3
+  at 252 m with the Spy I and 360 m with the Spy IV, a tank of level 2 at
+  206 and 294 m. Silent things (level 0) are never heard.
+- **Active:** once up, the active sonar finds anything within 180 m, the
+  second round radar's range, whatever its noise, and identifies the locked
+  target within 36 m. Switching it on makes the player one noise level louder
+  at once.
+
+The four abilities: Spy I has none, Spy II tells friend from
 foe and shows the target's armour, Spy III and IV also show its weapons (`G:`
 and `T:` on the master monitor) and what it does (the second line). The
 target's sensor range (`R:`) shows with any sonar once the contact is active.
@@ -1648,7 +1662,8 @@ Three pages lie over the view, the mission going on underneath.
   angegriffen / zerstört / identifiziert / paralysiert / infiltriert", "ist
   angekommen", FIGHTEXT 5–10) in amber. An event is logged only for a unit
   with a name, when the mission uses that event for it (something depends on
-  it) and its count is reached. The mission's end lines (FIGHTEXT 11–13) go
+  it) and its count is reached; the events only go to the log and never show
+  on the radio line during the mission. The mission's end lines (FIGHTEXT 11–13) go
   through the same rule without a unit, so they are not logged in normal
   play; only a hidden switch that logs every event (a Ctrl key combination)
   logs them.
@@ -1707,7 +1722,8 @@ names are FIGHTEXT 14–19 (chase, fly around, pass by, look, death, look at).
   chase view they do nothing. The zoom and the place round the boat are
   kept, the same for the player's boat and the target. The help's torpedo
   camera (Entf) does nothing, and the fly-around, pass-by and look views
-  (15–17) can't be called up.
+  (15–17) can't be called up. While a view from outside is shown, Esc
+  doesn't open the mission menu; O still opens the turret menu.
 - **The mission goes on.** The boat is flown, fires and locks as from the
   cockpit, and the help, the radio log and the briefing open over the view.
   The sounds are heard where the camera is.

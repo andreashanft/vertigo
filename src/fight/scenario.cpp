@@ -1079,13 +1079,11 @@ void Scenario::loadIssue(const String &text)
 }
 
 
-// Friendly fire (docs/ROADMAP.md, appendix F): a hit by the player's shots or torpedoes on a unit
-// friendly to the player (faction 8), destroy objectives too, mines not, notes the unit for the frame;
-// a ram counts only on a big ship
+// Friendly fire (docs/ROADMAP.md, appendix F): a hit by the player's shots, torpedoes or boat (a
+// ram) on a unit friendly to the player (faction 8), destroy objectives too, mines not, notes the
+// unit for the frame
 void Scenario::playerHit(ActiveObject *unit, bool destroyed)
 {
-    if (m_playerRamming && !dynamic_cast<CargoShip *>(unit))
-        return;
     int id = -1;
     for (const auto &record : m_records)
         if (record.object == unit)

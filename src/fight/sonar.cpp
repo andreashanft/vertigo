@@ -23,9 +23,19 @@
 #include "sfx/samplemap.h"
 
 #include <glm/geometric.hpp>
+#include <algorithm>
+#include <cmath>
 
 
 namespace fight {
+
+
+namespace {
+
+// the active range, and half the passive one's limit (m)
+const float Range = 180.0f;
+
+}
 
 
 Sonar::Sonar(Scenario *scenario) :
@@ -38,15 +48,13 @@ Sonar::Sonar(Scenario *scenario) :
 
 // what each sonar can do (docs/ROADMAP.md, appendix P): Spy I tells no friend from foe and shows
 // no armor, weapons or activity of the target; Spy II tells friend from foe and shows the armor;
-// Spy III and IV show everything. The ranges are not compared yet.
+// Spy III and IV show everything. Their sensitivity (KNOWLEDGE.md 9.7) is 1.4, 1.6, 1.8 or 2
 void Sonar::init(int sensor)
 {
     const int grade = sensor >= 6145 && sensor <= 6148 ? sensor - 6144 : 1;
     m_delay = 14 - 2*grade;
+    m_sensitivity = 1.2f + 0.2f*grade;
     m_passiveRange = 140.0f + 20.0f*grade;
-    m_passiveRangeMult = 10.0f*grade + 10.0f;
-    m_activeRange = 160.0f;
-    m_activeRangeMult = 20.0f;
     m_iff = grade >= 2;
     m_detectArmor = grade >= 2;
     m_detectWeapons = grade >= 3;
@@ -77,15 +85,18 @@ void Sonar::toggle()
 }
 
 
+// heard as far as the sensitivity times 180 m times the root of a third of its noise level, at
+// most 360 m (the first round radar's range)
 float Sonar::passiveRange(const ActiveObject *object) const
 {
-    return m_passiveRange + m_passiveRangeMult*object->noise();
+    return std::min(2*Range, m_sensitivity*Range*std::sqrt(std::max(0.0f, object->noise())/3));
 }
 
 
-float Sonar::activeRange(const ActiveObject *object) const
+// anything within 180 m (the second round radar's range), whatever its noise
+float Sonar::activeRange(const ActiveObject *) const
 {
-    return m_activeRange + m_activeRangeMult*object->noise();
+    return Range;
 }
 
 
@@ -135,7 +146,8 @@ void Sonar::update(float elapsedTime)
         {
             lockNotLost = true;
             target.update(dist, passive);
-            if (m_active && !object->isIdentified() && dist <= 35.0f)
+            // identified within a fifth of the active range
+            if (m_active && !object->isIdentified() && dist <= 0.2f*Range)
                 object->identify();
         }
 
