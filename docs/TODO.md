@@ -126,6 +126,60 @@ comparisons above.
 - Vertigo's ground plans can't be attacked, so their attacker lists have no
   effect.
 
+## New features
+
+Feature ideas beyond the original, not needed for 1.0.
+
+| # | Item | Notes |
+|---|---|---|
+| F1 | Upscaled art for owners of the game | Share the AI-upscaled art in a way that it can be used only when the original data is present |
+
+### F1: Upscaled art for owners of the game
+
+Distribute an encrypted package that uses the original game data as a key to open it. Its download
+link can then be public, and sharing the link should not violate any copyright law.
+
+1. Encrypt each upscaled image with a key taken from its own original image,
+   for example `SHA-256("vertigo-art-v1" ‖ the source's pixels and palette)`,
+   with AES-256-GCM or ChaCha20-Poly1305. The file keeps its public name, the
+   64-bit `gfx::Upscaled::key` of its source, so the game knows which file
+   belongs to which image.
+2. Publish the encrypted pack anywhere: a GitHub release asset, a static page
+   or a shared folder. No database, expiring links or server logic.
+3. Decrypt it in Vertigo, which already has the original data loaded: an
+   Options button such as **Upscaled graphics: IMPORT PACK**, and
+   `vertigo --import-pack FILE` for the terminal and the iPad's workflow. For
+   each image it computes the key, decrypts the matching file and writes it
+   to `Game Data Upscaled`, as the upscaler does.
+4. Building the pack: A script uses the installed data and the according AI-upscaled set,
+   mapping the set's files to their sources by their names. The key must be
+   derived as in the game.
+
+#### English and German Data Sets
+
+The language versions sort themselves out. Images that are the same in the
+German and English versions (most textures, models and backgrounds) open for
+everyone. Images with German lettering open only with the German data, and
+English owners keep their original images for those, which is right, as the
+German upscale shows German text. Upscales of the English images can be added
+to the pack later without changing anything else.
+
+#### Caveats
+
+- A tiny or plain image (one colour) could be guessed. Leave images under a
+  size threshold unencrypted, or mix a few large files that are the same in
+  both versions (the main menu's art) into every key.
+- Anyone can still pass on the decrypted images; no download scheme prevents
+  that.
+- It's a technical barrier, not a licence: the pack is still derived from the
+  original's art.
+
+#### Alternatives considered
+
+A hash challenge on a web page. It is weaker and needs more: one owner can publish
+every file's hash, and stopping shared links needs signed, expiring URLs and a
+running server.
+
 ## Notes
 
 - Renderer changes stay self-contained so that a modern renderer and VR work
