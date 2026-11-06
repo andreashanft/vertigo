@@ -271,6 +271,8 @@ It can be fine-tuned with the font editor in [data/font](data/font/README.md).
 
 ## Game controllers
 
+<img src="docs/screenshots/controller-help.jpg" alt="The in-mission help's controller page: the buttons' jobs in green, with LB held in yellow">
+
 Missions can be played with a game controller (Xbox, PlayStation, Switch Pro
 or MFi, through SDL), on the desktop and the iPad. Buttons are named after an
 Xbox controller's. The left stick steers as far as it is pushed; as with the

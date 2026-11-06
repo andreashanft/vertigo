@@ -123,10 +123,23 @@ KeyEvent menuKey(Button button)
 }
 
 
+namespace {
+int g_faceOverride = -1;
+}
+
+
 FaceLabels faceLabels()
 {
+    if (g_faceOverride >= 0)
+        return FaceLabels(g_faceOverride);
     const std::string labels = util::Settings::value("controller/faces", "xbox");
     return labels == "nintendo" ? FaceLabels::Nintendo : labels == "playstation" ? FaceLabels::PlayStation : FaceLabels::Xbox;
+}
+
+
+void overrideFaceLabels(FaceLabels labels)
+{
+    g_faceOverride = int(labels);
 }
 
 

@@ -153,6 +153,8 @@ KeyEvent menuKey(Button button);
 enum class FaceLabels { Xbox, Nintendo, PlayStation };
 FaceLabels faceLabels();
 void setFaceLabels(FaceLabels labels);
+// these for the run, whatever controller is connected (--faces, for screenshots)
+void overrideFaceLabels(FaceLabels labels);
 
 } // namespace input
 
