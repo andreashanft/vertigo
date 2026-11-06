@@ -278,9 +278,8 @@ original's joystick, forward lowers the nose. The buttons stand for the keys
 in brackets, and LB held gives a second set (held before the other button).
 The in-mission help (H) shows them on its last page, with or without a
 controller connected, with the letters or symbols of the controller connected
-last. The face buttons work by their letters, so A gives full ahead at the
-bottom of an Xbox controller and on the right of a Nintendo one; a PlayStation
-controller's work by their place (the cross as A):
+last. The buttons work by their place: full ahead is the right face button,
+B on an Xbox controller and A on a Nintendo one:
 
 | Control | In a mission | With LB held |
 |---|---|---|
@@ -289,10 +288,10 @@ controller's work by their place (the cross as A):
 | RT | fire the gun (Space) | lock the next attacker (J) |
 | LT | fire a torpedo (Tab) | lock the next attacking torpedo (G) |
 | RB | lock the target in the reticle (L) | lock the nearest enemy (U) |
-| A | full ahead while held (A) | the booster, while held (Q) |
-| B | full astern while held (the key below A: Z, or Y on a German keyboard) | drop a buzzer (D) |
-| X | next torpedo (Enter) | debug overlay (Ctrl+D) |
-| Y | next nav point (N) | lock the nav point (Alt+N) |
+| B (right) | full ahead while held (A) | the booster, while held (Q) |
+| A (bottom) | full astern while held (the key below A: Z, or Y on a German keyboard) | drop a buzzer (D) |
+| Y (top) | next torpedo (Enter) | debug overlay (Ctrl+D) |
+| X (left) | next nav point (N) | lock the nav point (Alt+N) |
 | D-pad up | 10 km/h faster, repeating while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
 | D-pad left | stop (C) | engine on or off (the key left of 1) |

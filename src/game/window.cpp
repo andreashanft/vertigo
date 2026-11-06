@@ -115,20 +115,6 @@ input::MouseButton button(Uint8 button)
 
 
 // SDL's gamepad buttons as ours (the Guide button, the paddles and the touchpad aren't used)
-// A face button by the letter printed on it, as an Xbox controller has them (A at the bottom), so
-// that A does the same on a Nintendo controller, where it is on the right; a PlayStation
-// controller's symbols go by their place (the cross as A)
-input::Button faceButton(SDL_Gamepad *gamepad, Uint8 button)
-{
-    switch (gamepad ? SDL_GetGamepadButtonLabel(gamepad, SDL_GamepadButton(button)) : SDL_GAMEPAD_BUTTON_LABEL_UNKNOWN) {
-    case SDL_GAMEPAD_BUTTON_LABEL_A: return input::Button_South;
-    case SDL_GAMEPAD_BUTTON_LABEL_B: return input::Button_East;
-    case SDL_GAMEPAD_BUTTON_LABEL_X: return input::Button_West;
-    case SDL_GAMEPAD_BUTTON_LABEL_Y: return input::Button_North;
-    default: return input::Button_None;
-    }
-}
-
 input::Button padButton(Uint8 button)
 {
     switch (button) {
@@ -495,10 +481,7 @@ void Window::handle(const SDL_Event &event)
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
     case SDL_EVENT_GAMEPAD_BUTTON_UP:
         if (!m_onlyGamepad || event.gbutton.which == m_onlyGamepad)
-        {
-            const input::Button face = faceButton(SDL_GetGamepadFromID(event.gbutton.which), event.gbutton.button);
-            buttonEvent(face != input::Button_None ? face : padButton(event.gbutton.button), event.gbutton.down);
-        }
+            buttonEvent(padButton(event.gbutton.button), event.gbutton.down);
         break;
     case SDL_EVENT_GAMEPAD_AXIS_MOTION:
         if ((!m_onlyGamepad || event.gaxis.which == m_onlyGamepad) && event.gaxis.axis < SDL_GAMEPAD_AXIS_COUNT)

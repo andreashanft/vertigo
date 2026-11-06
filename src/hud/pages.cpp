@@ -95,31 +95,14 @@ struct PadControl
     int face = -1;                  // a face button's place: 0 top, 1 left, 2 right, 3 bottom
 };
 
-// The face buttons work by their letters (input::FaceLabels): the one at each place (top, left,
-// right, bottom) on the controller connected last, as A, B, X or Y (0-3), its name (a PlayStation
-// controller's symbols are drawn) and its jobs
-int faceButton(int place)
-{
-    static const int letters[2][4] = { { 3, 2, 1, 0 }, { 2, 3, 0, 1 } };
-    return letters[input::faceLabels() == input::FaceLabels::Nintendo ? 1 : 0][place];
-}
-
+// The face buttons work by their place (top, left, right, bottom); their names are the letters
+// printed there on the controller connected last (input::FaceLabels; a PlayStation controller's
+// symbols are drawn)
 const char *faceName(int place)
 {
-    static const char *const names[4] = { "A", "B", "X", "Y" };
-    return input::faceLabels() == input::FaceLabels::PlayStation ? "" : names[faceButton(place)];
-}
-
-txt::StringVertigo faceJob(int place)
-{
-    static const txt::StringVertigo jobs[4] = { txt::Pad_Ahead, txt::Pad_Astern, txt::Pad_NextTorpedo, txt::Pad_NavPoint };
-    return jobs[faceButton(place)];
-}
-
-int faceSecond(int place)
-{
-    static const int jobs[4] = { txt::Pad_Booster, txt::Pad_Buzzer, -1, txt::Pad_LockNavPoint };
-    return jobs[faceButton(place)];
+    static const char *const names[2][4] = { { "Y", "X", "B", "A" }, { "X", "Y", "A", "B" } };
+    const input::FaceLabels labels = input::faceLabels();
+    return labels == input::FaceLabels::PlayStation ? "" : names[labels == input::FaceLabels::Nintendo ? 1 : 0][place];
 }
 
 // down each side in the order of the rows, so that the lines rarely cross
@@ -138,24 +121,17 @@ const PadControl PadRight[] = {
     { "RT", Vector2D(135, 3), txt::Pad_Gun, txt::Pad_Attacker },
     { "RB", Vector2D(135, 13), txt::Pad_Lock, txt::Pad_LockEnemy },
     { "START", Vector2D(100, 36), txt::Pad_Menu, txt::Pad_Pause },
-    { "", Vector2D(128, 38), txt::Pad_NavPoint, txt::Pad_LockNavPoint, -1, 0 },
-    { "", Vector2D(118, 48), txt::Pad_NextTorpedo, -1, -1, 1 },
-    { "", Vector2D(138, 48), txt::Pad_Astern, txt::Pad_Buzzer, -1, 2 },
-    { "", Vector2D(128, 58), txt::Pad_Ahead, txt::Pad_Booster, -1, 3 },
+    { "", Vector2D(128, 38), txt::Pad_NextTorpedo, -1, -1, 0 },
+    { "", Vector2D(118, 48), txt::Pad_NavPoint, txt::Pad_LockNavPoint, -1, 1 },
+    { "", Vector2D(138, 48), txt::Pad_Ahead, txt::Pad_Booster, -1, 2 },
+    { "", Vector2D(128, 58), txt::Pad_Astern, txt::Pad_Buzzer, -1, 3 },
     { "RS", Vector2D(108, 74), txt::Pad_Look, txt::Pad_Zoom },
     { "R3", Vector2D(108, 74), txt::Pad_View, -1 },
 };
 
-// the right side's controls, the face buttons with the jobs of the letters at their places
 std::vector<PadControl> padRight()
 {
-    std::vector<PadControl> controls(std::begin(PadRight), std::end(PadRight));
-    for (PadControl &control : controls)
-        if (control.face >= 0) {
-            control.job = faceJob(control.face);
-            control.second = faceSecond(control.face);
-        }
-    return controls;
+    return std::vector<PadControl>(std::begin(PadRight), std::end(PadRight));
 }
 
 // a point of the design space in the art

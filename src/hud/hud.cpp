@@ -1343,10 +1343,11 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_RightTrigger: return second ? KeyEvent(Key_J) : KeyEvent(Key_Space);
     case Button_LeftTrigger: return second ? KeyEvent(Key_G) : KeyEvent(Key_Tab);
     case Button_RightShoulder: return second ? KeyEvent(Key_U) : KeyEvent(Key_L);
-    case Button_South: return second ? KeyEvent(Key_Q) : KeyEvent(Key_A);
-    case Button_East: return second ? KeyEvent(Key_D) : KeyEvent(Key_Z);
-    case Button_West: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_Return);
-    case Button_North: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
+    // the face buttons by their place: full ahead on the right, full astern at the bottom
+    case Button_East: return second ? KeyEvent(Key_Q) : KeyEvent(Key_A);
+    case Button_South: return second ? KeyEvent(Key_D) : KeyEvent(Key_Z);
+    case Button_North: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_Return);
+    case Button_West: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
     case Button_Up: return second ? KeyEvent(Key(Key_F1 + m_weaponPage)) : KeyEvent(Key_S);
     case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
     case Button_Left: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_C);
