@@ -275,7 +275,9 @@ Missions can be played with a game controller (Xbox, PlayStation, Switch Pro
 or MFi, through SDL), on the desktop and the iPad. Buttons are named after an
 Xbox controller's. The left stick steers as far as it is pushed; as with the
 original's joystick, forward lowers the nose. The buttons stand for the keys
-in brackets, and LB held gives a second set:
+in brackets, and LB held gives a second set (held before the other button).
+The in-mission help (H) shows them on its last page, with or without a
+controller connected:
 
 | Control | In a mission | With LB held |
 |---|---|---|
@@ -283,18 +285,18 @@ in brackets, and LB held gives a second set:
 | Right stick | look around in the 3D cockpit; in the look-at view move the camera round the boat | zoom the view from outside (up and down) |
 | RT | fire the gun (Space) | |
 | LT | fire a torpedo (Tab) | |
-| RB | lock the target in the reticle (L) | |
-| A | lock the nearest enemy (U) | autopilot (Alt+A) |
-| B | drop a buzzer (D) | engine on or off (the key left of 1) |
+| RB | lock the target in the reticle (L) | lock the nearest enemy (U) |
+| A | full ahead while held (A) | the booster, while held (Q) |
+| B | full astern while held (the key below A: Z, or Y on a German keyboard) | drop a buzzer (D) |
 | X | next torpedo (Enter) | debug overlay (Ctrl+D) |
 | Y | next nav point (N) | lock the nav point (Alt+N) |
 | D-pad up | 10 km/h faster, repeating while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
-| D-pad left | stop (C) | the booster, while held (Q) |
+| D-pad left | stop (C) | engine on or off (the key left of 1) |
 | D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
-| L3, R3 (press a stick) | full ahead, full astern while held (A, and the key below it: Z, or Y on a German keyboard) | |
+| R3 (press the right stick) | the next cockpit or view from outside (V) | |
 | Start | mission menu (Esc) | pause (P) |
-| Back | turret menu (O) | the next cockpit or view from outside (V) |
+| Back | turret menu (O) | autopilot (Alt+A) |
 
 In the mission and turret menus the d-pad highlights an option, A takes it and
 B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a

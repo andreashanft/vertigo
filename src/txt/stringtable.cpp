@@ -92,8 +92,38 @@ String StringTable::get(StringVertigo string)
         { "Hochskalierte Grafik: VORBEREITEN", "Upscaled graphics: PREPARE" },
         { "Hochskalierte Grafik: AKTUALISIEREN", "Upscaled graphics: UPDATE" },
         { "Grafik wird hochskaliert: %1 %", "Upscaling graphics: %1 %" },
+        // (in the game's 8-bit text: \x8e Ä, \x99 Ö, \x9a Ü; split where a letter follows that
+        // would extend the escape)
+        { "TORPEDO ABFEUERN", "FIRE TORPEDO" },
+        { "HALTEN: ZWEITE BELEGUNG", "HOLD: SECOND SET" },
+        { "GESCH\x9aTZTURM-MEN\x9a", "TURRET MENU" },
+        { "AUTOPILOT", "AUTOPILOT" },
+        { "SCHNELLER (+10 KM/H)", "FASTER (+10 KM/H)" },
+        { "WAFFENSTATUS (F1-F4)", "WEAPON STATUS (F1-F4)" },
+        { "SONAR AN / AUS", "SONAR ON / OFF" },
+        { "ZOOM SONARANZEIGE", "SONAR DISPLAY ZOOM" },
+        { "LANGSAMER (-10 KM/H)", "SLOWER (-10 KM/H)" },
+        { "PANZERUNG / SYSTEME", "ARMOR / SYSTEMS" },
+        { "STOPP (0 KM/H)", "STOP (0 KM/H)" },
+        { "MOTOR AN / AUS", "ENGINE ON / OFF" },
+        { "STEUERN", "STEER" },
+        { "BORDKANONE ABFEUERN", "FIRE GUN" },
+        { "ZIEL IM VISIER AUFFASSEN", "LOCK TARGET IN SIGHT" },
+        { "N\x8e" "CHSTEN GEGNER AUFFASSEN", "LOCK NEAREST ENEMY" },
+        { "MISSIONSMEN\x9a", "MISSION MENU" },
+        { "PAUSE", "PAUSE" },
+        { "N\x8e" "CHSTER NAV-PUNKT", "NEXT NAV POINT" },
+        { "NAV-PUNKT AUFFASSEN", "LOCK NAV POINT" },
+        { "N\x8e" "CHSTES TORPEDO", "NEXT TORPEDO" },
+        { "VOLLE FAHRT ZUR\x9a" "CK", "FULL ASTERN" },
+        { "BUZZER ABWERFEN", "DROP BUZZER" },
+        { "VOLLE FAHRT VORAUS", "FULL AHEAD" },
+        { "BOOSTER", "BOOSTER" },
+        { "UMSEHEN / KAMERA", "LOOK AROUND / CAMERA" },
+        { "KAMERA-ZOOM", "CAMERA ZOOM" },
+        { "ANSICHT WECHSELN", "CHANGE VIEW" },
     };
-    return texts[string][m_language == "English" ? 1 : 0];
+    return String::fromLatin1(texts[string][m_language == "English" ? 1 : 0]);
 }
 
 
