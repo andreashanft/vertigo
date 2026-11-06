@@ -361,6 +361,10 @@ enum StringVertigo
     Pad_Look,
     Pad_Zoom,
     Pad_View,
+    Pad_AttackingTorpedo,
+    Pad_Attacker,
+    Pad_Help,
+    Pad_Radio,
 };
 
 

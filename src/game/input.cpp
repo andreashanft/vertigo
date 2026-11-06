@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "input.hpp"
+#include "util/settings.hpp"
 
 #include <cmath>
 
@@ -119,6 +120,20 @@ KeyEvent menuKey(Button button)
     case Button_Right: return KeyEvent(Key_Right);
     default: return KeyEvent();
     }
+}
+
+
+FaceLabels faceLabels()
+{
+    const std::string labels = util::Settings::value("controller/faces", "xbox");
+    return labels == "nintendo" ? FaceLabels::Nintendo : labels == "playstation" ? FaceLabels::PlayStation : FaceLabels::Xbox;
+}
+
+
+void setFaceLabels(FaceLabels labels)
+{
+    if (labels != faceLabels())
+        util::Settings::setValue("controller/faces", labels == FaceLabels::Nintendo ? "nintendo" : labels == FaceLabels::PlayStation ? "playstation" : "xbox");
 }
 
 

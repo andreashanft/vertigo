@@ -21,6 +21,7 @@
 #include "gfx/font.h"
 #include "gfx/image.h"
 #include "gfx/pipeline.h"
+#include "game/input.hpp"
 #include "txt/stringtable.h"
 #include "util/datapath.h"
 
@@ -74,7 +75,7 @@ const int TextRadioFooter = 59, TextRadioTitle = 60;
 const float PadScale = 0.76f;
 const Point PadOrigin(251, 185);
 // the picture holds the controller and the lines, over the part of the box they take
-const Rect PadPicture(54, 136, 523, 164);
+const Rect PadPicture(54, 136, 523, 194);
 // the label columns: the control's name (an arrow for the d-pad), then its job, up to 25 characters
 const int PadLeftX = 60;
 const int PadRightX = 388;
@@ -86,16 +87,44 @@ const gfx::Rgb PadYellow = gfx::rgb(239, 214, 0);
 
 struct PadControl
 {
-    const char *name;               // empty for the d-pad, which has an arrow
+    const char *name;               // empty for the d-pad, which has an arrow, and the face buttons
     Vector2D at;                    // where its line ends, in the design space
     txt::StringVertigo job;
     int second;                     // its job with LB held, -1 for none
     int arrow = -1;                 // the d-pad's: 0 up, 1 right, 2 down, 3 left
+    int face = -1;                  // a face button's place: 0 top, 1 left, 2 right, 3 bottom
 };
+
+// The face buttons work by their letters (input::FaceLabels): the one at each place (top, left,
+// right, bottom) on the controller connected last, as A, B, X or Y (0-3), its name (a PlayStation
+// controller's symbols are drawn) and its jobs
+int faceButton(int place)
+{
+    static const int letters[2][4] = { { 3, 2, 1, 0 }, { 2, 3, 0, 1 } };
+    return letters[input::faceLabels() == input::FaceLabels::Nintendo ? 1 : 0][place];
+}
+
+const char *faceName(int place)
+{
+    static const char *const names[4] = { "A", "B", "X", "Y" };
+    return input::faceLabels() == input::FaceLabels::PlayStation ? "" : names[faceButton(place)];
+}
+
+txt::StringVertigo faceJob(int place)
+{
+    static const txt::StringVertigo jobs[4] = { txt::Pad_Ahead, txt::Pad_Astern, txt::Pad_NextTorpedo, txt::Pad_NavPoint };
+    return jobs[faceButton(place)];
+}
+
+int faceSecond(int place)
+{
+    static const int jobs[4] = { txt::Pad_Booster, txt::Pad_Buzzer, -1, txt::Pad_LockNavPoint };
+    return jobs[faceButton(place)];
+}
 
 // down each side in the order of the rows, so that the lines rarely cross
 const PadControl PadLeft[] = {
-    { "LT", Vector2D(35, 3), txt::Pad_Torpedo, -1 },
+    { "LT", Vector2D(35, 3), txt::Pad_Torpedo, txt::Pad_AttackingTorpedo },
     { "LB", Vector2D(35, 13), txt::Pad_Shift, -1 },
     { "BACK", Vector2D(70, 36), txt::Pad_Turrets, txt::Pad_Autopilot },
     { "", Vector2D(42, 40), txt::Pad_Faster, txt::Pad_WeaponStatus, 0 },
@@ -103,18 +132,31 @@ const PadControl PadLeft[] = {
     { "", Vector2D(42, 56), txt::Pad_Slower, txt::Pad_Armor, 2 },
     { "", Vector2D(34, 48), txt::Pad_Stop, txt::Pad_Engine, 3 },
     { "LS", Vector2D(62, 74), txt::Pad_Steer, -1 },
+    { "L3", Vector2D(62, 74), txt::Pad_Help, txt::Pad_Radio },
 };
 const PadControl PadRight[] = {
-    { "RT", Vector2D(135, 3), txt::Pad_Gun, -1 },
+    { "RT", Vector2D(135, 3), txt::Pad_Gun, txt::Pad_Attacker },
     { "RB", Vector2D(135, 13), txt::Pad_Lock, txt::Pad_LockEnemy },
     { "START", Vector2D(100, 36), txt::Pad_Menu, txt::Pad_Pause },
-    { "Y", Vector2D(128, 38), txt::Pad_NavPoint, txt::Pad_LockNavPoint },
-    { "X", Vector2D(118, 48), txt::Pad_NextTorpedo, -1 },
-    { "B", Vector2D(138, 48), txt::Pad_Astern, txt::Pad_Buzzer },
-    { "A", Vector2D(128, 58), txt::Pad_Ahead, txt::Pad_Booster },
+    { "", Vector2D(128, 38), txt::Pad_NavPoint, txt::Pad_LockNavPoint, -1, 0 },
+    { "", Vector2D(118, 48), txt::Pad_NextTorpedo, -1, -1, 1 },
+    { "", Vector2D(138, 48), txt::Pad_Astern, txt::Pad_Buzzer, -1, 2 },
+    { "", Vector2D(128, 58), txt::Pad_Ahead, txt::Pad_Booster, -1, 3 },
     { "RS", Vector2D(108, 74), txt::Pad_Look, txt::Pad_Zoom },
     { "R3", Vector2D(108, 74), txt::Pad_View, -1 },
 };
+
+// the right side's controls, the face buttons with the jobs of the letters at their places
+std::vector<PadControl> padRight()
+{
+    std::vector<PadControl> controls(std::begin(PadRight), std::end(PadRight));
+    for (PadControl &control : controls)
+        if (control.face >= 0) {
+            control.job = faceJob(control.face);
+            control.second = faceSecond(control.face);
+        }
+    return controls;
+}
 
 // a point of the design space in the art
 Point padPoint(const Vector2D &at)
@@ -165,6 +207,28 @@ struct PadCanvas
                 const Point p = direction == 0 ? Point(j, i) : direction == 1 ? Point(3 - i, j) : direction == 2 ? Point(j, 3 - i) : Point(i, j);
                 pixel(at.x + p.x, at.y + p.y, colour);
             }
+    }
+    // a PlayStation face button's symbol, 7 pixels across, from its corner: a triangle (top), a
+    // square (left), a circle (right) or a cross (bottom)
+    void symbol(const Point &at, int face, gfx::Rgb colour)
+    {
+        if (face == 0) {
+            line(at + Point(3, 0), at + Point(0, 6), colour);
+            line(at + Point(3, 0), at + Point(6, 6), colour);
+            line(at + Point(0, 6), at + Point(6, 6), colour);
+        } else if (face == 1) {
+            line(at, at + Point(6, 0), colour);
+            line(at + Point(6, 0), at + Point(6, 6), colour);
+            line(at + Point(6, 6), at + Point(0, 6), colour);
+            line(at + Point(0, 6), at, colour);
+        } else if (face == 2) {
+            for (const Point &p : { Point(2, 0), Point(3, 0), Point(4, 0), Point(1, 1), Point(5, 1), Point(0, 2), Point(6, 2), Point(0, 3),
+                                    Point(6, 3), Point(0, 4), Point(6, 4), Point(1, 5), Point(5, 5), Point(2, 6), Point(3, 6), Point(4, 6) })
+                pixel(at.x + p.x, at.y + p.y, colour);
+        } else {
+            line(at, at + Point(6, 6), colour);
+            line(at + Point(6, 0), at + Point(0, 6), colour);
+        }
     }
     void circle(const Vector2D &centre, float radius, gfx::Rgb colour)
     {
@@ -257,6 +321,13 @@ void Pages::open(Page page)
 }
 
 
+void Pages::openController()
+{
+    open(Page::Help);
+    m_helpPage = int(m_help.size());
+}
+
+
 void Pages::next()
 {
     if (m_page == Page::Help)
@@ -340,7 +411,10 @@ void Pages::drawController(const Rect &box)
     gfx::Font &green = m_hud->fontGreen();
     gfx::Font &yellow = m_hud->fontYellow();
     auto row = [](int i) { return FirstLineY + i*LineHeight; };
-    if (!m_controller.isValid()) {
+    // (made again when another kind of controller has been connected since)
+    const int faces = int(input::faceLabels());
+    if (!m_controller.isValid() || faces != m_controllerFaces) {
+        m_controllerFaces = faces;
         PadCanvas canvas{ gfx::Image(PadPicture.width, PadPicture.height, gfx::Image::ARGB32) };
         canvas.shape({ { 14, 22 }, { 30, 19 }, { 60, 21 }, { 110, 21 }, { 140, 19 }, { 156, 22 }, { 163, 32 }, { 166, 52 },
                        { 165, 77 }, { 160, 102 }, { 152, 116 }, { 140, 120 }, { 128, 114 }, { 118, 98 }, { 106, 88 },
@@ -371,7 +445,9 @@ void Pages::drawController(const Rect &box)
             i += control.second >= 0 ? 2 : 1;
         }
         i = 0;
-        for (const PadControl &control : PadRight) {
+        for (const PadControl &control : padRight()) {
+            if (control.face >= 0 && input::faceLabels() == input::FaceLabels::PlayStation)
+                canvas.symbol(Point(PadRightX + 1, row(i)), control.face, PadGreen);
             canvas.line(padPoint(control.at), Point(PadRightX - 4, row(i) + 3), PadLine);
             i += control.second >= 0 ? 2 : 1;
         }
@@ -384,10 +460,9 @@ void Pages::drawController(const Rect &box)
     for (int side = 0; side < 2; side++) {
         const int x = side == 0 ? PadLeftX : PadRightX;
         int i = 0;
-        for (const PadControl &control : side == 0 ? std::vector<PadControl>(std::begin(PadLeft), std::end(PadLeft))
-                                                   : std::vector<PadControl>(std::begin(PadRight), std::end(PadRight))) {
+        for (const PadControl &control : side == 0 ? std::vector<PadControl>(std::begin(PadLeft), std::end(PadLeft)) : padRight()) {
             gfx::Font &font = control.job == txt::Pad_Shift ? yellow : green;
-            font.draw(control.name, place(box, x, row(i)));
+            font.draw(control.face >= 0 ? faceName(control.face) : control.name, place(box, x, row(i)));
             font.draw(txt::StringTable::get(control.job), place(box, x + PadTextX, row(i)));
             if (control.second >= 0)
                 yellow.draw(txt::StringTable::get(txt::StringVertigo(control.second)), place(box, x + PadTextX, row(++i)));

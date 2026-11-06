@@ -122,6 +122,10 @@ String StringTable::get(StringVertigo string)
         { "UMSEHEN / KAMERA", "LOOK AROUND / CAMERA" },
         { "KAMERA-ZOOM", "CAMERA ZOOM" },
         { "ANSICHT WECHSELN", "CHANGE VIEW" },
+        { "N\x8e" "CHSTES ANGR. TORPEDO", "NEXT ATTACKING TORPEDO" },
+        { "N\x8e" "CHSTER ANGREIFER", "NEXT ATTACKER" },
+        { "HILFE", "HELP" },
+        { "FUNKMELDUNGEN", "RADIO MESSAGES" },
     };
     return String::fromLatin1(texts[string][m_language == "English" ? 1 : 0]);
 }

@@ -51,6 +51,8 @@ public:
 public:
     Page page() const { return m_page; }
     void open(Page page);
+    // the help at its last page, the game controller's
+    void openController();
     void close() { m_page = Page::None; }
     // the help's or the briefing's next page
     void next();
@@ -88,6 +90,7 @@ private:
     gfx::Texture m_black;
     gfx::Texture m_dot;
     gfx::Texture m_controller;     // the controller page's drawing, made when it is first shown
+    int m_controllerFaces = -1;    // the face buttons' labels it was made for (input::FaceLabels)
 };
 
 

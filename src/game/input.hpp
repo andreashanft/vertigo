@@ -147,6 +147,15 @@ Button parseButton(const String &text);
 // arrows (so a button starts a mission after its briefing and skips a movie)
 KeyEvent menuKey(Button button);
 
+// what is printed on the face buttons of the controller connected last (kept in settings.ini,
+// an Xbox controller's letters until one is): A at the bottom on an Xbox controller, B there on a
+// Nintendo one, a cross on a PlayStation one. The lettered buttons work by their letter (A on the
+// right of a Nintendo controller does what A at the bottom of an Xbox one does), a PlayStation
+// controller's by their place
+enum class FaceLabels { Xbox, Nintendo, PlayStation };
+FaceLabels faceLabels();
+void setFaceLabels(FaceLabels labels);
+
 } // namespace input
 
 #endif // GAME_INPUT_HPP

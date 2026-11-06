@@ -277,14 +277,17 @@ Xbox controller's. The left stick steers as far as it is pushed; as with the
 original's joystick, forward lowers the nose. The buttons stand for the keys
 in brackets, and LB held gives a second set (held before the other button).
 The in-mission help (H) shows them on its last page, with or without a
-controller connected:
+controller connected, with the letters or symbols of the controller connected
+last. The face buttons work by their letters, so A gives full ahead at the
+bottom of an Xbox controller and on the right of a Nintendo one; a PlayStation
+controller's work by their place (the cross as A):
 
 | Control | In a mission | With LB held |
 |---|---|---|
 | Left stick | steer | |
 | Right stick | look around in the 3D cockpit; in the look-at view move the camera round the boat | zoom the view from outside (up and down) |
-| RT | fire the gun (Space) | |
-| LT | fire a torpedo (Tab) | |
+| RT | fire the gun (Space) | lock the next attacker (J) |
+| LT | fire a torpedo (Tab) | lock the next attacking torpedo (G) |
 | RB | lock the target in the reticle (L) | lock the nearest enemy (U) |
 | A | full ahead while held (A) | the booster, while held (Q) |
 | B | full astern while held (the key below A: Z, or Y on a German keyboard) | drop a buzzer (D) |
@@ -294,6 +297,7 @@ controller connected:
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
 | D-pad left | stop (C) | engine on or off (the key left of 1) |
 | D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
+| L3 (press the left stick) | the help, at the controller's page; again for its next page (H) | the radio messages (M) |
 | R3 (press the right stick) | the next cockpit or view from outside (V) | |
 | Start | mission menu (Esc) | pause (P) |
 | Back | turret menu (O) | autopilot (Alt+A) |

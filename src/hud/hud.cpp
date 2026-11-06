@@ -1340,8 +1340,8 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     const bool second = m_shoulder;
     switch (button)
     {
-    case Button_RightTrigger: return KeyEvent(Key_Space);
-    case Button_LeftTrigger: return KeyEvent(Key_Tab);
+    case Button_RightTrigger: return second ? KeyEvent(Key_J) : KeyEvent(Key_Space);
+    case Button_LeftTrigger: return second ? KeyEvent(Key_G) : KeyEvent(Key_Tab);
     case Button_RightShoulder: return second ? KeyEvent(Key_U) : KeyEvent(Key_L);
     case Button_South: return second ? KeyEvent(Key_Q) : KeyEvent(Key_A);
     case Button_East: return second ? KeyEvent(Key_D) : KeyEvent(Key_Z);
@@ -1351,6 +1351,7 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
     case Button_Left: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_C);
     case Button_Right: return second ? KeyEvent(Key_R, AltModifier) : KeyEvent(Key_R);
+    case Button_LeftStick: return second ? KeyEvent(Key_M) : KeyEvent(Key_H);
     case Button_RightStick: return KeyEvent(Key_V);
     case Button_Start: return second ? KeyEvent(Key_P) : KeyEvent(Key_Escape);
     case Button_Back: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_O);
@@ -1411,6 +1412,12 @@ void HUD::buttonPressEvent(input::Button button)
 
     const bool menu = m_menu->page() != MissionMenu::Page::None;
     const input::KeyEvent key = buttonKey(button);
+    // the help opened from the controller starts at the controller's page
+    if (key.key() == input::Key_H && m_pages->page() == Pages::Page::None)
+    {
+        m_pages->openController();
+        return;
+    }
     pressKey(key, button);
     if (!m_scenario)
         return;
