@@ -55,3 +55,17 @@ shot topos-asylum --new-game --station st0203 --screenshot 3=topos-asylum.png --
 shot depot-succubus --open-mission 2052 --screenshot 3=depot-succubus.png --timeout 4
 # the Zorn's cockpit beside the KILLTEK freighter of the second training mission
 shot zorn-freighter strai2 --boat 2051 --cockpit 2d --start 168,98,26,0 --fixed-step --screenshot 1.5=zorn-freighter.png --timeout 2
+
+# the help's controller page (its fourth, H four times), with an Xbox controller's letters, cut
+# out of the window: the help's box, 54 to 577 across and 92 to 406 down of the 640x480 picture
+"$vertigo" --window $size strai0 --cockpit 2d --faces xbox --fixed-step --keys "1=H,1.2=H,1.4=H,1.6=H" \
+    --screenshot 2=controller-help.png --timeout 2.2 > /dev/null || [ $? -eq 3 ]
+# (the picture fills the window's height or width, centred in the other)
+crop=$(sips -g pixelWidth -g pixelHeight controller-help.png | awk '
+    /pixelWidth/ { w = $2 } /pixelHeight/ { h = $2 }
+    END { s = (w/640 < h/480) ? w/640 : h/480; x = (w - 640*s)/2; y = (h - 480*s)/2
+          printf "%d %d --cropOffset %d %d", 314*s, 523*s, y + 92*s, x + 54*s }')
+sips -c $crop controller-help.png > /dev/null
+sips -s format jpeg -s formatOptions 85 controller-help.png --out controller-help.jpg > /dev/null
+rm controller-help.png
+echo controller-help.jpg

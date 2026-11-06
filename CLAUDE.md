@@ -15,5 +15,6 @@
   docs/screenshots/take.sh (the iPad one by hand, as the script's comment
   says). A change that alters what one of them shows (the main menu, the
   station screens, the depot, the cockpits and HUD, the models' textures,
-  the touch controls, the upscaled graphics or the vector font) also retakes
-  that screenshot with the script and commits the new image.
+  the touch controls, the upscaled graphics, the vector font, or the
+  controller's buttons and the help's controller page) also retakes that
+  screenshot with the script and commits the new image.

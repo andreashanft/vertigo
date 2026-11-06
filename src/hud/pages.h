@@ -36,7 +36,8 @@ class HUD;
 
 
 // The pages the original lays over the view (docs/ROADMAP.md, appendix E): the key help (H, its
-// pages from VFX/COCKPIT/HELP0-2.TXT, H turns them, Esc closes), the log of the radio messages and
+// pages from VFX/COCKPIT/HELP0-2.TXT and Vertigo's page for the game controllers, H turns them,
+// Esc closes), the log of the radio messages and
 // the units' events (M; Esc or M closes) and the mission's briefing (B; its text, then its targets
 // and tips; B or Enter turns, Esc closes). The mission goes on underneath.
 class Pages : public ui::Widget
@@ -50,6 +51,8 @@ public:
 public:
     Page page() const { return m_page; }
     void open(Page page);
+    // the help at its last page, the game controller's
+    void openController();
     void close() { m_page = Page::None; }
     // the help's or the briefing's next page
     void next();
@@ -69,6 +72,7 @@ private:
     void drawFrame(const Rect &box);
     void drawDots(int x1, int x2, int y);
     void drawHelp(const Rect &box);
+    void drawController(const Rect &box);
     void drawRadio(const Rect &box);
     void drawBriefing(const Rect &box);
     // right-aligned at the box's bottom right
@@ -85,6 +89,8 @@ private:
     StringList m_briefingTips;
     gfx::Texture m_black;
     gfx::Texture m_dot;
+    gfx::Texture m_controller;     // the controller page's drawing, made when it is first shown
+    int m_controllerFaces = -1;    // the face buttons' labels it was made for (input::FaceLabels)
 };
 
 

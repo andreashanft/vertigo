@@ -462,8 +462,15 @@ void Window::handle(const SDL_Event &event)
     }
     // game controllers: all of them at once, each from when it is connected
     case SDL_EVENT_GAMEPAD_ADDED:
-        if (!m_onlyGamepad || event.gdevice.which == m_onlyGamepad)
-            SDL_OpenGamepad(event.gdevice.which);
+        if (!m_onlyGamepad || event.gdevice.which == m_onlyGamepad) {
+            // its face buttons' letters or symbols, for the help's controller page
+            if (SDL_Gamepad *gamepad = SDL_OpenGamepad(event.gdevice.which)) {
+                const SDL_GamepadButtonLabel south = SDL_GetGamepadButtonLabel(gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
+                if (south == SDL_GAMEPAD_BUTTON_LABEL_A || south == SDL_GAMEPAD_BUTTON_LABEL_B || south == SDL_GAMEPAD_BUTTON_LABEL_CROSS)
+                    input::setFaceLabels(south == SDL_GAMEPAD_BUTTON_LABEL_B ? input::FaceLabels::Nintendo :
+                                         south == SDL_GAMEPAD_BUTTON_LABEL_CROSS ? input::FaceLabels::PlayStation : input::FaceLabels::Xbox);
+            }
+        }
         break;
     case SDL_EVENT_GAMEPAD_REMOVED:
         if (SDL_Gamepad *gamepad = SDL_GetGamepadFromID(event.gdevice.which)) {

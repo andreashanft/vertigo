@@ -1333,28 +1333,29 @@ void HUD::menuAction(int action)
 
 // The keys a game controller's buttons stand for in a mission, after the original's joystick
 // buttons where it had them (fire, lock the target in the reticle, fire a torpedo, the next
-// torpedo); LB held gives the second set
+// torpedo); LB held gives the second set. The help's last page shows them (Pages::drawController)
 input::KeyEvent HUD::buttonKey(input::Button button)
 {
     using namespace input;
     const bool second = m_shoulder;
     switch (button)
     {
-    case Button_RightTrigger: return KeyEvent(Key_Space);
-    case Button_LeftTrigger: return KeyEvent(Key_Tab);
-    case Button_RightShoulder: return KeyEvent(Key_L);
-    case Button_South: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_U);
-    case Button_East: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_D);
-    case Button_West: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_Return);
-    case Button_North: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
+    case Button_RightTrigger: return second ? KeyEvent(Key_J) : KeyEvent(Key_Space);
+    case Button_LeftTrigger: return second ? KeyEvent(Key_G) : KeyEvent(Key_Tab);
+    case Button_RightShoulder: return second ? KeyEvent(Key_U) : KeyEvent(Key_L);
+    // the face buttons by their place: full ahead on the right, full astern at the bottom
+    case Button_East: return second ? KeyEvent(Key_Q) : KeyEvent(Key_A);
+    case Button_South: return second ? KeyEvent(Key_D) : KeyEvent(Key_Z);
+    case Button_North: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_Return);
+    case Button_West: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
     case Button_Up: return second ? KeyEvent(Key(Key_F1 + m_weaponPage)) : KeyEvent(Key_S);
     case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
-    case Button_Left: return second ? KeyEvent(Key_Q) : KeyEvent(Key_C);
+    case Button_Left: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_C);
     case Button_Right: return second ? KeyEvent(Key_R, AltModifier) : KeyEvent(Key_R);
-    case Button_LeftStick: return KeyEvent(Key_A);
-    case Button_RightStick: return KeyEvent(Key_Z);
+    case Button_LeftStick: return second ? KeyEvent(Key_M) : KeyEvent(Key_H);
+    case Button_RightStick: return KeyEvent(Key_V);
     case Button_Start: return second ? KeyEvent(Key_P) : KeyEvent(Key_Escape);
-    case Button_Back: return second ? KeyEvent(Key_V) : KeyEvent(Key_O);
+    case Button_Back: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_O);
     default: return KeyEvent();
     }
 }
@@ -1412,6 +1413,12 @@ void HUD::buttonPressEvent(input::Button button)
 
     const bool menu = m_menu->page() != MissionMenu::Page::None;
     const input::KeyEvent key = buttonKey(button);
+    // the help opened from the controller starts at the controller's page
+    if (key.key() == input::Key_H && m_pages->page() == Pages::Page::None)
+    {
+        m_pages->openController();
+        return;
+    }
     pressKey(key, button);
     if (!m_scenario)
         return;
