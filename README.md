@@ -280,27 +280,27 @@ original's joystick, forward lowers the nose. The buttons stand for the keys
 in brackets, and LB held gives a second set (held before the other button).
 The in-mission help (H) shows them on its last page, with or without a
 controller connected, with the letters or symbols of the controller connected
-last. The buttons work by their place: full ahead is the right face button,
-B on an Xbox controller and A on a Nintendo one:
+last. The buttons work by their place: the gun is the right face button, B on
+an Xbox controller and A on a Nintendo one:
 
 | Control | In a mission | With LB held |
 |---|---|---|
 | Left stick | steer | |
 | Right stick | look around in the 3D cockpit; in the look-at view move the camera round the boat | zoom the view from outside (up and down) |
-| RT | fire the gun (Space) | lock the next attacker (J) |
-| LT | fire a torpedo (Tab) | lock the next attacking torpedo (G) |
-| RB | lock the target in the reticle (L) | lock the nearest enemy (U) |
-| B (right) | full ahead while held (A) | the booster, while held (Q) |
-| A (bottom) | full astern while held (the key below A: Z, or Y on a German keyboard) | drop a buzzer (D) |
-| Y (top) | next torpedo (Enter) | debug overlay (Ctrl+D) |
-| X (left) | next nav point (N) | lock the nav point (Alt+N) |
+| RT | full ahead while held (A) | the booster, while held (Q) |
+| LT | full astern while held (the key below A: Z, or Y on a German keyboard) | |
+| RB | next nav point (N) | lock the nav point (Alt+N) |
+| B (right) | fire the gun (Space) | lock the next attacker (J) |
+| A (bottom) | fire a torpedo (Tab) | lock the next attacking torpedo (G) |
+| Y (top) | lock the target in the reticle (L) | lock the nearest enemy (U) |
+| X (left) | next torpedo (Enter) | drop a buzzer (D) |
 | D-pad up | 10 km/h faster, repeating while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
 | D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
 | D-pad left | stop (C) | engine on or off (the key left of 1) |
-| D-pad right | sonar on or off (R) | sonar zoom (Alt+R) |
+| D-pad right | sonar zoom (Alt+R) | sonar on or off (R) |
 | L3 (press the left stick) | the help, at the controller's page; again for its next page (H) | the radio messages (M) |
-| R3 (press the right stick) | the next cockpit or view from outside (V) | |
-| Start | mission menu (Esc) | pause (P) |
+| R3 (press the right stick) | the next cockpit or view from outside (V) | debug overlay (Ctrl+D) |
+| Start | pause (P) | mission menu (Esc) |
 | Back | turret menu (O) | autopilot (Alt+A) |
 
 In the mission and turret menus the d-pad highlights an option, A takes it and
