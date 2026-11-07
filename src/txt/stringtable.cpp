@@ -110,7 +110,7 @@ String StringTable::get(StringVertigo string)
         { "BORDKANONE ABFEUERN", "FIRE GUN" },
         { "ZIEL IM VISIER AUFFASSEN", "LOCK TARGET IN SIGHT" },
         { "N\x8e" "CHSTEN GEGNER AUFFASSEN", "LOCK NEAREST ENEMY" },
-        { "MISSIONSMEN\x9a", "MISSION MENU" },
+        { "MISSIONSMEN\x9a/ESC", "MISSION MENU/ESC" },
         { "PAUSE", "PAUSE" },
         { "N\x8e" "CHSTER NAV-PUNKT", "NEXT NAV POINT" },
         { "NAV-PUNKT AUFFASSEN", "LOCK NAV POINT" },
