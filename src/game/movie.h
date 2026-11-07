@@ -73,6 +73,7 @@ private:
     sfx::Stream m_stream;
     bool m_pause;
     std::set<long long> m_touches; // fingers put down on the movie
+    bool m_shown = false;           // a frame of it has been drawn
     std::function<void()> m_funcFinished;
 };
 
