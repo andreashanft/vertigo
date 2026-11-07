@@ -1079,9 +1079,17 @@ void HUD::press(input::KeyEvent *e)
         engageAutopilot();
         return;
     }
+    // the pause clears the view: the help, the radio log, the briefing and the turret and autopilot
+    // menus close
     if (e->key() == input::Key_P)
     {
         m_paused = !m_paused;
+        if (m_paused)
+        {
+            m_pages->close();
+            if (m_menu->page() != MissionMenu::Page::None && !m_menu->pauses())
+                m_menu->open(MissionMenu::Page::None);
+        }
         return;
     }
     if (m_paused || m_scenario->playerDestroyed())
@@ -1349,8 +1357,9 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_South: return second ? KeyEvent(Key_G) : KeyEvent(Key_Tab);
     case Button_North: return second ? KeyEvent(Key_U) : KeyEvent(Key_L);
     case Button_West: return second ? KeyEvent(Key_D) : KeyEvent(Key_Return);
-    case Button_Up: return second ? KeyEvent(Key(Key_F1 + m_weaponPage)) : KeyEvent(Key_S);
-    case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
+    // (the d-pad's up without LB steps through the weapon page, buttonPressEvent)
+    case Button_Up: return second ? KeyEvent(Key_S) : KeyEvent();
+    case Button_Down: return second ? KeyEvent(Key_X) : KeyEvent(Key_I);
     case Button_Left: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_C);
     case Button_Right: return second ? KeyEvent(Key_R) : KeyEvent(Key_R, AltModifier);
     case Button_LeftStick: return second ? KeyEvent(Key_M) : KeyEvent(Key_H);
@@ -1413,6 +1422,16 @@ void HUD::buttonPressEvent(input::Button button)
     }
 
     const bool menu = m_menu->page() != MissionMenu::Page::None;
+    // the d-pad's up: the weapon page's next weapon, then the overview, with the F keys' click
+    if (button == input::Button_Up && !m_shoulder)
+    {
+        if (!m_slaveMonitors.empty() && !m_paused && !m_scenario->playerDestroyed())
+        {
+            m_slaveMonitors.front()->nextWeapon();
+            sfx::SampleMap::get(sfx::Sample::Click).play();
+        }
+        return;
+    }
     const input::KeyEvent key = buttonKey(button);
     // the help opened from the controller starts at the controller's page
     if (key.key() == input::Key_H && m_pages->page() == Pages::Page::None)
@@ -1426,8 +1445,6 @@ void HUD::buttonPressEvent(input::Button button)
     // a menu opened by a button shows its highlight at once
     if (!menu && m_menu->page() != MissionMenu::Page::None)
         m_menu->select(0);
-    if (key.key() >= input::Key_F1 && key.key() <= input::Key_F4)
-        m_weaponPage = (m_weaponPage + 1) % 4;
 }
 
 

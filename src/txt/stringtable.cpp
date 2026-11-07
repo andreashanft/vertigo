@@ -99,7 +99,7 @@ String StringTable::get(StringVertigo string)
         { "GESCH\x9aTZTURM-MEN\x9a", "TURRET MENU" },
         { "AUTOPILOT", "AUTOPILOT" },
         { "SCHNELLER (+10 KM/H)", "FASTER (+10 KM/H)" },
-        { "WAFFENSTATUS (F1-F4)", "WEAPON STATUS (F1-F4)" },
+        { "WAFFENSTATUS, \x9a" "BERSICHT", "WEAPON STATUS, OVERVIEW" },
         { "SONAR AN / AUS", "SONAR ON / OFF" },
         { "ZOOM SONARANZEIGE", "SONAR DISPLAY ZOOM" },
         { "LANGSAMER (-10 KM/H)", "SLOWER (-10 KM/H)" },

@@ -294,8 +294,8 @@ an Xbox controller and A on a Nintendo one:
 | A (bottom) | fire a torpedo (Tab) | lock the next attacking torpedo (G) |
 | Y (top) | lock the target in the reticle (L) | lock the nearest enemy (U) |
 | X (left) | next torpedo (Enter) | drop a buzzer (D) |
-| D-pad up | 10 km/h faster, repeating while held (S) | the weapon page: gun, magazine, turrets in turn (F1–F4) |
-| D-pad down | 10 km/h slower, the same (X) | armor and systems page (I) |
+| D-pad up | the weapon page: gun, magazine, the turrets, the overview in turn (F1–F4) | 10 km/h faster, repeating while held (S) |
+| D-pad down | armor and systems page (I) | 10 km/h slower, repeating while held (X) |
 | D-pad left | stop (C) | engine on or off (the key left of 1) |
 | D-pad right | sonar zoom (Alt+R) | sonar on or off (R) |
 | L3 (press the left stick) | the help, at the controller's page; again for its next page (H) | the radio messages (M) |

@@ -61,6 +61,9 @@ public:
     // overview, the armor page switches as I does; a single monitor (alone) goes on from the
     // overview to the armor page and from the system state back to the gun
     void tap(bool alone);
+    // the controller's d-pad: the weapon page's next weapon the boat has, then the overview, then
+    // the gun again (from another page the gun)
+    void nextWeapon();
     // whether a point of the 640x480 view is on the monitor
     bool contains(const Point &point) const;
     // the table of all weapons or the system state in a rect of the 640x480 view, without the
