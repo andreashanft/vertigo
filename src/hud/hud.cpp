@@ -1079,17 +1079,9 @@ void HUD::press(input::KeyEvent *e)
         engageAutopilot();
         return;
     }
-    // the pause clears the view: the help, the radio log, the briefing and the turret and autopilot
-    // menus close
     if (e->key() == input::Key_P)
     {
         m_paused = !m_paused;
-        if (m_paused)
-        {
-            m_pages->close();
-            if (m_menu->page() != MissionMenu::Page::None && !m_menu->pauses())
-                m_menu->open(MissionMenu::Page::None);
-        }
         return;
     }
     if (m_paused || m_scenario->playerDestroyed())
@@ -1216,11 +1208,11 @@ void HUD::press(input::KeyEvent *e)
         if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_scenario->conditionManager().autopilot())
-            {
                 engageAutopilot();
-                return;
-            }
-            m_menu->notice({ txt::StringTable::get(txt::Fight31), txt::StringTable::get(txt::Fight32) }, 3.0f);
+            else
+                m_menu->notice({ txt::StringTable::get(txt::Fight31), txt::StringTable::get(txt::Fight32) }, 3.0f);
+            // (not full ahead as A alone)
+            return;
         }
     }
 
@@ -1364,8 +1356,8 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     case Button_Right: return second ? KeyEvent(Key_R) : KeyEvent(Key_R, AltModifier);
     case Button_LeftStick: return second ? KeyEvent(Key_M) : KeyEvent(Key_H);
     case Button_RightStick: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_V);
-    case Button_Start: return second ? KeyEvent(Key_Escape) : KeyEvent(Key_P);
-    case Button_Back: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_O);
+    case Button_Start: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_Escape);
+    case Button_Back: return second ? KeyEvent(Key_O) : KeyEvent(Key_P);
     default: return KeyEvent();
     }
 }

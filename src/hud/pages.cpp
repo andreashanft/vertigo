@@ -109,7 +109,7 @@ const char *faceName(int place)
 const PadControl PadLeft[] = {
     { "LT", Vector2D(35, 3), txt::Pad_Astern, -1 },
     { "LB", Vector2D(35, 13), txt::Pad_Shift, -1 },
-    { "BACK", Vector2D(70, 36), txt::Pad_Turrets, txt::Pad_Autopilot },
+    { "BACK", Vector2D(70, 36), txt::Pad_Pause, txt::Pad_Turrets },
     { "", Vector2D(42, 40), txt::Pad_WeaponStatus, txt::Pad_Faster, 0 },
     { "", Vector2D(50, 48), txt::Pad_SonarZoom, txt::Pad_Sonar, 1 },
     { "", Vector2D(42, 56), txt::Pad_Armor, txt::Pad_Slower, 2 },
@@ -120,7 +120,7 @@ const PadControl PadLeft[] = {
 const PadControl PadRight[] = {
     { "RT", Vector2D(135, 3), txt::Pad_Ahead, txt::Pad_Booster },
     { "RB", Vector2D(135, 13), txt::Pad_NavPoint, txt::Pad_LockNavPoint },
-    { "START", Vector2D(100, 36), txt::Pad_Pause, txt::Pad_Menu },
+    { "START", Vector2D(100, 36), txt::Pad_Menu, txt::Pad_Autopilot },
     { "", Vector2D(128, 38), txt::Pad_Lock, txt::Pad_LockEnemy, -1, 0 },
     { "", Vector2D(118, 48), txt::Pad_NextTorpedo, txt::Pad_Buzzer, -1, 1 },
     { "", Vector2D(138, 48), txt::Pad_Gun, txt::Pad_Attacker, -1, 2 },

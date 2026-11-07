@@ -300,8 +300,8 @@ an Xbox controller and A on a Nintendo one:
 | D-pad right | sonar zoom (Alt+R) | sonar on or off (R) |
 | L3 (press the left stick) | the help, at the controller's page; again for its next page (H) | the radio messages (M) |
 | R3 (press the right stick) | the next cockpit or view from outside (V) | debug overlay (Ctrl+D) |
-| Start | pause (P) | mission menu (Esc) |
-| Back | turret menu (O) | autopilot (Alt+A) |
+| Start | mission menu (Esc) | autopilot (Alt+A) |
+| Back | pause (P) | turret menu (O) |
 
 In the mission and turret menus the d-pad highlights an option, A takes it and
 B goes back. Elsewhere A is Return, B and Start are Esc: any button starts a
