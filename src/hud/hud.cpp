@@ -444,6 +444,13 @@ void HUD::start(fight::Scenario *scenario)
     m_viewStickWait = -1;
     m_pinchStart = -1;
     m_wheel = 0;
+    // the controller's buttons and sticks start let go: those still held as the last mission ended
+    // (LB+Start for the autopilot) were let go on a screen that isn't the HUD's
+    m_shoulder = false;
+    m_heldKeys.clear();
+    m_repeat = -1;
+    m_padStick = m_lookStick = Vector2D(0);
+    updateStick();
     m_pages->close();
     m_scenario->headMotion().setStrength(headMotion());
     // the CD's audio tracks, as the game data import copies them out of the CD image, at half
