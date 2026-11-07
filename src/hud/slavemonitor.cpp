@@ -116,6 +116,25 @@ void SlaveMonitor::pressWeaponKey(Weapon weapon)
 }
 
 
+void SlaveMonitor::nextWeapon()
+{
+    if (m_page != Page::Weapon || m_overview)
+    {
+        m_page = Page::Weapon;
+        m_weapon = Weapon::Gun;
+        m_overview = false;
+        return;
+    }
+    for (int next = int(m_weapon) + 1; next <= int(Weapon::Turret2); next++)
+        if (next < int(Weapon::Turret1) || m_hud->scenario()->player()->turret(next - int(Weapon::Turret1)))
+        {
+            m_weapon = Weapon(next);
+            return;
+        }
+    m_overview = true;
+}
+
+
 void SlaveMonitor::tap(bool alone)
 {
     switch (m_page)
