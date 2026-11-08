@@ -246,6 +246,7 @@ private:
     std::map<int, input::KeyEvent> m_heldKeys;  // the keys the buttons held stand for
     int m_repeat = -1;      // the button that changes the speed again and again while held
     float m_repeatWait = 0;
+    float m_stepTime = 0;   // the time the mission's steps are behind, below 0 when one came early
     std::unique_ptr<TouchControls> m_touch;
     int m_weaponPage = 0;   // the next of F1-F4 for LB+Up
     bool m_integerScale;

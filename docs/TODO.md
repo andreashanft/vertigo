@@ -47,7 +47,7 @@ Units' behaviour:
 
 - Which of `car` 2 and 6 is left (Vertigo turns 2 left).
 - A tower's salvo in detail (KNOWLEDGE.md 4.3): whether its mountings fire
-  in the same frame or one after the other (Vertigo's one per frame, as a
+  in the same frame or one after the other (Vertigo's one per step, as a
   round's barrels), and whether an energy gun on a tower fires all the
   mountings in one go too (Vertigo's fires one shot per rearming time,
   through the mountings in turn).
@@ -59,6 +59,9 @@ Sensors, HUD and views:
 
 World, physics and effects:
 
+- The original's frame rate, which sets how fast its guns fire (KNOWLEDGE.md
+  4.3): whether it runs in fixed steps of 20 ms (50 a second), however fast
+  the computer is.
 - Why one of S00202's two upward current cells does nothing.
 - How an active mine moves while it chases: how fast, and how far a current
   carries it. Its drive takes currents at a factor of 0.2 against its own
@@ -106,8 +109,12 @@ comparisons above.
   as Vertigo's vertices and normals are its spline's, finer than the
   original's grid; the ground runs straight between the corners only in a
   lifted cell and its eight neighbours.
-- The barrels of a round fire 1/60 s apart whatever the frame rate, as the
-  original's do at 60 frames a second.
+- The mission runs in steps of 1/60 s, one a frame at 60 Hz and one every
+  other frame at 120 Hz. So what the original does once a frame (a gun fires
+  on the frame after the one in which it is ready, a round's barrels one a
+  frame, a patrol's new point every frame) goes as at 60 frames a second on
+  every display; the original's own rate is an open comparison. The world
+  moves on in those steps, also on a faster display.
 - The player's turrets hold their fire while a friend is in the line, in
   front of the target or behind it; the original's fire through friends.
   This one is kept on purpose.

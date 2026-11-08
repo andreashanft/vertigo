@@ -423,6 +423,7 @@ void HUD::start(fight::Scenario *scenario)
     m_scenario->setBoat(m_boat);
     m_lastTicks = util::ticks();
     m_frames = 0;
+    m_stepTime = 0;
     // (not the time the mission took to load)
     m_frameRate = FrameRate();
     m_frameBegin = std::chrono::steady_clock::time_point();
@@ -504,10 +505,13 @@ void HUD::step(float elapsedTime)
             press(&key);
         }
     }
-    while (elapsedTime > 0.0f) {
-        const float step = std::min(elapsedTime, 0.02f);
-        m_scenario->update(step);
-        elapsedTime -= step;
+    // the mission goes on in its fixed steps (fight::Scenario::Step), as many as the time asks for:
+    // one a frame at 60 Hz, one every other frame at 120 Hz. A step may come up to a quarter of one
+    // early, so that frames a little short or long still get one each
+    m_stepTime += elapsedTime;
+    while (m_stepTime >= 0.75f*fight::Scenario::Step) {
+        m_scenario->update(fight::Scenario::Step);
+        m_stepTime -= fight::Scenario::Step;
     }
 
     updateMissionState();

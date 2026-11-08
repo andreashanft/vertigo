@@ -59,6 +59,11 @@ public:
     Scenario(const String &name);
     ~Scenario();
 
+    // the mission runs in steps of this length whatever the display's refresh, so the rules that
+    // go once a step (a gun fires on the step after the one in which it is ready, a round's
+    // barrels a step apart, a patrol's new point every step) go the same on every display
+    static constexpr float Step = 1.0f/60;
+
     // the game's difficulty: 0 easy, 1 normal, 2 hard. Units whose "diff" key is higher stay out of the mission.
     static int difficulty();
     static void setDifficulty(int difficulty);
