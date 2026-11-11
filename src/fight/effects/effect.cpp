@@ -48,7 +48,7 @@ bool Effect::update(float elapsedTime)
 
 void Effect::draw()
 {
-    m_billboard->draw(m_position, m_angle, m_scale, m_time, m_scenario->eyeAxes());
+    m_billboard->draw(drawPosition(), m_angle, m_scale, m_time, m_scenario->eyeAxes());
 }
 
 

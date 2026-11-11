@@ -90,7 +90,8 @@ void Master::draw()
     {
         if (!m_hud->scenario()->sonar().isShown(entry))
             continue;
-        Vector4D point4 = m * Vector4D(entry.object->center(), 1);
+        // (where it is drawn: fight::Object::drawPosition())
+        Vector4D point4 = m * Vector4D(entry.object->center() + entry.object->drawShift(), 1);
         drawPoint(point4, rect, entry.object == target.locked(), entry.isFriend, entry.isPassive);
     }
     if (target.lockedNavPoint() != nullptr)
@@ -111,7 +112,7 @@ void Master::draw()
         if (state != fight::PlayerTurret::State::Locking && state != fight::PlayerTurret::State::Firing &&
             state != fight::PlayerTurret::State::Volley && state != fight::PlayerTurret::State::Rearming)
             continue;
-        const Vector4D point4 = m * Vector4D(turret->target()->center(), 1);
+        const Vector4D point4 = m * Vector4D(turret->target()->center() + turret->target()->drawShift(), 1);
         const Vector2D centre(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
         const Vector2D half(rect.width/2.0f, rect.height/2.0f);
         // (behind the eye the projection mirrors the way to the target, so it is turned back and

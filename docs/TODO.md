@@ -59,9 +59,6 @@ Sensors, HUD and views:
 
 World, physics and effects:
 
-- The original's frame rate, which sets how fast its guns fire (KNOWLEDGE.md
-  4.3): whether it runs in fixed steps of 20 ms (50 a second), however fast
-  the computer is.
 - Why one of S00202's two upward current cells does nothing.
 - How an active mine moves while it chases: how fast, and how far a current
   carries it. Its drive takes currents at a factor of 0.2 against its own
@@ -113,8 +110,12 @@ comparisons above.
   other frame at 120 Hz. So what the original does once a frame (a gun fires
   on the frame after the one in which it is ready, a round's barrels one a
   frame, a patrol's new point every frame) goes as at 60 frames a second on
-  every display; the original's own rate is an open comparison. The world
-  moves on in those steps, also on a faster display.
+  every display; the original has no rate of its own, as it updates once a
+  frame at whatever rate the computer reaches (KNOWLEDGE.md 1). A frame
+  between two steps shows the view, and the units, torpedoes and shots, a
+  part of a step further along their way, so the picture moves evenly on
+  every display; the units' own turning, the particles and the instruments
+  go in the steps.
 - The player's turrets hold their fire while a friend is in the line, in
   front of the target or behind it; the original's fire through friends.
   This one is kept on purpose.

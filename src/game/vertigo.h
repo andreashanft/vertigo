@@ -50,7 +50,7 @@ public:
         float timeout = 0;                              // test mode time limit in seconds
         bool debugOverlay = false;
         bool headless = false;                          // test mode: no window and no sound, simulated time
-        bool fixedStep = false;                         // test mode: 20 ms of mission time per frame
+        bool fixedStep = false;                         // test mode: one mission step (1/60 s) per frame
         std::vector<int> destroy;                       // test mode: destroy these units after one second
         std::vector<int> collapse;                      // test mode: collapse these units' energy defence after one second
         struct Key { float time; input::Key key; int modifiers; float hold; };

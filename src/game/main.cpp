@@ -289,7 +289,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("shake", "How strongly the pilot's head moves in the 3D cockpit and the 2D cockpit shakes, 0 to turn it off (default 1).", "factor");
     parser.addOption("faces", "Name the face buttons on the help's controller page as an Xbox, Nintendo or PlayStation controller has them, for this run.", "xbox|nintendo|playstation");
     parser.addOption("screenshot", "Save the window as PNG at the given mission seconds (test mode), or seconds since the start, e.g. 3=front.png.", "time=file");
-    parser.addOption("fixed-step", "Advance the mission by 20 ms per frame instead of by the real time (test mode, with a window), so runs repeat exactly, e.g. for --screenshot.");
+    parser.addOption("fixed-step", "Advance the mission by one step of 1/60 s per frame instead of by the real time (test mode, with a window), so runs repeat exactly, e.g. for --screenshot.");
     parser.addOption("click", "Click at the given seconds (test mode, or since the start) at a point of the 640x480 screen, e.g. 2=320,300; with a second point the mouse drags from the first to it, e.g. 2=100,50>300,80.", "time=x,y[>x,y]");
     parser.addOption("look", "Turn the pilot's head in the 3D cockpit for the whole run, in degrees left and up, e.g. --look=60,-10 (otherwise drag with the mouse).", "yaw,pitch");
     parser.addOption("data", "Use the game data in this directory for this run, instead of the remembered one.", "directory");

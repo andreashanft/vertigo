@@ -577,7 +577,7 @@ void MountedTurret::draw()
     if (m_gone)
         return;
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_carrier->position());
+    gfx::Pipeline::translate(m_carrier->drawPosition());
     gfx::Pipeline::multiply(Matrix(carrierFrame()));
     gfx::Pipeline::translate(m_mountPosition);
     if (m_below)

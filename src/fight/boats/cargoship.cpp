@@ -261,7 +261,7 @@ void CargoShip::drawBlock(int index)
 {
     const Block &block = m_blocks[index];
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     gfx::Pipeline::multiply(blockTransform(block));
     block.module->draw();
@@ -355,7 +355,7 @@ void CargoShip::sleep()
 void CargoShip::draw()
 {
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     for (const Block &block : m_blocks)
     {

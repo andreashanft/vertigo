@@ -222,8 +222,8 @@ int Vertigo::start()
     }
     m_timer.start();
     // test times are mission seconds: simulated without a window, real time with one, unless the
-    // mission advances by a fixed step per frame
-    m_fixedStep = m_options.fixedStep && !m_headless && m_hud ? 0.02f : 0;
+    // mission advances by one of its steps per frame
+    m_fixedStep = m_options.fixedStep && !m_headless && m_hud ? fight::Scenario::Step : 0;
     hud::HUD::setFixedStep(m_fixedStep);
 
     if (!m_headless)
@@ -322,10 +322,13 @@ int Vertigo::iterate()
     // what test runs make up comes first, as the platform's input would
     m_window.deliverPosted();
     if (m_headless) {
+        // a frame without a window is one of the mission's steps
         if (m_scenario)
-            m_hud->step(0.02f);
-        m_simulatedTime += 0.02f;
+            m_hud->step(fight::Scenario::Step);
+        m_simulatedTime += fight::Scenario::Step;
     } else {
+        // (the window may have moved to another display)
+        hud::HUD::setRefreshRate(m_window.refreshRate());
         m_window.render();
     }
     util::DeferredDeletable::clear();

@@ -90,12 +90,18 @@ public:
 
     const Matrix& projectionMatrix() const { return m_projectionMatrix; }
     const Matrix& projectionMatrixInverted() const { return m_projectionMatrixInverted; }
-    // the boat's camera, the pilot's eye: the reticle and the HUD's symbols go by it, also while
-    // the world is seen from outside
-    const Matrix& cameraMatrix() const { return m_cameraMatrix; }
-    const Matrix& cameraMatrixInverted() const { return m_cameraMatrixInverted; }
+    // The frame to draw is this part of a step past the mission's last step (StepClock::ahead();
+    // 0 for the step itself). The cameras below and whatever moves (Object::drawPosition()) are
+    // drawn that far further along their way in that step, so that the picture moves evenly on a
+    // display that shows more frames, or other ones, than the mission has steps.
+    void setDrawAhead(float steps);
+    float drawAhead() const { return m_drawAhead; }
+    // the boat's camera, the pilot's eye, as the frame is drawn: the reticle and the HUD's symbols
+    // go by it, also while the world is seen from outside
+    const Matrix& cameraMatrix() const { return m_drawCamera; }
+    const Matrix& cameraMatrixInverted() const { return m_drawCameraInverted; }
     // the camera the world is seen from: the boat's, or an outside view's
-    const Matrix& viewMatrix() const { return m_outsideView.mode() == OutsideView::Mode::Cockpit ? m_cameraMatrix : m_outsideView.matrix(); }
+    const Matrix& viewMatrix() const { return m_outsideView.mode() == OutsideView::Mode::Cockpit ? m_drawCamera : m_drawOutsideCamera; }
     // the eye of the picture (the boat's camera, an outside view's, the pilot's head moved in the
     // 3D cockpit) and its axes (right, up, back): the sprites face it, the particles and the
     // ground around it are drawn and the sounds are heard there
@@ -329,8 +335,15 @@ private:
 
     Matrix m_projectionMatrix;
     Matrix m_projectionMatrixInverted;
-    Matrix m_cameraMatrix;
+    // the boat's camera after the mission's last step, its place and axes, and when that step began
     Matrix m_cameraMatrixInverted;
+    Matrix m_cameraStepStart;
+    Matrix playerCamera() const;
+    // the cameras of the frame to draw, that part of a step further on
+    float m_drawAhead = 0;
+    Matrix m_drawCamera;
+    Matrix m_drawCameraInverted;
+    Matrix m_drawOutsideCamera;
 };
 
 } // namespace fight

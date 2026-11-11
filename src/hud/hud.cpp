@@ -25,7 +25,6 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
-#include "util/ticks.h"
 #include "fight/scenario.h"
 #include "fight/objects/navpoint.h"
 #include "fight/objects/activeobject.h"
@@ -79,6 +78,7 @@ float g_headMotion = 1;
 bool g_lookFixed = false;
 Vector2D g_look;
 float g_fixedStep = 0;
+float g_refreshPeriod = 0;      // the display's seconds per frame, 0 when unknown
 // the touch controls are shown once a finger touched the screen in a mission, until a key or a
 // game controller is used (on the iPad from the start without either)
 bool g_touchControls = false;
@@ -182,6 +182,12 @@ void HUD::setFixedStep(float seconds)
 }
 
 
+void HUD::setRefreshRate(float hertz)
+{
+    g_refreshPeriod = hertz > 0 ? 1/hertz : 0;
+}
+
+
 void HUD::setLook(float yaw, float pitch)
 {
     g_lookFixed = true;
@@ -211,6 +217,7 @@ HUD::HUD() :
     m_deathTime(-1),
     m_focal(245.5f),
     m_looking(false),
+    m_stepClock(fight::Scenario::Step),
     m_colorTable("gfx:pal/gui/border.pal"),
     m_fontGreen("gfx:fnt/cpit1ahc.fnt", m_colorTable, true, false),
     m_fontRed("gfx:fnt/cpit1bhc.fnt", m_colorTable, true, false),
@@ -421,9 +428,9 @@ void HUD::start(fight::Scenario *scenario)
     m_rectGL = Rect();
     m_scenario = scenario;
     m_scenario->setBoat(m_boat);
-    m_lastTicks = util::ticks();
+    m_lastFrame = std::chrono::steady_clock::now();
     m_frames = 0;
-    m_stepTime = 0;
+    m_stepClock.reset();
     // (not the time the mission took to load)
     m_frameRate = FrameRate();
     m_frameBegin = std::chrono::steady_clock::time_point();
@@ -506,13 +513,11 @@ void HUD::step(float elapsedTime)
         }
     }
     // the mission goes on in its fixed steps (fight::Scenario::Step), as many as the time asks for:
-    // one a frame at 60 Hz, one every other frame at 120 Hz. A step may come up to a quarter of one
-    // early, so that frames a little short or long still get one each
-    m_stepTime += elapsedTime;
-    while (m_stepTime >= 0.75f*fight::Scenario::Step) {
+    // one a frame at 60 Hz, one every other frame at 120 Hz. The frame is then drawn as far past
+    // the last step as its time is, so the picture moves evenly whatever the display's refresh
+    for (int steps = m_stepClock.advance(elapsedTime); steps > 0; steps--)
         m_scenario->update(fight::Scenario::Step);
-        m_stepTime -= fight::Scenario::Step;
-    }
+    m_scenario->setDrawAhead(m_stepClock.ahead());
 
     updateMissionState();
 }
@@ -734,15 +739,17 @@ void HUD::drawFrame()
         return;
     }
 
-    const int ticks = util::ticks();
-    // the explicit physics integration is unstable for large steps (e.g. after the window was hidden)
-    const float elapsed = g_fixedStep > 0 ? g_fixedStep : std::min((ticks - m_lastTicks)/1000.0f, 0.25f);
+    const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    const float passed = g_fixedStep > 0 ? g_fixedStep : std::chrono::duration<float>(now - m_lastFrame).count();
+    // the mission's time is the display's; it doesn't catch up with more than a quarter of a second
+    // (e.g. after the window was hidden)
+    const float elapsed = g_fixedStep > 0 ? g_fixedStep : std::min(fight::StepClock::displayTime(passed, g_refreshPeriod), 0.25f);
     m_frames++;
     step(elapsed);
-    updateLook(g_fixedStep > 0 ? g_fixedStep : (ticks - m_lastTicks)/1000.0f);
+    updateLook(passed);
     if (m_scenario)
-        updateViewStick(g_fixedStep > 0 ? g_fixedStep : (ticks - m_lastTicks)/1000.0f);
-    m_lastTicks = ticks;
+        updateViewStick(passed);
+    m_lastFrame = now;
     // a handler of the events in step() may have ended the mission
     if (!m_scenario)
     {

@@ -199,7 +199,7 @@ int EffectManager::pointLights(const Vector3D &position, gfx::Pipeline::PointLig
     {
         const Projectile *shot = static_cast<const Projectile *>(effect.get());
         if (shot->lightColor() != Vector3D(0))
-            consider(shot->position(), shot->lightColor()*LightStrength, LightRadius);
+            consider(shot->drawPosition(), shot->lightColor()*LightStrength, LightRadius);
     }
     m_decoys.clear();
     m_particles.decoys(m_decoys);
@@ -212,6 +212,13 @@ int EffectManager::pointLights(const Vector3D &position, gfx::Pipeline::PointLig
     for (int i = 0; i < n; i++)
         lights[i] = candidates[i].second;
     return n;
+}
+
+
+void EffectManager::stepBegins()
+{
+    for (const auto &effect : m_effects)
+        effect->stepBegins();
 }
 
 

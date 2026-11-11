@@ -340,7 +340,7 @@ void Tank::updateTurret(float elapsedTime)
 void Tank::draw()
 {
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     gfx::Pipeline::scale(m_scale);
     m_base->draw();
