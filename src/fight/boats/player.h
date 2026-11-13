@@ -79,6 +79,9 @@ public:
     // one the pilot forced with Alt+I (0 none/automatic, 1 armour, 2 gun, 3 torpedo magazine,
     // 4 and 5 the turrets)
     bool hasFixer() const { return m_fixer; }
+    // The mission is over. The boat takes its state along, and a Fixer first mends everything
+    // that is below three quarters up to three quarters.
+    void leaveMission();
     int fixerSystem() const { return m_fixerSystem; }
     int fixerForced() const { return m_fixerForced; }
     void cycleFixer();

@@ -617,6 +617,8 @@ void HUD::leave(util::event<> &event)
     setFrozen(false);
     m_music.stop();
     m_paused = false;
+    if (m_scenario)
+        m_scenario->player()->leaveMission();
     m_scenario = nullptr;
     event();
 }

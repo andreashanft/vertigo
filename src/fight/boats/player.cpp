@@ -112,6 +112,17 @@ Player::Player(Scenario *scenario, game::Boat *boat, float yaw) :
     // each side as the boat left its last mission: front, left, right and back
     for (i = 0; i < 4; i++)
         m_shield[i] = int(std::lround(boat->defects()[game::Boat::DefectFArm + i]*m_shieldMax[i]));
+    // On easy, the armour is twice as strong during the mission, so a hit takes half as much of a
+    // side. The boat keeps each side as a share of its full armour, so nothing is undone afterwards
+    // (KNOWLEDGE.md 4.6).
+    if (Scenario::difficulty() == 0)
+    {
+        for (i = 0; i < 4; i++)
+        {
+            m_shieldMax[i] *= 2;
+            m_shield[i] *= 2;
+        }
+    }
 
     if (boat->silator() == 4101)
         m_noise -= 1;
@@ -822,6 +833,26 @@ void Player::updateFixer()
         break;
     default:
         break;
+    }
+    storeCondition();
+}
+
+
+void Player::leaveMission()
+{
+    // A Fixer mends everything that is below three quarters up to three quarters when the mission
+    // ends, however it ends: each armour side, the gun, the torpedo magazine and the turrets
+    // (KNOWLEDGE.md 4.7).
+    if (m_fixer)
+    {
+        for (int side = 0; side < 4; side++)
+            if (m_shieldMax[side] > 0 && float(m_shield[side])/m_shieldMax[side] < FixerDone)
+                m_shield[side] = int(std::lround(FixerDone*m_shieldMax[side]));
+        m_gun.setDefect(std::max(m_gun.defect(), FixerDone));
+        m_magazineCondition = std::max(m_magazineCondition, FixerDone);
+        for (const std::unique_ptr<PlayerTurret> &turret : m_turrets)
+            if (turret)
+                turret->gun().setDefect(std::max(turret->gun().defect(), FixerDone));
     }
     storeCondition();
 }

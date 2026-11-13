@@ -550,8 +550,9 @@ magazine jams the same way ([6.8](#68-the-players-torpedo-magazine)).
 ### 4.6 Armour, wear and the Fixer
 
 - **Armour.** The player is hit per side (front, left, right, back). A side's
-  full armour is the boat's `kineticshield` plus the fitted armour's. The
-  armour symbol on the HUD shows a bar per side
+  full armour is the boat's `kineticshield` plus the fitted armour's. On
+  easy, every side is twice as strong during a mission, so a hit takes half
+  as much of it. The armour symbol on the HUD shows a bar per side
   ([9.3](#93-symbols-alert-threat-and-pause)).
 - **Wear.** Hits on the armour wear the systems down. Once a side is below
   45 % of its full armour, what a hit takes from it, counted from 45 % down,
@@ -584,6 +585,10 @@ The save file keeps each armour side (`[Defect]` `FArm`, `LArm`, `RArm`,
 turrets, and the depot repairs them, so a mission's damage stays with the
 boat: the next mission of the campaign starts with the damage that wasn't
 repaired. What the Fixer mends stays with the boat as well.
+
+A boat with a Fixer leaves every mission mended, however the mission ends:
+each armour side, the gun, the torpedo magazine and the turrets that are
+below three quarters of their full state are at three quarters afterwards.
 
 ## 5. Units' behaviour
 
@@ -1815,7 +1820,10 @@ From GLOBWEAP `TurretState0–8`: ARM, SCA, FIR, JAM, EMP, LOC, STP, SYN, VOL
 ### 12.1 Main menu, credits and difficulty
 
 - The main menu cycles the difficulty. The option pages are in the medium
-  font, 15 pixels apart.
+  font, 15 pixels apart. The difficulty decides which units a mission has
+  ([2.3](#23-unit-keys)), how many units attack the player at once
+  ([5.2](#52-attacker-lists)) and, on easy, doubles the player's armour
+  ([4.6](#46-armour-wear-and-the-fixer)).
 - CREDITS, between TRAINING and the options, shows
   `gfx/pic/title/credits0`–`3.r16` (640×480, RGB565) full screen, twelve
   seconds each, then goes back to the menu; a key or a click ends them at
