@@ -72,6 +72,12 @@ void Object::setPosition(const Vector3D &pos)
 }
 
 
+Vector3D Object::drawShift() const
+{
+    return m_stepped ? (m_position - m_stepStart)*m_scenario->drawAhead() : Vector3D(0);
+}
+
+
 bool Object::update(float elapsedTime)
 {
     return false;

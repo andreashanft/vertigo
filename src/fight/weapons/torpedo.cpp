@@ -503,7 +503,7 @@ void Torpedo::draw()
     const Matrix orientation(Vector4D(right, 0), Vector4D(m_dir, 0), Vector4D(up, 0), Vector4D(0, 0, 0, 1));
 
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::multiply(orientation);
     gfx::Pipeline::scale(m_type.scale);
     m_model->draw();

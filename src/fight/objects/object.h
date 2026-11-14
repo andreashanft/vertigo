@@ -51,6 +51,14 @@ public:
 
     virtual void setPosition(const Vector3D &pos);
     const Vector3D& position() const { return m_position; }
+    // A step of the mission begins: the object's way in it starts here.
+    void stepBegins() { m_stepStart = m_position; m_stepped = true; }
+    // Where the object is drawn: its position, moved on along its way in the mission's last step
+    // by the part of a step the frame is ahead of that step (Scenario::setDrawAhead()). An
+    // object made in that step is drawn where it is.
+    Vector3D drawPosition() const { return m_position + drawShift(); }
+    // how far that is from its position
+    Vector3D drawShift() const;
     const BoundingBox& box() const { return m_box; }
     virtual Vector3D center() const { return (m_box.minPoint() + m_box.maxPoint())*0.5f; }
     bool isStatic() const { return m_static; }
@@ -73,6 +81,8 @@ protected:
     bool m_enabled;
     bool m_absent = false;
     Vector3D m_position;
+    Vector3D m_stepStart;       // the position when the mission's last step began...
+    bool m_stepped = false;     // ...if the object was there then
 
     BoundingBox m_box;
     bool m_static;

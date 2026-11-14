@@ -110,6 +110,13 @@ describes the original.
 - Angles in the object files are radians unless a key says otherwise.
 - `card` and `car` values count in eighths of a turn: 2 is a quarter turn,
   4 half, 6 three quarters.
+- The game has no fixed time step. It counts time in ticks of 5 ms and
+  updates the world once for every frame it draws, by the time the frame
+  takes: the time now, plus its running averages of the time an update and
+  a drawing take, less the mission's clock. Its clock skips whatever is more
+  than 50 ticks (0.25 s) between two frames. So what happens once a frame
+  ([4.3](#43-firing-the-gun), [5.5](#55-flying-to-a-point-and-patrolling))
+  goes with the frame rate the computer reaches.
 
 ## 2. Scenarios and their units
 

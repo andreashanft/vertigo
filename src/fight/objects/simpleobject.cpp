@@ -53,7 +53,7 @@ void SimpleObject::setYaw(float yaw)
 void SimpleObject::draw()
 {
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     // a building tilts as it blows up
     if (m_tilt != glm::mat3(1))
         gfx::Pipeline::multiply(Matrix(m_tilt));

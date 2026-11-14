@@ -68,7 +68,7 @@ bool NavPoint::update(float elapsedTime)
 void NavPoint::draw()
 {
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::scale(m_scale);
     if (m_state == 0)
         m_state0->draw();

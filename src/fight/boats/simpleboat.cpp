@@ -356,7 +356,7 @@ void SimpleBoat::move(Vector3D delta)
 void SimpleBoat::draw()
 {
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::multiply(Matrix(m_orientationInverted));
     if (m_bank != 0)
         gfx::Pipeline::rotate(glm::degrees(m_bank), Vector3D(0, 1, 0));
