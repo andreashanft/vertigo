@@ -444,6 +444,13 @@ void HUD::start(fight::Scenario *scenario)
     m_viewStickWait = -1;
     m_pinchStart = -1;
     m_wheel = 0;
+    // the controller's buttons and sticks start let go: those still held as the last mission ended
+    // (LB+Start for the autopilot) were let go on a screen that isn't the HUD's
+    m_shoulder = false;
+    m_heldKeys.clear();
+    m_repeat = -1;
+    m_padStick = m_lookStick = Vector2D(0);
+    updateStick();
     m_pages->close();
     m_scenario->headMotion().setStrength(headMotion());
     // the CD's audio tracks, as the game data import copies them out of the CD image, at half
@@ -1208,11 +1215,11 @@ void HUD::press(input::KeyEvent *e)
         if ((e->modifiers() & ~input::KeypadModifier) == input::AltModifier)
         {
             if (m_scenario->conditionManager().autopilot())
-            {
                 engageAutopilot();
-                return;
-            }
-            m_menu->notice({ txt::StringTable::get(txt::Fight31), txt::StringTable::get(txt::Fight32) }, 3.0f);
+            else
+                m_menu->notice({ txt::StringTable::get(txt::Fight31), txt::StringTable::get(txt::Fight32) }, 3.0f);
+            // (not full ahead as A alone)
+            return;
         }
     }
 
@@ -1340,22 +1347,24 @@ input::KeyEvent HUD::buttonKey(input::Button button)
     const bool second = m_shoulder;
     switch (button)
     {
-    case Button_RightTrigger: return second ? KeyEvent(Key_J) : KeyEvent(Key_Space);
-    case Button_LeftTrigger: return second ? KeyEvent(Key_G) : KeyEvent(Key_Tab);
-    case Button_RightShoulder: return second ? KeyEvent(Key_U) : KeyEvent(Key_L);
-    // the face buttons by their place: full ahead on the right, full astern at the bottom
-    case Button_East: return second ? KeyEvent(Key_Q) : KeyEvent(Key_A);
-    case Button_South: return second ? KeyEvent(Key_D) : KeyEvent(Key_Z);
-    case Button_North: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_Return);
-    case Button_West: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
-    case Button_Up: return second ? KeyEvent(Key(Key_F1 + m_weaponPage)) : KeyEvent(Key_S);
-    case Button_Down: return second ? KeyEvent(Key_I) : KeyEvent(Key_X);
+    // the triggers full ahead and full astern while held, LB+RT the booster
+    case Button_RightTrigger: return second ? KeyEvent(Key_Q) : KeyEvent(Key_A);
+    case Button_LeftTrigger: return second ? KeyEvent() : KeyEvent(Key_Z);
+    case Button_RightShoulder: return second ? KeyEvent(Key_N, AltModifier) : KeyEvent(Key_N);
+    // the face buttons by their place: the gun on the right, a torpedo at the bottom
+    case Button_East: return second ? KeyEvent(Key_J) : KeyEvent(Key_Space);
+    case Button_South: return second ? KeyEvent(Key_G) : KeyEvent(Key_Tab);
+    case Button_North: return second ? KeyEvent(Key_U) : KeyEvent(Key_L);
+    case Button_West: return second ? KeyEvent(Key_D) : KeyEvent(Key_Return);
+    // (the d-pad's up without LB steps through the weapon page, buttonPressEvent)
+    case Button_Up: return second ? KeyEvent(Key_S) : KeyEvent();
+    case Button_Down: return second ? KeyEvent(Key_X) : KeyEvent(Key_I);
     case Button_Left: return second ? KeyEvent(Key_QuoteLeft) : KeyEvent(Key_C);
-    case Button_Right: return second ? KeyEvent(Key_R, AltModifier) : KeyEvent(Key_R);
+    case Button_Right: return second ? KeyEvent(Key_R) : KeyEvent(Key_R, AltModifier);
     case Button_LeftStick: return second ? KeyEvent(Key_M) : KeyEvent(Key_H);
-    case Button_RightStick: return KeyEvent(Key_V);
-    case Button_Start: return second ? KeyEvent(Key_P) : KeyEvent(Key_Escape);
-    case Button_Back: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_O);
+    case Button_RightStick: return second ? KeyEvent(Key_D, ControlModifier) : KeyEvent(Key_V);
+    case Button_Start: return second ? KeyEvent(Key_A, AltModifier) : KeyEvent(Key_Escape);
+    case Button_Back: return second ? KeyEvent(Key_O) : KeyEvent(Key_P);
     default: return KeyEvent();
     }
 }
@@ -1412,6 +1421,16 @@ void HUD::buttonPressEvent(input::Button button)
     }
 
     const bool menu = m_menu->page() != MissionMenu::Page::None;
+    // the d-pad's up: the weapon page's next weapon, then the overview, with the F keys' click
+    if (button == input::Button_Up && !m_shoulder)
+    {
+        if (!m_slaveMonitors.empty() && !m_paused && !m_scenario->playerDestroyed())
+        {
+            m_slaveMonitors.front()->nextWeapon();
+            sfx::SampleMap::get(sfx::Sample::Click).play();
+        }
+        return;
+    }
     const input::KeyEvent key = buttonKey(button);
     // the help opened from the controller starts at the controller's page
     if (key.key() == input::Key_H && m_pages->page() == Pages::Page::None)
@@ -1425,8 +1444,6 @@ void HUD::buttonPressEvent(input::Button button)
     // a menu opened by a button shows its highlight at once
     if (!menu && m_menu->page() != MissionMenu::Page::None)
         m_menu->select(0);
-    if (key.key() >= input::Key_F1 && key.key() <= input::Key_F4)
-        m_weaponPage = (m_weaponPage + 1) % 4;
 }
 
 
