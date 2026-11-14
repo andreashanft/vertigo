@@ -59,7 +59,7 @@ void Placeholder::draw()
     glDisable(GL_CULL_FACE);
 
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::scale(m_halfSize);
     for (int i = 0; i < 6; i++)
     {

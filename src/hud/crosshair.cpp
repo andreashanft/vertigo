@@ -53,7 +53,8 @@ void Crosshair::draw()
                 aimPoint = target.position() + unit->velocity()*(glm::length(aimPoint - m_hud->scenario()->position())/speed);
 
         Matrix m = m_hud->hudProjectionMatrixInverted() * m_hud->scenario()->projectionMatrix() * m_hud->scenario()->cameraMatrix();
-        Vector4D point4 = m * Vector4D(aimPoint, 1);
+        // (ahead of where the target is drawn: fight::Object::drawPosition())
+        Vector4D point4 = m * Vector4D(unit ? aimPoint + unit->drawShift() : aimPoint, 1);
         Point point = glm::round(Vector2D(point4)/point4.w);
         Rect rect = m_clipRect->rect();
 

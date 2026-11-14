@@ -164,7 +164,7 @@ void DebugOverlay::drawLabels()
         if (distance > 500.0f)
             continue;
 
-        const Vector4D point4 = m * Vector4D(object->center(), 1);
+        const Vector4D point4 = m * Vector4D(object->center() + object->drawShift(), 1);
         if (point4.z > 0)
             continue;
         const Point point = glm::round(Vector2D(point4)/point4.w);

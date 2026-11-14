@@ -160,13 +160,15 @@ void MasterMonitor::draw()
         Matrix m(1);
         m = glm::translate(m, Vector3D(observeCenter, -0.5f));
         m = glm::scale(m, Vector3D(observeCenter.x - observePos.x, observePos.y - observeCenter.y, 0.5f));
+        // (the eye and the object where they are drawn, fight::Object::drawPosition(), so that the
+        // picture holds still between the mission's steps)
         m *= m_hud->scenario()->cameraMatrix();
-        m = glm::translate(m, m_hud->scenario()->position());
+        m = glm::translate(m, Vector3D(m_hud->scenario()->cameraMatrixInverted()[3]));
 
         fight::Object *obj = target.object();
         const fight::BoundingBox& box = obj->box();
         m = glm::scale(m, Vector3D(2/glm::length(box.dim())));
-        m = glm::translate(m, -0.5f*(box.maxPoint() + box.minPoint()));
+        m = glm::translate(m, -0.5f*(box.maxPoint() + box.minPoint()) - obj->drawShift());
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);

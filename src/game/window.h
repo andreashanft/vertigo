@@ -57,6 +57,8 @@ public:
     int width() const;
     int height() const;
     double devicePixelRatio() const;
+    // the frames a second of the window's display
+    float refreshRate() const { return m_refreshRate; }
 
     // what the platform reports; sends input on to the renderer
     void handle(const SDL_Event &event);
@@ -108,6 +110,7 @@ private:
     // the app in the background (on the iPad), where nothing may draw: iOS ends apps that use
     // OpenGL there
     bool m_background = false;
+    float m_refreshRate = 60;
     bool m_cursorVisible = true;
     int m_viewportWidth = 0;
     int m_viewportHeight = 0;

@@ -18,6 +18,7 @@
 #include "scenario.h"
 #include "module.h"
 #include "orders.h"
+#include "poseahead.hpp"
 #include "enginesounds.h"
 #include "weapons/torpedo.h"
 #include "sfx/soundsystem.h"
@@ -709,6 +710,15 @@ void Scenario::setRect(const RectF &rect, const Vector2D &center, float fovY)
 
 void Scenario::update(float elapsedTime)
 {
+    // whatever moves in this step is drawn on along its way in it (Object::drawPosition())
+    m_player->stepBegins();
+    for (const auto &object : m_objects)
+        object->stepBegins();
+    for (const auto &torpedo : m_torpedoes)
+        torpedo->stepBegins();
+    m_effectManager.stepBegins();
+    m_cameraStepStart = playerCamera();
+
     markGround();
     m_time += elapsedTime;
     m_frameTime = elapsedTime;
@@ -723,13 +733,18 @@ void Scenario::update(float elapsedTime)
     m_pitch = dir.z < -1.0f ? -glm::half_pi<float>() : dir.z > 1.0f ? glm::half_pi<float>() : glm::asin(dir.z);
     m_height = m_position.z - m_surface.heightAt(m_position.x, m_position.y);
 
+    // (the camera of a destroyed boat stays where it was)
     if (!playerDestroyed())
     {
-        m_cameraMatrixInverted = Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_position, 1));
-        m_cameraMatrix = glm::inverse(m_cameraMatrixInverted);
+        m_cameraMatrixInverted = playerCamera();
         m_headMotion.update(elapsedTime, m_player->velocity(), glm::mat3(m_cameraMatrixInverted));
     }
+    else
+    {
+        m_cameraStepStart = m_cameraMatrixInverted;
+    }
     m_outsideView.update(elapsedTime);
+    setDrawAhead(m_drawAhead);
     setEye(outside() ? m_outsideView.matrixInverted() : m_cameraMatrixInverted);
 
     updateFriendlyFire();
@@ -858,7 +873,22 @@ void Scenario::explosionAt(const Vector3D &position, float strength)
 
 void Scenario::draw()
 {
-    draw(m_projectionMatrix, m_cameraMatrix);
+    draw(m_projectionMatrix, m_drawCamera);
+}
+
+
+Matrix Scenario::playerCamera() const
+{
+    return Matrix(Vector4D(m_player->right(), 0), Vector4D(m_player->up(), 0), Vector4D(-m_player->dir(), 0), Vector4D(m_player->position(), 1));
+}
+
+
+void Scenario::setDrawAhead(float steps)
+{
+    m_drawAhead = steps;
+    m_drawCameraInverted = poseAhead(m_cameraStepStart, m_cameraMatrixInverted, steps);
+    m_drawCamera = glm::inverse(m_drawCameraInverted);
+    m_drawOutsideCamera = glm::inverse(m_outsideView.matrixInvertedAhead(steps));
 }
 
 

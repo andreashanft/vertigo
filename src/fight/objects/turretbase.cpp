@@ -240,7 +240,7 @@ bool TurretBase::update(float elapsedTime)
 void TurretBase::draw()
 {
     gfx::Pipeline::pushMatrix();
-    gfx::Pipeline::translate(m_position);
+    gfx::Pipeline::translate(drawPosition());
     gfx::Pipeline::scale(m_scale);
     m_base->draw();
     if (m_body)

@@ -391,8 +391,8 @@ void Window::saveScreenshot(const std::string &fileName)
 void Window::updateFrameRate()
 {
     const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(m_window));
-    const float refresh = mode && mode->refresh_rate > 0 ? mode->refresh_rate : 60.0f;
-    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, std::to_string(std::lround(2*refresh)).c_str());
+    m_refreshRate = mode && mode->refresh_rate > 0 ? mode->refresh_rate : 60.0f;
+    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, std::to_string(std::lround(2*m_refreshRate)).c_str());
 }
 
 void Window::handle(const SDL_Event &event)

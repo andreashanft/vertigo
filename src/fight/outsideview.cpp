@@ -18,6 +18,7 @@
 #include "outsideview.h"
 #include "scenario.h"
 #include "boats/player.h"
+#include "poseahead.hpp"
 
 #include <glm/gtc/constants.hpp>
 #include <glm/trigonometric.hpp>
@@ -67,6 +68,7 @@ bool OutsideView::show(Mode mode, bool target)
         return false;
     m_mode = mode;
     m_target = mode != Mode::Cockpit && target;
+    cut();
     if (mode == Mode::Cockpit)
         return true;
     // at its place at once
@@ -83,6 +85,7 @@ void OutsideView::startDeath()
     // the camera starts in the hull and moves out to its place beside it
     m_mode = Mode::Death;
     m_target = false;
+    cut();
     m_eye = m_scenario->player()->position();
     m_deathYaw = -glm::half_pi<float>();
     m_deathPitch = glm::quarter_pi<float>();
@@ -147,22 +150,43 @@ void OutsideView::aim(Vector3D &place, Vector3D &at) const
 
 void OutsideView::update(float elapsedTime)
 {
+    // the camera's way in this step starts here, unless a cut has just put it somewhere else
+    const bool cutBefore = m_cut;
+    m_cut = false;
+    m_stepStart = m_matrixInverted;
+    m_stepped = false;
     if (m_mode == Mode::Cockpit)
         return;
     if (m_mode == Mode::Death)
     {
         updateDeath(elapsedTime);
-        return;
     }
-    if (!subject())
+    else
     {
-        show(Mode::Cockpit, false);
-        return;
+        if (!subject())
+        {
+            show(Mode::Cockpit, false);
+            return;
+        }
+        Vector3D place, at;
+        aim(place, at);
+        m_eye += (place - m_eye)*std::min(1.0f, Follow*elapsedTime);
+        lookAt(at);
     }
-    Vector3D place, at;
-    aim(place, at);
-    m_eye += (place - m_eye)*std::min(1.0f, Follow*elapsedTime);
-    lookAt(at);
+    m_stepped = !cutBefore;
+}
+
+
+Matrix OutsideView::matrixInvertedAhead(float steps) const
+{
+    return m_stepped ? poseAhead(m_stepStart, m_matrixInverted, steps) : m_matrixInverted;
+}
+
+
+void OutsideView::cut()
+{
+    m_cut = true;
+    m_stepped = false;
 }
 
 
@@ -199,7 +223,6 @@ void OutsideView::lookAt(const Vector3D &at)
         m_right = glm::normalize(right);
     const Vector3D up = glm::normalize(glm::cross(m_right, forward));
     m_matrixInverted = Matrix(Vector4D(glm::cross(forward, up), 0), Vector4D(up, 0), Vector4D(-forward, 0), Vector4D(m_eye, 1));
-    m_matrix = glm::inverse(m_matrixInverted);
 }
 
 
