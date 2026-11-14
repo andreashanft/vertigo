@@ -247,7 +247,6 @@ private:
     int m_repeat = -1;      // the button that changes the speed again and again while held
     float m_repeatWait = 0;
     std::unique_ptr<TouchControls> m_touch;
-    int m_weaponPage = 0;   // the next of F1-F4 for LB+Up
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;
     Matrix m_integerScaleProjectionMatrixInverted;

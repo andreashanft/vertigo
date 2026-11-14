@@ -75,7 +75,7 @@ const int TextRadioFooter = 59, TextRadioTitle = 60;
 const float PadScale = 0.76f;
 const Point PadOrigin(251, 185);
 // the picture holds the controller and the lines, over the part of the box they take
-const Rect PadPicture(54, 136, 523, 194);
+const Rect PadPicture(54, 136, 523, 214);
 // the label columns: the control's name (an arrow for the d-pad), then its job, up to 25 characters
 const int PadLeftX = 60;
 const int PadRightX = 388;
@@ -107,24 +107,24 @@ const char *faceName(int place)
 
 // down each side in the order of the rows, so that the lines rarely cross
 const PadControl PadLeft[] = {
-    { "LT", Vector2D(35, 3), txt::Pad_Torpedo, txt::Pad_AttackingTorpedo },
+    { "LT", Vector2D(35, 3), txt::Pad_Astern, -1 },
     { "LB", Vector2D(35, 13), txt::Pad_Shift, -1 },
-    { "BACK", Vector2D(70, 36), txt::Pad_Turrets, txt::Pad_Autopilot },
-    { "", Vector2D(42, 40), txt::Pad_Faster, txt::Pad_WeaponStatus, 0 },
-    { "", Vector2D(50, 48), txt::Pad_Sonar, txt::Pad_SonarZoom, 1 },
-    { "", Vector2D(42, 56), txt::Pad_Slower, txt::Pad_Armor, 2 },
+    { "BACK", Vector2D(70, 36), txt::Pad_Pause, txt::Pad_Turrets },
+    { "", Vector2D(42, 40), txt::Pad_WeaponStatus, txt::Pad_Faster, 0 },
+    { "", Vector2D(50, 48), txt::Pad_SonarZoom, txt::Pad_Sonar, 1 },
+    { "", Vector2D(42, 56), txt::Pad_Armor, txt::Pad_Slower, 2 },
     { "", Vector2D(34, 48), txt::Pad_Stop, txt::Pad_Engine, 3 },
     { "LS", Vector2D(62, 74), txt::Pad_Steer, -1 },
     { "L3", Vector2D(62, 74), txt::Pad_Help, txt::Pad_Radio },
 };
 const PadControl PadRight[] = {
-    { "RT", Vector2D(135, 3), txt::Pad_Gun, txt::Pad_Attacker },
-    { "RB", Vector2D(135, 13), txt::Pad_Lock, txt::Pad_LockEnemy },
-    { "START", Vector2D(100, 36), txt::Pad_Menu, txt::Pad_Pause },
-    { "", Vector2D(128, 38), txt::Pad_NextTorpedo, -1, -1, 0 },
-    { "", Vector2D(118, 48), txt::Pad_NavPoint, txt::Pad_LockNavPoint, -1, 1 },
-    { "", Vector2D(138, 48), txt::Pad_Ahead, txt::Pad_Booster, -1, 2 },
-    { "", Vector2D(128, 58), txt::Pad_Astern, txt::Pad_Buzzer, -1, 3 },
+    { "RT", Vector2D(135, 3), txt::Pad_Ahead, txt::Pad_Booster },
+    { "RB", Vector2D(135, 13), txt::Pad_NavPoint, txt::Pad_LockNavPoint },
+    { "START", Vector2D(100, 36), txt::Pad_Menu, txt::Pad_Autopilot },
+    { "", Vector2D(128, 38), txt::Pad_Lock, txt::Pad_LockEnemy, -1, 0 },
+    { "", Vector2D(118, 48), txt::Pad_NextTorpedo, txt::Pad_Buzzer, -1, 1 },
+    { "", Vector2D(138, 48), txt::Pad_Gun, txt::Pad_Attacker, -1, 2 },
+    { "", Vector2D(128, 58), txt::Pad_Torpedo, txt::Pad_AttackingTorpedo, -1, 3 },
     { "RS", Vector2D(108, 74), txt::Pad_Look, txt::Pad_Zoom },
     { "R3", Vector2D(108, 74), txt::Pad_View, -1 },
 };
