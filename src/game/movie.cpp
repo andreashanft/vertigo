@@ -48,6 +48,8 @@ void Movie::deactivate()
 void Movie::play(std::function<void()> &&funcFinished)
 {
     hideCursor();
+    m_shown = false;
+    m_touches.clear();
     m_funcFinished = std::move(funcFinished);
 
     m_video.open(m_filename);
@@ -115,6 +117,7 @@ void Movie::draw()
             m_fontLarge.draw(m_textLarge, Rect(8, 8, -1, -1), false, false);
             m_fontSmall.draw(m_textSmall, Rect(8, 22, -1, -1), false, false);
         }
+        m_shown = true;
     }
 }
 
@@ -143,10 +146,13 @@ void Movie::mousePressEvent(input::MouseEvent *event)
 
 
 // a tap skips the movie, as Escape does; on lifting the finger, so the next screen gets no press,
-// and only a finger put down on the movie, not one still down from what started it
+// and only a finger put down on the movie once it shows, not one still down from what started it:
+// a tap's press reaches the screen before the finger does, so the tap on a dialogue's last answer
+// starts the movie and only then puts its finger down
 void Movie::touchPressEvent(input::TouchEvent *event)
 {
-    m_touches.insert(event->id());
+    if (m_shown)
+        m_touches.insert(event->id());
 }
 
 

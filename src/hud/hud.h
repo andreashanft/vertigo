@@ -252,7 +252,6 @@ private:
     float m_repeatWait = 0;
     fight::StepClock m_stepClock;   // the mission's steps for the frames' times
     std::unique_ptr<TouchControls> m_touch;
-    int m_weaponPage = 0;   // the next of F1-F4 for LB+Up
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;
     Matrix m_integerScaleProjectionMatrixInverted;
