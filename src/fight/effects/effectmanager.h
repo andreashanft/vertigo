@@ -69,6 +69,8 @@ public:
     // as lights with their positions in the world; none when no shot is within 150 m
     int pointLights(const Vector3D &position, gfx::Pipeline::PointLight *lights, int count);
 
+    // a step of the mission begins (Object::stepBegins())
+    void stepBegins();
     void update(float elapsedTime);
     void draw();
 

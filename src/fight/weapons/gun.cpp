@@ -30,10 +30,9 @@ namespace fight {
 Gun::GunState* Gun::GunStates = nullptr;
 
 namespace {
-// the original fires the next barrel of an ammo gun's round on the next frame; Vertigo spaces them
-// as at 60 frames a second, with a quarter of that for the frames' jitter (docs/ROADMAP.md,
-// appendix K)
-const float BarrelInterval = 1.0f/60;
+// the original fires the next barrel of an ammo gun's round on the next frame, Vertigo on the
+// mission's next step, with a quarter of one for rounding (docs/ROADMAP.md, appendix K)
+const float BarrelInterval = Scenario::Step;
 const float BarrelTolerance = BarrelInterval/4;
 }
 

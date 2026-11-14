@@ -27,6 +27,7 @@
 #include "gfx/image.h"
 #include "sfx/music.hpp"
 #include "fight/outsideview.h"
+#include "fight/stepclock.hpp"
 
 #include <chrono>
 #include <map>
@@ -78,6 +79,9 @@ public:
     // advances the mission by this many seconds per frame instead of by the real time, so test
     // runs with a window repeat exactly (0: real time)
     static void setFixedStep(float seconds);
+    // the display shows this many frames a second (0: unknown): the frames' times go by it
+    // (fight::StepClock::displayTime())
+    static void setRefreshRate(float hertz);
     // frames drawn of the current mission
     int frames() const { return m_frames; }
     // the last second's frames, for the debug overlay: frames a second, the average and the
@@ -211,7 +215,7 @@ private:
 
     game::Boat *m_boat;
     fight::Scenario *m_scenario;
-    int m_lastTicks;
+    std::chrono::steady_clock::time_point m_lastFrame;      // when the last frame was drawn
     int m_frames = 0;
     FrameRate m_frameRate;
     std::chrono::steady_clock::time_point m_frameBegin;     // of the last frame
@@ -246,6 +250,7 @@ private:
     std::map<int, input::KeyEvent> m_heldKeys;  // the keys the buttons held stand for
     int m_repeat = -1;      // the button that changes the speed again and again while held
     float m_repeatWait = 0;
+    fight::StepClock m_stepClock;   // the mission's steps for the frames' times
     std::unique_ptr<TouchControls> m_touch;
     bool m_integerScale;
     Matrix m_integerScaleProjectionMatrix;

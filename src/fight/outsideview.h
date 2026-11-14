@@ -64,10 +64,12 @@ public:
     // target is gone or lost
     void update(float elapsedTime);
 
-    // the camera, and where it is
-    const Matrix& matrix() const { return m_matrix; }
+    // the camera's place and axes (its inverted matrix), and where it is
     const Matrix& matrixInverted() const { return m_matrixInverted; }
     const Vector3D& eye() const { return m_eye; }
+    // the same a part of a step past the mission's last step, the camera going on as it moved in
+    // that step (poseAhead()); as it is after a cut to another view or to another boat
+    Matrix matrixInvertedAhead(float steps) const;
 
 private:
     ActiveObject* subject() const;
@@ -76,6 +78,8 @@ private:
     void updateDeath(float elapsedTime);
     // looks at the point from the eye, level
     void lookAt(const Vector3D &at);
+    // the camera is put somewhere it didn't move to: nothing to go on along
+    void cut();
 
 private:
     Scenario *m_scenario;
@@ -85,8 +89,10 @@ private:
     // the last level heading and right, for a boat or a camera pointing straight up or down
     mutable Vector3D m_heading = Vector3D(0, 1, 0);
     Vector3D m_right = Vector3D(1, 0, 0);
-    Matrix m_matrix = Matrix(1);
     Matrix m_matrixInverted = Matrix(1);
+    Matrix m_stepStart = Matrix(1);     // the camera when the mission's last step began...
+    bool m_stepped = false;             // ...if it moved on from there in that step
+    bool m_cut = false;                 // the view or its boat has changed since the last step
     // the death view's heading and elevation round the hull and its distance in hull radii
     float m_deathYaw = 0;
     float m_deathPitch = 0;
