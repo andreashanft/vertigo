@@ -110,6 +110,11 @@ describes the original.
 - Angles in the object files are radians unless a key says otherwise.
 - `card` and `car` values count in eighths of a turn: 2 is a quarter turn,
   4 half, 6 three quarters.
+- A zero byte ends the text of a line in a description file (`.DES`). The
+  dialogues' files in `TXT/DIA` have 97 such lines. On 28 of them the zero
+  byte follows a value, for example `Mission = m00201` in `002101.DES` and
+  `Type = enablestation` in `004023.DES`, and the value is the text before
+  it.
 - The game has no fixed time step. It counts time in ticks of 5 ms and
   updates the world once for every frame it draws, by the time the frame
   takes: the time now, plus its running averages of the time an update and

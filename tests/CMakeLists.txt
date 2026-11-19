@@ -1,6 +1,6 @@
 # Tests of the game's own types: strings, data values and dates, images and colours, the parsers
-# of the text formats, JSON, CD images, the hash that checks downloads, the mission's steps and the
-# vector font
+# of the text formats, the files of sections and values, JSON, CD images, the hash that checks
+# downloads, the mission's steps and the vector font
 
 # util::String, txt::Value and util::DateTime
 add_executable(stringtest
@@ -45,6 +45,21 @@ add_executable(parsetest
 )
 target_include_directories(parsetest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME parse COMMAND parsetest)
+
+# txt::DesFile, the game data's files of sections and values
+add_executable(desfiletest
+    desfiletest.cpp
+    ${PROJECT_SOURCE_DIR}/src/txt/desfile.cpp
+    ${PROJECT_SOURCE_DIR}/src/txt/parse.cpp
+    ${PROJECT_SOURCE_DIR}/src/txt/stringtable.cpp
+    ${PROJECT_SOURCE_DIR}/src/txt/value.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/datapath.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/datetime.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/path.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/string.cpp
+)
+target_include_directories(desfiletest PRIVATE ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME desfile COMMAND desfiletest)
 
 # util::Json
 add_executable(jsontest

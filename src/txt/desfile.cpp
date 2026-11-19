@@ -34,6 +34,17 @@ String trimEnd(const String &str)
 
 namespace txt {
 
+namespace {
+
+// A line of a file as text. The text ends at a zero byte: a few lines of the game data have one
+// after their value, and the name of a mission or the type of a message must not carry it.
+String lineText(const std::string &line)
+{
+    return String::fromLatin1(line.c_str());
+}
+
+} // namespace
+
 
 DesFile::DesFile()
 {
@@ -61,7 +72,7 @@ bool DesFile::load(const std::string &filename)
 
     while (next < lines.size()) {
         // the game data is 8-bit (DOS codepage 437) text; keep the raw bytes, the fonts are indexed by them
-        const String line = String::fromLatin1(lines[next++]);
+        const String line = lineText(lines[next++]);
 
         String section;
         if (parseSection(line, section))
@@ -79,11 +90,11 @@ bool DesFile::load(const std::string &filename)
         {
             // up to "}"; at the end of the file, without the last line
             StringList text;
-            String textLine = next < lines.size() ? trimEnd(String::fromLatin1(lines[next++])) : String();
+            String textLine = next < lines.size() ? trimEnd(lineText(lines[next++])) : String();
             while (next < lines.size() && textLine != "}")
             {
                 text.append(textLine);
-                textLine = trimEnd(String::fromLatin1(lines[next++]));
+                textLine = trimEnd(lineText(lines[next++]));
             }
             setValue("{text}", text);
         }
