@@ -91,8 +91,11 @@ public:
         float alignHit = 1;                            // chance to align anew when hit while aligning
     };
     const AttackSettings& attackSettings() const { return m_attackSettings; }
-    // the sphere the boat is moved by (metres)
+    // the sphere the boat is moved by over the ground and along obstacles (metres)
     float collisionRadius() const { return m_collisionRadius; }
+    // the sphere it meets mines and debris by, and a mine meets it by (a cargo ship has no hull
+    // of its own, so its segments are met by their shapes)
+    float contactRadius() const override { return hullSphere(); }
     virtual bool isGroundVehicle() const { return false; }
     bool startTumbling() override;
     // the destruction sequence (docs/ROADMAP.md, appendix R): bursts of explosions and debris

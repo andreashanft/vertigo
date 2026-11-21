@@ -45,8 +45,15 @@ public:
     const BoundingBox& localBox() const { return m_localBox; }
 
 protected:
+    // The sphere of the hull about the object's position: the distance of the hull's farthest
+    // point from the model's origin, times the object file's [Collision] RadiusScale. 0 without
+    // a model. The classes that meet other units as spheres return it as contactRadius().
+    float hullSphere() const { return m_hullSphere; }
+
+protected:
     Module *m_base;
     float m_scale;
+    float m_hullSphere = 0;
     float m_yaw = 0;
     BoundingBox m_localBox; // m_box before it is turned and moved to the object's position
 };

@@ -59,6 +59,16 @@ Sensors, HUD and views:
 
 World, physics and effects:
 
+- How the other boats meet the ground, buildings and each other. The contact
+  table pairs a boat with none of them (KNOWLEDGE.md 7.1). Vertigo stops a
+  boat at the ground and slides it along buildings and other boats, as a
+  sphere that fits into its hull.
+- How ramming a building or a boat reaches the player, whom the contact table
+  pairs with neither (KNOWLEDGE.md 7.1).
+- The player's boat has three values `BottomAlphaSupport`, `FreeAlphaSupport`
+  and `TopAlphaSupport`. A state of the boat picks one of them, it starts as
+  the bottom one, and keys switch it. Which keys these are and what the
+  player sees of the other two. Vertigo always takes the bottom one.
 - Why one of S00202's two upward current cells does nothing.
 - How an active mine moves while it chases: how fast, and how far a current
   carries it. Its drive takes currents at a factor of 0.2 against its own

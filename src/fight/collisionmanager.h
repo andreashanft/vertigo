@@ -64,6 +64,12 @@ public:
     // the nearest object a sphere moving from start to end hits; accept() can leave objects out
     Object* testCollision(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, CollisionCache *collisionCache = nullptr, const Object *ignore = nullptr,
                           const std::function<bool(const Object *)> &accept = nullptr);
+    // The nearest unit that a unit meets on its way from start to end, the unit being a sphere
+    // of this radius. A unit with a contact sphere (Object::contactRadius()) is met as that
+    // sphere about its position, any other object by its shape as in testCollision(). position
+    // takes the moving sphere's centre at the contact, normal the direction away from the other.
+    Object* testContact(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, const Object *ignore = nullptr,
+                        const std::function<bool(const Object *)> &accept = nullptr);
 
 private:
 

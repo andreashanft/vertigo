@@ -1,6 +1,6 @@
 # Tests of the game's own types: strings, data values and dates, images and colours, the parsers
 # of the text formats, the files of sections and values, JSON, CD images, the hash that checks
-# downloads, the mission's steps and the vector font
+# downloads, the mission's steps, the units' contact spheres and the vector font
 
 # util::String, txt::Value and util::DateTime
 add_executable(stringtest
@@ -115,6 +115,16 @@ elseif(TARGET glm::glm)
     target_link_libraries(steptest glm::glm)
 endif()
 add_test(NAME step COMMAND steptest)
+
+# fight::sphereContact: two units that meet as spheres
+add_executable(contacttest contacttest.cpp)
+target_include_directories(contacttest PRIVATE ${PROJECT_SOURCE_DIR}/src)
+if(TARGET glm::glm-header-only)
+    target_link_libraries(contacttest glm::glm-header-only)
+elseif(TARGET glm::glm)
+    target_link_libraries(contacttest glm::glm)
+endif()
+add_test(NAME contact COMMAND contacttest)
 
 # gfx::VectorFont, the large silver font redrawn as vectors
 add_executable(vectorfonttest

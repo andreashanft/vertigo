@@ -51,6 +51,9 @@ public:
     bool update(float elapsedTime);
     void destroy();
 
+    // another unit meets the mine as the sphere of its hull
+    float contactRadius() const { return hullSphere(); }
+
 private:
     float radius() const;
 
