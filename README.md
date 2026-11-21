@@ -10,7 +10,7 @@ To run, either download a build from the [Releases section](https://github.com/a
 
 Features:
 
-* Supports macOS, iOS (iPad), Linux and Windows (Windows not playtested yet)
+* Supports macOS, iOS (iPad), Linux and Windows
 * HD look by upscaling many of the original game assets, see [Upscaled graphics](#upscaled-graphics)
 * Modern codebase and renderer
 * Support of English and German original or [modified](https://www.moddb.com/mods/archimedean-dynasty-augmented-mod) game data
@@ -60,7 +60,9 @@ Builds for Linux, macOS and Windows are in the [Releases section](https://github
   start: System Settings › Privacy & Security › Open Anyway starts it (or
   `xattr -dr com.apple.quarantine Vertigo.app`)
 * `vertigo-<version>-windows-x86_64.zip`: `vertigo.exe` with `SDL3.dll` and
-  OpenAL Soft's `OpenAL32.dll`, Windows 10 or later
+  OpenAL Soft's `OpenAL32.dll`, Windows 10 or later. It isn't signed, so
+  Windows warns before the first start that the program comes from an unknown
+  source. Confirm the dialog to run it. The build is playtested on Windows 10
 
 The game data is added at the first start (see [Game data](#game-data)).
 
@@ -163,7 +165,9 @@ cmake --build build --config Release
 ```
 
 `vertigo.exe` needs `SDL3.dll` and OpenAL Soft's `soft_oal.dll`, renamed to
-`OpenAL32.dll`, next to it.
+`OpenAL32.dll`, next to it. The build puts the folders `font` (the
+[HD font](#hd-font)) and `cockpits` (the [3D cockpits](#3d-cockpits)' kits)
+next to the program. Keep them with it when you move it.
 
 
 # Game data
@@ -269,6 +273,10 @@ version that comes with Vertigo, sharp at any size, with nothing to make or
 download. It is shown whenever the upscaled graphics are on, with either set.
 It can be fine-tuned with the font editor in [data/font](data/font/README.md).
 
+The font is the file `vertigo-mono.json` in the folder `font` next to the
+program (in the app on macOS and the iPad, in `share/vertigo/font` on Linux).
+Without that file the upscaled graphics show the game's own font.
+
 ## Game controllers
 
 <img src="docs/screenshots/controller-help.jpg" alt="The in-mission help's controller page: the buttons' jobs in green, with LB held in yellow">
@@ -299,7 +307,7 @@ an Xbox controller and A on a Nintendo one:
 | D-pad left | stop (C) | engine on or off (the key left of 1) |
 | D-pad right | sonar zoom (Alt+R) | sonar on or off (R) |
 | L3 (press the left stick) | the help, at the controller's page; again for its next page (H) | the radio messages (M) |
-| R3 (press the right stick) | the next cockpit or view from outside (V) | debug overlay (Ctrl+D) |
+| R3 (press the right stick) | the next view: the cockpit, then the views from outside (V) | debug overlay (Ctrl+D) |
 | Start | mission menu (Esc) | autopilot (Alt+A) |
 | Back | pause (P) | turret menu (O) |
 
@@ -318,9 +326,10 @@ is detected. Connecting a keyboard or game controller hides the touch UI.
 - In the 3rd-person view dragging moves the camera around, pinching with two fingers zooms in and out
 - MENU opens the mission menu; holding it toggles the debug overlay
 - Tapping any secondary status monitor cycles its views
-- VIEW toggles between the 2D and 3D cockpit and any applicable outside views (enemy when a target is locked)
+- VIEW steps through the cockpit and the outside views (the enemy's too when a target is locked)
 
-Two options are available:
+The iPad version has two options for the stick, in the main menu's Options and
+on the notebook's input devices page:
  - Touch stick: LEFT/RIGHT - what side the virtual joystick should be
  - Touch stick vertical: REGULAR/INVERTED - let up raise or lower the nose
 
@@ -333,28 +342,33 @@ As in the original, the number pad offers outside views:
 - 1 and 7: the same of the locked target
 - 9 and 3 zoom; 4, 6, 8 and 2 move the look-at view's camera round the boat
 
-V steps through the 2D cockpit, the 3D one, and the chase and look-at views
-of the boat and of the target (LB+Back on a game controller, VIEW on the touch
-screen). In the views, dragging with the mouse or a finger moves the look-at
+V steps through the cockpit and the chase and look-at views of the boat and
+of the target (LB+Back on a game controller, VIEW on the touch screen). The
+cockpit is the 2D or the 3D one, as the option [3D cockpit](#3d-cockpits)
+says. In the views, dragging with the mouse or a finger moves the look-at
 view's camera, and the mouse wheel (two fingers on a trackpad) or a pinch
 zooms.
 
 ## 3D cockpits
 
 Besides the original 2D cockpit art, Vertigo can show 3D models of the four
-cockpits. The models come without their textures (`cockpits` next to the
-program, built by the Blender scripts in
-[data/3D-cockpits](data/3D-cockpits/README.md)). The first time a 3D cockpit
-is shown, its texture is painted from the cockpit art of your game data in the
-background (the 2D cockpit shows meanwhile); with the
-[upscaled graphics](#upscaled-graphics) on, from the upscaled art of the set in
-use (Real-ESRGAN's or the AI upscale's). The texture is cached in
-`~/Library/Caches/Vertigo` on macOS, `~/.cache/vertigo` on Linux and
-`AppData/Local/Vertigo/Vertigo/Cache` on Windows.
+cockpits. To switch them on, click **3D cockpit** in the main menu's Options,
+or in the notebook under OPTIONS › 3D GRAPHICS.
 
-- `--cockpit 3d` (or `2d`) picks the cockpit for one run; Alt+V switches in a
-  mission and saves the choice (setting `cockpit/mode`). Without a model for
-  the boat's cockpit the 2D art is shown.
+The models come without their textures (`cockpits` next to the program, built
+by the Blender scripts in [data/3D-cockpits](data/3D-cockpits/README.md)).
+When you switch the option on, Vertigo paints the textures of all four
+cockpits from the cockpit art of your game data. It does so in the background,
+and the option's line shows the progress. With the
+[upscaled graphics](#upscaled-graphics) on, it paints them from the upscaled
+art of the set in use (Real-ESRGAN's or the AI upscale's). A mission that
+starts before its texture is done shows the 2D cockpit until then. The
+textures are cached in `~/Library/Caches/Vertigo` on macOS, `~/.cache/vertigo`
+on Linux and `AppData/Local/Vertigo/Vertigo/Cache` on Windows.
+
+- `--cockpit 3d` (or `2d`) picks the cockpit for one run. Alt+V switches in a
+  mission and saves the choice as the option does (setting `cockpit/mode`).
+  Without a model for the boat's cockpit the 2D art is shown.
 - A finished model, e.g. one textured with upscaled art by the scripts in
   data/3D-cockpits, takes the kit's place when it is in the folder
   `3d-cockpits` of the data directory (or the folder set as

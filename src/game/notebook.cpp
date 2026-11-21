@@ -21,6 +21,7 @@
 
 #include "gfx/colortable.h"
 #include "gfx/image.h"
+#include "hud/cockpitpreparer.h"
 #include "hud/touchcontrols.h"
 #include "sfx/music.hpp"
 #include "util/datetimetext.hpp"
@@ -47,6 +48,7 @@ Notebook::Notebook(std::function<void()> funcClose) :
     m_lblSound(&m_lblBackground, false),
     m_lblMovies(&m_lblBackground, false),
     m_lblInput(&m_lblBackground, false),
+    m_lblGraphics(&m_lblBackground, false),
     m_lblMoviePlayer(&m_lblBackground, false),
     m_lblMap(&m_lblBackground, false),
     m_btnSoundCdMusic([this]() { sfx::Music::setEnabled(!sfx::Music::isEnabled()); updateSound(); }, &m_lblSound),
@@ -55,6 +57,7 @@ Notebook::Notebook(std::function<void()> funcClose) :
     m_btnMoviesHarbour([this]() { Chapter::get()->toggleMovieHarbour(); updateMovies(); }, &m_lblMovies),
     m_btnInputTouchSide([this]() { hud::TouchControls::setMirrored(!hud::TouchControls::isMirrored()); updateInput(); }, &m_lblInput),
     m_btnInputTouchStick([this]() { hud::TouchControls::setStickInverted(!hud::TouchControls::isStickInverted()); updateInput(); }, &m_lblInput),
+    m_btnGraphicsCockpit([this]() { hud::CockpitPreparer::toggleOption(); updateGraphics(); }, &m_lblGraphics),
     m_btnMoviePlayerHide([this]() { hideMoviePlayer(); }, &m_lblMoviePlayer),
     m_btnMissionsBack([this]() { hideMissions(); }, &m_lblMissions),
     m_listMissions(&m_lblMissions),
@@ -106,10 +109,14 @@ Notebook::Notebook(std::function<void()> funcClose) :
         createLabel(&m_lblOptions, txt::Notebook_Options_Title, 30);
         createLabel(&m_lblOptions, txt::Notebook_Options_TitleLine, 40);
 
+        // (a page with nothing to set doesn't open: the 3D graphics' without a 3D cockpit, the
+        // input devices' anywhere but on the iPad)
+        const bool graphics = hud::CockpitPreparer::isOptionAvailable();
+        const bool input = hud::TouchControls::hasOptions();
         createButton([this]() { showSound(); }, &m_lblOptions, txt::Notebook_Sound, 90);
-        createButton([]() {}, &m_lblOptions, txt::Notebook_Graphics, 110);
+        createButton([this, graphics]() { if (graphics) showGraphics(); }, &m_lblOptions, txt::Notebook_Graphics, 110);
         createButton([this]() { showMovies(); }, &m_lblOptions, txt::Notebook_Movies, 130);
-        createButton([this]() { showInput(); }, &m_lblOptions, txt::Notebook_InputDevices, 150);
+        createButton([this, input]() { if (input) showInput(); }, &m_lblOptions, txt::Notebook_InputDevices, 150);
         createButton([this]() { showMoviePlayer(); }, &m_lblOptions, txt::Notebook_MoviePlayer, 170);
         createButton([this]() { hideOptions(); }, &m_lblOptions, txt::Notebook_Back, 220);
     }
@@ -126,6 +133,21 @@ Notebook::Notebook(std::function<void()> funcClose) :
         createButton([this]() { hideSound(); }, &m_lblSound, txt::Notebook_Back, 130);
 
         updateSound();
+    }
+
+    {
+        // (the game data has no texts of this page; Vertigo's has the 3D cockpit)
+        m_lblGraphics.setPosition(162, 73);
+        m_lblGraphics.setTexture(m_background);
+
+        createLabel(&m_lblGraphics, txt::StringTable::get(txt::Notebook_Graphics_Title), 30);
+        createLabel(&m_lblGraphics, txt::StringTable::get(txt::Notebook_Graphics_TitleLine), 40);
+
+        setupButton(m_btnGraphicsCockpit, txt::Notebook_Back, 90);
+
+        createButton([this]() { hideGraphics(); }, &m_lblGraphics, txt::Notebook_Back, 130);
+
+        updateGraphics();
     }
 
     {
@@ -455,6 +477,11 @@ void Notebook::updateRows(std::list<Row> &rows, int first, ui::Button &up, ui::B
 
 void Notebook::createLabel(ui::Widget *parent, txt::StringId text, float posY)
 {
+    createLabel(parent, txt::StringTable::get(text), posY);
+}
+
+void Notebook::createLabel(ui::Widget *parent, const String &text, float posY)
+{
     m_labels.emplace_back(parent);
     setupLabel(m_labels.back(), text, posY);
 }
@@ -467,8 +494,13 @@ void Notebook::createButton(std::function<void()> funcClick, ui::Widget *parent,
 
 void Notebook::setupLabel(ui::Label &label, txt::StringId text, float posY)
 {
+    setupLabel(label, txt::StringTable::get(text), posY);
+}
+
+void Notebook::setupLabel(ui::Label &label, const String &text, float posY)
+{
     label.setFont(m_fontYellow);
-    label.setText(txt::StringTable::get(text));
+    label.setText(text);
     label.setPosition(0, posY);
     label.setWidth(304);
     label.setAlignment(ui::Label::AlignHCenter);
@@ -550,6 +582,19 @@ void Notebook::hideMovies()
     m_lblOptions.show();
 }
 
+void Notebook::showGraphics()
+{
+    m_lblOptions.hide();
+    m_lblGraphics.show();
+    updateGraphics();
+}
+
+void Notebook::hideGraphics()
+{
+    m_lblGraphics.hide();
+    m_lblOptions.show();
+}
+
 void Notebook::showInput()
 {
     m_lblOptions.hide();
@@ -621,6 +666,13 @@ void Notebook::updateMovies()
     m_btnMoviesHarbour.setText(txt::StringTable::get(harbour));
 }
 
+// the 3D cockpit's line: on or off, and while the cockpits' textures are painted the percentage
+void Notebook::updateGraphics()
+{
+    m_graphicsTime.start();
+    m_btnGraphicsCockpit.setText(hud::CockpitPreparer::optionText());
+}
+
 void Notebook::updateInput()
 {
     m_btnInputTouchSide.setText(txt::StringTable::get(hud::TouchControls::isMirrored() ? txt::Touch_Stick_Right : txt::Touch_Stick_Left));
@@ -635,6 +687,9 @@ void Notebook::draw()
         m_cursor = !m_cursor;
         updateSaveName();
     }
+    // the progress of the cockpits' textures, twice a second
+    if (m_lblGraphics.isVisible() && m_graphicsTime.elapsed() >= 500)
+        updateGraphics();
     ui::Label::draw();
 }
 
@@ -678,6 +733,10 @@ bool Notebook::mousePressEvent(const Point &pos, input::MouseButton button)
         }
         if (m_lblMovies.isVisible()) {
             hideMovies();
+            return true;
+        }
+        if (m_lblGraphics.isVisible()) {
+            hideGraphics();
             return true;
         }
         if (m_lblInput.isVisible()) {

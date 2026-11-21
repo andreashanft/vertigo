@@ -26,6 +26,7 @@
 
 #include <glm/geometric.hpp>
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <vector>
 
@@ -89,7 +90,14 @@ int main()
     input.center = Vector2D(info["camera"][1].toDouble(), info["camera"][2].toDouble());
     input.size = 1024;
     input.eyeScale = 2;
-    const gfx::Image texture = hud::CockpitPaint::paint(input);
+    // the painting reports how far it is, and a cancelled one gives no texture
+    std::atomic<int> progress{ -1 };
+    const gfx::Image texture = hud::CockpitPaint::paint(input, nullptr, &progress);
+    CHECK_EQUAL(progress.load(), 100);
+    const std::atomic<bool> cancel{ true };
+    progress = -1;
+    CHECK(hud::CockpitPaint::paint(input, &cancel, &progress).isNull());
+    CHECK(progress.load() < 100);
     CHECK_EQUAL(texture.width(), 1024);
     CHECK_EQUAL(texture.height(), 1024);
     CHECK(texture.format() == gfx::Image::RGB888);

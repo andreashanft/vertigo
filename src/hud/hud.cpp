@@ -276,13 +276,10 @@ void HUD::load(game::Boat *boat)
 
     txt::DesFile file(String("vfx:cockpit/%1.des").arg(boat->cockpit()));
 
-    file.setSection("front");
-    m_center = glm::ivec2(file.value("VFX_StartX").toInt() + file.value("VFX_FlightX").toInt(), file.value("VFX_StartY").toInt() + file.value("VFX_FlightY").toInt());
-
-    // the camera the cockpit art was rendered with (horizontal view angle over 640 pixels)
-    file.setSection("camera");
-    const float viewAngle = file.contains("ViewAngle") ? file.value("ViewAngle").toFloat() : 105.0f;
-    m_focal = 320/std::tan(glm::radians(viewAngle)/2);
+    // the camera the cockpit art was rendered with
+    const Cockpit3D::Camera camera = Cockpit3D::artCamera(boat->cockpit());
+    m_center = Point(int(camera.center.x), int(camera.center.y));
+    m_focal = camera.focal;
     const std::string model = Cockpit3D::find(boat->cockpit());
     m_model = model.empty() ? nullptr : Cockpit3D::get(model);
     if (m_model)
@@ -786,7 +783,9 @@ void HUD::drawFrame()
         if (m_model->isReady() != ready)
             m_rectGL = Rect();      // the view angle changes with it
     }
-    if (showsModel() && drawModel(pixelRatio))
+    // (in the frame in which the cockpit changes, the view's rectangle is not set for it yet: that
+    // frame shows the 2D cockpit once more, or it would show nothing)
+    if (showsModel() && m_rectGL.width > 0 && drawModel(pixelRatio))
     {
         drawTouchControls(pixelRatio);
         return;
@@ -1250,29 +1249,23 @@ void HUD::toggleView(fight::OutsideView::Mode mode, bool target)
 }
 
 
-// V, the VIEW button and LB+Back: the 2D cockpit, the 3D one (if there is a model), the chase and
-// look-at views of the boat and, with a locked unit, of the target, and the 2D cockpit again
+// V, the VIEW button and LB+Back: the cockpit, the chase and look-at views of the boat and, with a
+// locked unit, of the target, and the cockpit again. The cockpit is the 2D or the 3D one, as the
+// option "3D cockpit" says.
 void HUD::nextView()
 {
     using Mode = fight::OutsideView::Mode;
     fight::OutsideView &view = m_scenario->outsideView();
     if (view.mode() == Mode::Cockpit)
     {
-        if (cockpitMode() == CockpitMode::Art && m_model && m_model->isValid())
-            setCockpit(CockpitMode::Model);
-        else
-            view.show(Mode::Chase, false);
+        view.show(Mode::Chase, false);
         return;
     }
     const bool target = view.watchesTarget();
     if (view.mode() == Mode::Chase)
         view.show(Mode::LookAt, target);
     else if (target || !view.show(Mode::Chase, true))
-    {
         view.show(Mode::Cockpit, false);
-        if (cockpitMode() == CockpitMode::Model)
-            setCockpit(CockpitMode::Art);
-    }
 }
 
 

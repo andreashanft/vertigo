@@ -3,7 +3,8 @@
 #   vertigo-<version>-linux-x86_64.tar.gz    the program, SDL 3 built in; needs OpenAL
 #   vertigo-<version>-macos-universal.zip    Vertigo.app for Apple silicon and Intel, macOS 13.3 on
 #   vertigo-<version>-windows-x86_64.zip     vertigo.exe with SDL3.dll and OpenAL32.dll
-# each with the 3D cockpits' kits (cockpits, share/vertigo/cockpits on Linux)
+# each with the 3D cockpits' kits (cockpits, share/vertigo/cockpits on Linux) and the vector font
+# of the upscaled graphics (font, share/vertigo/font on Linux)
 # A tag v<version> (the version of CMakeLists.txt's project()) also puts the three on the release
 # of that tag: the one made for it on GitHub's page, if there is one, or else a new draft to be
 # checked and published by hand.
@@ -97,6 +98,7 @@ jobs:
         run: |
           version=$(sed -nE 's/^project\(vertigo VERSION ([0-9.]+)\)$/\1/p' CMakeLists.txt)
           cmake --install build --prefix "$PWD/package/vertigo"
+          test -f package/vertigo/share/vertigo/font/vertigo-mono.json
           cp README.md LICENSE AUTHORS package/vertigo/
           tar -C package -czf "vertigo-$version-linux-x86_64.tar.gz" vertigo
           echo "name=vertigo-$version-linux-x86_64" >> "$GITHUB_OUTPUT"
@@ -163,7 +165,7 @@ jobs:
           app=package/vertigo/Vertigo.app
           mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" icon.iconset
           cp build/vertigo "$app/Contents/MacOS/"
-          cp -R build/cockpits "$app/Contents/Resources/"
+          cp -R build/cockpits build/font "$app/Contents/Resources/"
           for size in 16 32 128 256 512; do
             sips -z $size $size ios/Assets.xcassets/AppIcon.appiconset/icon-1024.png --out icon.iconset/icon_${size}x${size}.png > /dev/null
             sips -z $((size * 2)) $((size * 2)) ios/Assets.xcassets/AppIcon.appiconset/icon-1024.png --out icon.iconset/icon_${size}x${size}@2x.png > /dev/null
@@ -197,11 +199,12 @@ jobs:
           echo "name=vertigo-$version-macos-universal" >> "$GITHUB_OUTPUT"
 
       # the packed program starts (--help only), runs on both processors and names no library
-      # outside the system's
+      # outside the system's; the vector font is where the program looks for it
       - name: Start
         run: |
           program=package/vertigo/Vertigo.app/Contents/MacOS/vertigo
           "$program" --help
+          test -f package/vertigo/Vertigo.app/Contents/Resources/font/vertigo-mono.json
           test "$(lipo -archs "$program")" = "x86_64 arm64"
           otool -L "$program"
           if otool -L "$program" | grep -E '^\s' | grep -vE '^\s+(/System/Library/|/usr/lib/)'; then exit 1; fi
@@ -273,7 +276,7 @@ jobs:
           version=$(sed -nE 's/^project\(vertigo VERSION ([0-9.]+)\)$/\1/p' CMakeLists.txt)
           mkdir -p package/vertigo/licenses
           cp build/Release/vertigo.exe "deps/SDL3-$SDL_VERSION/lib/x64/SDL3.dll" package/vertigo/
-          cp -R build/Release/cockpits package/vertigo/
+          cp -R build/Release/cockpits build/Release/font package/vertigo/
           cp "deps/openal-soft-$OPENAL_VERSION-bin/bin/Win64/soft_oal.dll" package/vertigo/OpenAL32.dll
           cp README.md LICENSE AUTHORS package/vertigo/
           cp "deps/SDL3-$SDL_VERSION/LICENSE.txt" package/vertigo/licenses/SDL.txt
@@ -283,10 +286,11 @@ jobs:
           echo "name=vertigo-$version-windows-x86_64" >> "$GITHUB_OUTPUT"
 
       # the packed program starts (--help only) and needs no DLL beyond the two packed with it and
-      # Windows' own
+      # Windows' own; the vector font is where the program looks for it
       - name: Start
         run: |
           package/vertigo/vertigo.exe --help | cat
+          test -f package/vertigo/font/vertigo-mono.json
           ldd package/vertigo/vertigo.exe
           if ldd package/vertigo/vertigo.exe | grep -iE 'vcruntime|msvcp[0-9]|not found'; then exit 1; fi
 

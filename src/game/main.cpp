@@ -284,7 +284,7 @@ SDL_AppResult SDL_AppInit(void **, int argc, char *argv[])
     parser.addOption("upscale", "Make the upscaled graphics (as Options in the main menu does), printing the progress, and switch them on; downloads the Real-ESRGAN upscaler first if it isn't there.");
     parser.addOption("difficulty", "Difficulty in test mode: 0 easy, 1 normal (default), 2 hard.", "level");
     parser.addOption("seed", "Random seed in test mode (default 1), so runs repeat exactly.", "number");
-    parser.addOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (Alt+V switches and saves the choice).", "2d|3d");
+    parser.addOption("cockpit", "Show the original 2D cockpit or the 3D cockpit for this run (the option 3D cockpit and Alt+V switch and save the choice).", "2d|3d");
     parser.addOption("cockpit-dir", "Take the 3D cockpits' models (cockpit_NNN.glb) from this directory for this run, a relative one in the data directory, e.g. 3d-cockpits-vector.", "directory");
     parser.addOption("shake", "How strongly the pilot's head moves in the 3D cockpit and the 2D cockpit shakes, 0 to turn it off (default 1).", "factor");
     parser.addOption("faces", "Name the face buttons on the help's controller page as an Xbox, Nintendo or PlayStation controller has them, for this run.", "xbox|nintendo|playstation");

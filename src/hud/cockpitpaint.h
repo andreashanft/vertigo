@@ -62,8 +62,9 @@ public:
         int eyeScale = 8;
     };
 
-    // the texture (RGB888), or a null image if the kit has no parts or cancel was set
-    static gfx::Image paint(const Input &input, const std::atomic<bool> *cancel = nullptr);
+    // the texture (RGB888), or a null image if the kit has no parts or cancel was set; progress
+    // takes how far the painting is, 0 to 100
+    static gfx::Image paint(const Input &input, const std::atomic<bool> *cancel = nullptr, std::atomic<int> *progress = nullptr);
 
     // the art's see-through area: its colour key (pure black) where it fills at least 40 pixels,
     // smaller spots are black paint; art in ARGB32 with the colour key transparent

@@ -48,10 +48,12 @@ const VectorFont* vectorFont()
         const char *base = SDL_GetBasePath();
         if (!base)
             return nullptr;
+        bool found = false;
         for (const char *candidate : { "font/vertigo-mono.json", "../share/vertigo/font/vertigo-mono.json" }) {
             std::ifstream file(util::toPath(util::joinPath(base, candidate)), std::ios::binary);
             if (!file)
                 continue;
+            found = true;
             std::stringstream text;
             text << file.rdbuf();
             auto font = std::make_unique<VectorFont>();
@@ -59,6 +61,10 @@ const VectorFont* vectorFont()
                 return font;
             std::cerr << "The vector font " << candidate << " can't be read" << std::endl;
         }
+        // (the upscaled graphics then show the game's own font, which is easy to take for a fault)
+        if (!found)
+            std::cerr << "The vector font font/vertigo-mono.json is not next to the program in " << base
+                      << ": the upscaled graphics show the game's font" << std::endl;
         return nullptr;
     }();
     return font.get();
