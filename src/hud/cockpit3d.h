@@ -26,9 +26,11 @@
 #include "util/string.hpp"
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <future>
 #include <string>
 #include <memory>
+#include <vector>
 
 
 namespace gfx { class GlbModel; }
@@ -63,6 +65,45 @@ public:
     static std::string find(const String &cockpit);
     // the model in this file, shared while it is in use; prepare() loads it
     static std::shared_ptr<Cockpit3D> get(const std::string &fileName);
+    // the cockpits that have a model or a kit, by the number in the file's name, e.g. "000"
+    static StringList cockpits();
+
+    // The camera that a cockpit's art was rendered with, from the cockpit's description file: the
+    // focal length and the optical centre in pixels of the 640x480 view.
+    struct Camera
+    {
+        float focal = 245.5f;
+        Vector2D center = Vector2D(320, 240);
+    };
+    static Camera artCamera(const String &cockpit);
+
+    // What a kit's texture is painted from besides the kit: the cockpit art of the game data, its
+    // upscaled copy if the upscaled graphics are on, the art's camera and the largest texture
+    // that OpenGL takes. paintSource() gathers it on the game's thread with an OpenGL context.
+    struct PaintSource
+    {
+        gfx::Image art;                     // 640x480, RGB888
+        gfx::Image detail;                  // the upscaled art, RGB888, or null
+        std::vector<std::uint8_t> see;      // 640x480, 1 where the art is see-through
+        Camera camera;
+        int maxTextureSize = 0;             // 0: not known
+        String cockpit;
+    };
+    static PaintSource paintSource(const String &cockpit, const Camera &camera);
+    // A kit's texture, on any thread. The kit, the art, its camera and the size make the name of
+    // the file that keeps it in the cache. paint() takes the texture from that file, or paints
+    // it and writes the file. With load = false it only makes sure that the file is there and
+    // leaves the texture null where the file was. One texture is painted at a time, so a second
+    // call waits; cancel ends the wait and the painting. progress takes how far the painting is,
+    // 0 to 100.
+    struct Painted
+    {
+        gfx::Image texture;
+        bool cached = false;
+        std::string file;
+    };
+    static Painted paint(const gfx::GlbModel &kit, const std::string &kitFile, const PaintSource &source,
+                         const std::atomic<bool> *cancel, std::atomic<int> *progress = nullptr, bool load = true);
 
 public:
     explicit Cockpit3D(const std::string &fileName);
@@ -107,12 +148,6 @@ private:
     int m_decalCount = 0;
     unsigned int m_texture = 0;
     // the model until it is ready, and the texture painted for a kit
-    struct Painted
-    {
-        gfx::Image texture;
-        bool cached = false;
-        std::string file;
-    };
     std::unique_ptr<gfx::GlbModel> m_model;
     std::future<Painted> m_painted;
     std::atomic<bool> m_cancel { false };

@@ -477,9 +477,15 @@ std::vector<std::uint8_t> CockpitPaint::seeThrough(const gfx::Image &art)
 }
 
 
-gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *cancel)
+gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *cancel, std::atomic<int> *progress)
 {
     auto cancelled = [cancel]() { return cancel && cancel->load(); };
+    // the share of the whole painting that is done after each step, estimated
+    auto reached = [progress](int percent) {
+        if (progress)
+            progress->store(percent);
+    };
+    reached(0);
     const int size = input.size, S = input.eyeScale;
     const float F = input.focal;
     const Vector2D C = input.center;
@@ -550,6 +556,7 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
             return gfx::Image();
     }
     depth = std::vector<float>();
+    reached(15);
     // per part: (art pixel, sub-pixels it covers there)
     std::vector<std::vector<std::pair<int, int>>> coverage(parts.size() + 1);
     {
@@ -661,6 +668,7 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
     coverage = std::vector<std::vector<std::pair<int, int>>>();
     if (cancelled())
         return gfx::Image();
+    reached(40);
 
     // ------------------------------------------------------------------------------------------
     // 3. The atlas: every part's texels, from its field where the eye sees them, else the
@@ -837,6 +845,7 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
     fields = std::vector<Field>();
     if (cancelled())
         return gfx::Image();
+    reached(85);
 
     // ------------------------------------------------------------------------------------------
     // 4. The texels between the islands: pull-push from the islands' colours (levels of colour
@@ -917,6 +926,7 @@ gfx::Image CockpitPaint::paint(const Input &input, const std::atomic<bool> *canc
                     row[3*x + k] = std::uint8_t(std::min(std::max(c[k] + 0.5f, 0.0f), 255.0f));
             }
     }
+    reached(100);
     return texture;
 }
 

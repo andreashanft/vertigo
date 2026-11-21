@@ -17,6 +17,7 @@
 
 #include "vertigo.h"
 
+#include "hud/cockpitpreparer.h"
 #include "hud/hud.h"
 #include "game/renderer.h"
 #include "game/boat.h"
@@ -318,6 +319,7 @@ int Vertigo::iterate()
         gfx::Upscaled::reload();
         gfx::Upscaled::setEnabled(true);
         m_window.updateCursor();
+        hud::CockpitPreparer::artChanged();
     }
     // what test runs make up comes first, as the platform's input would
     m_window.deliverPosted();

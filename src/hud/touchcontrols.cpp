@@ -23,6 +23,7 @@
 #include "gfx/rgb.h"
 #include "util/settings.hpp"
 
+#include <SDL3/SDL_platform_defines.h>
 #include <glm/geometric.hpp>
 #include <algorithm>
 #include <cmath>
@@ -101,6 +102,16 @@ TouchControls::TouchControls(gfx::Font &font, gfx::Font &fontPressed, const Hand
         { "TURR", KeyEvent(Key_O), Vector2D(-30, 82), 22, -1 },
         { "VIEW", KeyEvent(Key_V), Vector2D(-30, 134), 22, -1 },
     };
+}
+
+
+bool TouchControls::hasOptions()
+{
+#if defined(SDL_PLATFORM_IOS)
+    return true;
+#else
+    return false;
+#endif
 }
 
 

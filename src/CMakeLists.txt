@@ -193,6 +193,8 @@ set(SOURCES
     hud/cockpit3d.h
     hud/cockpitpaint.cpp
     hud/cockpitpaint.h
+    hud/cockpitpreparer.cpp
+    hud/cockpitpreparer.h
     hud/hud.cpp
     hud/hud.h
     hud/crosshair.cpp

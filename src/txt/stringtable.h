@@ -332,6 +332,12 @@ enum StringVertigo
     Upscaled_Prepare,
     Upscaled_Update,
     Upscaled_Running,   // with the percentage as %1
+    Cockpit3D_On,
+    Cockpit3D_Off,
+    Cockpit3D_Running,  // with the percentage as %1
+    // the notebook's page of the 3D graphics (the game data has the other pages' titles)
+    Notebook_Graphics_Title,
+    Notebook_Graphics_TitleLine,
     // the help's controller page: each control's job, then its job with LB held where it has one
     Pad_Torpedo,
     Pad_Shift,

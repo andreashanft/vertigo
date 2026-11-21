@@ -92,6 +92,11 @@ String StringTable::get(StringVertigo string)
         { "Hochskalierte Grafik: VORBEREITEN", "Upscaled graphics: PREPARE" },
         { "Hochskalierte Grafik: AKTUALISIEREN", "Upscaled graphics: UPDATE" },
         { "Grafik wird hochskaliert: %1 %", "Upscaling graphics: %1 %" },
+        { "3D-Cockpit: AN", "3D cockpit: ON" },
+        { "3D-Cockpit: AUS", "3D cockpit: OFF" },
+        { "3D-Cockpits werden vorbereitet: %1 %", "Preparing 3D cockpits: %1 %" },
+        { "O P T I O N E N  3 D - G R A F I K", "O P T I O N S  3 D  G R A P H I C S" },
+        { "----------------------------------", "-----------------------------------" },
         // (in the game's 8-bit text: \x8e Ä, \x99 Ö, \x9a Ü; split where a letter follows that
         // would extend the escape)
         { "TORPEDO ABFEUERN", "FIRE TORPEDO" },

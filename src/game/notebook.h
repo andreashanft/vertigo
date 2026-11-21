@@ -66,6 +66,8 @@ private:
     void hideSound();
     void showMovies();
     void hideMovies();
+    void showGraphics();
+    void hideGraphics();
     void showInput();
     void hideInput();
     void showMoviePlayer();
@@ -74,12 +76,15 @@ private:
     void hideMap();
     void updateSound();
     void updateMovies();
+    void updateGraphics();
     void updateInput();
 
 private:
     void createLabel(ui::Widget *parent, txt::StringId text, float posY);
+    void createLabel(ui::Widget *parent, const String &text, float posY);
     void createButton(std::function<void()> funcClick, ui::Widget *parent, txt::StringId text, float posY);
     void setupLabel(ui::Label &label, txt::StringId text, float posY);
+    void setupLabel(ui::Label &label, const String &text, float posY);
     void setupButton(ui::Button &button, txt::StringId text, float posY);
 
 private:
@@ -97,6 +102,7 @@ private:
     ui::Label m_lblSound;
     ui::Label m_lblMovies;
     ui::Label m_lblInput;
+    ui::Label m_lblGraphics;
     ui::Label m_lblMoviePlayer;
     ui::Label m_lblMap;
     ui::Button m_btnSoundCdMusic;
@@ -105,6 +111,9 @@ private:
     ui::Button m_btnMoviesHarbour;
     ui::Button m_btnInputTouchSide;
     ui::Button m_btnInputTouchStick;
+    // the 3D graphics' page: the 3D cockpit, switched on and off (hud::CockpitPreparer)
+    ui::Button m_btnGraphicsCockpit;
+    util::ElapsedTimer m_graphicsTime;
     ui::Button m_btnMoviePlayerHide;
     ui::Button m_btnMissionsBack;
     ui::List m_listMissions;

@@ -52,6 +52,7 @@ private:
     void showCredits(int page);
     void updateDifficulty();
     void updateOptions();
+    void updateCockpit();
     void updateUpscaled();
     void clickUpscaled();
 
@@ -114,12 +115,15 @@ private:
     ui::Label m_lblOptionsTitle;
     ui::Button m_btnOptionsBack;
     ui::Button m_btnOptionsDifficulty;
+    // the 3D cockpit: switched on and off (hud::CockpitPreparer); shown if there is one
+    ui::Button m_btnOptionsCockpit;
+    bool m_cockpitAvailable = false;
     // the upscaled graphics: prepared, updated, switched on and off (gfx::Upscaled, Upscaler)
     ui::Button m_btnOptionsUpscaled;
     std::string m_upscaledSource;   // the game data's fingerprint, taken when the page opens
     util::ElapsedTimer m_upscaledTime;
     bool m_upscaledErrorShown = true;
-    // the notebook's options and the touch screen's, each a button that switches it
+    // the notebook's options and on the iPad the touch screen's, each a button that switches it
     struct Option
     {
         std::function<bool()> value;

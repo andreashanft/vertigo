@@ -17,6 +17,7 @@
 
 #include "chapter.h"
 #include "fight/scenario.h"
+#include "hud/cockpitpreparer.h"
 #include "hud/touchcontrols.h"
 #include "sfx/music.hpp"
 #include "mainmenu.h"
@@ -77,6 +78,7 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_lblOptionsTitle(&m_lblOptions),
     m_btnOptionsBack([this]() { showMain(); }, &m_lblOptions),
     m_btnOptionsDifficulty([this]() { fight::Scenario::setDifficulty((fight::Scenario::difficulty() + 1)%3); updateDifficulty(); }, &m_lblOptions),
+    m_btnOptionsCockpit([this]() { hud::CockpitPreparer::toggleOption(); updateCockpit(); }, &m_lblOptions),
     m_btnOptionsUpscaled([this]() { clickUpscaled(); }, &m_lblOptions),
     m_lblLoading(&m_title, false),
     m_lblLoadingTitle(&m_lblLoading),
@@ -194,7 +196,8 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
     m_btnMainOptions.setText(txt::StringTable::get(txt::Notebook_Options));
 
     // the difficulty (easy, normal, hard: cycles on click), the notebook's sound and movie
-    // options (which a chapter takes when it starts) and the touch screen's, on one page
+    // options (which a chapter takes when it starts), on the iPad the touch screen's, the 3D
+    // cockpit and the upscaled graphics, on one page
     m_lblOptionsTitle.setFont(fontMedium);
     m_lblOptionsTitle.setPosition(145, 256 - fontMedium.height() - 2);
     m_lblOptionsTitle.setText(txt::StringTable::get(txt::Notebook_Options));
@@ -205,11 +208,13 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
         { []() { return sfx::Music::isEnabled(); }, [](bool value) { sfx::Music::setEnabled(value); },
           txt::StringTable::get(txt::Notebook_Sound_CdMusic_On), txt::StringTable::get(txt::Notebook_Sound_CdMusic_Off) },
         setting("Movie/autopilot"), setting("Movie/approach"), setting("Movie/harbour"),
-        { []() { return hud::TouchControls::isMirrored(); }, [](bool value) { hud::TouchControls::setMirrored(value); },
-          txt::StringTable::get(txt::Touch_Stick_Right), txt::StringTable::get(txt::Touch_Stick_Left) },
-        { []() { return hud::TouchControls::isStickInverted(); }, [](bool value) { hud::TouchControls::setStickInverted(value); },
-          txt::StringTable::get(txt::Touch_Stick_Inverted), txt::StringTable::get(txt::Touch_Stick_Normal) },
     };
+    if (hud::TouchControls::hasOptions()) {
+        m_options.push_back({ []() { return hud::TouchControls::isMirrored(); }, [](bool value) { hud::TouchControls::setMirrored(value); },
+                              txt::StringTable::get(txt::Touch_Stick_Right), txt::StringTable::get(txt::Touch_Stick_Left) });
+        m_options.push_back({ []() { return hud::TouchControls::isStickInverted(); }, [](bool value) { hud::TouchControls::setStickInverted(value); },
+                              txt::StringTable::get(txt::Touch_Stick_Inverted), txt::StringTable::get(txt::Touch_Stick_Normal) });
+    }
     const txt::StringId movies[][2] = { { txt::Notebook_Movies_Autopilot_Yes, txt::Notebook_Movies_Autopilot_No },
                                         { txt::Notebook_Movies_Approach_Yes, txt::Notebook_Movies_Approach_No },
                                         { txt::Notebook_Movies_Harbour_Yes, txt::Notebook_Movies_Harbour_No } };
@@ -217,9 +222,12 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
         m_options[1 + i].on = txt::StringTable::get(movies[i][0]);
         m_options[1 + i].off = txt::StringTable::get(movies[i][1]);
     }
-    // as on the original's option pages: the medium font, 15 pixels apart
+    // as on the original's option pages: the medium font, 15 pixels apart. With the iPad's lines
+    // the page starts a line higher, so that the last line stays clear of the way back.
+    const int optionRows = 1 + int(m_options.size()) + 2;
+    const int optionTop = optionRows > 7 ? 278 : 293;
     m_btnOptionsDifficulty.setFont(fontMedium);
-    m_btnOptionsDifficulty.setPosition(0, 293);
+    m_btnOptionsDifficulty.setPosition(0, optionTop);
     m_btnOptionsDifficulty.setWidth(640);
     m_btnOptionsDifficulty.setAlignment(ui::Label::AlignHCenter);
     updateDifficulty();
@@ -227,12 +235,24 @@ MainMenu::MainMenu(std::function<void(String)> funcStartGame, std::function<void
         m_btnOptions.emplace_back([this, i]() { m_options[i].setValue(!m_options[i].value()); updateOptions(); }, &m_lblOptions);
         ui::Button &button = m_btnOptions.back();
         button.setFont(fontMedium);
-        button.setPosition(0, 308 + 15*int(i));
+        button.setPosition(0, optionTop + 15 + 15*int(i));
         button.setWidth(640);
         button.setAlignment(ui::Label::AlignHCenter);
     }
+    // the 3D cockpit's line, if there is a model or a kit for any cockpit, then the upscaled
+    // graphics'
+    int optionY = optionTop + 15 + 15*int(m_options.size());
+    m_btnOptionsCockpit.setFont(fontMedium);
+    m_btnOptionsCockpit.setPosition(0, optionY);
+    m_btnOptionsCockpit.setWidth(640);
+    m_btnOptionsCockpit.setAlignment(ui::Label::AlignHCenter);
+    m_cockpitAvailable = hud::CockpitPreparer::isOptionAvailable();
+    if (m_cockpitAvailable)
+        optionY += 15;
+    else
+        m_btnOptionsCockpit.hide();
     m_btnOptionsUpscaled.setFont(fontMedium);
-    m_btnOptionsUpscaled.setPosition(0, 308 + 15*int(m_options.size()));
+    m_btnOptionsUpscaled.setPosition(0, optionY);
     m_btnOptionsUpscaled.setWidth(640);
     m_btnOptionsUpscaled.setAlignment(ui::Label::AlignHCenter);
     m_btnOptionsBack.setPosition(0, 428);
@@ -321,9 +341,11 @@ void MainMenu::draw()
         else
             changeState(Title);
     }
-    // the upscaler's progress, twice a second
-    if (m_lblOptions.isVisible() && m_upscaledTime.elapsed() >= 500)
+    // the progress of the cockpits' textures and of the upscaler, twice a second
+    if (m_lblOptions.isVisible() && m_upscaledTime.elapsed() >= 500) {
+        updateCockpit();
         updateUpscaled();
+    }
     Menu::draw();
 
     if (m_lblNew.isVisible()) {
@@ -580,7 +602,16 @@ void MainMenu::updateOptions()
     auto button = m_btnOptions.begin();
     for (const Option &option : m_options)
         (button++)->setText(option.value() ? option.on : option.off);
+    updateCockpit();
     updateUpscaled();
+}
+
+
+// The 3D cockpit's line: on or off, and while the cockpits' textures are painted the percentage.
+void MainMenu::updateCockpit()
+{
+    if (m_cockpitAvailable)
+        m_btnOptionsCockpit.setText(hud::CockpitPreparer::optionText());
 }
 
 
@@ -633,6 +664,8 @@ void MainMenu::clickUpscaled()
         gfx::Upscaled::setEnabled(!gfx::Upscaled::isEnabled());
         if (window())
             window()->updateCursor();
+        hud::CockpitPreparer::artChanged();
+        updateCockpit();
     } else {
         const std::string upscaling = "Upscaling takes about a quarter of an hour, in the background: you can go on playing "
             "meanwhile, and the upscaled graphics are used once they are done. They are kept in " + gfx::Upscaled::directory() + ".";

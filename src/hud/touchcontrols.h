@@ -69,6 +69,8 @@ public:
 
 public:
     // the options, kept in the settings: mirrored, and the stick pushed up for down
+    // The touch screen's options are offered where the game is played by touch: on the iPad.
+    static bool hasOptions();
     static bool isMirrored();
     static void setMirrored(bool mirrored);
     static bool isStickInverted();

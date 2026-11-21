@@ -20,17 +20,23 @@
 #include "gfx/glbmodel.h"
 #include "gfx/pipeline.h"
 #include "gfx/upscaled.h"
+#include "txt/desfile.h"
 #include "util/datapath.h"
 #include "util/path.hpp"
 
 #include "gfx/gl.hpp"
 #include "util/settings.hpp"
 #include <SDL3/SDL_filesystem.h>
+#include <glm/trigonometric.hpp>
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cmath>
 #include <iostream>
 #include <map>
+#include <mutex>
+#include <set>
+#include <thread>
 
 // OpenGL 1.2, missing from some gl.h
 #ifndef GL_CLAMP_TO_EDGE
@@ -64,6 +70,10 @@ const int EyeScale = 8;
 // raised when CockpitPaint paints differently, so that the cached textures are painted again
 const int PaintVersion = 2;
 const int CacheQuality = 92;
+
+// held while a texture is painted: a mission and the preparation of all cockpits (CockpitPreparer)
+// may want the same one at the same time
+std::mutex paintMutex;
 
 std::uint64_t fnv1a(const void *data, std::size_t size, std::uint64_t hash = 14695981039346656037ull)
 {
@@ -237,32 +247,80 @@ void Cockpit3D::prepare(const String &cockpit, bool wait)
 }
 
 
-// The kit's texture on a worker thread: from the cache, where the kit, the art, its camera and the
-// size make the name, else painted and kept there
-void Cockpit3D::startPainting(const String &cockpit)
+StringList Cockpit3D::cockpits()
 {
-    CockpitPaint::Input input;
-    input.kit = m_model.get();
+    std::set<String> found;
+    for (const std::string &directory : { directory(), kitDirectory() }) {
+        if (directory.empty())
+            continue;
+        for (const std::string &name : util::files(directory)) {
+            const String file = String::fromUtf8(name.c_str()).toLower();
+            if (file.startsWith("cockpit_") && file.endsWith(".glb"))
+                found.insert(file.mid(8, file.size() - 12));
+        }
+    }
+    StringList cockpits;
+    for (const String &cockpit : found)
+        cockpits << cockpit;
+    return cockpits;
+}
+
+
+Cockpit3D::Camera Cockpit3D::artCamera(const String &cockpit)
+{
+    txt::DesFile file(String("vfx:cockpit/%1.des").arg(cockpit));
+    Camera camera;
+    file.setSection("front");
+    camera.center = Vector2D(file.value("VFX_StartX").toInt() + file.value("VFX_FlightX").toInt(),
+                             file.value("VFX_StartY").toInt() + file.value("VFX_FlightY").toInt());
+    // the horizontal view angle over 640 pixels
+    file.setSection("camera");
+    const float viewAngle = file.contains("ViewAngle") ? file.value("ViewAngle").toFloat() : 105.0f;
+    camera.focal = 320/std::tan(glm::radians(viewAngle)/2);
+    return camera;
+}
+
+
+Cockpit3D::PaintSource Cockpit3D::paintSource(const String &cockpit, const Camera &camera)
+{
+    PaintSource source;
+    source.cockpit = cockpit;
+    source.camera = camera;
     const gfx::Image art = gfx::Image::load(String("vfx:cockpit/%1/cockpit.r16").arg(cockpit), 640, 480, true);
-    input.see = CockpitPaint::seeThrough(art);
-    input.art = art.convertToFormat(gfx::Image::RGB888);
+    source.see = CockpitPaint::seeThrough(art);
+    source.art = art.convertToFormat(gfx::Image::RGB888);
     // the upscaled art, as the 2D cockpit shows it, from the set in use (Real-ESRGAN's or the AI
     // upscale's)
     const gfx::Image upscaled = gfx::Upscaled::find(gfx::Upscaled::key(art));
     if (upscaled.width() == art.width()*gfx::Upscaled::Scale && upscaled.height() == art.height()*gfx::Upscaled::Scale)
-        input.detail = upscaled.convertToFormat(gfx::Image::RGB888);
-    input.focal = m_focal;
-    input.center = m_center;
+        source.detail = upscaled.convertToFormat(gfx::Image::RGB888);
     GLint maxSize = 0;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
-    input.size = std::min(m_model->extras()["vertigo_kit"]["atlas"].toInt(8192), MaxTextureSize);
-    if (maxSize > 0)
-        input.size = std::min(input.size, int(maxSize));
+    if (gfx::gl::hasContext())
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
+    source.maxTextureSize = int(maxSize);
+    return source;
+}
+
+
+Cockpit3D::Painted Cockpit3D::paint(const gfx::GlbModel &kit, const std::string &kitFile, const PaintSource &source,
+                                    const std::atomic<bool> *cancel, std::atomic<int> *progress, bool load)
+{
+    CockpitPaint::Input input;
+    input.kit = &kit;
+    input.art = source.art;
+    input.detail = source.detail;
+    input.see = source.see;
+    input.focal = source.camera.focal;
+    input.center = source.camera.center;
+    input.size = std::min(kit.extras()["vertigo_kit"]["atlas"].toInt(8192), MaxTextureSize);
+    if (source.maxTextureSize > 0)
+        input.size = std::min(input.size, source.maxTextureSize);
     input.eyeScale = EyeScale;
 
-    std::vector<char> kit;
-    util::readFile(m_fileName, kit);
-    std::uint64_t hash = fnv1a(kit.data(), kit.size());
+    std::vector<char> kitData;
+    util::readFile(kitFile, kitData);
+    std::uint64_t hash = fnv1a(kitData.data(), kitData.size());
+    kitData = std::vector<char>();
     hash = fnv1a(input.art.constBits(), std::size_t(input.art.bytesPerLine())*input.art.height(), hash);
     if (!input.detail.isNull())
         hash = fnv1a(input.detail.constBits(), std::size_t(input.detail.bytesPerLine())*input.detail.height(), hash);
@@ -274,35 +332,60 @@ void Cockpit3D::startPainting(const String &cockpit)
     std::snprintf(hex, sizeof(hex), "%016llx", static_cast<unsigned long long>(hash));
     const std::string directory = util::joinPath(util::cacheLocation(), "3d-cockpits");
     // (with and without the upscaled art apart, so that switching it keeps both)
-    const std::string prefix = String("cockpit_%1_%2_%3").arg(cockpit).arg(input.size).arg(input.detail.isNull() ? "sd_" : "hd_").toUtf8();
-    const std::string file = util::joinPath(directory, prefix + hex + ".jpg");
+    const std::string prefix = String("cockpit_%1_%2_%3").arg(source.cockpit).arg(input.size).arg(input.detail.isNull() ? "sd_" : "hd_").toUtf8();
 
-    m_cancel = false;
-    m_painted = std::async(std::launch::async, [input = std::move(input), directory, prefix, file, cancel = &m_cancel]() {
-        Painted painted;
-        painted.file = file;
+    Painted painted;
+    painted.file = util::joinPath(directory, prefix + hex + ".jpg");
+    // the file is whole whenever it is there (see below), so it is read without waiting
+    auto fromCache = [&painted, &input, load]() {
+        if (!util::exists(painted.file))
+            return false;
+        painted.cached = !load;
         std::vector<char> data;
-        if (util::exists(file) && util::readFile(file, data))
-        {
+        if (load && util::readFile(painted.file, data)) {
             painted.texture = gfx::Image::fromData(reinterpret_cast<const std::uint8_t *>(data.data()), data.size());
             painted.cached = painted.texture.width() == input.size && painted.texture.height() == input.size;
-            if (painted.cached)
-                return painted;
         }
-        painted.texture = CockpitPaint::paint(input, cancel);
-        if (!painted.texture.isNull() && util::makeDirectory(directory))
-        {
-            // (the textures of other kits, art or versions are of no use any more)
-            for (const std::string &name : util::files(directory))
-                if (name.compare(0, prefix.size(), prefix) == 0)
-                {
-                    std::error_code error;
-                    std::filesystem::remove(util::toPath(util::joinPath(directory, name)), error);
-                }
-            if (!painted.texture.saveJpeg(file, CacheQuality))
-                std::cerr << "3D cockpit: cannot write " << file << std::endl;
-        }
+        return painted.cached;
+    };
+    if (fromCache())
         return painted;
+    std::unique_lock<std::mutex> lock(paintMutex, std::defer_lock);
+    while (!lock.try_lock()) {
+        if (cancel && cancel->load())
+            return painted;
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+    // (the texture may have been painted while this call waited)
+    if (fromCache())
+        return painted;
+    painted.texture = CockpitPaint::paint(input, cancel, progress);
+    if (!painted.texture.isNull() && util::makeDirectory(directory)) {
+        // (the textures of other kits, art or versions are of no use any more)
+        for (const std::string &name : util::files(directory))
+            if (name.compare(0, prefix.size(), prefix) == 0) {
+                std::error_code error;
+                std::filesystem::remove(util::toPath(util::joinPath(directory, name)), error);
+            }
+        // written under another name first, so that the file is never there in part
+        const std::string part = painted.file + ".part";
+        std::error_code error;
+        if (painted.texture.saveJpeg(part, CacheQuality))
+            std::filesystem::rename(util::toPath(part), util::toPath(painted.file), error);
+        if (error || !util::exists(painted.file))
+            std::cerr << "3D cockpit: cannot write " << painted.file << std::endl;
+    }
+    return painted;
+}
+
+
+// the kit's texture on a worker thread
+void Cockpit3D::startPainting(const String &cockpit)
+{
+    m_cancel = false;
+    m_painted = std::async(std::launch::async, [kit = m_model.get(), file = m_fileName,
+                                                source = paintSource(cockpit, Camera{ m_focal, m_center }), cancel = &m_cancel]() {
+        return paint(*kit, file, source, cancel);
     });
 }
 
