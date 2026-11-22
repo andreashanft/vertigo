@@ -39,6 +39,9 @@ SimpleObject::SimpleObject(Scenario *scenario, txt::DesFile &file, const ObjectI
     if (m_base)
         m_localBox = m_base->box().scale(m_scale);
     m_box = m_localBox;
+    file.setSection("collision");
+    if (m_base)
+        m_hullSphere = file.value("RadiusScale", 1).toFloat()*m_base->radius()*m_scale;
     scenario->collisionManager().addObject(this);
 }
 

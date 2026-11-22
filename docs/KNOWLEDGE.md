@@ -31,6 +31,7 @@ describes the original.
   - [4.5 Jams](#45-jams)
   - [4.6 Armour, wear and the Fixer](#46-armour-wear-and-the-fixer)
   - [4.7 Damage between missions](#47-damage-between-missions)
+  - [4.8 Touching the ground](#48-touching-the-ground)
 - [5. Units' behaviour](#5-units-behaviour)
   - [5.1 Sleeping units](#51-sleeping-units)
   - [5.2 Attacker lists](#52-attacker-lists)
@@ -601,6 +602,25 @@ repaired. What the Fixer mends stays with the boat as well.
 A boat with a Fixer leaves every mission mended, however the mission ends:
 each armour side, the gun, the torpedo magazine and the turrets that are
 below three quarters of their full state are at three quarters afterwards.
+
+### 4.8 Touching the ground
+
+The player's boat touches the ground as a sphere of 1.5 m radius about its
+position, whatever its hull. All four hulls are longer than that: the Hiob's
+nose is 4.7 m ahead of its position and the Zorn's 7.6 m. So a boat that
+stands on its nose reaches about a third of its length into the ground.
+
+- For every frame the game takes the ground's normal under the boat. It
+  takes it from the ground's height at the boat's place and at a quarter of
+  a cell to two sides.
+- It then looks at the point 1.5 m from the boat's position, against that
+  normal. If the point is under the ground, the boat moves out along the
+  normal. It moves by 1.5 m times the share that the point's depth under the
+  ground has of the boat's own height over the ground, and by 1.5 m at most.
+- This test only moves the boat. It doesn't turn it or level it.
+
+The boat meets other objects as the same sphere
+([7.1](#71-the-contact-table-and-factions)).
 
 ## 5. Units' behaviour
 
@@ -1207,6 +1227,27 @@ offense (strength) off its armour.
 - Shots and torpedoes carry the faction of whoever fired them and pass
   through the units, mines and ship segments of their own side.
 - A unit of a mine's own faction passes through it.
+
+What stands for an object in a contact depends on its line in the table. A
+line is marked `L` for the shots and torpedoes and `S` for everything else.
+
+- A unit's sphere lies about its position, the origin of its model. Its
+  radius is the distance of the hull's farthest point from that origin, times
+  the `[Collision] RadiusScale` of the unit's object file. The scale is 1.5
+  for the player's four boats and 0.8 for the other boats and the bombers.
+  It is 0.7 for the buildings, most ground plans, the big ships' own files
+  (`BSHIP`, `CSHIP`), the gun turrets and the shots, 0.6 for the towers,
+  0.451 for the torpedoes and 0.3 for the bubbles. It is 1 for the mines,
+  the tanks, the ships' blocks and the rest.
+- Two `S` objects meet as their two spheres. A boat touches a mine when
+  their positions are as far apart as the two radii together.
+- An `L` object is the sphere of its own radius and scale, and it meets the
+  shape of an `S` object: first the spheres of the object's parts, then
+  their polygons.
+- The player's boat is the exception among the `S` objects. In a contact
+  with another `S` object it is a sphere of 1.5 m radius, whatever its hull
+  and its `RadiusScale`, and it meets the other object's shape as a shot
+  does ([4.8](#48-touching-the-ground)).
 
 ### 7.2 Mines
 

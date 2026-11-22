@@ -61,6 +61,9 @@ public:
     Vector3D drawShift() const;
     const BoundingBox& box() const { return m_box; }
     virtual Vector3D center() const { return (m_box.minPoint() + m_box.maxPoint())*0.5f; }
+    // The radius of the sphere about the object's position that stands for it when two units
+    // meet, or 0 for an object that is met by its shape (KNOWLEDGE.md 7.1).
+    virtual float contactRadius() const { return 0; }
     bool isStatic() const { return m_static; }
 
     int kineticStrength() const { return m_kineticStrength; };

@@ -295,9 +295,12 @@ Vector3D SimpleBoat::slideAlongObjects(const Vector3D &position, const Vector3D 
 {
     if (glm::length2(delta) < 1e-8f)
         return delta;
+    // The unit meets debris and mines as the sphere of its hull (KNOWLEDGE.md 7.1); a unit
+    // without a hull of its own as the sphere it is moved by.
+    const float reach = contactRadius() > 0 ? contactRadius() : m_collisionRadius;
     // debris slower than the unit
     Particles::DebrisHit debris;
-    if (m_scenario->effectManager().hitDebris(position, position + delta, m_collisionRadius, speed < 0 ? glm::length(m_velocity) : speed, m_kineticStrength, debris))
+    if (m_scenario->effectManager().hitDebris(position, position + delta, reach, speed < 0 ? glm::length(m_velocity) : speed, m_kineticStrength, debris))
         damage(debris.kinetic, debris.shock, debris.position);
     // another faction's mine in the way goes up (docs/ROADMAP.md, appendix Q); the unit carries on
     auto mine = [this](const Object *object) {
@@ -305,7 +308,7 @@ Vector3D SimpleBoat::slideAlongObjects(const Vector3D &position, const Vector3D 
         return mine && mine->collidesWith(this);
     };
     Vector3D contact, normal;
-    if (Object *hit = m_scenario->collisionManager().testCollision(position, position + delta, m_collisionRadius, contact, normal, nullptr, this, mine))
+    if (Object *hit = m_scenario->collisionManager().testContact(position, position + delta, reach, contact, normal, this, mine))
         static_cast<Mine *>(hit)->collide(this, contact);
     if (!collidesWithObjects())
         return delta;

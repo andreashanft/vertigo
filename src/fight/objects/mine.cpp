@@ -103,7 +103,8 @@ bool Mine::update(float elapsedTime)
     {
         Vector3D next = distance <= step ? goal : m_position + way*(step/distance);
         next.z = std::max(next.z, m_scenario->surface().heightAt(next.x, next.y) + GroundClearance*r);
-        // running into another faction's unit or a building on the way
+        // running into another faction's unit or a building on the way: a boat is met as the
+        // sphere of its hull, the others by their shapes
         Vector3D contact, normal;
         const Vector3D from = center();
         auto other = [this, player](const Object *object) {
@@ -112,7 +113,7 @@ bool Mine::update(float elapsedTime)
             const ActiveObject *unit = dynamic_cast<const ActiveObject *>(object);
             return unit && unit != player && collidesWith(unit);
         };
-        if (Object *hit = m_scenario->collisionManager().testCollision(from, from + next - m_position, r, contact, normal, nullptr, this, other))
+        if (Object *hit = m_scenario->collisionManager().testContact(from, from + next - m_position, r, contact, normal, this, other))
         {
             collide(hit, contact);
             return false;

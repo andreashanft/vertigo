@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "collisionmanager.h"
+#include "spherecontact.hpp"
 #include "objects/object.h"
 
 #include <glm/geometric.hpp>
@@ -113,6 +114,44 @@ Object* CollisionManager::testCollision(const Vector3D &start, const Vector3D &e
             }
         }
     return collisionObject;
+}
+
+
+Object* CollisionManager::testContact(const Vector3D &start, const Vector3D &end, float radius, Vector3D &position, Vector3D &normal, const Object *ignore,
+                                      const std::function<bool(const Object *)> &accept)
+{
+    Vector3D dir = end - start;
+    float distance = glm::length(dir);
+    if (distance <= 0)
+        return nullptr;
+    dir /= distance;
+
+    Object *contactObject = nullptr;
+    for (Object *object : m_objects)
+    {
+        if (object == ignore || !object->isEnabled() || (accept && !accept(object)))
+            continue;
+        const float sphere = object->contactRadius();
+        float d = 0;
+        Vector3D norm;
+        if (sphere > 0)
+        {
+            if (!sphereContact(start, dir, object->position(), radius + sphere, d, norm))
+                continue;
+        }
+        else if (!object->box().test(end, radius) || !object->intersect(start, dir, radius, d, norm))
+            continue;
+        if (distance > d)
+        {
+            distance = d;
+            position = start;
+            if (distance > 0)
+                position += dir*distance;
+            normal = norm;
+            contactObject = object;
+        }
+    }
+    return contactObject;
 }
 
 
